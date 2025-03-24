@@ -77,7 +77,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 
 	// Upload the CSV file to Snowflake, wrapping the file in single quotes to avoid special characters.
 	tableStageName := addPrefixToTableName(tempTableID, "%")
-	if _, err = s.Exec(fmt.Sprintf("PUT 'file://%s' @%s AUTO_COMPRESS=TRUE", file.FilePath, tableStageName)); err != nil {
+	if _, err = s.ExecContext(ctx, fmt.Sprintf("PUT 'file://%s' @%s AUTO_COMPRESS=TRUE", file.FilePath, tableStageName)); err != nil {
 		return fmt.Errorf("failed to run PUT for temporary table: %w", err)
 	}
 
@@ -93,7 +93,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		copyCommand += " " + additionalSettings.AdditionalCopyClause
 	}
 
-	if _, err = s.Exec(copyCommand); err != nil {
+	if _, err = s.ExecContext(ctx, copyCommand); err != nil {
 		// For non-temp tables, we should try to delete the staging file if COPY INTO fails.
 		// This is because [PURGE = TRUE] will only delete the staging files upon a successful COPY INTO.
 		// We also only need to do this for non-temp tables because these staging files will linger, since we create a new temporary table per attempt.
