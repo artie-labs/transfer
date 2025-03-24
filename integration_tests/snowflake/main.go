@@ -51,25 +51,25 @@ func (st *SnowflakeTest) setupColumns() {
 	st.tableData = optimization.NewTableData(cols, config.Replication, []string{"id"}, st.topicConfig, st.tableID.Table())
 }
 
-func (st *SnowflakeTest) generateTestData(numRows int) {
-	for i := 0; i < numRows; i++ {
-		rowData := map[string]any{
-			"id":         i,
-			"name":       fmt.Sprintf("test_name_%d", i),
-			"created_at": time.Now().Format(time.RFC3339Nano),
-			"value":      float64(i) * 1.5,
+func (st *SnowflakeTest) generateTestData(numRows int, appendEvery int) error {
+	for i := 0; i < appendEvery; i++ {
+		for j := 0; j < numRows; j++ {
+			pkValue := i*numRows + j
+			pkValueString := fmt.Sprintf("%d", pkValue)
+			rowData := map[string]any{
+				"id":         pkValue,
+				"name":       fmt.Sprintf("test_name_%d", pkValue),
+				"created_at": time.Now().Format(time.RFC3339Nano),
+				"value":      float64(pkValue) * 1.5,
+			}
+			st.tableData.InsertRow(pkValueString, rowData, false)
 		}
-		st.tableData.InsertRow(fmt.Sprintf("%d", i), rowData, false)
-	}
-}
 
-func (st *SnowflakeTest) setupTable() error {
-	if err := st.cleanup(st.tableID); err != nil {
-		return fmt.Errorf("failed to cleanup table: %w", err)
-	}
+		if err := st.dest.Append(st.ctx, st.tableData, true); err != nil {
+			return fmt.Errorf("failed to append data: %w", err)
+		}
 
-	if err := st.dest.Append(st.ctx, st.tableData, true); err != nil {
-		return fmt.Errorf("failed to append data: %w", err)
+		st.tableData.WipeData()
 	}
 
 	return nil
@@ -139,18 +139,24 @@ func (st *SnowflakeTest) cleanup(tableID dialect.TableIdentifier) error {
 }
 
 func (st *SnowflakeTest) Run() error {
+	if err := st.cleanup(st.tableID); err != nil {
+		return fmt.Errorf("failed to cleanup table: %w", err)
+	}
+
 	st.setupColumns()
-	st.generateTestData(120)
-	if err := st.setupTable(); err != nil {
-		return err
+
+	appendRows := 200
+	appendEvery := 50
+	if err := st.generateTestData(appendRows, appendEvery); err != nil {
+		return fmt.Errorf("failed to generate test data: %w", err)
 	}
 
-	if err := st.verifyRowCount(120); err != nil {
-		return err
+	if err := st.verifyRowCount(appendRows * appendEvery); err != nil {
+		return fmt.Errorf("failed to verify row count: %w", err)
 	}
 
-	if err := st.verifyDataContent(120); err != nil {
-		return err
+	if err := st.verifyDataContent(appendRows * appendEvery); err != nil {
+		return fmt.Errorf("failed to verify data content: %w", err)
 	}
 
 	return st.cleanup(st.tableID)
