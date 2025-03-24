@@ -160,6 +160,7 @@ func generateTableData(rows int) (dialect.TableIdentifier, *optimization.TableDa
 func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 	tempTableID, tableData := generateTableData(10)
 	tempTableName := tempTableID.FullyQualifiedName()
+	tempFileName := strings.ReplaceAll(fmt.Sprintf("%s.csv", tempTableName), `"`, "")
 	s.stageStore.GetConfigMap().AddTable(tempTableID, types.NewDestinationTableConfig(nil, true))
 	sflkTc := s.stageStore.GetConfigMap().GetTableConfig(tempTableID)
 
@@ -182,8 +183,8 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 		assert.Contains(s.T(), putQuery, fmt.Sprintf("@%s AUTO_COMPRESS=TRUE", resourceName))
 		// Third call is a COPY INTO
 		copyQuery, _ := s.fakeStageStore.ExecArgsForCall(1)
-		assert.Equal(s.T(), fmt.Sprintf(`COPY INTO %s ("USER_ID","FIRST_NAME","LAST_NAME","DUSTY") FROM (SELECT $1,$2,$3,$4 FROM @%s)`,
-			tempTableName, resourceName), copyQuery)
+		assert.Equal(s.T(), fmt.Sprintf(`COPY INTO %s ("USER_ID","FIRST_NAME","LAST_NAME","DUSTY") FROM (SELECT $1,$2,$3,$4 FROM @%s FILES = ('%s'))`,
+			tempTableName, resourceName, tempFileName), copyQuery)
 	}
 	{
 		// Don't create the temporary table.
@@ -197,6 +198,8 @@ func (s *SnowflakeTestSuite) TestLoadTemporaryTable() {
 	tempTableID, tableData := generateTableData(100)
 	file, err := s.stageStore.writeTemporaryTableFile(tableData, tempTableID)
 	assert.NoError(s.T(), err)
+	assert.Equal(s.T(), fmt.Sprintf("%s.csv", strings.ReplaceAll(tempTableID.FullyQualifiedName(), `"`, "")), file.FileName)
+
 	// Read the CSV and confirm.
 	csvfile, err := os.Open(file.FilePath)
 	assert.NoError(s.T(), err)
@@ -231,7 +234,4 @@ func (s *SnowflakeTestSuite) TestLoadTemporaryTable() {
 
 	// Delete the file.
 	assert.NoError(s.T(), os.RemoveAll(file.FilePath))
-
-	fmt.Println("fileName", file.FileName)
-	assert.True(s.T(), false)
 }
