@@ -115,7 +115,7 @@ type File struct {
 }
 
 func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID dialect.TableIdentifier) (File, error) {
-	fileName := newTableID.FullyQualifiedName()
+	fileName := strings.ReplaceAll(fmt.Sprintf("%s.csv", newTableID.FullyQualifiedName()), `"`, "")
 	fp := filepath.Join(os.TempDir(), fileName)
 	file, err := os.Create(fp)
 	if err != nil {

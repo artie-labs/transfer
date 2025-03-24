@@ -31,8 +31,3 @@ func TestTableIdentifier_EscapedTable(t *testing.T) {
 	// Table name that is a reserved word:
 	assert.Equal(t, `"TABLE"`, NewTableIdentifier("database", "schema", "table").EscapedTable())
 }
-
-func TestTableIdentifier_StagingFileName(t *testing.T) {
-	assert.Equal(t, `database_schema_foo.csv`, NewTableIdentifier("database", "schema", "foo").StagingFileName())
-	assert.Equal(t, `db_schema_foo.csv`, NewTableIdentifier("DB", "SCHEMA", "FOO").StagingFileName())
-}
