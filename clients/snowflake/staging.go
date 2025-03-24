@@ -63,28 +63,31 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	}
 
 	// Write data into CSV
-	fp, err := s.writeTemporaryTableFile(tableData, snowflakeTableID)
+	file, err := s.writeTemporaryTableFile(tableData, snowflakeTableID)
 	if err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
 	}
 
 	defer func() {
 		// In the case where PUT or COPY fails, we'll at least delete the temporary file.
-		if deleteErr := os.RemoveAll(fp); deleteErr != nil {
-			slog.Warn("Failed to delete temp file", slog.Any("err", deleteErr), slog.String("filePath", fp))
+		if deleteErr := os.RemoveAll(file.FilePath); deleteErr != nil {
+			slog.Warn("Failed to delete temp file", slog.Any("err", deleteErr), slog.String("filePath", file.FilePath))
 		}
 	}()
 
 	// Upload the CSV file to Snowflake, wrapping the file in single quotes to avoid special characters.
-	if _, err = s.Exec(fmt.Sprintf("PUT 'file://%s' @%s AUTO_COMPRESS=TRUE", fp, addPrefixToTableName(tempTableID, "%"))); err != nil {
+	tableStageName := addPrefixToTableName(tempTableID, "%")
+	if _, err = s.Exec(fmt.Sprintf("PUT 'file://%s' @%s AUTO_COMPRESS=TRUE", file.FilePath, tableStageName)); err != nil {
 		return fmt.Errorf("failed to run PUT for temporary table: %w", err)
 	}
 
 	// COPY the CSV file (in Snowflake) into a table
-	copyCommand := fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @%s)",
-		tempTableID.FullyQualifiedName(),
-		strings.Join(sql.QuoteColumns(tableData.ReadOnlyInMemoryCols().ValidColumns(), s.Dialect()), ","),
-		escapeColumns(tableData.ReadOnlyInMemoryCols(), ","), addPrefixToTableName(tempTableID, "%"))
+	copyCommand := fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @%s FILES = ('%s'))",
+		// COPY INTO <table> (<columns>)
+		tempTableID.FullyQualifiedName(), strings.Join(sql.QuoteColumns(tableData.ReadOnlyInMemoryCols().ValidColumns(), s.Dialect()), ","),
+		// FROM (SELECT <columns> FROM @<stage> FILES = ('<file_name>'))
+		escapeColumns(tableData.ReadOnlyInMemoryCols(), ","), tableStageName, file.FileName,
+	)
 
 	if additionalSettings.AdditionalCopyClause != "" {
 		copyCommand += " " + additionalSettings.AdditionalCopyClause
@@ -95,7 +98,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		// This is because [PURGE = TRUE] will only delete the staging files upon a successful COPY INTO.
 		// We also only need to do this for non-temp tables because these staging files will linger, since we create a new temporary table per attempt.
 		if !createTempTable {
-			if _, deleteErr := s.ExecContext(ctx, s.dialect().BuildRemoveFilesFromStage(addPrefixToTableName(tempTableID, "%"), "")); deleteErr != nil {
+			if _, deleteErr := s.ExecContext(ctx, s.dialect().BuildRemoveFilesFromStage(tableStageName, "")); deleteErr != nil {
 				slog.Warn("Failed to remove all files from stage", slog.Any("deleteErr", deleteErr))
 			}
 		}
@@ -106,11 +109,16 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	return nil
 }
 
-func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID dialect.TableIdentifier) (string, error) {
+type File struct {
+	FilePath string
+	FileName string
+}
+
+func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID dialect.TableIdentifier) (File, error) {
 	fp := filepath.Join(os.TempDir(), newTableID.StagingFileName())
 	file, err := os.Create(fp)
 	if err != nil {
-		return "", err
+		return File{}, err
 	}
 
 	defer file.Close()
@@ -123,17 +131,17 @@ func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTa
 		for _, col := range columns {
 			castedValue, castErr := castColValStaging(row[col.Name()], col.KindDetails)
 			if castErr != nil {
-				return "", fmt.Errorf("failed to cast value '%v': %w", row[col.Name()], castErr)
+				return File{}, fmt.Errorf("failed to cast value '%v': %w", row[col.Name()], castErr)
 			}
 
 			csvRow = append(csvRow, castedValue)
 		}
 
 		if err = writer.Write(csvRow); err != nil {
-			return "", fmt.Errorf("failed to write to csv: %w", err)
+			return File{}, fmt.Errorf("failed to write to csv: %w", err)
 		}
 	}
 
 	writer.Flush()
-	return fp, writer.Error()
+	return File{FilePath: fp, FileName: newTableID.StagingFileName()}, writer.Error()
 }
