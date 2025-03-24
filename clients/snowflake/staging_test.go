@@ -178,7 +178,7 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 		resourceName := addPrefixToTableName(tempTableID, "%")
 		// Second call is a PUT
 		putQuery, _ := s.fakeStageStore.ExecArgsForCall(0)
-		assert.Contains(s.T(), putQuery, "PUT file://", putQuery)
+		assert.Contains(s.T(), putQuery, "PUT 'file://", putQuery)
 		assert.Contains(s.T(), putQuery, fmt.Sprintf("@%s AUTO_COMPRESS=TRUE", resourceName))
 		// Third call is a COPY INTO
 		copyQuery, _ := s.fakeStageStore.ExecArgsForCall(1)

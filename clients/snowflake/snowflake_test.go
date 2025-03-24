@@ -205,9 +205,9 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	_, createQuery, _ := s.fakeStageStore.ExecContextArgsForCall(0)
 	assert.Contains(s.T(), createQuery, `"CUSTOMER"."PUBLIC"."ORDERS___ARTIE_`, fmt.Sprintf("query: %v, destKind: %v", createQuery, constants.Snowflake))
 
-	// PUT file:///tmp/customer.public.orders___artie_Mwv9YADmRy.csv @customer.public.%orders___artie_Mwv9YADmRy AUTO_COMPRESS=TRUE
+	// PUT 'file:///tmp/customer.public.orders___artie_Mwv9YADmRy.csv' @customer.public.%orders___artie_Mwv9YADmRy AUTO_COMPRESS=TRUE
 	putQuery, _ := s.fakeStageStore.ExecArgsForCall(0)
-	assert.Contains(s.T(), putQuery, "PUT file://")
+	assert.Contains(s.T(), putQuery, "PUT 'file://")
 
 	// COPY INTO customer.public.orders___artie_Mwv9YADmRy (id,name,__artie_delete,created_at) FROM (SELECT $1,$2,$3,$4 FROM @customer.public.%orders___artie_Mwv9YADmRy
 	copyQuery, _ := s.fakeStageStore.ExecArgsForCall(1)
