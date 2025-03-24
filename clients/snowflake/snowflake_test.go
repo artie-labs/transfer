@@ -22,6 +22,16 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
+func retrieveTableNameFromCreateTable(t *testing.T, query string) string {
+	parts := strings.Split(query, ".")
+	assert.Len(t, parts, 3)
+
+	tableNamePart := parts[2]
+	tableNameParts := strings.Split(tableNamePart, " ")
+	assert.True(t, len(tableNameParts) > 2, tableNamePart)
+	return strings.ReplaceAll(tableNameParts[0], `"`, "")
+}
+
 func (s *SnowflakeTestSuite) identifierFor(tableData *optimization.TableData) sql.TableIdentifier {
 	return s.stageStore.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 }
@@ -156,6 +166,14 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 }
 
 func (s *SnowflakeTestSuite) TestExecuteMerge() {
+	columnNames := []string{
+		"id",
+		"name",
+		constants.DeleteColumnMarker,
+		constants.OnlySetDeleteColumnMarker,
+		"created_at",
+	}
+
 	colToKindDetailsMap := map[string]typing.KindDetails{
 		"id":                                typing.Integer,
 		"name":                              typing.String,
@@ -166,8 +184,10 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	}
 
 	var cols columns.Columns
-	for colName, colKind := range colToKindDetailsMap {
-		cols.AddColumn(columns.NewColumn(colName, colKind))
+	for _, colName := range columnNames {
+		kd, ok := colToKindDetailsMap[colName]
+		assert.True(s.T(), ok, colName)
+		cols.AddColumn(columns.NewColumn(colName, kd))
 	}
 
 	rowsData := make(map[string]map[string]any)
@@ -203,17 +223,17 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	s.fakeStageStore.ExecReturns(nil, nil)
 	// CREATE TABLE IF NOT EXISTS customer.public.orders___artie_Mwv9YADmRy (id int,name string,__artie_delete boolean,created_at timestamp_tz) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='__artie_null_value' EMPTY_FIELD_AS_NULL=FALSE) COMMENT='expires:2023-06-27 11:54:03 UTC'
 	_, createQuery, _ := s.fakeStageStore.ExecContextArgsForCall(0)
-	assert.Contains(s.T(), createQuery, `"CUSTOMER"."PUBLIC"."ORDERS___ARTIE_`, fmt.Sprintf("query: %v, destKind: %v", createQuery, constants.Snowflake))
+	tableName := retrieveTableNameFromCreateTable(s.T(), createQuery)
+	assert.Contains(s.T(), createQuery, `"CUSTOMER"."PUBLIC"."ORDERS___ARTIE_`)
 
 	// PUT 'file:///tmp/customer.public.orders___artie_Mwv9YADmRy.csv' @customer.public.%orders___artie_Mwv9YADmRy AUTO_COMPRESS=TRUE
 	putQuery, _ := s.fakeStageStore.ExecArgsForCall(0)
 	assert.Contains(s.T(), putQuery, "PUT 'file://")
 
-	// COPY INTO customer.public.orders___artie_Mwv9YADmRy (id,name,__artie_delete,created_at) FROM (SELECT $1,$2,$3,$4 FROM @customer.public.%orders___artie_Mwv9YADmRy
+	// COPY INTO \"CUSTOMER\".\"PUBLIC\".\"ORDERS___ARTIE_UJDK7_1742879510\" (\"__ARTIE_ONLY_SET_DELETE\",\"CREATED_AT\",\"ID\",\"NAME\",\"__ARTIE_DELETE\") FROM (SELECT $1,$2,$3,$4,$5 FROM @\"CUSTOMER\".\"PUBLIC\".\"%ORDERS___ARTIE_UJDK7_1742879510\" FILES = ('CUSTOMER.PUBLIC.ORDERS___ARTIE_UJDK7_1742879510.csv'))
 	copyQuery, _ := s.fakeStageStore.ExecArgsForCall(1)
-	fmt.Println("copyQuery", copyQuery)
-	assert.Contains(s.T(), copyQuery, `COPY INTO "CUSTOMER"."PUBLIC"."ORDERS___ARTIE_`, fmt.Sprintf("query: %v, destKind: %v", copyQuery, constants.Snowflake))
-	assert.Contains(s.T(), copyQuery, `FROM @"CUSTOMER"."PUBLIC"."%ORDERS___ARTIE_`, fmt.Sprintf("query: %v, destKind: %v", copyQuery, constants.Snowflake))
+	expectedCopyQuery := fmt.Sprintf(`COPY INTO "CUSTOMER"."PUBLIC"."%s" ("ID","NAME","__ARTIE_DELETE","__ARTIE_ONLY_SET_DELETE","CREATED_AT") FROM (SELECT $1,$2,$3,$4,$5 FROM @"CUSTOMER"."PUBLIC"."%%%s" FILES = ('CUSTOMER.PUBLIC.%s.csv'))`, tableName, tableName, tableName)
+	assert.Equal(s.T(), expectedCopyQuery, copyQuery)
 
 	mergeQuery, _ := s.fakeStageStore.ExecArgsForCall(2)
 	assert.Contains(s.T(), mergeQuery, fmt.Sprintf("MERGE INTO %s", fqName), fmt.Sprintf("query: %v, destKind: %v", mergeQuery, constants.Snowflake))
