@@ -17,7 +17,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
-	"github.com/artie-labs/transfer/lib/typing/decimal"
+	libconverters "github.com/artie-labs/transfer/lib/typing/converters"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
@@ -178,12 +178,12 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 
 			message.Set(field, protoreflect.ValueOfFloat64(castedVal))
 		case typing.EDecimal.Kind:
-			decimalValue, err := typing.AssertType[*decimal.Decimal](value)
+			out, err := libconverters.DecimalConverter{}.Convert(value)
 			if err != nil {
-				return nil, fmt.Errorf("failed to cast value for column: %q, err: %w", column.Name(), err)
+				return nil, fmt.Errorf("failed to convert value for column: %q, err: %w", column.Name(), err)
 			}
 
-			message.Set(field, protoreflect.ValueOfString(decimalValue.String()))
+			message.Set(field, protoreflect.ValueOfString(out))
 		case typing.String.Kind:
 			val, err := converters.NewStringConverter(column.KindDetails).Convert(value)
 			if err != nil {

@@ -12,12 +12,13 @@ import (
 func TestBigQueryDialect_DataTypeForKind(t *testing.T) {
 	{
 		// String
-		{
-			assert.Equal(t, "string", BigQueryDialect{}.DataTypeForKind(typing.String, false, config.SharedDestinationColumnSettings{}))
-		}
-		{
-			assert.Equal(t, "string", BigQueryDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: typing.ToPtr(int32(12345))}, true, config.SharedDestinationColumnSettings{}))
-		}
+		assert.Equal(t, "string", BigQueryDialect{}.DataTypeForKind(typing.String, false, config.SharedDestinationColumnSettings{}))
+		assert.Equal(t, "string", BigQueryDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: typing.ToPtr(int32(12345))}, true, config.SharedDestinationColumnSettings{}))
+	}
+	{
+		// NUMERIC
+		// Precision and scale are not specified
+		assert.Equal(t, "numeric", BigQueryDialect{}.DataTypeForKind(typing.EDecimal, false, config.SharedDestinationColumnSettings{}))
 	}
 }
 
