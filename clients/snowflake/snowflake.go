@@ -17,6 +17,11 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
+func init() {
+	// Snowflake's logger is noisy, disable it since we're going to use our own.
+	gosnowflake.GetLogger().SetLogLevel("debug")
+}
+
 type Store struct {
 	db.Store
 	configMap *types.DestinationTableConfigMap
