@@ -151,8 +151,8 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 	commitTx, err := s.stageStore.Merge(s.T().Context(), tableData)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
-	assert.Equal(s.T(), 4, s.fakeStageStore.ExecCallCount())
-	assert.Equal(s.T(), 1, s.fakeStageStore.ExecContextCallCount())
+	assert.Equal(s.T(), 2, s.fakeStageStore.ExecCallCount())
+	assert.Equal(s.T(), 3, s.fakeStageStore.ExecContextCallCount())
 }
 
 func (s *SnowflakeTestSuite) TestExecuteMerge() {
@@ -211,7 +211,6 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 
 	// COPY INTO customer.public.orders___artie_Mwv9YADmRy (id,name,__artie_delete,created_at) FROM (SELECT $1,$2,$3,$4 FROM @customer.public.%orders___artie_Mwv9YADmRy
 	_, copyQuery, _ := s.fakeStageStore.ExecContextArgsForCall(2)
-	fmt.Println("copyQuery", copyQuery)
 	assert.Contains(s.T(), copyQuery, `COPY INTO "CUSTOMER"."PUBLIC"."ORDERS___ARTIE_`, fmt.Sprintf("query: %v, destKind: %v", copyQuery, constants.Snowflake))
 	assert.Contains(s.T(), copyQuery, `FROM @"CUSTOMER"."PUBLIC"."%ORDERS___ARTIE_`, fmt.Sprintf("query: %v, destKind: %v", copyQuery, constants.Snowflake))
 
@@ -288,8 +287,8 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
 	s.fakeStageStore.ExecReturns(nil, nil)
-	assert.Equal(s.T(), 4, s.fakeStageStore.ExecCallCount())
-	assert.Equal(s.T(), 1, s.fakeStageStore.ExecContextCallCount())
+	assert.Equal(s.T(), 2, s.fakeStageStore.ExecCallCount())
+	assert.Equal(s.T(), 3, s.fakeStageStore.ExecContextCallCount())
 
 	// Check the temp deletion table now.
 	assert.Equal(s.T(), len(s.stageStore.configMap.GetTableConfig(s.identifierFor(tableData)).ReadOnlyColumnsToDelete()), 1,
@@ -314,8 +313,8 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
 	s.fakeStageStore.ExecReturns(nil, nil)
-	assert.Equal(s.T(), 8, s.fakeStageStore.ExecCallCount())
-	assert.Equal(s.T(), 2, s.fakeStageStore.ExecContextCallCount())
+	assert.Equal(s.T(), 4, s.fakeStageStore.ExecCallCount())
+	assert.Equal(s.T(), 6, s.fakeStageStore.ExecContextCallCount())
 
 	// Caught up now, so columns should be 0.
 	assert.Len(s.T(), s.stageStore.configMap.GetTableConfig(s.identifierFor(tableData)).ReadOnlyColumnsToDelete(), 0)
