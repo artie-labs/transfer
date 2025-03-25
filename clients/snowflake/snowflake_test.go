@@ -23,6 +23,7 @@ import (
 )
 
 func retrieveTableNameFromCreateTable(t *testing.T, query string) string {
+	t.Helper()
 	parts := strings.Split(query, ".")
 	assert.Len(t, parts, 3)
 
@@ -233,8 +234,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 
 	// COPY INTO customer.public.orders___artie_Mwv9YADmRy (id,name,__artie_delete,created_at) FROM (SELECT $1,$2,$3,$4 FROM @customer.public.%orders___artie_Mwv9YADmRy
 	_, copyQuery, _ := s.fakeStageStore.ExecContextArgsForCall(2)
-	assert.Contains(s.T(), copyQuery, `COPY INTO "CUSTOMER"."PUBLIC"."ORDERS___ARTIE_`, fmt.Sprintf("query: %v, destKind: %v", copyQuery, constants.Snowflake))
-	assert.Contains(s.T(), copyQuery, `FROM @"CUSTOMER"."PUBLIC"."%ORDERS___ARTIE_`, fmt.Sprintf("query: %v, destKind: %v", copyQuery, constants.Snowflake))
+	assert.Equal(s.T(), fmt.Sprintf(`COPY INTO "CUSTOMER"."PUBLIC"."%s" ("ID","NAME","__ARTIE_DELETE","__ARTIE_ONLY_SET_DELETE","CREATED_AT") FROM (SELECT $1,$2,$3,$4,$5 FROM @"CUSTOMER"."PUBLIC"."%%%s")`, tableName, tableName), copyQuery)
 
 	mergeQuery, _ := s.fakeStageStore.ExecArgsForCall(0)
 	assert.Contains(s.T(), mergeQuery, fmt.Sprintf("MERGE INTO %s", fqName), fmt.Sprintf("query: %v, destKind: %v", mergeQuery, constants.Snowflake))
