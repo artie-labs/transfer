@@ -140,3 +140,8 @@ func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTa
 	writer.Flush()
 	return File{FilePath: fp, FileName: fileName}, writer.Error()
 }
+
+// BuildPutQuery builds a PUT query to upload a file to Snowflake's staging area
+func (s *Store) BuildPutQuery(filePath string, stageName string) string {
+	return fmt.Sprintf("PUT 'file://%s' @%s AUTO_COMPRESS=TRUE", filePath, stageName)
+}

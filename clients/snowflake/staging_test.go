@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/stretchr/testify/assert"
@@ -177,9 +178,14 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 		assert.True(s.T(), containsPrefix, fmt.Sprintf("createQuery:%v, prefixQuery:%s", createQuery, prefixQuery))
 		resourceName := addPrefixToTableName(tempTableID, "%")
 		// Second call is a PUT
+
+		stagingTableID := tempTableID.WithTable("%" + tempTableID.Table())
 		_, putQuery, _ := s.fakeStageStore.ExecContextArgsForCall(1)
-		assert.Contains(s.T(), putQuery, "PUT 'file://", putQuery)
-		assert.Contains(s.T(), putQuery, fmt.Sprintf("@%s AUTO_COMPRESS=TRUE", resourceName))
+		assert.Equal(s.T(),
+			fmt.Sprintf(`PUT 'file://%s' @"DATABASE"."SCHEMA".%s AUTO_COMPRESS=TRUE`,
+				filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv", strings.ReplaceAll(tempTableName, `"`, ""))),
+				stagingTableID.EscapedTable(),
+			), putQuery)
 		// Third call is a COPY INTO
 		_, copyQuery, _ := s.fakeStageStore.ExecContextArgsForCall(2)
 		assert.Equal(s.T(), fmt.Sprintf(`COPY INTO %s ("USER_ID","FIRST_NAME","LAST_NAME","DUSTY") FROM (SELECT $1,$2,$3,$4 FROM @%s FILES = ('%s.csv'))`,
