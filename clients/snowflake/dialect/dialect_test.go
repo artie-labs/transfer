@@ -335,3 +335,29 @@ func TestSnowflakeDialect_EscapeColumns(t *testing.T) {
 		assert.Equal(t, "$1,$2,PARSE_JSON($3),CAST(PARSE_JSON($4) AS ARRAY) AS $4", SnowflakeDialect{}.EscapeColumns(cols.GetColumns(), ","))
 	}
 }
+
+func TestSnowflakeDialect_BuildCopyIntoTableQuery(t *testing.T) {
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns("database.schema.table")
+
+	cols := buildColumns(map[string]typing.KindDetails{
+		"id":         typing.String,
+		"name":       typing.String,
+		"data":       typing.Struct,
+		"tags":       typing.Array,
+		"created_at": typing.TimestampNTZ,
+	})
+
+	query := SnowflakeDialect{}.BuildCopyIntoTableQuery(
+		fakeTableID,
+		cols.ValidColumns(),
+		"%table_stage",
+		"data.csv.gz",
+	)
+
+	expected := `COPY INTO database.schema.table ("CREATED_AT","DATA","ID","NAME","TAGS") ` +
+		`FROM (SELECT $1,PARSE_JSON($2),$3,$4,CAST(PARSE_JSON($5) AS ARRAY) AS $5 FROM @%table_stage) ` +
+		`FILES = ('data.csv.gz')`
+
+	assert.Equal(t, expected, query)
+}
