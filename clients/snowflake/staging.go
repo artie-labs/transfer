@@ -76,11 +76,13 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	}
 
 	// COPY the CSV file (in Snowflake) into a table
-	copyCommand := fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @%s FILES = ('%s'))",
+	copyCommand := fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @%s) FILES = ('%s')",
 		// COPY INTO <table> (<columns>)
 		tempTableID.FullyQualifiedName(), strings.Join(sql.QuoteColumns(tableData.ReadOnlyInMemoryCols().ValidColumns(), s.Dialect()), ","),
 		// FROM (SELECT <columns> FROM @<stage> FILES = ('<file_name>'))
-		escapeColumns(tableData.ReadOnlyInMemoryCols(), ","), tableStageName, file.FileName,
+		escapeColumns(tableData.ReadOnlyInMemoryCols(), ","), tableStageName,
+		// We're appending gz to the file name since it was compressed by the PUT command.
+		fmt.Sprintf("%s.gz", file.FileName),
 	)
 
 	if additionalSettings.AdditionalCopyClause != "" {
