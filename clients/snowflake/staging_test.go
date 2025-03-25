@@ -188,7 +188,7 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 			), putQuery)
 		// Third call is a COPY INTO
 		_, copyQuery, _ := s.fakeStageStore.ExecContextArgsForCall(2)
-		assert.Equal(s.T(), fmt.Sprintf(`COPY INTO %s ("USER_ID","FIRST_NAME","LAST_NAME","DUSTY") FROM (SELECT $1,$2,$3,$4 FROM @%s FILES = ('%s.csv'))`,
+		assert.Equal(s.T(), fmt.Sprintf(`COPY INTO %s ("USER_ID","FIRST_NAME","LAST_NAME","DUSTY") FROM (SELECT $1,$2,$3,$4 FROM @%s) FILES = ('%s.csv.gz')`,
 			tempTableName, resourceName, strings.ReplaceAll(tempTableName, `"`, "")), copyQuery)
 	}
 	{
