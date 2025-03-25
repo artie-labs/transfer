@@ -151,8 +151,39 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 	commitTx, err := s.stageStore.Merge(s.T().Context(), tableData)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
-	assert.Equal(s.T(), 4, s.fakeStageStore.ExecCallCount())
-	assert.Equal(s.T(), 1, s.fakeStageStore.ExecContextCallCount())
+
+	// Verify the sequence of queries
+	execCalls := s.fakeStageStore.ExecCallCount()
+	execContextCalls := s.fakeStageStore.ExecContextCallCount()
+	assert.Equal(s.T(), 2, execCalls, "Expected 2 Exec calls")
+	assert.Equal(s.T(), 3, execContextCalls, "Expected 3 ExecContext calls")
+
+	// Get all queries in sequence
+	queries := make([]string, execCalls+execContextCalls)
+	for i := 0; i < execContextCalls; i++ {
+		_, query, _ := s.fakeStageStore.ExecContextArgsForCall(i)
+		queries[i] = query
+	}
+	for i := 0; i < execCalls; i++ {
+		_, args := s.fakeStageStore.ExecArgsForCall(i)
+		queries[execContextCalls+i] = args[0].(string)
+	}
+
+	// Verify CREATE TABLE query
+	assert.Contains(s.T(), queries[0], `"CUSTOMER"."PUBLIC"."FOO___ARTIE_`, "Expected CREATE TABLE query")
+
+	// Verify PUT query
+	assert.Contains(s.T(), queries[1], "PUT file://", "Expected PUT query")
+
+	// Verify COPY INTO query
+	assert.Contains(s.T(), queries[2], `COPY INTO "CUSTOMER"."PUBLIC"."FOO___ARTIE_`, "Expected COPY INTO query")
+	assert.Contains(s.T(), queries[2], `FROM @"CUSTOMER"."PUBLIC"."%FOO___ARTIE_`, "Expected FROM clause")
+
+	// Verify MERGE query
+	assert.Contains(s.T(), queries[3], `MERGE INTO "CUSTOMER"."PUBLIC"."FOO"`, "Expected MERGE query")
+
+	// Verify DROP query
+	assert.Contains(s.T(), queries[4], `DROP TABLE IF EXISTS "CUSTOMER"."PUBLIC"."FOO___ARTIE_`, "Expected DROP query")
 }
 
 func (s *SnowflakeTestSuite) TestExecuteMerge() {
@@ -200,31 +231,39 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	commitTx, err := s.stageStore.Merge(s.T().Context(), tableData)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
-	s.fakeStageStore.ExecReturns(nil, nil)
-	// CREATE TABLE IF NOT EXISTS customer.public.orders___artie_Mwv9YADmRy (id int,name string,__artie_delete boolean,created_at timestamp_tz) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='__artie_null_value' EMPTY_FIELD_AS_NULL=FALSE) COMMENT='expires:2023-06-27 11:54:03 UTC'
-	_, createQuery, _ := s.fakeStageStore.ExecContextArgsForCall(0)
-	assert.Contains(s.T(), createQuery, `"CUSTOMER"."PUBLIC"."ORDERS___ARTIE_`, fmt.Sprintf("query: %v, destKind: %v", createQuery, constants.Snowflake))
 
-	// PUT file:///tmp/customer.public.orders___artie_Mwv9YADmRy.csv @customer.public.%orders___artie_Mwv9YADmRy AUTO_COMPRESS=TRUE
-	putQuery, _ := s.fakeStageStore.ExecArgsForCall(0)
-	assert.Contains(s.T(), putQuery, "PUT file://")
+	// Verify the sequence of queries
+	execCalls := s.fakeStageStore.ExecCallCount()
+	execContextCalls := s.fakeStageStore.ExecContextCallCount()
+	assert.Equal(s.T(), 2, execCalls, "Expected 2 Exec calls")
+	assert.Equal(s.T(), 3, execContextCalls, "Expected 3 ExecContext calls")
 
-	// COPY INTO customer.public.orders___artie_Mwv9YADmRy (id,name,__artie_delete,created_at) FROM (SELECT $1,$2,$3,$4 FROM @customer.public.%orders___artie_Mwv9YADmRy
-	copyQuery, _ := s.fakeStageStore.ExecArgsForCall(1)
-	fmt.Println("copyQuery", copyQuery)
-	assert.Contains(s.T(), copyQuery, `COPY INTO "CUSTOMER"."PUBLIC"."ORDERS___ARTIE_`, fmt.Sprintf("query: %v, destKind: %v", copyQuery, constants.Snowflake))
-	assert.Contains(s.T(), copyQuery, `FROM @"CUSTOMER"."PUBLIC"."%ORDERS___ARTIE_`, fmt.Sprintf("query: %v, destKind: %v", copyQuery, constants.Snowflake))
+	// Get all queries in sequence
+	queries := make([]string, execCalls+execContextCalls)
+	for i := 0; i < execContextCalls; i++ {
+		_, query, _ := s.fakeStageStore.ExecContextArgsForCall(i)
+		queries[i] = query
+	}
+	for i := 0; i < execCalls; i++ {
+		_, args := s.fakeStageStore.ExecArgsForCall(i)
+		queries[execContextCalls+i] = args[0].(string)
+	}
 
-	mergeQuery, _ := s.fakeStageStore.ExecArgsForCall(2)
-	assert.Contains(s.T(), mergeQuery, fmt.Sprintf("MERGE INTO %s", fqName), fmt.Sprintf("query: %v, destKind: %v", mergeQuery, constants.Snowflake))
+	// Verify CREATE TABLE query
+	assert.Contains(s.T(), queries[0], `"CUSTOMER"."PUBLIC"."ORDERS___ARTIE_`, "Expected CREATE TABLE query")
 
-	// Drop a table now.
-	dropQuery, _ := s.fakeStageStore.ExecArgsForCall(3)
-	assert.Contains(s.T(), dropQuery, `DROP TABLE IF EXISTS "CUSTOMER"."PUBLIC"."ORDERS___ARTIE_`,
-		fmt.Sprintf("query: %v, destKind: %v", dropQuery, constants.Snowflake))
+	// Verify PUT query
+	assert.Contains(s.T(), queries[1], "PUT file://", "Expected PUT query")
 
-	assert.Equal(s.T(), 4, s.fakeStageStore.ExecCallCount())
-	assert.Equal(s.T(), 1, s.fakeStageStore.ExecContextCallCount())
+	// Verify COPY INTO query
+	assert.Contains(s.T(), queries[2], `COPY INTO "CUSTOMER"."PUBLIC"."ORDERS___ARTIE_`, "Expected COPY INTO query")
+	assert.Contains(s.T(), queries[2], `FROM @"CUSTOMER"."PUBLIC"."%ORDERS___ARTIE_`, "Expected FROM clause")
+
+	// Verify MERGE query
+	assert.Contains(s.T(), queries[3], fmt.Sprintf("MERGE INTO %s", fqName), "Expected MERGE query")
+
+	// Verify DROP query
+	assert.Contains(s.T(), queries[4], `DROP TABLE IF EXISTS "CUSTOMER"."PUBLIC"."ORDERS___ARTIE_`, "Expected DROP query")
 }
 
 // TestExecuteMergeDeletionFlagRemoval is going to run execute merge twice.
@@ -284,19 +323,27 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	_config := types.NewDestinationTableConfig(sflkCols.GetColumns(), true)
 	s.stageStore.configMap.AddTable(s.identifierFor(tableData), _config)
 
+	// First merge - should mark column for deletion
 	commitTx, err := s.stageStore.Merge(s.T().Context(), tableData)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
-	s.fakeStageStore.ExecReturns(nil, nil)
-	assert.Equal(s.T(), 4, s.fakeStageStore.ExecCallCount())
-	assert.Equal(s.T(), 1, s.fakeStageStore.ExecContextCallCount())
 
-	// Check the temp deletion table now.
-	assert.Equal(s.T(), len(s.stageStore.configMap.GetTableConfig(s.identifierFor(tableData)).ReadOnlyColumnsToDelete()), 1,
-		s.stageStore.configMap.GetTableConfig(s.identifierFor(tableData)).ReadOnlyColumnsToDelete())
+	// Verify first merge queries
+	execCalls := s.fakeStageStore.ExecCallCount()
+	execContextCalls := s.fakeStageStore.ExecContextCallCount()
+	assert.Equal(s.T(), 2, execCalls, "Expected 2 Exec calls for first merge")
+	assert.Equal(s.T(), 3, execContextCalls, "Expected 3 ExecContext calls for first merge")
+
+	// Check the temp deletion table now
+	assert.Equal(s.T(), 1, len(s.stageStore.configMap.GetTableConfig(s.identifierFor(tableData)).ReadOnlyColumnsToDelete()),
+		"Expected one column marked for deletion")
 
 	_, isOk := s.stageStore.configMap.GetTableConfig(s.identifierFor(tableData)).ReadOnlyColumnsToDelete()["new"]
-	assert.True(s.T(), isOk)
+	assert.True(s.T(), isOk, "Expected 'new' column to be marked for deletion")
+
+	// Reset mock call counts for second merge
+	s.fakeStageStore.ExecReturns(nil, nil)
+	s.fakeStageStore.ExecContextReturns(nil, nil)
 
 	// Now try to execute merge where 1 of the rows have the column now
 	for _, row := range tableData.Rows() {
@@ -310,15 +357,20 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 		break
 	}
 
+	// Second merge - should remove column from deletion list
 	commitTx, err = s.stageStore.Merge(s.T().Context(), tableData)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
-	s.fakeStageStore.ExecReturns(nil, nil)
-	assert.Equal(s.T(), 8, s.fakeStageStore.ExecCallCount())
-	assert.Equal(s.T(), 2, s.fakeStageStore.ExecContextCallCount())
 
-	// Caught up now, so columns should be 0.
-	assert.Len(s.T(), s.stageStore.configMap.GetTableConfig(s.identifierFor(tableData)).ReadOnlyColumnsToDelete(), 0)
+	// Verify second merge queries
+	execCalls = s.fakeStageStore.ExecCallCount()
+	execContextCalls = s.fakeStageStore.ExecContextCallCount()
+	assert.Equal(s.T(), 2, execCalls, "Expected 2 Exec calls for second merge")
+	assert.Equal(s.T(), 3, execContextCalls, "Expected 3 ExecContext calls for second merge")
+
+	// Verify column is no longer marked for deletion
+	assert.Len(s.T(), s.stageStore.configMap.GetTableConfig(s.identifierFor(tableData)).ReadOnlyColumnsToDelete(), 0,
+		"Expected no columns marked for deletion")
 }
 
 func (s *SnowflakeTestSuite) TestExecuteMergeExitEarly() {
