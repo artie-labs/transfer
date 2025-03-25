@@ -16,68 +16,59 @@ import (
 
 func (b *BigQueryTestSuite) TestBackfillColumn() {
 	tableID := bigqueryDialect.NewTableIdentifier("db", "public", "tableName")
-	type _testCase struct {
-		name        string
-		col         columns.Column
-		backfillSQL string
-		commentSQL  string
+	{
+		// Test column without default value
+		col := columns.NewColumn("foo", typing.Invalid)
+		assert.NoError(b.T(), shared.BackfillColumn(b.store, col, tableID))
+		assert.Equal(b.T(), 0, b.fakeStore.ExecCallCount())
 	}
+	{
+		// Test column with default value but already backfilled
+		col := columns.NewColumn("foo", typing.Boolean)
+		col.SetDefaultValue(true)
+		col.SetBackfilled(true)
 
-	backfilledCol := columns.NewColumn("foo", typing.Boolean)
-	backfilledCol.SetDefaultValue(true)
-	backfilledCol.SetBackfilled(true)
-
-	needsBackfillCol := columns.NewColumn("foo", typing.Boolean)
-	needsBackfillCol.SetDefaultValue(true)
-
-	needsBackfillColStr := columns.NewColumn("foo2", typing.String)
-	needsBackfillColStr.SetDefaultValue("hello there")
-
-	needsBackfillColNum := columns.NewColumn("foo3", typing.Float)
-	needsBackfillColNum.SetDefaultValue(3.5)
-	testCases := []_testCase{
-		{
-			name: "col that doesn't have default val",
-			col:  columns.NewColumn("foo", typing.Invalid),
-		},
-		{
-			name: "col that has default value but already backfilled",
-			col:  backfilledCol,
-		},
-		{
-			name:        "col that has default value that needs to be backfilled (boolean)",
-			col:         needsBackfillCol,
-			backfillSQL: "UPDATE `db`.`public`.`tableName` as t SET t.`foo` = true WHERE t.`foo` IS NULL;",
-			commentSQL:  "ALTER TABLE `db`.`public`.`tableName` ALTER COLUMN `foo` SET OPTIONS (description=`{\"backfilled\": true}`);",
-		},
-		{
-			name:        "col that has default value that needs to be backfilled (string)",
-			col:         needsBackfillColStr,
-			backfillSQL: "UPDATE `db`.`public`.`tableName` as t SET t.`foo2` = 'hello there' WHERE t.`foo2` IS NULL;",
-			commentSQL:  "ALTER TABLE `db`.`public`.`tableName` ALTER COLUMN `foo2` SET OPTIONS (description=`{\"backfilled\": true}`);",
-		},
-		{
-			name:        "col that has default value that needs to be backfilled (number)",
-			col:         needsBackfillColNum,
-			backfillSQL: "UPDATE `db`.`public`.`tableName` as t SET t.`foo3` = 3.5 WHERE t.`foo3` IS NULL;",
-			commentSQL:  "ALTER TABLE `db`.`public`.`tableName` ALTER COLUMN `foo3` SET OPTIONS (description=`{\"backfilled\": true}`);",
-		},
+		assert.NoError(b.T(), shared.BackfillColumn(b.store, col, tableID))
+		assert.Equal(b.T(), 0, b.fakeStore.ExecCallCount())
 	}
+	{
+		// Test boolean column that needs backfilling
+		col := columns.NewColumn("foo", typing.Boolean)
+		col.SetDefaultValue(true)
 
-	var index int
-	for _, testCase := range testCases {
-		err := shared.BackfillColumn(b.store, testCase.col, tableID)
-		assert.NoError(b.T(), err, testCase.name)
-		if testCase.backfillSQL != "" && testCase.commentSQL != "" {
-			backfillSQL, _ := b.fakeStore.ExecArgsForCall(index)
-			assert.Equal(b.T(), testCase.backfillSQL, backfillSQL, testCase.name)
+		assert.NoError(b.T(), shared.BackfillColumn(b.store, col, tableID))
 
-			commentSQL, _ := b.fakeStore.ExecArgsForCall(index + 1)
-			assert.Equal(b.T(), testCase.commentSQL, commentSQL, testCase.name)
-			index += 2
-		} else {
-			assert.Equal(b.T(), index, b.fakeStore.ExecCallCount())
-		}
+		backfillSQL, _ := b.fakeStore.ExecArgsForCall(0)
+		assert.Equal(b.T(), "UPDATE `db`.`public`.`tableName` as t SET t.`foo` = true WHERE t.`foo` IS NULL;", backfillSQL)
+
+		commentSQL, _ := b.fakeStore.ExecArgsForCall(1)
+		assert.Equal(b.T(), "ALTER TABLE `db`.`public`.`tableName` ALTER COLUMN `foo` SET OPTIONS (description=`{\"backfilled\": true}`);", commentSQL)
+	}
+	{
+		// Test string column that needs backfilling
+		col := columns.NewColumn("foo2", typing.String)
+		col.SetDefaultValue("hello there")
+
+		assert.NoError(b.T(), shared.BackfillColumn(b.store, col, tableID))
+
+		backfillSQL, _ := b.fakeStore.ExecArgsForCall(2)
+		assert.Equal(b.T(), "UPDATE `db`.`public`.`tableName` as t SET t.`foo2` = 'hello there' WHERE t.`foo2` IS NULL;", backfillSQL)
+
+		commentSQL, _ := b.fakeStore.ExecArgsForCall(3)
+		assert.Equal(b.T(), "ALTER TABLE `db`.`public`.`tableName` ALTER COLUMN `foo2` SET OPTIONS (description=`{\"backfilled\": true}`);", commentSQL)
+	}
+	{
+		// Test numeric column that needs backfilling
+		col := columns.NewColumn("foo3", typing.Float)
+		col.SetDefaultValue(3.5)
+
+		assert.NoError(b.T(), shared.BackfillColumn(b.store, col, tableID))
+
+		backfillSQL, _ := b.fakeStore.ExecArgsForCall(4)
+		assert.Equal(b.T(), "UPDATE `db`.`public`.`tableName` as t SET t.`foo3` = 3.5 WHERE t.`foo3` IS NULL;", backfillSQL)
+
+		commentSQL, _ := b.fakeStore.ExecArgsForCall(5)
+		assert.Equal(b.T(), "ALTER TABLE `db`.`public`.`tableName` ALTER COLUMN `foo3` SET OPTIONS (description=`{\"backfilled\": true}`);", commentSQL)
 	}
 }
 

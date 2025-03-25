@@ -51,12 +51,12 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 			row = append(row, castedValue)
 		}
 
-		if _, err = stmt.Exec(row...); err != nil {
+		if _, err = stmt.ExecContext(ctx, row...); err != nil {
 			return fmt.Errorf("failed to copy row: %w", err)
 		}
 	}
 
-	if _, err = stmt.Exec(); err != nil {
+	if _, err = stmt.ExecContext(ctx); err != nil {
 		return fmt.Errorf("failed to finalize bulk insert: %w", err)
 	}
 
