@@ -182,8 +182,8 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 		assert.Contains(s.T(), putQuery, fmt.Sprintf("@%s AUTO_COMPRESS=TRUE", resourceName))
 		// Third call is a COPY INTO
 		_, copyQuery, _ := s.fakeStageStore.ExecContextArgsForCall(2)
-		assert.Equal(s.T(), fmt.Sprintf(`COPY INTO %s ("USER_ID","FIRST_NAME","LAST_NAME","DUSTY") FROM (SELECT $1,$2,$3,$4 FROM @%s)`,
-			tempTableName, resourceName), copyQuery)
+		assert.Equal(s.T(), fmt.Sprintf(`COPY INTO %s ("USER_ID","FIRST_NAME","LAST_NAME","DUSTY") FROM (SELECT $1,$2,$3,$4 FROM @%s FILES = ('%s.csv'))`,
+			tempTableName, resourceName, strings.ReplaceAll(tempTableName, `"`, "")), copyQuery)
 	}
 	{
 		// Don't create the temporary table.
