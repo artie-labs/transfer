@@ -73,6 +73,12 @@ func (s *SnowflakeTestSuite) TestCastColValStaging() {
 	}
 }
 
+// runTestCaseWithReset runs a test case with a fresh store state
+func (s *SnowflakeTestSuite) runTestCaseWithReset(name string, fn func()) {
+	s.ResetStore()
+	fn()
+}
+
 func (s *SnowflakeTestSuite) TestBackfillColumn() {
 	tableID := dialect.NewTableIdentifier("db", "public", "tableName")
 
@@ -80,30 +86,26 @@ func (s *SnowflakeTestSuite) TestBackfillColumn() {
 	needsBackfillCol.SetDefaultValue(true)
 	needsBackfillColDefault := columns.NewColumn("default", typing.Boolean)
 	needsBackfillColDefault.SetDefaultValue(true)
-	{
-		// col that doesn't have default val
-		s.ResetStore()
+
+	s.runTestCaseWithReset("col that doesn't have default val", func() {
 		assert.NoError(s.T(), shared.BackfillColumn(s.stageStore, columns.NewColumn("foo", typing.Invalid), tableID))
 		assert.Equal(s.T(), 0, s.fakeStageStore.ExecCallCount())
-	}
-	{
-		// col that has default value but already backfilled
-		s.ResetStore()
+	})
+
+	s.runTestCaseWithReset("col that has default value but already backfilled", func() {
 		backfilledCol := columns.NewColumn("foo", typing.Boolean)
 		backfilledCol.SetDefaultValue(true)
 		backfilledCol.SetBackfilled(true)
 		assert.NoError(s.T(), shared.BackfillColumn(s.stageStore, backfilledCol, tableID))
 		assert.Equal(s.T(), 0, s.fakeStageStore.ExecCallCount())
-	}
-	{
-		// col that has default value that needs to be backfilled
-		s.ResetStore()
+	})
+
+	s.runTestCaseWithReset("col that has default value that needs to be backfilled", func() {
 		assert.NoError(s.T(), shared.BackfillColumn(s.stageStore, needsBackfillCol, tableID))
 		assert.Equal(s.T(), 2, s.fakeStageStore.ExecCallCount())
-	}
-	{
-		// default col that has default value that needs to be backfilled
-		s.ResetStore()
+	})
+
+	s.runTestCaseWithReset("default col that has default value that needs to be backfilled", func() {
 		assert.NoError(s.T(), shared.BackfillColumn(s.stageStore, needsBackfillColDefault, tableID))
 
 		backfillSQL, _ := s.fakeStageStore.ExecArgsForCall(0)
@@ -111,10 +113,9 @@ func (s *SnowflakeTestSuite) TestBackfillColumn() {
 
 		commentSQL, _ := s.fakeStageStore.ExecArgsForCall(1)
 		assert.Equal(s.T(), `COMMENT ON COLUMN "DB"."PUBLIC"."TABLENAME"."DEFAULT" IS '{"backfilled": true}';`, commentSQL)
-	}
-	{
-		// default col that has default value that needs to be backfilled
-		s.ResetStore()
+	})
+
+	s.runTestCaseWithReset("default col that has default value that needs to be backfilled (repeat)", func() {
 		assert.NoError(s.T(), shared.BackfillColumn(s.stageStore, needsBackfillColDefault, tableID))
 
 		backfillSQL, _ := s.fakeStageStore.ExecArgsForCall(0)
@@ -122,7 +123,7 @@ func (s *SnowflakeTestSuite) TestBackfillColumn() {
 
 		commentSQL, _ := s.fakeStageStore.ExecArgsForCall(1)
 		assert.Equal(s.T(), `COMMENT ON COLUMN "DB"."PUBLIC"."TABLENAME"."DEFAULT" IS '{"backfilled": true}';`, commentSQL)
-	}
+	})
 }
 
 // generateTableData - returns tableName and tableData
