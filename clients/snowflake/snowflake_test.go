@@ -230,7 +230,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 
 	// PUT file:///tmp/customer.public.orders___artie_Mwv9YADmRy.csv @customer.public.%orders___artie_Mwv9YADmRy AUTO_COMPRESS=TRUE
 	_, putQuery, _ := s.fakeStageStore.ExecContextArgsForCall(1)
-	assert.Contains(s.T(), putQuery, "PUT file://")
+	assert.Contains(s.T(), putQuery, "PUT 'file://")
 
 	// COPY INTO customer.public.orders___artie_Mwv9YADmRy (id,name,__artie_delete,created_at) FROM (SELECT $1,$2,$3,$4 FROM @customer.public.%orders___artie_Mwv9YADmRy
 	_, copyQuery, _ := s.fakeStageStore.ExecContextArgsForCall(2)

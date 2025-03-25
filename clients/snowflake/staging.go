@@ -69,8 +69,8 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		}
 	}()
 
-	// Upload the CSV file to Snowflake
-	if _, err = s.ExecContext(ctx, fmt.Sprintf("PUT file://%s @%s AUTO_COMPRESS=TRUE", file.FilePath, addPrefixToTableName(tempTableID, "%"))); err != nil {
+	// Upload the CSV file to Snowflake, wrapping the file in single quotes to avoid special characters.
+	if _, err = s.ExecContext(ctx, fmt.Sprintf("PUT 'file://%s' @%s AUTO_COMPRESS=TRUE", file.FilePath, addPrefixToTableName(tempTableID, "%"))); err != nil {
 		return fmt.Errorf("failed to run PUT for temporary table: %w", err)
 	}
 
@@ -106,7 +106,7 @@ type File struct {
 }
 
 func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID sql.TableIdentifier) (File, error) {
-	fileName := fmt.Sprintf("%s.csv", newTableID.FullyQualifiedName())
+	fileName := fmt.Sprintf("%s.csv", strings.ReplaceAll(newTableID.FullyQualifiedName(), `"`, ""))
 	fp := filepath.Join(os.TempDir(), fileName)
 	file, err := os.Create(fp)
 	if err != nil {
