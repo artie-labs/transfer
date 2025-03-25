@@ -166,6 +166,11 @@ func TestToString(t *testing.T) {
 	{
 		// Integer column
 		{
+			// Invalid (string value)
+			_, err := ToString("foo", typing.Integer)
+			assert.ErrorContains(t, err, `converter converters.IntegerConverter failed to convert value: unexpected value: 'foo', type: string`)
+		}
+		{
 			// Float32 value
 			val, err := ToString(float32(45452.999991), typing.Integer)
 			assert.NoError(t, err)
