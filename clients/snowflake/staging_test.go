@@ -160,14 +160,14 @@ func generateTableData(rows int) (dialect.TableIdentifier, *optimization.TableDa
 func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 	tempTableID, tableData := generateTableData(10)
 	tempTableName := tempTableID.FullyQualifiedName()
-	tempFileName := strings.ReplaceAll(fmt.Sprintf("%s.csv", tempTableName), `"`, "")
+	// tempFileName := strings.ReplaceAll(fmt.Sprintf("%s.csv", tempTableName), `"`, "")
 	s.stageStore.GetConfigMap().AddTable(tempTableID, types.NewDestinationTableConfig(nil, true))
 	sflkTc := s.stageStore.GetConfigMap().GetTableConfig(tempTableID)
 
 	{
 		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(s.T().Context(), tableData, sflkTc, tempTableID, tempTableID, types.AdditionalSettings{}, true))
-		assert.Equal(s.T(), 2, s.fakeStageStore.ExecCallCount())
-		assert.Equal(s.T(), 1, s.fakeStageStore.ExecContextCallCount())
+		assert.Equal(s.T(), 0, s.fakeStageStore.ExecCallCount())
+		assert.Equal(s.T(), 3, s.fakeStageStore.ExecContextCallCount())
 
 		// First call is to create the temp table
 		_, createQuery, _ := s.fakeStageStore.ExecContextArgsForCall(0)
@@ -178,19 +178,19 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 		assert.True(s.T(), containsPrefix, fmt.Sprintf("createQuery:%v, prefixQuery:%s", createQuery, prefixQuery))
 		resourceName := addPrefixToTableName(tempTableID, "%")
 		// Second call is a PUT
-		putQuery, _ := s.fakeStageStore.ExecArgsForCall(0)
-		assert.Contains(s.T(), putQuery, "PUT 'file://", putQuery)
+		_, putQuery, _ := s.fakeStageStore.ExecContextArgsForCall(1)
+		assert.Contains(s.T(), putQuery, "PUT file://", putQuery)
 		assert.Contains(s.T(), putQuery, fmt.Sprintf("@%s AUTO_COMPRESS=TRUE", resourceName))
 		// Third call is a COPY INTO
-		copyQuery, _ := s.fakeStageStore.ExecArgsForCall(1)
-		assert.Equal(s.T(), fmt.Sprintf(`COPY INTO %s ("USER_ID","FIRST_NAME","LAST_NAME","DUSTY") FROM (SELECT $1,$2,$3,$4 FROM @%s FILES = ('%s'))`,
-			tempTableName, resourceName, tempFileName), copyQuery)
+		_, copyQuery, _ := s.fakeStageStore.ExecContextArgsForCall(2)
+		assert.Equal(s.T(), fmt.Sprintf(`COPY INTO %s ("USER_ID","FIRST_NAME","LAST_NAME","DUSTY") FROM (SELECT $1,$2,$3,$4 FROM @%s)`,
+			tempTableName, resourceName), copyQuery)
 	}
 	{
 		// Don't create the temporary table.
 		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(s.T().Context(), tableData, sflkTc, tempTableID, tempTableID, types.AdditionalSettings{}, false))
-		assert.Equal(s.T(), 4, s.fakeStageStore.ExecCallCount())
-		assert.Equal(s.T(), 1, s.fakeStageStore.ExecContextCallCount())
+		assert.Equal(s.T(), 0, s.fakeStageStore.ExecCallCount())
+		assert.Equal(s.T(), 5, s.fakeStageStore.ExecContextCallCount())
 	}
 }
 
