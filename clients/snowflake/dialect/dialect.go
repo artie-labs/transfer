@@ -208,3 +208,13 @@ func (SnowflakeDialect) EscapeColumns(columns []columns.Column, delimiter string
 
 	return strings.Join(escapedCols, delimiter)
 }
+
+func (sd SnowflakeDialect) BuildCopyIntoTableQuery(tableID sql.TableIdentifier, columns []columns.Column, stageName string, fileName string) string {
+	return fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @%s) FILES = ('%s')",
+		tableID.FullyQualifiedName(),
+		strings.Join(sql.QuoteColumns(columns, sd), ","),
+		sd.EscapeColumns(columns, ","),
+		stageName,
+		fileName,
+	)
+}
