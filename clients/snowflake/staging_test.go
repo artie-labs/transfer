@@ -76,60 +76,52 @@ func (s *SnowflakeTestSuite) TestCastColValStaging() {
 func (s *SnowflakeTestSuite) TestBackfillColumn() {
 	tableID := dialect.NewTableIdentifier("db", "public", "tableName")
 
-	backfilledCol := columns.NewColumn("foo", typing.Boolean)
-	backfilledCol.SetDefaultValue(true)
-	backfilledCol.SetBackfilled(true)
-
 	needsBackfillCol := columns.NewColumn("foo", typing.Boolean)
 	needsBackfillCol.SetDefaultValue(true)
-
 	needsBackfillColDefault := columns.NewColumn("default", typing.Boolean)
 	needsBackfillColDefault.SetDefaultValue(true)
-
-	testCases := []struct {
-		name        string
-		col         columns.Column
-		backfillSQL string
-		commentSQL  string
-	}{
-		{
-			name: "col that doesn't have default val",
-			col:  columns.NewColumn("foo", typing.Invalid),
-		},
-		{
-			name: "col that has default value but already backfilled",
-			col:  backfilledCol,
-		},
-		{
-			name:        "col that has default value that needs to be backfilled",
-			col:         needsBackfillCol,
-			backfillSQL: `UPDATE "DB"."PUBLIC"."TABLENAME" as t SET t."FOO" = true WHERE t."FOO" IS NULL;`,
-			commentSQL:  `COMMENT ON COLUMN "DB"."PUBLIC"."TABLENAME"."FOO" IS '{"backfilled": true}';`,
-		},
-		{
-			name:        "default col that has default value that needs to be backfilled",
-			col:         needsBackfillColDefault,
-			backfillSQL: `UPDATE "DB"."PUBLIC"."TABLENAME" as t SET t."DEFAULT" = true WHERE t."DEFAULT" IS NULL;`,
-			commentSQL:  `COMMENT ON COLUMN "DB"."PUBLIC"."TABLENAME"."DEFAULT" IS '{"backfilled": true}';`,
-		},
+	{
+		// col that doesn't have default val
+		s.ResetStore()
+		assert.NoError(s.T(), shared.BackfillColumn(s.stageStore, columns.NewColumn("foo", typing.Invalid), tableID))
+		assert.Equal(s.T(), 0, s.fakeStageStore.ExecCallCount())
 	}
+	{
+		// col that has default value but already backfilled
+		s.ResetStore()
+		backfilledCol := columns.NewColumn("foo", typing.Boolean)
+		backfilledCol.SetDefaultValue(true)
+		backfilledCol.SetBackfilled(true)
+		assert.NoError(s.T(), shared.BackfillColumn(s.stageStore, backfilledCol, tableID))
+		assert.Equal(s.T(), 0, s.fakeStageStore.ExecCallCount())
+	}
+	{
+		// col that has default value that needs to be backfilled
+		s.ResetStore()
+		assert.NoError(s.T(), shared.BackfillColumn(s.stageStore, needsBackfillCol, tableID))
+		assert.Equal(s.T(), 2, s.fakeStageStore.ExecCallCount())
+	}
+	{
+		// default col that has default value that needs to be backfilled
+		s.ResetStore()
+		assert.NoError(s.T(), shared.BackfillColumn(s.stageStore, needsBackfillColDefault, tableID))
 
-	var count int
-	for _, testCase := range testCases {
-		err := shared.BackfillColumn(s.stageStore, testCase.col, tableID)
-		assert.NoError(s.T(), err, testCase.name)
-		if testCase.backfillSQL != "" && testCase.commentSQL != "" {
-			backfillSQL, _ := s.fakeStageStore.ExecArgsForCall(count)
-			assert.Equal(s.T(), testCase.backfillSQL, backfillSQL, testCase.name)
+		backfillSQL, _ := s.fakeStageStore.ExecArgsForCall(0)
+		assert.Equal(s.T(), `UPDATE "DB"."PUBLIC"."TABLENAME" as t SET t."DEFAULT" = true WHERE t."DEFAULT" IS NULL;`, backfillSQL)
 
-			count++
-			commentSQL, _ := s.fakeStageStore.ExecArgsForCall(count)
-			assert.Equal(s.T(), testCase.commentSQL, commentSQL, testCase.name)
+		commentSQL, _ := s.fakeStageStore.ExecArgsForCall(1)
+		assert.Equal(s.T(), `COMMENT ON COLUMN "DB"."PUBLIC"."TABLENAME"."DEFAULT" IS '{"backfilled": true}';`, commentSQL)
+	}
+	{
+		// default col that has default value that needs to be backfilled
+		s.ResetStore()
+		assert.NoError(s.T(), shared.BackfillColumn(s.stageStore, needsBackfillColDefault, tableID))
 
-			count++
-		} else {
-			assert.Equal(s.T(), 0, s.fakeStageStore.ExecCallCount())
-		}
+		backfillSQL, _ := s.fakeStageStore.ExecArgsForCall(0)
+		assert.Equal(s.T(), `UPDATE "DB"."PUBLIC"."TABLENAME" as t SET t."DEFAULT" = true WHERE t."DEFAULT" IS NULL;`, backfillSQL)
+
+		commentSQL, _ := s.fakeStageStore.ExecArgsForCall(1)
+		assert.Equal(s.T(), `COMMENT ON COLUMN "DB"."PUBLIC"."TABLENAME"."DEFAULT" IS '{"backfilled": true}';`, commentSQL)
 	}
 }
 
