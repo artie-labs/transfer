@@ -151,8 +151,8 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 	commitTx, err := s.stageStore.Merge(s.T().Context(), tableData)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
-	assert.Equal(s.T(), 4, s.fakeStageStore.ExecCallCount())
-	assert.Equal(s.T(), 1, s.fakeStageStore.ExecContextCallCount())
+	assert.Equal(s.T(), 2, s.fakeStageStore.ExecCallCount())
+	assert.Equal(s.T(), 3, s.fakeStageStore.ExecContextCallCount())
 }
 
 func (s *SnowflakeTestSuite) TestExecuteMerge() {
@@ -206,25 +206,24 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	assert.Contains(s.T(), createQuery, `"CUSTOMER"."PUBLIC"."ORDERS___ARTIE_`, fmt.Sprintf("query: %v, destKind: %v", createQuery, constants.Snowflake))
 
 	// PUT file:///tmp/customer.public.orders___artie_Mwv9YADmRy.csv @customer.public.%orders___artie_Mwv9YADmRy AUTO_COMPRESS=TRUE
-	putQuery, _ := s.fakeStageStore.ExecArgsForCall(0)
+	_, putQuery, _ := s.fakeStageStore.ExecContextArgsForCall(1)
 	assert.Contains(s.T(), putQuery, "PUT file://")
 
 	// COPY INTO customer.public.orders___artie_Mwv9YADmRy (id,name,__artie_delete,created_at) FROM (SELECT $1,$2,$3,$4 FROM @customer.public.%orders___artie_Mwv9YADmRy
-	copyQuery, _ := s.fakeStageStore.ExecArgsForCall(1)
-	fmt.Println("copyQuery", copyQuery)
+	_, copyQuery, _ := s.fakeStageStore.ExecContextArgsForCall(2)
 	assert.Contains(s.T(), copyQuery, `COPY INTO "CUSTOMER"."PUBLIC"."ORDERS___ARTIE_`, fmt.Sprintf("query: %v, destKind: %v", copyQuery, constants.Snowflake))
 	assert.Contains(s.T(), copyQuery, `FROM @"CUSTOMER"."PUBLIC"."%ORDERS___ARTIE_`, fmt.Sprintf("query: %v, destKind: %v", copyQuery, constants.Snowflake))
 
-	mergeQuery, _ := s.fakeStageStore.ExecArgsForCall(2)
+	mergeQuery, _ := s.fakeStageStore.ExecArgsForCall(0)
 	assert.Contains(s.T(), mergeQuery, fmt.Sprintf("MERGE INTO %s", fqName), fmt.Sprintf("query: %v, destKind: %v", mergeQuery, constants.Snowflake))
 
 	// Drop a table now.
-	dropQuery, _ := s.fakeStageStore.ExecArgsForCall(3)
+	dropQuery, _ := s.fakeStageStore.ExecArgsForCall(1)
 	assert.Contains(s.T(), dropQuery, `DROP TABLE IF EXISTS "CUSTOMER"."PUBLIC"."ORDERS___ARTIE_`,
 		fmt.Sprintf("query: %v, destKind: %v", dropQuery, constants.Snowflake))
 
-	assert.Equal(s.T(), 4, s.fakeStageStore.ExecCallCount())
-	assert.Equal(s.T(), 1, s.fakeStageStore.ExecContextCallCount())
+	assert.Equal(s.T(), 2, s.fakeStageStore.ExecCallCount())
+	assert.Equal(s.T(), 3, s.fakeStageStore.ExecContextCallCount())
 }
 
 // TestExecuteMergeDeletionFlagRemoval is going to run execute merge twice.
@@ -288,8 +287,8 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
 	s.fakeStageStore.ExecReturns(nil, nil)
-	assert.Equal(s.T(), 4, s.fakeStageStore.ExecCallCount())
-	assert.Equal(s.T(), 1, s.fakeStageStore.ExecContextCallCount())
+	assert.Equal(s.T(), 2, s.fakeStageStore.ExecCallCount())
+	assert.Equal(s.T(), 3, s.fakeStageStore.ExecContextCallCount())
 
 	// Check the temp deletion table now.
 	assert.Equal(s.T(), len(s.stageStore.configMap.GetTableConfig(s.identifierFor(tableData)).ReadOnlyColumnsToDelete()), 1,
@@ -314,8 +313,8 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
 	s.fakeStageStore.ExecReturns(nil, nil)
-	assert.Equal(s.T(), 8, s.fakeStageStore.ExecCallCount())
-	assert.Equal(s.T(), 2, s.fakeStageStore.ExecContextCallCount())
+	assert.Equal(s.T(), 4, s.fakeStageStore.ExecCallCount())
+	assert.Equal(s.T(), 6, s.fakeStageStore.ExecContextCallCount())
 
 	// Caught up now, so columns should be 0.
 	assert.Len(s.T(), s.stageStore.configMap.GetTableConfig(s.identifierFor(tableData)).ReadOnlyColumnsToDelete(), 0)
