@@ -1,82 +1,65 @@
 package array
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestToArrayString(t *testing.T) {
-	type _testCase struct {
-		name          string
-		val           any
-		recastAsArray bool
-		expectedList  []string
-		expectedErr   error
+	{
+		// Test nil input
+		value, err := InterfaceToArrayString(nil, false)
+		assert.NoError(t, err)
+		var expected []string
+		assert.Equal(t, expected, value)
 	}
-
-	testCases := []_testCase{
-		{
-			name: "nil",
-		},
-		{
-			name:         "wrong data type",
-			val:          true,
-			expectedList: nil,
-			expectedErr:  fmt.Errorf("wrong data type, kind: bool"),
-		},
-		{
-			name:         "list of numbers",
-			val:          []int{1, 2, 3, 4, 5},
-			expectedList: []string{"1", "2", "3", "4", "5"},
-		},
-		{
-			name:         "list of strings",
-			val:          []string{"abc", "def", "ghi"},
-			expectedList: []string{"abc", "def", "ghi"},
-		},
-		{
-			name:         "list of bools",
-			val:          []bool{true, false, true},
-			expectedList: []string{"true", "false", "true"},
-		},
-		{
-			name: "array of nested objects",
-			val: []map[string]any{
-				{
-					"foo": "bar",
-				},
-				{
-					"hello": "world",
-				},
+	{
+		// Test wrong data type
+		_, err := InterfaceToArrayString(true, false)
+		assert.ErrorContains(t, err, "wrong data type, kind: bool")
+	}
+	{
+		// Test list of numbers
+		value, err := InterfaceToArrayString([]int{1, 2, 3, 4, 5}, false)
+		assert.NoError(t, err)
+		assert.Equal(t, []string{"1", "2", "3", "4", "5"}, value)
+	}
+	{
+		// Test list of strings
+		value, err := InterfaceToArrayString([]string{"abc", "def", "ghi"}, false)
+		assert.NoError(t, err)
+		assert.Equal(t, []string{"abc", "def", "ghi"}, value)
+	}
+	{
+		// Test list of booleans
+		value, err := InterfaceToArrayString([]bool{true, false, true}, false)
+		assert.NoError(t, err)
+		assert.Equal(t, []string{"true", "false", "true"}, value)
+	}
+	{
+		// Test array of nested objects
+		value, err := InterfaceToArrayString([]map[string]any{{"foo": "bar"}, {"hello": "world"}}, false)
+		assert.NoError(t, err)
+		assert.Equal(t, []string{`{"foo":"bar"}`, `{"hello":"world"}`}, value)
+	}
+	{
+		// Test array of nested lists
+		value, err := InterfaceToArrayString([][]string{
+			{
+				"foo", "bar",
 			},
-			expectedList: []string{`{"foo":"bar"}`, `{"hello":"world"}`},
-		},
-		{
-			name: "array of nested lists",
-			val: [][]string{
-				{
-					"foo", "bar",
-				},
-				{
-					"abc", "def",
-				},
+			{
+				"abc", "def",
 			},
-			expectedList: []string{"[foo bar]", "[abc def]"},
-		},
-		{
-			name:          "boolean, but recasting as an array",
-			val:           true,
-			expectedList:  []string{"true"},
-			recastAsArray: true,
-		},
+		}, false)
+		assert.NoError(t, err)
+		assert.Equal(t, []string{"[foo bar]", "[abc def]"}, value)
 	}
-
-	for _, testCase := range testCases {
-		actualString, actualErr := InterfaceToArrayString(testCase.val, testCase.recastAsArray)
-		assert.Equal(t, testCase.expectedList, actualString, testCase.name)
-		assert.Equal(t, testCase.expectedErr, actualErr, testCase.name)
+	{
+		// Test boolean recast as array
+		value, err := InterfaceToArrayString(true, true)
+		assert.NoError(t, err)
+		assert.Equal(t, []string{"true"}, value)
 	}
-
 }
