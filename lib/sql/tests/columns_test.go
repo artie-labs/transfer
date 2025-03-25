@@ -119,45 +119,39 @@ func TestBuildColumnsUpdateFragment_BigQuery(t *testing.T) {
 }
 
 func TestBuildColumnsUpdateFragment_Redshift(t *testing.T) {
-	var happyPathCols []columns.Column
-	for _, col := range []string{"foo", "bar"} {
-		column := columns.NewColumn(col, typing.String)
-		column.ToastColumn = false
-		happyPathCols = append(happyPathCols, column)
-	}
-
-	var lastCaseColTypes []columns.Column
-	lastCaseCols := []string{"a1", "b2", "c3"}
-	for _, lastCaseCol := range lastCaseCols {
-		kd := typing.String
-		var toast bool
-		// a1 - struct + toast, b2 - string + toast, c3 = regular string.
-		if lastCaseCol == "a1" {
-			kd = typing.Struct
-			toast = true
-		} else if lastCaseCol == "b2" {
-			toast = true
+	{
+		// Test basic string columns without toast
+		var cols []columns.Column
+		for _, col := range []string{"foo", "bar"} {
+			column := columns.NewColumn(col, typing.String)
+			column.ToastColumn = false
+			cols = append(cols, column)
 		}
 
-		column := columns.NewColumn(lastCaseCol, kd)
-		column.ToastColumn = toast
-		lastCaseColTypes = append(lastCaseColTypes, column)
+		actualQuery := sql.BuildColumnsUpdateFragment(cols, "stg", "tgt", redshiftDialect.RedshiftDialect{})
+		assert.Equal(t, `"foo"=stg."foo","bar"=stg."bar"`, actualQuery)
 	}
+	{
+		// Test mixed columns with struct, toast string, and regular string
+		var cols []columns.Column
 
-	testCases := []struct {
-		name           string
-		columns        []columns.Column
-		expectedString string
-	}{
-		{
-			name:           "happy path",
-			columns:        happyPathCols,
-			expectedString: `"foo"=stg."foo","bar"=stg."bar"`,
-		},
-		{
-			name:    "struct, string and toast string",
-			columns: lastCaseColTypes,
-			expectedString: `"a1"= CASE WHEN 
+		// Add struct column with toast
+		structCol := columns.NewColumn("a1", typing.Struct)
+		structCol.ToastColumn = true
+		cols = append(cols, structCol)
+
+		// Add string column with toast
+		toastStringCol := columns.NewColumn("b2", typing.String)
+		toastStringCol.ToastColumn = true
+		cols = append(cols, toastStringCol)
+
+		// Add regular string column
+		regularStringCol := columns.NewColumn("c3", typing.String)
+		regularStringCol.ToastColumn = false
+		cols = append(cols, regularStringCol)
+
+		actualQuery := sql.BuildColumnsUpdateFragment(cols, "stg", "tgt", redshiftDialect.RedshiftDialect{})
+		expectedQuery := `"a1"= CASE WHEN 
 COALESCE(
     CASE
         WHEN JSON_SIZE(stg."a1") < 500 THEN JSON_SERIALIZE(stg."a1") NOT LIKE '%__debezium_unavailable_value%'
@@ -165,13 +159,8 @@ COALESCE(
         TRUE
     END,
     TRUE
-) THEN stg."a1" ELSE tgt."a1" END,"b2"= CASE WHEN COALESCE(stg."b2" NOT LIKE '%__debezium_unavailable_value%', TRUE) THEN stg."b2" ELSE tgt."b2" END,"c3"=stg."c3"`,
-		},
-	}
-
-	for _, _testCase := range testCases {
-		actualQuery := sql.BuildColumnsUpdateFragment(_testCase.columns, "stg", "tgt", redshiftDialect.RedshiftDialect{})
-		assert.Equal(t, _testCase.expectedString, actualQuery, _testCase.name)
+) THEN stg."a1" ELSE tgt."a1" END,"b2"= CASE WHEN COALESCE(stg."b2" NOT LIKE '%__debezium_unavailable_value%', TRUE) THEN stg."b2" ELSE tgt."b2" END,"c3"=stg."c3"`
+		assert.Equal(t, expectedQuery, actualQuery)
 	}
 }
 
