@@ -195,10 +195,11 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 
 func (s *SnowflakeTestSuite) TestLoadTemporaryTable() {
 	tempTableID, tableData := generateTableData(100)
-	fp, err := s.stageStore.writeTemporaryTableFile(tableData, tempTableID)
+	file, err := s.stageStore.writeTemporaryTableFile(tableData, tempTableID)
+	assert.Equal(s.T(), fmt.Sprintf("%s.csv", tempTableID.FullyQualifiedName()), file.FileName)
 	assert.NoError(s.T(), err)
 	// Read the CSV and confirm.
-	csvfile, err := os.Open(fp)
+	csvfile, err := os.Open(file.FilePath)
 	assert.NoError(s.T(), err)
 	// Parse the file
 	r := csv.NewReader(csvfile)
@@ -230,5 +231,5 @@ func (s *SnowflakeTestSuite) TestLoadTemporaryTable() {
 	assert.Len(s.T(), seenLastName, int(tableData.NumberOfRows()))
 
 	// Delete the file.
-	assert.NoError(s.T(), os.RemoveAll(fp))
+	assert.NoError(s.T(), os.RemoveAll(file.FilePath))
 }
