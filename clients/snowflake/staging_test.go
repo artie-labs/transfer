@@ -74,64 +74,62 @@ func (s *SnowflakeTestSuite) TestCastColValStaging() {
 	}
 }
 
+// runTestCaseWithReset runs a test case with a fresh store state
+func (s *SnowflakeTestSuite) runTestCaseWithReset(fn func()) {
+	s.ResetStore()
+	fn()
+}
+
 func (s *SnowflakeTestSuite) TestBackfillColumn() {
 	tableID := dialect.NewTableIdentifier("db", "public", "tableName")
 
-	backfilledCol := columns.NewColumn("foo", typing.Boolean)
-	backfilledCol.SetDefaultValue(true)
-	backfilledCol.SetBackfilled(true)
-
 	needsBackfillCol := columns.NewColumn("foo", typing.Boolean)
 	needsBackfillCol.SetDefaultValue(true)
-
 	needsBackfillColDefault := columns.NewColumn("default", typing.Boolean)
 	needsBackfillColDefault.SetDefaultValue(true)
 
-	testCases := []struct {
-		name        string
-		col         columns.Column
-		backfillSQL string
-		commentSQL  string
-	}{
-		{
-			name: "col that doesn't have default val",
-			col:  columns.NewColumn("foo", typing.Invalid),
-		},
-		{
-			name: "col that has default value but already backfilled",
-			col:  backfilledCol,
-		},
-		{
-			name:        "col that has default value that needs to be backfilled",
-			col:         needsBackfillCol,
-			backfillSQL: `UPDATE "DB"."PUBLIC"."TABLENAME" as t SET t."FOO" = true WHERE t."FOO" IS NULL;`,
-			commentSQL:  `COMMENT ON COLUMN "DB"."PUBLIC"."TABLENAME"."FOO" IS '{"backfilled": true}';`,
-		},
-		{
-			name:        "default col that has default value that needs to be backfilled",
-			col:         needsBackfillColDefault,
-			backfillSQL: `UPDATE "DB"."PUBLIC"."TABLENAME" as t SET t."DEFAULT" = true WHERE t."DEFAULT" IS NULL;`,
-			commentSQL:  `COMMENT ON COLUMN "DB"."PUBLIC"."TABLENAME"."DEFAULT" IS '{"backfilled": true}';`,
-		},
-	}
+	s.runTestCaseWithReset(func() {
+		// col that doesn't have default value
+		assert.NoError(s.T(), shared.BackfillColumn(s.stageStore, columns.NewColumn("foo", typing.Invalid), tableID))
+		assert.Equal(s.T(), 0, s.fakeStageStore.ExecCallCount())
+	})
 
-	var count int
-	for _, testCase := range testCases {
-		err := shared.BackfillColumn(s.stageStore, testCase.col, tableID)
-		assert.NoError(s.T(), err, testCase.name)
-		if testCase.backfillSQL != "" && testCase.commentSQL != "" {
-			backfillSQL, _ := s.fakeStageStore.ExecArgsForCall(count)
-			assert.Equal(s.T(), testCase.backfillSQL, backfillSQL, testCase.name)
+	s.runTestCaseWithReset(func() {
+		// col that has default value but already backfilled
+		backfilledCol := columns.NewColumn("foo", typing.Boolean)
+		backfilledCol.SetDefaultValue(true)
+		backfilledCol.SetBackfilled(true)
+		assert.NoError(s.T(), shared.BackfillColumn(s.stageStore, backfilledCol, tableID))
+		assert.Equal(s.T(), 0, s.fakeStageStore.ExecCallCount())
+	})
 
-			count++
-			commentSQL, _ := s.fakeStageStore.ExecArgsForCall(count)
-			assert.Equal(s.T(), testCase.commentSQL, commentSQL, testCase.name)
+	s.runTestCaseWithReset(func() {
+		// col that has default value that needs to be backfilled
+		assert.NoError(s.T(), shared.BackfillColumn(s.stageStore, needsBackfillCol, tableID))
+		assert.Equal(s.T(), 2, s.fakeStageStore.ExecCallCount())
+	})
 
-			count++
-		} else {
-			assert.Equal(s.T(), 0, s.fakeStageStore.ExecCallCount())
-		}
-	}
+	s.runTestCaseWithReset(func() {
+		// default col that has default value that needs to be backfilled
+		assert.NoError(s.T(), shared.BackfillColumn(s.stageStore, needsBackfillColDefault, tableID))
+
+		backfillSQL, _ := s.fakeStageStore.ExecArgsForCall(0)
+		assert.Equal(s.T(), `UPDATE "DB"."PUBLIC"."TABLENAME" as t SET t."DEFAULT" = true WHERE t."DEFAULT" IS NULL;`, backfillSQL)
+
+		commentSQL, _ := s.fakeStageStore.ExecArgsForCall(1)
+		assert.Equal(s.T(), `COMMENT ON COLUMN "DB"."PUBLIC"."TABLENAME"."DEFAULT" IS '{"backfilled": true}';`, commentSQL)
+	})
+
+	s.runTestCaseWithReset(func() {
+		// default col that has default value that needs to be backfilled (repeat)
+		assert.NoError(s.T(), shared.BackfillColumn(s.stageStore, needsBackfillColDefault, tableID))
+
+		backfillSQL, _ := s.fakeStageStore.ExecArgsForCall(0)
+		assert.Equal(s.T(), `UPDATE "DB"."PUBLIC"."TABLENAME" as t SET t."DEFAULT" = true WHERE t."DEFAULT" IS NULL;`, backfillSQL)
+
+		commentSQL, _ := s.fakeStageStore.ExecArgsForCall(1)
+		assert.Equal(s.T(), `COMMENT ON COLUMN "DB"."PUBLIC"."TABLENAME"."DEFAULT" IS '{"backfilled": true}';`, commentSQL)
+	})
 }
 
 // generateTableData - returns tableName and tableData
