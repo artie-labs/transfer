@@ -299,3 +299,39 @@ func TestSnowflakeDialect_BuildRemoveAllFilesFromStage(t *testing.T) {
 		)
 	}
 }
+
+func TestSnowflakeDialect_EscapeColumns(t *testing.T) {
+	{
+		// Test basic string columns
+		var cols columns.Columns
+		cols.AddColumn(columns.NewColumn("foo", typing.String))
+		cols.AddColumn(columns.NewColumn("bar", typing.String))
+		assert.Equal(t, "$1,$2", SnowflakeDialect{}.EscapeColumns(cols.GetColumns(), ","))
+	}
+	{
+		// Test string columns with struct
+		var cols columns.Columns
+		cols.AddColumn(columns.NewColumn("foo", typing.String))
+		cols.AddColumn(columns.NewColumn("bar", typing.String))
+		cols.AddColumn(columns.NewColumn("struct", typing.Struct))
+		assert.Equal(t, "$1,$2,PARSE_JSON($3)", SnowflakeDialect{}.EscapeColumns(cols.GetColumns(), ","))
+	}
+	{
+		// Test string columns with struct and array
+		var cols columns.Columns
+		cols.AddColumn(columns.NewColumn("foo", typing.String))
+		cols.AddColumn(columns.NewColumn("bar", typing.String))
+		cols.AddColumn(columns.NewColumn("struct", typing.Struct))
+		cols.AddColumn(columns.NewColumn("array", typing.Array))
+		assert.Equal(t, "$1,$2,PARSE_JSON($3),CAST(PARSE_JSON($4) AS ARRAY) AS $4", SnowflakeDialect{}.EscapeColumns(cols.GetColumns(), ","))
+	}
+	{
+		// Test with invalid columns mixed in
+		var cols columns.Columns
+		cols.AddColumn(columns.NewColumn("foo", typing.String))
+		cols.AddColumn(columns.NewColumn("bar", typing.String))
+		cols.AddColumn(columns.NewColumn("struct", typing.Struct))
+		cols.AddColumn(columns.NewColumn("array", typing.Array))
+		assert.Equal(t, "$1,$2,PARSE_JSON($3),CAST(PARSE_JSON($4) AS ARRAY) AS $4", SnowflakeDialect{}.EscapeColumns(cols.GetColumns(), ","))
+	}
+}
