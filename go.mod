@@ -41,7 +41,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-replace github.com/snowflakedb/gosnowflake v1.13.1 => github.com/Tang8330/gosnowflake v0.0.0-20250325200307-ae0795479fe2
+replace github.com/snowflakedb/gosnowflake => github.com/Tang8330/gosnowflake v0.0.0-20250325200307-ae0795479fe2
 
 require (
 	cloud.google.com/go v0.118.0 // indirect
