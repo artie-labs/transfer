@@ -165,7 +165,6 @@ func (d DatabricksDialect) BuildCopyIntoQuery(tempTableID sql.TableIdentifier, c
 	// Copy file from DBFS -> table via COPY INTO, ref: https://docs.databricks.com/en/sql/language-manual/delta-copy-into.html
 	return fmt.Sprintf(`
 COPY INTO %s
-BY POSITION
 FROM (
     SELECT %s FROM '%s'
 )
