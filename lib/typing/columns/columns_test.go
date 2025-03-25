@@ -11,65 +11,41 @@ import (
 )
 
 func TestEscapeName(t *testing.T) {
-	type _testCase struct {
-		name         string
-		expectedName string
-	}
+	// Test basic name without any transformations
+	assert.Equal(t, "foo", EscapeName("foo"))
 
-	testCases := []_testCase{
-		{
-			name:         "foo",
-			expectedName: "foo",
-		},
-		{
-			name:         "FOOO",
-			expectedName: "fooo",
-		},
-		{
-			name:         "col with spaces",
-			expectedName: "col__with__spaces",
-		},
-		{
-			name:         "1abc",
-			expectedName: "col_1abc",
-		},
-	}
+	// Test uppercase to lowercase conversion
+	assert.Equal(t, "fooo", EscapeName("FOOO"))
 
-	for _, testCase := range testCases {
-		actualName := EscapeName(testCase.name)
-		assert.Equal(t, testCase.expectedName, actualName, testCase.name)
-	}
+	// Test spaces being replaced with double underscores
+	assert.Equal(t, "col__with__spaces", EscapeName("col with spaces"))
+
+	// Test column name starting with number gets col_ prefix
+	assert.Equal(t, "col_1abc", EscapeName("1abc"))
 }
 
 func TestColumn_ShouldSkip(t *testing.T) {
-	type _testCase struct {
-		name           string
-		col            *Column
-		expectedResult bool
+	{
+		// nil col
+		var col *Column
+		assert.True(t, col.ShouldSkip())
 	}
-
-	testCases := []_testCase{
-		{
-			name:           "col is nil",
-			expectedResult: true,
-		},
-		{
-			name: "invalid column",
-			col: &Column{
-				KindDetails: typing.Invalid,
-			},
-			expectedResult: true,
-		},
-		{
-			name: "normal column",
-			col: &Column{
-				KindDetails: typing.String,
-			},
-		},
+	{
+		// zero col
+		var col Column
+		assert.True(t, col.ShouldSkip())
 	}
-
-	for _, testCase := range testCases {
-		assert.Equal(t, testCase.expectedResult, testCase.col.ShouldSkip(), testCase.name)
+	{
+		// Invalid col
+		col := Column{
+			KindDetails: typing.Invalid,
+		}
+		assert.True(t, col.ShouldSkip())
+	}
+	{
+		// Normal column
+		col := Column{KindDetails: typing.String}
+		assert.False(t, col.ShouldSkip())
 	}
 }
 
