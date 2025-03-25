@@ -175,6 +175,7 @@ FORMAT_OPTIONS (
     'delimiter' = '\t',
     'header' = 'false',
     'nullValue' = '%s',
+    'multiLine' = 'true',
     'compression' = 'gzip'
 );`,
 		// COPY INTO
