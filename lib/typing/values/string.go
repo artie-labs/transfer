@@ -17,7 +17,12 @@ func ToStringOpts(colVal any, colKind typing.KindDetails, opts converters.GetStr
 		return "", fmt.Errorf("failed to get string converter: %w", err)
 	}
 
-	return sv.Convert(colVal)
+	value, err := sv.Convert(colVal)
+	if err != nil {
+		return "", fmt.Errorf("converter %T failed to convert value: %w", sv, err)
+	}
+
+	return value, nil
 }
 
 func ToString(colVal any, colKind typing.KindDetails) (string, error) {
