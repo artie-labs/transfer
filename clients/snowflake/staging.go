@@ -80,7 +80,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		// COPY INTO <table> (<columns>)
 		tempTableID.FullyQualifiedName(), strings.Join(sql.QuoteColumns(tableData.ReadOnlyInMemoryCols().ValidColumns(), s.Dialect()), ","),
 		// FROM (SELECT <columns> FROM @<stage> FILES = ('<file_name>'))
-		escapeColumns(tableData.ReadOnlyInMemoryCols(), ","), tableStageName,
+		s.dialect().EscapeColumns(tableData.ReadOnlyInMemoryCols().ValidColumns(), ","), tableStageName,
 		// We're appending gz to the file name since it was compressed by the PUT command.
 		fmt.Sprintf("%s.gz", file.FileName),
 	)
