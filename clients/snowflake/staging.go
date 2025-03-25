@@ -75,6 +75,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		return fmt.Errorf("failed to run PUT for temporary table: %w", err)
 	}
 
+	// We are appending gz to the file name since it was compressed by the PUT command.
 	copyCommand := s.dialect().BuildCopyIntoTableQuery(tempTableID, tableData.ReadOnlyInMemoryCols().ValidColumns(), tableStageName, fmt.Sprintf("%s.gz", file.FileName))
 	if additionalSettings.AdditionalCopyClause != "" {
 		copyCommand += " " + additionalSettings.AdditionalCopyClause
