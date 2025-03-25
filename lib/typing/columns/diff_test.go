@@ -13,88 +13,53 @@ import (
 )
 
 func TestShouldSkipColumn(t *testing.T) {
-	type _testCase struct {
-		name                     string
-		colName                  string
-		softDelete               bool
-		includeArtieUpdatedAt    bool
-		includeDatabaseUpdatedAt bool
-		cfgMode                  config.Mode
-
-		expectedResult bool
+	{
+		// Test delete column marker with soft delete enabled
+		assert.False(t, shouldSkipColumn(constants.DeleteColumnMarker, true, false, false, config.Mode("")))
 	}
-
-	testCases := []_testCase{
-		{
-			name:       "delete col marker + soft delete",
-			colName:    constants.DeleteColumnMarker,
-			softDelete: true,
-		},
-		{
-			name:           "delete col marker",
-			colName:        constants.DeleteColumnMarker,
-			expectedResult: true,
-		},
-		{
-			name:           "only_set_delete col marker should be skipped",
-			colName:        constants.OnlySetDeleteColumnMarker,
-			expectedResult: true,
-		},
-		{
-			name:           "only_set_delete col marker should be skipped even if softDelete is true",
-			colName:        constants.OnlySetDeleteColumnMarker,
-			softDelete:     true,
-			expectedResult: true,
-		},
-		{
-			name:                  "updated col marker + include updated",
-			colName:               constants.UpdateColumnMarker,
-			includeArtieUpdatedAt: true,
-		},
-		{
-			name:           "updated col marker",
-			colName:        constants.UpdateColumnMarker,
-			expectedResult: true,
-		},
-		{
-			name:    "random col",
-			colName: "firstName",
-		},
-		{
-			name:                  "col with includeArtieUpdatedAt + softDelete",
-			colName:               "email",
-			includeArtieUpdatedAt: true,
-			softDelete:            true,
-		},
-		{
-			name:                     "db updated at col BUT updated_at is not enabled",
-			colName:                  constants.DatabaseUpdatedColumnMarker,
-			includeDatabaseUpdatedAt: false,
-			expectedResult:           true,
-		},
-		{
-			name:                     "db updated at col AND updated_at is enabled",
-			colName:                  constants.DatabaseUpdatedColumnMarker,
-			includeDatabaseUpdatedAt: true,
-			expectedResult:           false,
-		},
-		{
-			name:           "operation col AND mode is replication mode",
-			colName:        constants.OperationColumnMarker,
-			cfgMode:        config.Replication,
-			expectedResult: true,
-		},
-		{
-			name:           "operation col AND mode is history mode",
-			colName:        constants.OperationColumnMarker,
-			cfgMode:        config.History,
-			expectedResult: false,
-		},
+	{
+		// Test delete column marker without soft delete
+		assert.True(t, shouldSkipColumn(constants.DeleteColumnMarker, false, false, false, config.Mode("")))
 	}
-
-	for _, testCase := range testCases {
-		actualResult := shouldSkipColumn(testCase.colName, testCase.softDelete, testCase.includeArtieUpdatedAt, testCase.includeDatabaseUpdatedAt, testCase.cfgMode)
-		assert.Equal(t, testCase.expectedResult, actualResult, testCase.name)
+	{
+		// Test only set delete column marker
+		assert.True(t, shouldSkipColumn(constants.OnlySetDeleteColumnMarker, false, false, false, config.Mode("")))
+	}
+	{
+		// Test only set delete column marker with soft delete enabled
+		assert.True(t, shouldSkipColumn(constants.OnlySetDeleteColumnMarker, true, false, false, config.Mode("")))
+	}
+	{
+		// Test update column marker with artie updated at enabled
+		assert.False(t, shouldSkipColumn(constants.UpdateColumnMarker, false, true, false, config.Mode("")))
+	}
+	{
+		// Test update column marker without artie updated at
+		assert.True(t, shouldSkipColumn(constants.UpdateColumnMarker, false, false, false, config.Mode("")))
+	}
+	{
+		// Test regular column
+		assert.False(t, shouldSkipColumn("firstName", false, false, false, config.Mode("")))
+	}
+	{
+		// Test regular column with artie updated at and soft delete enabled
+		assert.False(t, shouldSkipColumn("email", true, true, false, config.Mode("")))
+	}
+	{
+		// Test database updated column without database updated at enabled
+		assert.True(t, shouldSkipColumn(constants.DatabaseUpdatedColumnMarker, false, false, false, config.Mode("")))
+	}
+	{
+		// Test database updated column with database updated at enabled
+		assert.False(t, shouldSkipColumn(constants.DatabaseUpdatedColumnMarker, false, false, true, config.Mode("")))
+	}
+	{
+		// Test operation column in replication mode
+		assert.True(t, shouldSkipColumn(constants.OperationColumnMarker, false, false, false, config.Replication))
+	}
+	{
+		// Test operation column in history mode
+		assert.False(t, shouldSkipColumn(constants.OperationColumnMarker, false, false, false, config.History))
 	}
 }
 
