@@ -2,6 +2,8 @@ package snowflake
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
@@ -228,9 +230,9 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	tableName := retrieveTableNameFromCreateTable(s.T(), createQuery)
 	assert.Equal(s.T(), fmt.Sprintf(`CREATE TABLE IF NOT EXISTS "CUSTOMER"."PUBLIC"."%s" ("ID" int,"NAME" string,"__ARTIE_DELETE" boolean,"__ARTIE_ONLY_SET_DELETE" boolean,"CREATED_AT" string) DATA_RETENTION_TIME_IN_DAYS = 0 STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='__artie_null_value' EMPTY_FIELD_AS_NULL=FALSE)`, tableName), createQuery)
 
-	// PUT file:///tmp/customer.public.orders___artie_Mwv9YADmRy.csv @customer.public.%orders___artie_Mwv9YADmRy AUTO_COMPRESS=TRUE
+	// PUT file:///tmp/CUSTOMER.PUBLIC.orders.csv @"CUSTOMER"."PUBLIC"."%%orders" AUTO_COMPRESS=TRUE
 	_, putQuery, _ := s.fakeStageStore.ExecContextArgsForCall(1)
-	assert.Contains(s.T(), putQuery, "PUT 'file://")
+	assert.Equal(s.T(), fmt.Sprintf(`PUT 'file://%s' @"CUSTOMER"."PUBLIC"."%%%s" AUTO_COMPRESS=TRUE`, filepath.Join(os.TempDir(), fmt.Sprintf("CUSTOMER.PUBLIC.%s.csv", tableName)), tableName), putQuery)
 
 	// COPY INTO customer.public.orders___artie_Mwv9YADmRy (id,name,__artie_delete,created_at) FROM (SELECT $1,$2,$3,$4 FROM @customer.public.%orders___artie_Mwv9YADmRy
 	_, copyQuery, _ := s.fakeStageStore.ExecContextArgsForCall(2)
