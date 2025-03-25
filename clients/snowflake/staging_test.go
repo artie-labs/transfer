@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/stretchr/testify/assert"
@@ -175,13 +176,18 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 		assert.True(s.T(), containsPrefix, fmt.Sprintf("createQuery:%v, prefixQuery:%s", createQuery, prefixQuery))
 		resourceName := addPrefixToTableName(tempTableID, "%")
 		// Second call is a PUT
+
+		stagingTableID := tempTableID.WithTable("%" + tempTableID.Table())
 		_, putQuery, _ := s.fakeStageStore.ExecContextArgsForCall(1)
-		assert.Contains(s.T(), putQuery, "PUT file://", putQuery)
-		assert.Contains(s.T(), putQuery, fmt.Sprintf("@%s AUTO_COMPRESS=TRUE", resourceName))
+		assert.Equal(s.T(),
+			fmt.Sprintf(`PUT 'file://%s' @"DATABASE"."SCHEMA".%s AUTO_COMPRESS=TRUE`,
+				filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv", strings.ReplaceAll(tempTableName, `"`, ""))),
+				stagingTableID.EscapedTable(),
+			), putQuery)
 		// Third call is a COPY INTO
 		_, copyQuery, _ := s.fakeStageStore.ExecContextArgsForCall(2)
-		assert.Equal(s.T(), fmt.Sprintf(`COPY INTO %s ("USER_ID","FIRST_NAME","LAST_NAME","DUSTY") FROM (SELECT $1,$2,$3,$4 FROM @%s)`,
-			tempTableName, resourceName), copyQuery)
+		assert.Equal(s.T(), fmt.Sprintf(`COPY INTO %s ("USER_ID","FIRST_NAME","LAST_NAME","DUSTY") FROM (SELECT $1,$2,$3,$4 FROM @%s) FILES = ('%s.csv.gz')`,
+			tempTableName, resourceName, strings.ReplaceAll(tempTableName, `"`, "")), copyQuery)
 	}
 	{
 		// Don't create the temporary table.
@@ -194,7 +200,7 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 func (s *SnowflakeTestSuite) TestLoadTemporaryTable() {
 	tempTableID, tableData := generateTableData(100)
 	file, err := s.stageStore.writeTemporaryTableFile(tableData, tempTableID)
-	assert.Equal(s.T(), fmt.Sprintf("%s.csv", tempTableID.FullyQualifiedName()), file.FileName)
+	assert.Equal(s.T(), fmt.Sprintf("%s.csv", strings.ReplaceAll(tempTableID.FullyQualifiedName(), `"`, "")), file.FileName)
 	assert.NoError(s.T(), err)
 	// Read the CSV and confirm.
 	csvfile, err := os.Open(file.FilePath)

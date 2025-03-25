@@ -69,16 +69,21 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		}
 	}()
 
-	// Upload the CSV file to Snowflake
-	if _, err = s.ExecContext(ctx, fmt.Sprintf("PUT file://%s @%s AUTO_COMPRESS=TRUE", file.FilePath, addPrefixToTableName(tempTableID, "%"))); err != nil {
+	// Upload the CSV file to Snowflake, wrapping the file in single quotes to avoid special characters.
+	tableStageName := addPrefixToTableName(tempTableID, "%")
+	if _, err = s.ExecContext(ctx, fmt.Sprintf("PUT 'file://%s' @%s AUTO_COMPRESS=TRUE", file.FilePath, tableStageName)); err != nil {
 		return fmt.Errorf("failed to run PUT for temporary table: %w", err)
 	}
 
 	// COPY the CSV file (in Snowflake) into a table
-	copyCommand := fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @%s)",
-		tempTableID.FullyQualifiedName(),
-		strings.Join(sql.QuoteColumns(tableData.ReadOnlyInMemoryCols().ValidColumns(), s.Dialect()), ","),
-		escapeColumns(tableData.ReadOnlyInMemoryCols(), ","), addPrefixToTableName(tempTableID, "%"))
+	copyCommand := fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @%s) FILES = ('%s')",
+		// COPY INTO <table> (<columns>)
+		tempTableID.FullyQualifiedName(), strings.Join(sql.QuoteColumns(tableData.ReadOnlyInMemoryCols().ValidColumns(), s.Dialect()), ","),
+		// FROM (SELECT <columns> FROM @<stage> FILES = ('<file_name>'))
+		escapeColumns(tableData.ReadOnlyInMemoryCols(), ","), tableStageName,
+		// We're appending gz to the file name since it was compressed by the PUT command.
+		fmt.Sprintf("%s.gz", file.FileName),
+	)
 
 	if additionalSettings.AdditionalCopyClause != "" {
 		copyCommand += " " + additionalSettings.AdditionalCopyClause
@@ -106,7 +111,7 @@ type File struct {
 }
 
 func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID sql.TableIdentifier) (File, error) {
-	fileName := fmt.Sprintf("%s.csv", newTableID.FullyQualifiedName())
+	fileName := fmt.Sprintf("%s.csv", strings.ReplaceAll(newTableID.FullyQualifiedName(), `"`, ""))
 	fp := filepath.Join(os.TempDir(), fileName)
 	file, err := os.Create(fp)
 	if err != nil {
