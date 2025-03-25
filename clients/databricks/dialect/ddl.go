@@ -9,7 +9,7 @@ import (
 
 func (DatabricksDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, _ bool, colSQLParts []string) string {
 	// Databricks doesn't have a concept of temporary tables.
-	return fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", tableID.FullyQualifiedName(), strings.Join(colSQLParts, ", "))
+	return fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s) TBLPROPERTIES ('delta.feature.timestampNtz' = 'supported')", tableID.FullyQualifiedName(), strings.Join(colSQLParts, ", "))
 }
 
 func (DatabricksDialect) BuildDropTableQuery(tableID sql.TableIdentifier) string {
