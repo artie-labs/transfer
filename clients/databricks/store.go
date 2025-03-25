@@ -115,10 +115,12 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 	}()
 
 	ctx = driverctx.NewContextWithStagingInfo(ctx, []string{"/var", "tmp"})
-	putCommand := fmt.Sprintf("PUT '%s' INTO '%s' OVERWRITE", fp, file.DBFSFilePath())
+	putCommand := fmt.Sprintf("PUT '%s' INTO '%s' OVERWRITE HEADER", fp, file.DBFSFilePath())
 	if _, err = s.ExecContext(ctx, putCommand); err != nil {
 		return fmt.Errorf("failed to run PUT INTO for temporary table: %w", err)
 	}
+
+	fmt.Println("putCommand", putCommand)
 
 	defer func() {
 		if _, err = s.ExecContext(ctx, s.dialect().BuildRemoveFileFromVolumeQuery(file.FilePath())); err != nil {
@@ -129,18 +131,18 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 		}
 	}()
 
-	var ordinalColumns []string
-	for idx, column := range tableData.ReadOnlyInMemoryCols().ValidColumns() {
-		ordinalColumn := fmt.Sprintf("_c%d", idx)
+	var columnNames []string
+	for _, column := range tableData.ReadOnlyInMemoryCols().ValidColumns() {
+		columnName := column.Name()
 		switch column.KindDetails.Kind {
 		case typing.Array.Kind:
-			ordinalColumn = fmt.Sprintf(`PARSE_JSON(%s)`, ordinalColumn)
+			columnName = fmt.Sprintf(`PARSE_JSON(%s)`, columnName)
 		}
-
-		ordinalColumns = append(ordinalColumns, ordinalColumn)
+		columnNames = append(columnNames, columnName)
 	}
 
-	copyCommand := s.dialect().BuildCopyIntoQuery(tempTableID, ordinalColumns, file.DBFSFilePath())
+	copyCommand := s.dialect().BuildCopyIntoQuery(tempTableID, columnNames, file.DBFSFilePath())
+	fmt.Println("copyCommand", copyCommand)
 	if _, err = s.ExecContext(ctx, copyCommand); err != nil {
 		return fmt.Errorf("failed to run COPY INTO for temporary table: %w", err)
 	}
@@ -171,6 +173,18 @@ func (s Store) writeTemporaryTableFile(tableData *optimization.TableData, fileNa
 	defer gzipWriter.Close()
 
 	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
+
+	// Write header row
+	var headerRow []string
+	for _, col := range columns {
+		headerRow = append(headerRow, col.Name())
+	}
+
+	if err = gzipWriter.Write(headerRow); err != nil {
+		return "", fmt.Errorf("failed to write header to csv: %w", err)
+	}
+
+	// Write data rows
 	for _, value := range tableData.Rows() {
 		var row []string
 		for _, col := range columns {
