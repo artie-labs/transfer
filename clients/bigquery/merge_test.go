@@ -19,8 +19,7 @@ func (b *BigQueryTestSuite) TestBackfillColumn() {
 	{
 		// Test column without default value
 		col := columns.NewColumn("foo", typing.Invalid)
-		err := shared.BackfillColumn(b.store, col, tableID)
-		assert.NoError(b.T(), err)
+		assert.NoError(b.T(), shared.BackfillColumn(b.store, col, tableID))
 		assert.Equal(b.T(), 0, b.fakeStore.ExecCallCount())
 	}
 	{
@@ -29,8 +28,7 @@ func (b *BigQueryTestSuite) TestBackfillColumn() {
 		col.SetDefaultValue(true)
 		col.SetBackfilled(true)
 
-		err := shared.BackfillColumn(b.store, col, tableID)
-		assert.NoError(b.T(), err)
+		assert.NoError(b.T(), shared.BackfillColumn(b.store, col, tableID))
 		assert.Equal(b.T(), 0, b.fakeStore.ExecCallCount())
 	}
 	{
@@ -38,8 +36,7 @@ func (b *BigQueryTestSuite) TestBackfillColumn() {
 		col := columns.NewColumn("foo", typing.Boolean)
 		col.SetDefaultValue(true)
 
-		err := shared.BackfillColumn(b.store, col, tableID)
-		assert.NoError(b.T(), err)
+		assert.NoError(b.T(), shared.BackfillColumn(b.store, col, tableID))
 
 		backfillSQL, _ := b.fakeStore.ExecArgsForCall(0)
 		assert.Equal(b.T(), "UPDATE `db`.`public`.`tableName` as t SET t.`foo` = true WHERE t.`foo` IS NULL;", backfillSQL)
@@ -52,8 +49,7 @@ func (b *BigQueryTestSuite) TestBackfillColumn() {
 		col := columns.NewColumn("foo2", typing.String)
 		col.SetDefaultValue("hello there")
 
-		err := shared.BackfillColumn(b.store, col, tableID)
-		assert.NoError(b.T(), err)
+		assert.NoError(b.T(), shared.BackfillColumn(b.store, col, tableID))
 
 		backfillSQL, _ := b.fakeStore.ExecArgsForCall(2)
 		assert.Equal(b.T(), "UPDATE `db`.`public`.`tableName` as t SET t.`foo2` = 'hello there' WHERE t.`foo2` IS NULL;", backfillSQL)
@@ -66,8 +62,7 @@ func (b *BigQueryTestSuite) TestBackfillColumn() {
 		col := columns.NewColumn("foo3", typing.Float)
 		col.SetDefaultValue(3.5)
 
-		err := shared.BackfillColumn(b.store, col, tableID)
-		assert.NoError(b.T(), err)
+		assert.NoError(b.T(), shared.BackfillColumn(b.store, col, tableID))
 
 		backfillSQL, _ := b.fakeStore.ExecArgsForCall(4)
 		assert.Equal(b.T(), "UPDATE `db`.`public`.`tableName` as t SET t.`foo3` = 3.5 WHERE t.`foo3` IS NULL;", backfillSQL)
