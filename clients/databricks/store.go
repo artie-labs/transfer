@@ -115,7 +115,7 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 	}()
 
 	ctx = driverctx.NewContextWithStagingInfo(ctx, []string{"/var", "tmp"})
-	putCommand := fmt.Sprintf("PUT '%s' INTO '%s' OVERWRITE HEADER", fp, file.DBFSFilePath())
+	putCommand := fmt.Sprintf("PUT '%s' INTO '%s' OVERWRITE", fp, file.DBFSFilePath())
 	if _, err = s.ExecContext(ctx, putCommand); err != nil {
 		return fmt.Errorf("failed to run PUT INTO for temporary table: %w", err)
 	}

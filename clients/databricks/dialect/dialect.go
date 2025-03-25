@@ -173,7 +173,7 @@ FILEFORMAT = CSV
 FORMAT_OPTIONS (
     'escape' = '"',
     'delimiter' = '\t',
-    'header' = 'false',
+    'header' = 'true',
     'nullValue' = '%s',
     'compression' = 'gzip'
 );`,
