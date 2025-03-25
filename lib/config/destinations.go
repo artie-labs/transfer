@@ -39,11 +39,12 @@ func (m MSSQL) DSN() string {
 
 func (s Snowflake) ToConfig() (*gosnowflake.Config, error) {
 	cfg := &gosnowflake.Config{
-		Account:     s.AccountID,
-		User:        s.Username,
-		Warehouse:   s.Warehouse,
-		Region:      s.Region,
-		Application: s.Application,
+		OCSPFailOpen: gosnowflake.OCSPFailOpenTrue,
+		Account:      s.AccountID,
+		User:         s.Username,
+		Warehouse:    s.Warehouse,
+		Region:       s.Region,
+		Application:  s.Application,
 		Params: map[string]*string{
 			// This parameter will cancel in-progress queries if connectivity is lost.
 			// https://docs.snowflake.com/en/sql-reference/parameters#abort-detached-query
