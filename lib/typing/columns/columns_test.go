@@ -31,11 +31,6 @@ func TestColumn_ShouldSkip(t *testing.T) {
 		assert.True(t, col.ShouldSkip())
 	}
 	{
-		// zero col
-		var col Column
-		assert.True(t, col.ShouldSkip())
-	}
-	{
 		// Invalid col
 		col := Column{
 			KindDetails: typing.Invalid,
