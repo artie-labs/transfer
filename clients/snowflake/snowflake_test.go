@@ -241,8 +241,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 
 	// Drop a table now.
 	dropQuery, _ := s.fakeStageStore.ExecArgsForCall(1)
-	assert.Contains(s.T(), dropQuery, `DROP TABLE IF EXISTS "CUSTOMER"."PUBLIC"."ORDERS___ARTIE_`,
-		fmt.Sprintf("query: %v, destKind: %v", dropQuery, constants.Snowflake))
+	assert.Equal(s.T(), fmt.Sprintf(`DROP TABLE IF EXISTS "CUSTOMER"."PUBLIC"."%s"`, tableName), dropQuery)
 
 	assert.Equal(s.T(), 2, s.fakeStageStore.ExecCallCount())
 	assert.Equal(s.T(), 3, s.fakeStageStore.ExecContextCallCount())
