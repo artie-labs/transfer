@@ -341,6 +341,7 @@ FORMAT_OPTIONS (
     'delimiter' = '\t',
     'header' = 'false',
     'nullValue' = '%s',
+    'multiLine' = 'true',
     'compression' = 'gzip'
 );`, constants.NullValuePlaceholder), dialect.BuildCopyIntoQuery(tempTableID, []string{"_c0", "_c1"}, "dbfs:/path/to/file.csv.gz"))
 }
