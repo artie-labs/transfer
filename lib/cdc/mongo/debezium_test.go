@@ -11,54 +11,68 @@ import (
 )
 
 func (m *MongoTestSuite) TestGetPrimaryKey() {
-	type _tc struct {
-		name          string
-		key           []byte
-		keyFormat     string
-		expectedValue any
-	}
-
-	tcs := []_tc{
-		{
-			name:          "id in json format, value = number",
-			key:           []byte(`{"id": 1001}`),
-			keyFormat:     kafkalib.JSONKeyFmt,
-			expectedValue: float64(1001),
-		},
-		{
-			name:          "id in string format",
-			key:           []byte(`Struct{id=1001}`),
-			keyFormat:     kafkalib.StringKeyFmt,
-			expectedValue: "1001",
-		},
-		{
-			name:          "id in json format, value = object id",
-			key:           []byte(`{"schema":{"type":"struct","fields":[{"type":"string","optional":false,"field":"id"}],"optional":false,"name":"1a75f632-29d2-419b-9ffe-d18fa12d74d5.38d5d2db-870a-4a38-a76c-9891b0e5122d.myFirstDatabase.stock.Key"},"payload":{"id":"{\"$oid\": \"63e3a3bf314a4076d249e203\"}"}}`),
-			keyFormat:     kafkalib.JSONKeyFmt,
-			expectedValue: "63e3a3bf314a4076d249e203",
-		},
-		{
-			name:          "id in string format, value = object id",
-			key:           []byte(`Struct{id={"$oid": "65566afbfefeb3c639deaf5d"}}`),
-			keyFormat:     kafkalib.StringKeyFmt,
-			expectedValue: "65566afbfefeb3c639deaf5d",
-		},
-	}
-
-	for _, tc := range tcs {
-		pkMap, err := m.GetPrimaryKey(tc.key, kafkalib.TopicConfig{
-			CDCKeyFormat: tc.keyFormat,
+	{
+		// Test JSON key format with numeric ID
+		pkMap, err := m.GetPrimaryKey([]byte(`{"id": 1001}`), kafkalib.TopicConfig{
+			CDCKeyFormat: kafkalib.JSONKeyFmt,
 		})
 
-		assert.Equal(m.T(), err, nil, tc.name)
-
+		assert.Equal(m.T(), err, nil, "JSON key format with numeric ID should not return error")
 		pkVal, isOk := pkMap["_id"]
-		assert.True(m.T(), isOk, tc.name)
-		assert.Equal(m.T(), pkVal, tc.expectedValue, tc.name)
+		assert.True(m.T(), isOk, "JSON key format with numeric ID should have _id field")
+		assert.Equal(m.T(), pkVal, float64(1001), "JSON key format with numeric ID should have correct value")
 
 		// The `id` column should not exist anymore
 		_, isOk = pkMap["id"]
-		assert.False(m.T(), isOk)
+		assert.False(m.T(), isOk, "JSON key format should not have id field")
+	}
+
+	{
+		// Test string key format with numeric ID
+		pkMap, err := m.GetPrimaryKey([]byte(`Struct{id=1001}`), kafkalib.TopicConfig{
+			CDCKeyFormat: kafkalib.StringKeyFmt,
+		})
+
+		assert.Equal(m.T(), err, nil, "string key format with numeric ID should not return error")
+		pkVal, isOk := pkMap["_id"]
+		assert.True(m.T(), isOk, "string key format with numeric ID should have _id field")
+		assert.Equal(m.T(), pkVal, "1001", "string key format with numeric ID should have correct value")
+
+		// The `id` column should not exist anymore
+		_, isOk = pkMap["id"]
+		assert.False(m.T(), isOk, "string key format should not have id field")
+	}
+
+	{
+		// Test JSON key format with ObjectId
+		pkMap, err := m.GetPrimaryKey([]byte(`{"schema":{"type":"struct","fields":[{"type":"string","optional":false,"field":"id"}],"optional":false,"name":"1a75f632-29d2-419b-9ffe-d18fa12d74d5.38d5d2db-870a-4a38-a76c-9891b0e5122d.myFirstDatabase.stock.Key"},"payload":{"id":"{\"$oid\": \"63e3a3bf314a4076d249e203\"}"}}`), kafkalib.TopicConfig{
+			CDCKeyFormat: kafkalib.JSONKeyFmt,
+		})
+
+		assert.Equal(m.T(), err, nil, "JSON key format with ObjectId should not return error")
+		pkVal, isOk := pkMap["_id"]
+		assert.True(m.T(), isOk, "JSON key format with ObjectId should have _id field")
+		assert.Equal(m.T(), pkVal, "63e3a3bf314a4076d249e203", "JSON key format with ObjectId should have correct value")
+
+		// The `id` column should not exist anymore
+		_, isOk = pkMap["id"]
+		assert.False(m.T(), isOk, "JSON key format should not have id field")
+	}
+
+	{
+		// Test string key format with ObjectId
+		pkMap, err := m.GetPrimaryKey([]byte(`Struct{id={"$oid": "65566afbfefeb3c639deaf5d"}}`), kafkalib.TopicConfig{
+			CDCKeyFormat: kafkalib.StringKeyFmt,
+		})
+
+		assert.Equal(m.T(), err, nil, "string key format with ObjectId should not return error")
+		pkVal, isOk := pkMap["_id"]
+		assert.True(m.T(), isOk, "string key format with ObjectId should have _id field")
+		assert.Equal(m.T(), pkVal, "65566afbfefeb3c639deaf5d", "string key format with ObjectId should have correct value")
+
+		// The `id` column should not exist anymore
+		_, isOk = pkMap["id"]
+		assert.False(m.T(), isOk, "string key format should not have id field")
 	}
 }
 
