@@ -64,22 +64,26 @@ func (e *EventsTestSuite) TestTransformData() {
 		// Hashing columns
 		{
 			// No columns to hash
-			data := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{})
+			data, err := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{}, nil)
+			assert.NoError(e.T(), err)
 			assert.Equal(e.T(), map[string]any{"foo": "bar", "abc": "def"}, data)
 		}
 		{
 			// There's a column to hash, but the event does not have any data
-			data := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToHash: []string{"super duper"}})
+			data, err := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToHash: []string{"super duper"}}, nil)
+			assert.NoError(e.T(), err)
 			assert.Equal(e.T(), map[string]any{"foo": "bar", "abc": "def"}, data)
 		}
 		{
 			// Hash the column foo (value is set)
-			data := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToHash: []string{"foo"}})
+			data, err := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToHash: []string{"foo"}}, nil)
+			assert.NoError(e.T(), err)
 			assert.Equal(e.T(), map[string]any{"foo": "fcde2b2edba56bf408601fb721fe9b5c338d10ee429ea04fae5511b68fbf8fb9", "abc": "def"}, data)
 		}
 		{
 			// Hash the column foo (value is nil)
-			data := transformData(map[string]any{"foo": nil, "abc": "def"}, kafkalib.TopicConfig{ColumnsToHash: []string{"foo"}})
+			data, err := transformData(map[string]any{"foo": nil, "abc": "def"}, kafkalib.TopicConfig{ColumnsToHash: []string{"foo"}}, nil)
+			assert.NoError(e.T(), err)
 			assert.Equal(e.T(), map[string]any{"foo": nil, "abc": "def"}, data)
 		}
 	}
@@ -87,12 +91,14 @@ func (e *EventsTestSuite) TestTransformData() {
 		// Excluding columns
 		{
 			// No columns to exclude
-			data := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToExclude: []string{}})
+			data, err := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToExclude: []string{}}, nil)
+			assert.NoError(e.T(), err)
 			assert.Equal(e.T(), map[string]any{"foo": "bar", "abc": "def"}, data)
 		}
 		{
 			// Exclude the column foo
-			data := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToExclude: []string{"foo"}})
+			data, err := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToExclude: []string{"foo"}}, nil)
+			assert.NoError(e.T(), err)
 			assert.Equal(e.T(), map[string]any{"abc": "def"}, data)
 		}
 	}
@@ -101,24 +107,24 @@ func (e *EventsTestSuite) TestTransformData() {
 func (e *EventsTestSuite) TestEvent_TableName() {
 	{
 		// Don't pass in tableName.
-		evt, err := ToMemoryEvent(e.fakeEvent, idMap, kafkalib.TopicConfig{}, config.Replication)
+		evt, err := ToMemoryEvent(e.fakeEvent, idMap, kafkalib.TopicConfig{}, config.Replication, nil)
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), e.fakeEvent.GetTableName(), evt.Table)
 	}
 	{
 		// Now pass it in, it should override.
-		evt, err := ToMemoryEvent(e.fakeEvent, idMap, kafkalib.TopicConfig{TableName: "orders"}, config.Replication)
+		evt, err := ToMemoryEvent(e.fakeEvent, idMap, kafkalib.TopicConfig{TableName: "orders"}, config.Replication, nil)
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), "orders", evt.Table)
 	}
 	{
 		// Now, if it's history mode...
-		evt, err := ToMemoryEvent(e.fakeEvent, idMap, kafkalib.TopicConfig{TableName: "orders"}, config.History)
+		evt, err := ToMemoryEvent(e.fakeEvent, idMap, kafkalib.TopicConfig{TableName: "orders"}, config.History, nil)
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), "orders__history", evt.Table)
 
 		// Table already has history suffix, so it won't add extra.
-		evt, err = ToMemoryEvent(e.fakeEvent, idMap, kafkalib.TopicConfig{TableName: "dusty__history"}, config.History)
+		evt, err = ToMemoryEvent(e.fakeEvent, idMap, kafkalib.TopicConfig{TableName: "dusty__history"}, config.History, nil)
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), "dusty__history", evt.Table)
 	}
@@ -126,7 +132,7 @@ func (e *EventsTestSuite) TestEvent_TableName() {
 
 func (e *EventsTestSuite) TestEvent_Columns() {
 	{
-		evt, err := ToMemoryEvent(e.fakeEvent, map[string]any{"id": 123}, kafkalib.TopicConfig{}, config.Replication)
+		evt, err := ToMemoryEvent(e.fakeEvent, map[string]any{"id": 123}, kafkalib.TopicConfig{}, config.Replication, nil)
 		assert.NoError(e.T(), err)
 
 		assert.Equal(e.T(), 1, len(evt.Columns.GetColumns()))
@@ -135,7 +141,7 @@ func (e *EventsTestSuite) TestEvent_Columns() {
 	}
 	{
 		// Now it should handle escaping column names
-		evt, err := ToMemoryEvent(e.fakeEvent, map[string]any{"id": 123, "CAPITAL": "foo"}, kafkalib.TopicConfig{}, config.Replication)
+		evt, err := ToMemoryEvent(e.fakeEvent, map[string]any{"id": 123, "CAPITAL": "foo"}, kafkalib.TopicConfig{}, config.Replication, nil)
 		assert.NoError(e.T(), err)
 
 		assert.Equal(e.T(), 2, len(evt.Columns.GetColumns()))
@@ -147,7 +153,7 @@ func (e *EventsTestSuite) TestEvent_Columns() {
 	}
 	{
 		// In history mode, the deletion column markers should be removed from the event data
-		evt, err := ToMemoryEvent(e.fakeEvent, map[string]any{"id": 123}, kafkalib.TopicConfig{}, config.History)
+		evt, err := ToMemoryEvent(e.fakeEvent, map[string]any{"id": 123}, kafkalib.TopicConfig{}, config.History, nil)
 		assert.NoError(e.T(), err)
 
 		_, isOk := evt.Data[constants.DeleteColumnMarker]
@@ -180,7 +186,7 @@ func (e *EventsTestSuite) TestEventPrimaryKeys() {
 	mockEvent.GetTableNameReturns("foo")
 	mockEvent.GetDataReturns(map[string]any{"id": 1, "course_id": 2}, nil)
 
-	anotherEvt, err := ToMemoryEvent(mockEvent, map[string]any{"id": 1, "course_id": 2}, kafkalib.TopicConfig{}, config.Replication)
+	anotherEvt, err := ToMemoryEvent(mockEvent, map[string]any{"id": 1, "course_id": 2}, kafkalib.TopicConfig{}, config.Replication, nil)
 	assert.NoError(e.T(), err)
 
 	pkValue, err := anotherEvt.PrimaryKeyValue()
@@ -203,7 +209,7 @@ func (e *EventsTestSuite) TestEventPrimaryKeys() {
 		mockEvent.GetTableNameReturns("foo")
 		mockEvent.GetDataReturns(map[string]any{"course_id": 2}, nil)
 
-		evt, err := ToMemoryEvent(mockEvent, map[string]any{"id": 123}, kafkalib.TopicConfig{}, config.Replication)
+		evt, err := ToMemoryEvent(mockEvent, map[string]any{"id": 123}, kafkalib.TopicConfig{}, config.Replication, nil)
 		assert.NoError(e.T(), err)
 
 		pkValue, err := evt.PrimaryKeyValue()
@@ -229,7 +235,7 @@ func (e *EventsTestSuite) TestPrimaryKeyValueDeterministic() {
 		"zz":    "ff",
 		"gg":    "artie",
 		"dusty": "mini aussie",
-	}, kafkalib.TopicConfig{}, config.Replication)
+	}, kafkalib.TopicConfig{}, config.Replication, nil)
 	assert.NoError(e.T(), err)
 
 	for i := 0; i < 50_000; i++ {
@@ -242,13 +248,13 @@ func (e *EventsTestSuite) TestPrimaryKeyValueDeterministic() {
 func (e *EventsTestSuite) TestEvent_PrimaryKeysOverride() {
 	{
 		// No primary keys override
-		evt, err := ToMemoryEvent(e.fakeEvent, map[string]any{"not_id": 123}, kafkalib.TopicConfig{}, config.Replication)
+		evt, err := ToMemoryEvent(e.fakeEvent, map[string]any{"not_id": 123}, kafkalib.TopicConfig{}, config.Replication, nil)
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), []string{"not_id"}, evt.GetPrimaryKeys())
 	}
 	{
 		// Specified primary keys override
-		evt, err := ToMemoryEvent(e.fakeEvent, map[string]any{"not_id": 123}, kafkalib.TopicConfig{PrimaryKeysOverride: []string{"id"}}, config.Replication)
+		evt, err := ToMemoryEvent(e.fakeEvent, map[string]any{"not_id": 123}, kafkalib.TopicConfig{PrimaryKeysOverride: []string{"id"}}, config.Replication, nil)
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), []string{"id"}, evt.GetPrimaryKeys())
 	}

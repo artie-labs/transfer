@@ -57,11 +57,15 @@ type TopicConfig struct {
 	// TODO: Deprecate BigQueryPartitionSettings and use AdditionalMergePredicates instead.
 	BigQueryPartitionSettings *partition.BigQuerySettings `yaml:"bigQueryPartitionSettings,omitempty"`
 	AdditionalMergePredicates []partition.MergePredicates `yaml:"additionalMergePredicates,omitempty"`
-	ColumnsToHash             []string                    `yaml:"columnsToHash,omitempty"`
+	PrimaryKeysOverride       []string                    `yaml:"primaryKeysOverride,omitempty"`
+	MultiStepMergeSettings    *MultiStepMergeSettings     `yaml:"multiStepMergeSettings,omitempty"`
+
+	// Settings related to columns:
+	ColumnsToHash []string `yaml:"columnsToHash,omitempty"`
 	// [ColumnsToExclude] can be used to exclude columns from being written to the destination.
-	ColumnsToExclude       []string                `yaml:"columnsToExclude,omitempty"`
-	PrimaryKeysOverride    []string                `yaml:"primaryKeysOverride,omitempty"`
-	MultiStepMergeSettings *MultiStepMergeSettings `yaml:"multiStepMergeSettings,omitempty"`
+	ColumnsToExclude []string `yaml:"columnsToExclude,omitempty"`
+	ColumnsToEncrypt []string `yaml:"columnsToEncrypt,omitempty"`
+	ColumnsToDecrypt []string `yaml:"columnsToDecrypt,omitempty"`
 
 	// Internal metadata
 	opsToSkipMap map[string]bool `yaml:"-"`
@@ -125,6 +129,39 @@ func (t TopicConfig) Validate() error {
 		if err := t.MultiStepMergeSettings.Validate(); err != nil {
 			return fmt.Errorf("invalid multi-step merge settings: %w", err)
 		}
+	}
+
+	if err := t.ValidateColumns(); err != nil {
+		return fmt.Errorf("invalid columns: %w", err)
+	}
+
+	return nil
+}
+
+func (t TopicConfig) ValidateColumns() error {
+	seenColumns := make(map[string]string)
+	checkDuplicate := func(columns []string, operation string) error {
+		for _, col := range columns {
+			if existingOp, exists := seenColumns[col]; exists {
+				return fmt.Errorf("column %q cannot be both %q and %q", col, existingOp, operation)
+			}
+			seenColumns[col] = operation
+		}
+		return nil
+	}
+
+	// Check each list for duplicates
+	if err := checkDuplicate(t.ColumnsToEncrypt, "encrypted"); err != nil {
+		return err
+	}
+	if err := checkDuplicate(t.ColumnsToDecrypt, "decrypted"); err != nil {
+		return err
+	}
+	if err := checkDuplicate(t.ColumnsToHash, "hashed"); err != nil {
+		return err
+	}
+	if err := checkDuplicate(t.ColumnsToExclude, "excluded"); err != nil {
+		return err
 	}
 
 	return nil
