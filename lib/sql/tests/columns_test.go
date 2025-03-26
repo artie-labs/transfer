@@ -54,67 +54,62 @@ func TestQuotedDeleteColumnMarker(t *testing.T) {
 }
 
 func TestBuildColumnsUpdateFragment_BigQuery(t *testing.T) {
-	var lastCaseColTypes []columns.Column
-	lastCaseCols := []string{"a1", "b2", "c3"}
-	for _, lastCaseCol := range lastCaseCols {
-		kd := typing.String
-		var toast bool
-		// a1 - struct + toast, b2 - string + toast, c3 = regular string.
-		if lastCaseCol == "a1" {
-			kd = typing.Struct
-			toast = true
-		} else if lastCaseCol == "b2" {
-			toast = true
-		}
+	{
+		// Test basic mixed columns with struct, toast string, and regular string
+		var cols []columns.Column
+		// Add struct column with toast
+		structCol := columns.NewColumn("a1", typing.Struct)
+		structCol.ToastColumn = true
+		cols = append(cols, structCol)
 
-		column := columns.NewColumn(lastCaseCol, kd)
-		column.ToastColumn = toast
-		lastCaseColTypes = append(lastCaseColTypes, column)
+		// Add string column with toast
+		toastStringCol := columns.NewColumn("b2", typing.String)
+		toastStringCol.ToastColumn = true
+		cols = append(cols, toastStringCol)
+
+		// Add regular string column
+		regularStringCol := columns.NewColumn("c3", typing.String)
+		regularStringCol.ToastColumn = false
+		cols = append(cols, regularStringCol)
+
+		expectedQuery := "`a1`= CASE WHEN TO_JSON_STRING(stg.`a1`) NOT LIKE '%__debezium_unavailable_value%' THEN stg.`a1` ELSE tgt.`a1` END,`b2`= CASE WHEN TO_JSON_STRING(stg.`b2`) NOT LIKE '%__debezium_unavailable_value%' THEN stg.`b2` ELSE tgt.`b2` END,`c3`=stg.`c3`"
+		assert.Equal(t, expectedQuery, sql.BuildColumnsUpdateFragment(cols, "stg", "tgt", bigqueryDialect.BigQueryDialect{}), "mixed columns with struct, toast string, and regular string")
 	}
+	{
+		// Test mixed columns with reserved keywords and delete marker
+		var cols []columns.Column
+		// Add struct column with toast
+		structCol := columns.NewColumn("a1", typing.Struct)
+		structCol.ToastColumn = true
+		cols = append(cols, structCol)
 
-	var lastCaseEscapeTypes []columns.Column
-	lastCaseColsEsc := []string{"a1", "b2", "c3", "start", "select"}
-	for _, lastCaseColEsc := range lastCaseColsEsc {
-		kd := typing.String
-		var toast bool
-		// a1 - struct + toast, b2 - string + toast, c3 = regular string.
-		if lastCaseColEsc == "a1" {
-			kd = typing.Struct
-			toast = true
-		} else if lastCaseColEsc == "b2" {
-			toast = true
-		} else if lastCaseColEsc == "start" {
-			kd = typing.Struct
-			toast = true
-		}
+		// Add string column with toast
+		toastStringCol := columns.NewColumn("b2", typing.String)
+		toastStringCol.ToastColumn = true
+		cols = append(cols, toastStringCol)
 
-		column := columns.NewColumn(lastCaseColEsc, kd)
-		column.ToastColumn = toast
-		lastCaseEscapeTypes = append(lastCaseEscapeTypes, column)
-	}
+		// Add regular string column
+		regularStringCol := columns.NewColumn("c3", typing.String)
+		regularStringCol.ToastColumn = false
+		cols = append(cols, regularStringCol)
 
-	lastCaseEscapeTypes = append(lastCaseEscapeTypes, columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
+		// Add struct column with reserved keyword
+		reservedStructCol := columns.NewColumn("start", typing.Struct)
+		reservedStructCol.ToastColumn = true
+		cols = append(cols, reservedStructCol)
 
-	testCases := []struct {
-		name           string
-		columns        []columns.Column
-		expectedString string
-	}{
-		{
-			name:           "struct, string and toast string (bigquery)",
-			columns:        lastCaseColTypes,
-			expectedString: "`a1`= CASE WHEN TO_JSON_STRING(stg.`a1`) NOT LIKE '%__debezium_unavailable_value%' THEN stg.`a1` ELSE tgt.`a1` END,`b2`= CASE WHEN TO_JSON_STRING(stg.`b2`) NOT LIKE '%__debezium_unavailable_value%' THEN stg.`b2` ELSE tgt.`b2` END,`c3`=stg.`c3`",
-		},
-		{
-			name:           "struct, string and toast string (bigquery) w/ reserved keywords",
-			columns:        lastCaseEscapeTypes,
-			expectedString: "`a1`= CASE WHEN TO_JSON_STRING(stg.`a1`) NOT LIKE '%__debezium_unavailable_value%' THEN stg.`a1` ELSE tgt.`a1` END,`b2`= CASE WHEN TO_JSON_STRING(stg.`b2`) NOT LIKE '%__debezium_unavailable_value%' THEN stg.`b2` ELSE tgt.`b2` END,`c3`=stg.`c3`,`start`= CASE WHEN TO_JSON_STRING(stg.`start`) NOT LIKE '%__debezium_unavailable_value%' THEN stg.`start` ELSE tgt.`start` END,`select`=stg.`select`,`__artie_delete`=stg.`__artie_delete`",
-		},
-	}
+		// Add regular string column with reserved keyword
+		reservedStringCol := columns.NewColumn("select", typing.String)
+		reservedStringCol.ToastColumn = false
+		cols = append(cols, reservedStringCol)
 
-	for _, _testCase := range testCases {
-		actualQuery := sql.BuildColumnsUpdateFragment(_testCase.columns, "stg", "tgt", bigqueryDialect.BigQueryDialect{})
-		assert.Equal(t, _testCase.expectedString, actualQuery, _testCase.name)
+		// Add delete marker column
+		deleteMarkerCol := columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean)
+		deleteMarkerCol.ToastColumn = false
+		cols = append(cols, deleteMarkerCol)
+
+		expectedQuery := "`a1`= CASE WHEN TO_JSON_STRING(stg.`a1`) NOT LIKE '%__debezium_unavailable_value%' THEN stg.`a1` ELSE tgt.`a1` END,`b2`= CASE WHEN TO_JSON_STRING(stg.`b2`) NOT LIKE '%__debezium_unavailable_value%' THEN stg.`b2` ELSE tgt.`b2` END,`c3`=stg.`c3`,`start`= CASE WHEN TO_JSON_STRING(stg.`start`) NOT LIKE '%__debezium_unavailable_value%' THEN stg.`start` ELSE tgt.`start` END,`select`=stg.`select`,`__artie_delete`=stg.`__artie_delete`"
+		assert.Equal(t, expectedQuery, sql.BuildColumnsUpdateFragment(cols, "stg", "tgt", bigqueryDialect.BigQueryDialect{}), "mixed columns with reserved keywords and delete marker")
 	}
 }
 

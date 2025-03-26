@@ -9,47 +9,29 @@ import (
 )
 
 func TestIsRetryable_Errors(t *testing.T) {
-	type _tc struct {
-		name           string
-		err            error
-		expectedResult bool
+	{
+		// Test nil error case
+		var err error
+		assert.False(t, isRetryableError(err), "nil error should not be retryable")
 	}
-
-	tcs := []_tc{
-		{
-			name:           "nil error",
-			err:            nil,
-			expectedResult: false,
-		},
-		{
-			name:           "irrelevant error",
-			err:            fmt.Errorf("random error"),
-			expectedResult: false,
-		},
-		{
-			name:           "direct error - connection refused",
-			err:            syscall.ECONNREFUSED,
-			expectedResult: true,
-		},
-		{
-			name:           "direct error - connection reset",
-			err:            syscall.ECONNRESET,
-			expectedResult: true,
-		},
-		{
-			name:           "wrapped error - connection refused",
-			err:            fmt.Errorf("foo: %w", syscall.ECONNREFUSED),
-			expectedResult: true,
-		},
-		{
-			name:           "wrapped error - connection reset",
-			err:            fmt.Errorf("foo: %w", syscall.ECONNRESET),
-			expectedResult: true,
-		},
+	{
+		// Test irrelevant error case
+		assert.False(t, isRetryableError(fmt.Errorf("random error")), "irrelevant error should not be retryable")
 	}
-
-	for _, tc := range tcs {
-		actualErr := isRetryableError(tc.err)
-		assert.Equal(t, tc.expectedResult, actualErr, tc.name)
+	{
+		// Test direct connection refused error
+		assert.True(t, isRetryableError(syscall.ECONNREFUSED), "direct connection refused error should be retryable")
+	}
+	{
+		// Test direct connection reset error
+		assert.True(t, isRetryableError(syscall.ECONNRESET), "direct connection reset error should be retryable")
+	}
+	{
+		// Test wrapped connection refused error
+		assert.True(t, isRetryableError(fmt.Errorf("foo: %w", syscall.ECONNREFUSED)), "wrapped connection refused error should be retryable")
+	}
+	{
+		// Test wrapped connection reset error
+		assert.True(t, isRetryableError(fmt.Errorf("foo: %w", syscall.ECONNRESET)), "wrapped connection reset error should be retryable")
 	}
 }

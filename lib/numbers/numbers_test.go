@@ -7,22 +7,24 @@ import (
 )
 
 func TestBetweenEq(t *testing.T) {
-	type _tc struct {
-		result bool
-		start  int
-		end    int
-		number int
+	{
+		// Test number within range
+		assert.True(t, BetweenEq(5, 500, 100), "number within range should return true")
 	}
-
-	tcs := []_tc{
-		{result: true, start: 5, end: 500, number: 100},
-		{result: true, start: 5, end: 500, number: 5},
-		{result: true, start: 5, end: 500, number: 500},
-		{result: false, start: 5, end: 500, number: 501},
-		{result: false, start: 5, end: 500, number: 4},
+	{
+		// Test number at lower bound
+		assert.True(t, BetweenEq(5, 500, 5), "number at lower bound should return true")
 	}
-
-	for _, tc := range tcs {
-		assert.Equal(t, tc.result, BetweenEq(tc.start, tc.end, tc.number), tc)
+	{
+		// Test number at upper bound
+		assert.True(t, BetweenEq(5, 500, 500), "number at upper bound should return true")
+	}
+	{
+		// Test number above range
+		assert.False(t, BetweenEq(5, 500, 501), "number above range should return false")
+	}
+	{
+		// Test number below range
+		assert.False(t, BetweenEq(5, 500, 4), "number below range should return false")
 	}
 }
