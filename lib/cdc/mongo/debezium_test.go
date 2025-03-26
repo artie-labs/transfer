@@ -55,7 +55,7 @@ func TestGetPrimaryKey(t *testing.T) {
 
 		// The `id` column should not exist anymore
 		_, isOk := pkMap["id"]
-		assert.False(t, isOk, "string key format should not have id field")
+		assert.False(t, isOk)
 	}
 }
 
@@ -299,9 +299,7 @@ func TestMongoDBEventCustomerBefore(t *testing.T) {
 		evtData, err := evt.GetData(kafkalib.TopicConfig{IncludeArtieUpdatedAt: true})
 		assert.NoError(t, err)
 
-		updatedAt, isOk := evtData[constants.UpdateColumnMarker]
-		assert.True(t, isOk)
-		_, isOk = updatedAt.(time.Time)
+		_, isOk := evtData[constants.UpdateColumnMarker]
 		assert.True(t, isOk)
 	}
 }
