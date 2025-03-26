@@ -57,7 +57,6 @@ func TestBuildColumnsUpdateFragment_BigQuery(t *testing.T) {
 	{
 		// Test basic mixed columns with struct, toast string, and regular string
 		var cols []columns.Column
-
 		// Add struct column with toast
 		structCol := columns.NewColumn("a1", typing.Struct)
 		structCol.ToastColumn = true
