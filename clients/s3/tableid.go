@@ -1,19 +1,21 @@
 package s3
 
 import (
-	"fmt"
+	"cmp"
+	"strings"
 
 	"github.com/artie-labs/transfer/lib/sql"
 )
 
 type TableIdentifier struct {
-	database string
-	schema   string
-	table    string
+	database      string
+	schema        string
+	table         string
+	nameSeparator string
 }
 
-func NewTableIdentifier(database, schema, table string) TableIdentifier {
-	return TableIdentifier{database: database, schema: schema, table: table}
+func NewTableIdentifier(database, schema, table string, nameSeparator string) TableIdentifier {
+	return TableIdentifier{database: database, schema: schema, table: table, nameSeparator: cmp.Or(nameSeparator, ".")}
 }
 
 func (ti TableIdentifier) Database() string {
@@ -34,9 +36,9 @@ func (ti TableIdentifier) Table() string {
 }
 
 func (ti TableIdentifier) WithTable(table string) sql.TableIdentifier {
-	return NewTableIdentifier(ti.database, ti.schema, table)
+	return NewTableIdentifier(ti.database, ti.schema, table, ti.nameSeparator)
 }
 
 func (ti TableIdentifier) FullyQualifiedName() string {
-	return fmt.Sprintf("%s.%s.%s", ti.database, ti.schema, ti.EscapedTable())
+	return strings.Join([]string{ti.database, ti.schema, ti.EscapedTable()}, ti.nameSeparator)
 }

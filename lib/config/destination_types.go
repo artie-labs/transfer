@@ -53,6 +53,7 @@ type S3Settings struct {
 	AwsSecretAccessKey string                   `yaml:"awsSecretAccessKey"`
 	AwsRegion          string                   `yaml:"awsRegion"`
 	OutputFormat       constants.S3OutputFormat `yaml:"outputFormat"`
+	TableNameSeparator string                   `yaml:"tableNameSeparator"`
 }
 
 type Snowflake struct {
