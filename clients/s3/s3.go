@@ -39,7 +39,7 @@ func (s *Store) Validate() error {
 }
 
 func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {
-	return NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table)
+	return NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table, s.config.S3.TableNameSeparator)
 }
 
 // ObjectPrefix - this will generate the exact right prefix that we need to write into S3.
