@@ -3,6 +3,7 @@ package logger
 import (
 	"log/slog"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/getsentry/sentry-go"
@@ -29,7 +30,7 @@ func NewLogger(verbose bool, sentryCfg *config.Sentry, version string) (*slog.Lo
 	if sentryCfg != nil && sentryCfg.DSN != "" {
 		if err := sentry.Init(sentry.ClientOptions{
 			Dsn:     sentryCfg.DSN,
-			Release: "artie-transfer@" + version,
+			Release: "artie-transfer@" + strings.TrimLeft(version, "v"),
 		}); err != nil {
 			slog.New(handler).Warn("Failed to enable Sentry output", slog.Any("err", err))
 		} else {
