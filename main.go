@@ -30,7 +30,7 @@ func main() {
 	}
 
 	// Initialize default logger
-	_logger, cleanUpHandlers := logger.NewLogger(settings.VerboseLogging, settings.Config.Reporting.Sentry, build.Version)
+	_logger, cleanUpHandlers := logger.NewLogger(settings.VerboseLogging, settings.Config.Reporting.Sentry)
 	slog.SetDefault(_logger)
 
 	defer cleanUpHandlers()
