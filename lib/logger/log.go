@@ -3,6 +3,7 @@ package logger
 import (
 	"log/slog"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/getsentry/sentry-go"
@@ -11,12 +12,13 @@ import (
 	slogmulti "github.com/samber/slog-multi"
 	slogsentry "github.com/samber/slog-sentry/v2"
 
+	"github.com/artie-labs/transfer/build"
 	"github.com/artie-labs/transfer/lib/config"
 )
 
 var handlersToTerminate []func()
 
-func NewLogger(verbose bool, sentryCfg *config.Sentry, version string) (*slog.Logger, func()) {
+func NewLogger(verbose bool, sentryCfg *config.Sentry) (*slog.Logger, func()) {
 	tintLogLevel := slog.LevelInfo
 	if verbose {
 		tintLogLevel = slog.LevelDebug
@@ -29,7 +31,7 @@ func NewLogger(verbose bool, sentryCfg *config.Sentry, version string) (*slog.Lo
 	if sentryCfg != nil && sentryCfg.DSN != "" {
 		if err := sentry.Init(sentry.ClientOptions{
 			Dsn:     sentryCfg.DSN,
-			Release: "artie-transfer@" + version,
+			Release: "artie-transfer@" + strings.TrimLeft(build.Version, "v"),
 		}); err != nil {
 			slog.New(handler).Warn("Failed to enable Sentry output", slog.Any("err", err))
 		} else {

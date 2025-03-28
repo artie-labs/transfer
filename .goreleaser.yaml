@@ -13,6 +13,8 @@ builds:
     goos:
       - linux
       - darwin
+    ldflags:
+      - -s -w -X github.com/artie-labs/transfer/build.Version=v{{.Version}}
 
 dockers:
 - image_templates:
