@@ -36,7 +36,7 @@ func (f *FlushTestSuite) TestMemoryBasic() {
 			"hi":                                "hello",
 		}, nil)
 
-		evt, err := event.ToMemoryEvent(mockEvent, map[string]any{"id": fmt.Sprintf("pk-%d", i)}, kafkalib.TopicConfig{}, config.Replication)
+		evt, err := event.ToMemoryEvent(mockEvent, map[string]any{"id": fmt.Sprintf("pk-%d", i)}, kafkalib.TopicConfig{}, config.Replication, nil)
 		assert.NoError(f.T(), err)
 
 		kafkaMsg := kafka.Message{Partition: 1, Offset: 1}
@@ -67,7 +67,7 @@ func (f *FlushTestSuite) TestShouldFlush() {
 			"cat":                               "dog",
 		}, nil)
 
-		evt, err := event.ToMemoryEvent(mockEvent, map[string]any{"id": fmt.Sprintf("pk-%d", i)}, kafkalib.TopicConfig{}, config.Replication)
+		evt, err := event.ToMemoryEvent(mockEvent, map[string]any{"id": fmt.Sprintf("pk-%d", i)}, kafkalib.TopicConfig{}, config.Replication, nil)
 		assert.NoError(f.T(), err)
 
 		kafkaMsg := kafka.Message{Partition: 1, Offset: int64(i)}
@@ -104,7 +104,7 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 					"cat":                               "dog",
 				}, nil)
 
-				evt, err := event.ToMemoryEvent(mockEvent, map[string]any{"id": fmt.Sprintf("pk-%d", i)}, kafkalib.TopicConfig{}, config.Replication)
+				evt, err := event.ToMemoryEvent(mockEvent, map[string]any{"id": fmt.Sprintf("pk-%d", i)}, kafkalib.TopicConfig{}, config.Replication, nil)
 				assert.NoError(f.T(), err)
 
 				kafkaMsg := kafka.Message{Partition: 1, Offset: int64(i)}
