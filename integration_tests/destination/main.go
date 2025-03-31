@@ -188,5 +188,5 @@ func main() {
 		logger.Fatal("Test failed", slog.Any("err", err))
 	}
 
-	slog.Info("🐕 🐕 🐕 Integration test completed successfully")
+	slog.Info(fmt.Sprintf("🐕 🐕 🐕 Integration test for %q completed successfully", settings.Config.Output))
 }

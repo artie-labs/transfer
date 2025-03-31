@@ -57,4 +57,4 @@ bench_mongo:
 .PHONY snowflake-itest:
 snowflake-itest:
 	# This expects a config file in .personal/integration_tests/snowflake.yaml
-	go run integration_tests/snowflake/main.go --config .personal/integration_tests/snowflake.yaml
+	go run integration_tests/destination/main.go --config .personal/integration_tests/snowflake.yaml
