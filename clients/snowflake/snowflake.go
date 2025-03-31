@@ -14,7 +14,6 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/sql"
-	"github.com/artie-labs/transfer/lib/typing"
 )
 
 type Store struct {
@@ -28,16 +27,11 @@ func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sq
 }
 
 func (s *Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error {
-	snowflakeTableID, err := typing.AssertType[dialect.TableIdentifier](tableID)
-	if err != nil {
-		return err
-	}
-
-	if !snowflakeTableID.AllowToDrop() {
+	if !tableID.AllowToDrop() {
 		return fmt.Errorf("table %q is not allowed to be dropped", tableID.FullyQualifiedName())
 	}
 
-	if _, err = s.ExecContext(ctx, s.dialect().BuildDropTableQuery(snowflakeTableID)); err != nil {
+	if _, err := s.ExecContext(ctx, s.dialect().BuildDropTableQuery(tableID)); err != nil {
 		return fmt.Errorf("failed to drop table: %w", err)
 	}
 
@@ -45,6 +39,7 @@ func (s *Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) erro
 	s.configMap.RemoveTable(tableID)
 	return nil
 }
+
 func (s *Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
 	return shared.GetTableCfgArgs{
 		Destination:           s,
