@@ -9,8 +9,9 @@ import (
 var _dialect = MSSQLDialect{}
 
 type TableIdentifier struct {
-	schema string
-	table  string
+	schema                string
+	table                 string
+	disableDropProtection bool
 }
 
 func NewTableIdentifier(schema, table string) TableIdentifier {
@@ -35,4 +36,13 @@ func (ti TableIdentifier) WithTable(table string) sql.TableIdentifier {
 
 func (ti TableIdentifier) FullyQualifiedName() string {
 	return fmt.Sprintf("%s.%s", _dialect.QuoteIdentifier(ti.schema), ti.EscapedTable())
+}
+
+func (ti TableIdentifier) WithDisableDropProtection(disableDropProtection bool) sql.TableIdentifier {
+	ti.disableDropProtection = disableDropProtection
+	return ti
+}
+
+func (ti TableIdentifier) AllowToDrop() bool {
+	return ti.disableDropProtection
 }
