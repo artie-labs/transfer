@@ -7,35 +7,35 @@ import (
 	"os"
 	"time"
 
-	"github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/utils"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-type SnowflakeTest struct {
+type DestinationTest struct {
 	ctx         context.Context
 	dest        destination.Destination
-	tableID     dialect.TableIdentifier
+	tableID     sql.TableIdentifier
 	tableData   *optimization.TableData
 	topicConfig kafkalib.TopicConfig
 }
 
-func NewSnowflakeTest(ctx context.Context, dest destination.Destination, topicConfig kafkalib.TopicConfig) *SnowflakeTest {
-	return &SnowflakeTest{
+func NewDestinationTest(ctx context.Context, dest destination.Destination, topicConfig kafkalib.TopicConfig) *DestinationTest {
+	return &DestinationTest{
 		ctx:         ctx,
 		dest:        dest,
-		tableID:     dialect.NewTableIdentifier(topicConfig.Database, topicConfig.Schema, topicConfig.TableName),
+		tableID:     dest.IdentifierFor(topicConfig, topicConfig.TableName),
 		topicConfig: topicConfig,
 	}
 }
 
-func (st *SnowflakeTest) setupColumns() {
+func (st *DestinationTest) setupColumns() {
 	cols := &columns.Columns{}
 	colTypes := map[string]typing.KindDetails{
 		"id":         typing.Integer,
@@ -51,7 +51,7 @@ func (st *SnowflakeTest) setupColumns() {
 	st.tableData = optimization.NewTableData(cols, config.Replication, []string{"id"}, st.topicConfig, st.tableID.Table())
 }
 
-func (st *SnowflakeTest) generateTestData(numRows int, appendEvery int) error {
+func (st *DestinationTest) generateTestData(numRows int, appendEvery int) error {
 	for i := 0; i < appendEvery; i++ {
 		for j := 0; j < numRows; j++ {
 			pkValue := i*numRows + j
@@ -65,7 +65,7 @@ func (st *SnowflakeTest) generateTestData(numRows int, appendEvery int) error {
 			st.tableData.InsertRow(pkValueString, rowData, false)
 		}
 
-		if err := st.dest.Append(st.ctx, st.tableData, true); err != nil {
+		if err := st.dest.Append(st.ctx, st.tableData, false); err != nil {
 			return fmt.Errorf("failed to append data: %w", err)
 		}
 
@@ -75,7 +75,7 @@ func (st *SnowflakeTest) generateTestData(numRows int, appendEvery int) error {
 	return nil
 }
 
-func (st *SnowflakeTest) verifyRowCount(expected int) error {
+func (st *DestinationTest) verifyRowCount(expected int) error {
 	rows, err := st.dest.Query(fmt.Sprintf("SELECT COUNT(*) FROM %s", st.tableID.FullyQualifiedName()))
 	if err != nil {
 		return fmt.Errorf("failed to query table: %w", err)
@@ -95,7 +95,7 @@ func (st *SnowflakeTest) verifyRowCount(expected int) error {
 	return nil
 }
 
-func (st *SnowflakeTest) verifyDataContent(rowCount int) error {
+func (st *DestinationTest) verifyDataContent(rowCount int) error {
 	rows, err := st.dest.Query(fmt.Sprintf("SELECT id, name, value FROM %s ORDER BY id", st.tableID.FullyQualifiedName()))
 	if err != nil {
 		return fmt.Errorf("failed to query table data: %w", err)
@@ -133,12 +133,12 @@ func (st *SnowflakeTest) verifyDataContent(rowCount int) error {
 	return nil
 }
 
-func (st *SnowflakeTest) cleanup(tableID dialect.TableIdentifier) error {
+func (st *DestinationTest) cleanup(tableID sql.TableIdentifier) error {
 	dropTableID := tableID.WithDisableDropProtection(true)
 	return st.dest.DropTable(st.ctx, dropTableID)
 }
 
-func (st *SnowflakeTest) Run() error {
+func (st *DestinationTest) Run() error {
 	if err := st.cleanup(st.tableID); err != nil {
 		return fmt.Errorf("failed to cleanup table: %w", err)
 	}
@@ -183,10 +183,10 @@ func main() {
 		logger.Fatal("Expected 1 topic config", slog.Int("num_configs", len(tc)))
 	}
 
-	test := NewSnowflakeTest(ctx, dest, *tc[0])
+	test := NewDestinationTest(ctx, dest, *tc[0])
 	if err := test.Run(); err != nil {
 		logger.Fatal("Test failed", slog.Any("err", err))
 	}
 
-	slog.Info("🐕 🐕 🐕 Integration test completed successfully")
+	slog.Info(fmt.Sprintf("🐕 🐕 🐕 Integration test for %q completed successfully", settings.Config.Output))
 }

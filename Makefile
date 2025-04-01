@@ -27,6 +27,7 @@ clean:
 .PHONY: generate
 generate:
 	cd lib/mocks && go tool counterfeiter -generate
+
 .PHONY: build
 build:
 	goreleaser build --clean
@@ -34,6 +35,11 @@ build:
 .PHONY: release
 release:
 	goreleaser release --clean
+
+.PHONY: outdated
+outdated:
+# Note this will not output major version changes of dependencies.
+	go list -u -m -f '{{if and .Update (not .Indirect)}}{{.}}{{end}}' all
 
 .PHONY: bench_size
 bench_size:
@@ -53,8 +59,10 @@ bench_redshift:
 bench_mongo:
 	go test ./lib/cdc/mongo -bench=Bench -benchtime=20s
 
-
-.PHONY snowflake-itest:
-snowflake-itest:
-	# This expects a config file in .personal/integration_tests/snowflake.yaml
-	go run integration_tests/snowflake/main.go --config .personal/integration_tests/snowflake.yaml
+.PHONY: dest-itest
+dest-itest:
+	# This expects snowflake.yaml, bigquery.yaml, databricks.yaml in .personal/integration_tests
+	go run integration_tests/destination/main.go --config .personal/integration_tests/snowflake.yaml
+	go run integration_tests/destination/main.go --config .personal/integration_tests/bigquery.yaml
+	go run integration_tests/destination/main.go --config .personal/integration_tests/databricks.yaml
+	go run integration_tests/destination/main.go --config .personal/integration_tests/redshift.yaml

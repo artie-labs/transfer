@@ -51,7 +51,7 @@ func (s *SnowflakeTestSuite) TestDropTable() {
 		snowflakeTableID, ok := tableID.(dialect.TableIdentifier)
 		assert.True(s.T(), ok)
 
-		snowflakeTableID = snowflakeTableID.WithDisableDropProtection(true)
+		snowflakeTableID = snowflakeTableID.WithDisableDropProtection(true).(dialect.TableIdentifier)
 		assert.NoError(s.T(), s.stageStore.DropTable(s.T().Context(), snowflakeTableID))
 
 		// Check store to see it drop
