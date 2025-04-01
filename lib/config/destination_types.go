@@ -67,6 +67,10 @@ type Snowflake struct {
 	Region      string `yaml:"region"`
 	Host        string `yaml:"host"`
 	Application string `yaml:"application"`
+
+	// AdditionalParameters - This will be added to the connection string.
+	// Ref: https://docs.snowflake.com/en/sql-reference/parameters
+	AdditionalParameters map[string]string `yaml:"additionalParameters,omitempty"`
 }
 
 type Iceberg struct {
