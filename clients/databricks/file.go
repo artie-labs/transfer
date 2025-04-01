@@ -8,6 +8,7 @@ import (
 	"github.com/artie-labs/transfer/clients/databricks/dialect"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/maputil"
+	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
 type File struct {
@@ -30,7 +31,7 @@ func NewFile(fileRow map[string]any) (File, error) {
 }
 
 func NewFileFromTableID(tableID dialect.TableIdentifier, volume string) File {
-	name := fmt.Sprintf("%s.csv.gz", tableID.Table())
+	name := fmt.Sprintf("%s_%s.csv.gz", tableID.Table(), stringutil.Random(10))
 	return File{
 		name: name,
 		fp:   fmt.Sprintf("/Volumes/%s/%s/%s/%s", tableID.Database(), tableID.Schema(), volume, name),

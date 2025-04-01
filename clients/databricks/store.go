@@ -101,13 +101,7 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 		return fmt.Errorf("failed to cast temp table ID to TableIdentifier")
 	}
 
-	anotherTempTableID := shared.TempTableID(castedTempTableID)
-	castedAnotherTempTableID, isOk := anotherTempTableID.(dialect.TableIdentifier)
-	if !isOk {
-		return fmt.Errorf("failed to cast another temp table ID to TableIdentifier")
-	}
-
-	file := NewFileFromTableID(castedAnotherTempTableID, s.volume)
+	file := NewFileFromTableID(castedTempTableID, s.volume)
 	fp, err := s.writeTemporaryTableFile(tableData, file.Name())
 	if err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
