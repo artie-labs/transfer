@@ -38,6 +38,7 @@ release:
 
 .PHONY: outdated
 outdated:
+# Note this will not output major version changes of dependencies.
 	go list -u -m -f '{{if and .Update (not .Indirect)}}{{.}}{{end}}' all
 
 .PHONY: bench_size
