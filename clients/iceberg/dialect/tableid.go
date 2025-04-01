@@ -9,9 +9,10 @@ import (
 var _dialect = IcebergDialect{}
 
 type TableIdentifier struct {
-	catalog   string
-	namespace string
-	table     string
+	catalog               string
+	namespace             string
+	table                 string
+	disableDropProtection bool
 }
 
 func NewTableIdentifier(catalog, namespace, table string) TableIdentifier {
@@ -36,4 +37,13 @@ func (ti TableIdentifier) WithTable(table string) sql.TableIdentifier {
 
 func (ti TableIdentifier) FullyQualifiedName() string {
 	return fmt.Sprintf("%s.%s.%s", _dialect.QuoteIdentifier(ti.catalog), _dialect.QuoteIdentifier(ti.namespace), ti.EscapedTable())
+}
+
+func (ti TableIdentifier) WithDisableDropProtection(disableDropProtection bool) sql.TableIdentifier {
+	ti.disableDropProtection = disableDropProtection
+	return ti
+}
+
+func (ti TableIdentifier) AllowToDrop() bool {
+	return ti.disableDropProtection
 }

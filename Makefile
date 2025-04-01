@@ -54,7 +54,10 @@ bench_mongo:
 	go test ./lib/cdc/mongo -bench=Bench -benchtime=20s
 
 
-.PHONY snowflake-itest:
-snowflake-itest:
-	# This expects a config file in .personal/integration_tests/snowflake.yaml
-	go run integration_tests/snowflake/main.go --config .personal/integration_tests/snowflake.yaml
+.PHONY: dest-itest
+dest-itest:
+	# This expects snowflake.yaml, bigquery.yaml, databricks.yaml in .personal/integration_tests
+	go run integration_tests/destination/main.go --config .personal/integration_tests/snowflake.yaml
+	go run integration_tests/destination/main.go --config .personal/integration_tests/bigquery.yaml
+	go run integration_tests/destination/main.go --config .personal/integration_tests/databricks.yaml
+	go run integration_tests/destination/main.go --config .personal/integration_tests/redshift.yaml

@@ -21,6 +21,8 @@ type TableIdentifier interface {
 	Table() string
 	WithTable(table string) TableIdentifier
 	FullyQualifiedName() string
+	WithDisableDropProtection(disableDropProtection bool) TableIdentifier
+	AllowToDrop() bool
 }
 
 type Dialect interface {
