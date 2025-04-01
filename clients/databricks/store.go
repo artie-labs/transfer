@@ -44,8 +44,8 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bo
 	return true, nil
 }
 
-func (s Store) Append(ctx context.Context, tableData *optimization.TableData, useTempTable bool) error {
-	return shared.Append(ctx, s, tableData, types.AdditionalSettings{UseTempTable: useTempTable})
+func (s Store) Append(ctx context.Context, tableData *optimization.TableData, _ bool) error {
+	return shared.Append(ctx, s, tableData, types.AdditionalSettings{})
 }
 
 func (s Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {
@@ -101,7 +101,13 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 		return fmt.Errorf("failed to cast temp table ID to TableIdentifier")
 	}
 
-	file := NewFileFromTableID(castedTempTableID, s.volume)
+	anotherTempTableID := shared.TempTableID(castedTempTableID)
+	castedAnotherTempTableID, isOk := anotherTempTableID.(dialect.TableIdentifier)
+	if !isOk {
+		return fmt.Errorf("failed to cast another temp table ID to TableIdentifier")
+	}
+
+	file := NewFileFromTableID(castedAnotherTempTableID, s.volume)
 	fp, err := s.writeTemporaryTableFile(tableData, file.Name())
 	if err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
