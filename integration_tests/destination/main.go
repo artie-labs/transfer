@@ -65,7 +65,7 @@ func (st *DestinationTest) generateTestData(numRows int, appendEvery int) error 
 			st.tableData.InsertRow(pkValueString, rowData, false)
 		}
 
-		if err := st.dest.Append(st.ctx, st.tableData, true); err != nil {
+		if err := st.dest.Append(st.ctx, st.tableData, false); err != nil {
 			return fmt.Errorf("failed to append data: %w", err)
 		}
 

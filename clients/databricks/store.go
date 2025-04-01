@@ -54,8 +54,17 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bo
 	return true, nil
 }
 
-func (s Store) Append(ctx context.Context, tableData *optimization.TableData, _ bool) error {
-	return shared.Append(ctx, s, tableData, types.AdditionalSettings{})
+func (s Store) Append(ctx context.Context, tableData *optimization.TableData, useTempTable bool) error {
+	additionalSettings := types.AdditionalSettings{
+		UseTempTable: useTempTable,
+	}
+
+	if useTempTable {
+		tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
+		additionalSettings.TempTableID = shared.TempTableID(tableID)
+	}
+
+	return shared.Append(ctx, s, tableData, additionalSettings)
 }
 
 func (s Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {
@@ -111,7 +120,13 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 		return fmt.Errorf("failed to cast temp table ID to TableIdentifier")
 	}
 
-	file := NewFileFromTableID(castedTempTableID, s.volume)
+	anotherTempTableID := shared.TempTableID(castedTempTableID)
+	castedAnotherTempTableID, isOk := anotherTempTableID.(dialect.TableIdentifier)
+	if !isOk {
+		return fmt.Errorf("failed to cast another temp table ID to TableIdentifier")
+	}
+
+	file := NewFileFromTableID(castedAnotherTempTableID, s.volume)
 	fp, err := s.writeTemporaryTableFile(tableData, file.Name())
 	if err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
@@ -154,6 +169,8 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 	if _, err = s.ExecContext(ctx, copyCommand); err != nil {
 		return fmt.Errorf("failed to run COPY INTO for temporary table: %w", err)
 	}
+
+	fmt.Println("copyCommand", copyCommand)
 
 	return nil
 }
