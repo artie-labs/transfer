@@ -27,6 +27,7 @@ clean:
 .PHONY: generate
 generate:
 	cd lib/mocks && go tool counterfeiter -generate
+
 .PHONY: build
 build:
 	goreleaser build --clean
@@ -34,6 +35,11 @@ build:
 .PHONY: release
 release:
 	goreleaser release --clean
+
+.PHONY: outdated
+outdated:
+# Note this will not output major version changes of dependencies.
+	go list -u -m -f '{{if and .Update (not .Indirect)}}{{.}}{{end}}' all
 
 .PHONY: bench_size
 bench_size:
@@ -52,7 +58,6 @@ bench_redshift:
 .PHONY: bench_mongo
 bench_mongo:
 	go test ./lib/cdc/mongo -bench=Bench -benchtime=20s
-
 
 .PHONY: dest-itest
 dest-itest:
