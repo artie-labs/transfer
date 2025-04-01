@@ -70,5 +70,17 @@ func TestFile_ShouldDelete(t *testing.T) {
 
 func TestFile_DBFSFilePath(t *testing.T) {
 	file := NewFileFromTableID(dialect.NewTableIdentifier("{DB}", "{SCHEMA}", "{TABLE}"), "{VOLUME}")
-	assert.Equal(t, "dbfs:/Volumes/{DB}/{SCHEMA}/{VOLUME}/{TABLE}.csv.gz", file.DBFSFilePath())
+
+	parts := strings.Split(file.DBFSFilePath(), "/")
+	assert.Len(t, parts, 6)
+
+	assert.Equal(t, "dbfs:", parts[0])
+	assert.Equal(t, "Volumes", parts[1])
+	assert.Equal(t, "{DB}", parts[2])
+	assert.Equal(t, "{SCHEMA}", parts[3])
+	assert.Equal(t, "{VOLUME}", parts[4])
+
+	// Last one has a random suffix
+	assert.Contains(t, parts[5], "{TABLE}")
+	assert.Contains(t, parts[5], ".csv.gz")
 }

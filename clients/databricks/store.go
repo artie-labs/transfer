@@ -44,8 +44,8 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bo
 	return true, nil
 }
 
-func (s Store) Append(ctx context.Context, tableData *optimization.TableData, useTempTable bool) error {
-	return shared.Append(ctx, s, tableData, types.AdditionalSettings{UseTempTable: useTempTable})
+func (s Store) Append(ctx context.Context, tableData *optimization.TableData, _ bool) error {
+	return shared.Append(ctx, s, tableData, types.AdditionalSettings{})
 }
 
 func (s Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {
