@@ -155,8 +155,6 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 		return fmt.Errorf("failed to run COPY INTO for temporary table: %w", err)
 	}
 
-	fmt.Println("copyCommand", copyCommand)
-
 	return nil
 }
 
