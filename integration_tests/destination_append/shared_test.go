@@ -3,15 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
-	"log/slog"
-	"os"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination"
-	"github.com/artie-labs/transfer/lib/destination/utils"
 	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -51,28 +47,13 @@ func (st *DestinationTest) setupColumns() {
 	st.tableData = optimization.NewTableData(cols, config.Replication, []string{"id"}, st.topicConfig, st.tableID.Table())
 }
 
-func (st *DestinationTest) generateTestData(numRows int, appendEvery int) error {
-	for i := 0; i < appendEvery; i++ {
-		for j := 0; j < numRows; j++ {
-			pkValue := i*numRows + j
-			pkValueString := fmt.Sprintf("%d", pkValue)
-			rowData := map[string]any{
-				"id":         pkValue,
-				"name":       fmt.Sprintf("test_name_%d", pkValue),
-				"created_at": time.Now().Format(time.RFC3339Nano),
-				"value":      float64(pkValue) * 1.5,
-			}
-			st.tableData.InsertRow(pkValueString, rowData, false)
-		}
-
-		if err := st.dest.Append(st.ctx, st.tableData, false); err != nil {
-			return fmt.Errorf("failed to append data: %w", err)
-		}
-
-		st.tableData.WipeData()
+func (st *DestinationTest) generateRowData(pkValue int) map[string]any {
+	return map[string]any{
+		"id":         pkValue,
+		"name":       fmt.Sprintf("test_name_%d", pkValue),
+		"created_at": time.Now().Format(time.RFC3339Nano),
+		"value":      float64(pkValue) * 1.5,
 	}
-
-	return nil
 }
 
 func (st *DestinationTest) verifyRowCount(expected int) error {
@@ -136,57 +117,4 @@ func (st *DestinationTest) verifyDataContent(rowCount int) error {
 func (st *DestinationTest) cleanup(tableID sql.TableIdentifier) error {
 	dropTableID := tableID.WithDisableDropProtection(true)
 	return st.dest.DropTable(st.ctx, dropTableID)
-}
-
-func (st *DestinationTest) Run() error {
-	if err := st.cleanup(st.tableID); err != nil {
-		return fmt.Errorf("failed to cleanup table: %w", err)
-	}
-
-	st.setupColumns()
-
-	appendRows := 200
-	appendEvery := 50
-	if err := st.generateTestData(appendRows, appendEvery); err != nil {
-		return fmt.Errorf("failed to generate test data: %w", err)
-	}
-
-	if err := st.verifyRowCount(appendRows * appendEvery); err != nil {
-		return fmt.Errorf("failed to verify row count: %w", err)
-	}
-
-	if err := st.verifyDataContent(appendRows * appendEvery); err != nil {
-		return fmt.Errorf("failed to verify data content: %w", err)
-	}
-
-	return st.cleanup(st.tableID)
-}
-
-func main() {
-	ctx := context.Background()
-	settings, err := config.LoadSettings(os.Args, true)
-	if err != nil {
-		logger.Fatal("Failed to load settings", slog.Any("err", err))
-	}
-
-	dest, err := utils.LoadDestination(ctx, settings.Config, nil)
-	if err != nil {
-		logger.Fatal("Failed to load destination", slog.Any("err", err))
-	}
-
-	tc, err := settings.Config.TopicConfigs()
-	if err != nil {
-		logger.Fatal("Failed to load topic configs", slog.Any("err", err))
-	}
-
-	if len(tc) != 1 {
-		logger.Fatal("Expected 1 topic config", slog.Int("num_configs", len(tc)))
-	}
-
-	test := NewDestinationTest(ctx, dest, *tc[0])
-	if err := test.Run(); err != nil {
-		logger.Fatal("Test failed", slog.Any("err", err))
-	}
-
-	slog.Info(fmt.Sprintf("🐕 🐕 🐕 Integration test for %q completed successfully", settings.Config.Output))
 }
