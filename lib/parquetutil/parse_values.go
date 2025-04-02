@@ -12,6 +12,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
+	"github.com/xitongsys/parquet-go/types"
 )
 
 func ParseValue(colVal any, colKind typing.KindDetails) (any, error) {
@@ -84,8 +85,7 @@ func ParseValue(colVal any, colKind typing.KindDetails) (any, error) {
 			return nil, err
 		}
 
-		// If the precision is not specified, we should return a string
-		return decimalValue.String(), nil
+		return types.DECIMAL_BYTE_ARRAY_ToString([]byte(decimalValue.String()), int(decimalValue.Details().Precision()), int(decimalValue.Details().Scale())), nil
 	case typing.Integer.Kind:
 		return asInt64(colVal)
 	}
