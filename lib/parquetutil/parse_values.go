@@ -9,7 +9,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/debezium/converters"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -86,18 +85,7 @@ func ParseValue(colVal any, colKind typing.KindDetails) (any, error) {
 		}
 
 		// If the precision is not specified, we should return a string
-		if colKind.ExtendedDecimalDetails.Precision() == decimal.PrecisionNotSpecified {
-			return decimalValue.String(), nil
-		}
-
-		// Else, we should return the unscaled number must be encoded as two's complement using big-endian byte order
-		encodedBytes, scale := converters.EncodeDecimal(decimalValue.Value())
-		if scale != colKind.ExtendedDecimalDetails.Scale() {
-			return nil, fmt.Errorf("scale mismatch, expected: %d, got: %d", colKind.ExtendedDecimalDetails.Scale(), scale)
-		}
-
-		fmt.Println("Encoded bytes", string(encodedBytes))
-		return string(encodedBytes), nil
+		return decimalValue.String(), nil
 	case typing.Integer.Kind:
 		fmt.Println("Incoming data", colVal, fmt.Sprintf("%T", colVal))
 		asInt64, err := asInt64(colVal)
