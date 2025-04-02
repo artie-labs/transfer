@@ -92,8 +92,7 @@ func ParseValue(colVal any, colKind typing.KindDetails) (any, error) {
 			return decimalValue.String(), nil
 		}
 
-		fmt.Println("precision", precision, "scale", scale)
-
+		fmt.Println("precision", precision, "scale", scale, "value", decimalValue.String())
 		return types.DECIMAL_BYTE_ARRAY_ToString([]byte(decimalValue.String()), int(precision), int(scale)), nil
 	case typing.Integer.Kind:
 		return asInt64(colVal)
