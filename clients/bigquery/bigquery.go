@@ -263,7 +263,8 @@ func (s *Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, includ
 
 	defer func() { _ = ddl.DropTemporaryTable(s, stagingTableID, false) }()
 
-	return destination.ExecStatements(s, dedupeQueries)
+	_, err := destination.ExecStatements(s, dedupeQueries, false)
+	return err
 }
 
 func (s *Store) SweepTemporaryTables(_ context.Context) error {

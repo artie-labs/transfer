@@ -42,21 +42,27 @@ type Baseline interface {
 
 // ExecStatements executes one or more statements against a [Destination].
 // If there is more than one statement, the statements will be executed inside of a transaction.
-func ExecStatements(dest Destination, statements []string) error {
+func ExecStatements(dest Destination, statements []string, returnRowsAffected bool) (int64, error) {
 	switch len(statements) {
 	case 0:
-		return fmt.Errorf("statements is empty")
+		return 0, fmt.Errorf("statements is empty")
 	case 1:
 		slog.Debug("Executing...", slog.String("query", statements[0]))
-		if _, err := dest.Exec(statements[0]); err != nil {
-			return fmt.Errorf("failed to execute statement: %w", err)
+		result, err := dest.Exec(statements[0])
+		if err != nil {
+			return 0, fmt.Errorf("failed to execute statement: %w", err)
 		}
 
-		return nil
+		rowsAffected, err := result.RowsAffected()
+		if err != nil {
+			return 0, fmt.Errorf("failed to get rows affected: %w", err)
+		}
+
+		return rowsAffected, nil
 	default:
 		tx, err := dest.Begin()
 		if err != nil {
-			return fmt.Errorf("failed to start tx: %w", err)
+			return 0, fmt.Errorf("failed to start tx: %w", err)
 		}
 		var committed bool
 		defer func() {
@@ -70,15 +76,15 @@ func ExecStatements(dest Destination, statements []string) error {
 		for _, statement := range statements {
 			slog.Debug("Executing...", slog.String("query", statement))
 			if _, err = tx.Exec(statement); err != nil {
-				return fmt.Errorf("failed to execute statement: %q, err: %w", statement, err)
+				return 0, fmt.Errorf("failed to execute statement: %q, err: %w", statement, err)
 			}
 		}
 
 		if err = tx.Commit(); err != nil {
-			return fmt.Errorf("failed to commit statements: %v, err: %w", statements, err)
+			return 0, fmt.Errorf("failed to commit statements: %v, err: %w", statements, err)
 		}
-		committed = true
 
-		return nil
+		committed = true
+		return 0, nil
 	}
 }
