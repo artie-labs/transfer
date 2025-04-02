@@ -195,9 +195,8 @@ func (rd RedshiftDialect) BuildMergeQueries(
 		}
 	}
 
-	parts := []string{rd.buildMergeInsertQuery(tableID, subQuery, primaryKeys, cols)}
-	parts = append(parts, rd.buildMergeUpdateQueries(tableID, subQuery, primaryKeys, cols, softDelete)...)
-
+	parts := rd.buildMergeUpdateQueries(tableID, subQuery, primaryKeys, cols, softDelete)
+	parts = append(parts, rd.buildMergeInsertQuery(tableID, subQuery, primaryKeys, cols))
 	if !softDelete && containsHardDeletes {
 		parts = append(parts, rd.buildMergeDeleteQuery(tableID, subQuery, primaryKeys))
 	}

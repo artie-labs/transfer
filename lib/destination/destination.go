@@ -75,7 +75,7 @@ func ExecStatements(dest Destination, statements []string, returnRowsAffected bo
 
 		var rowsAffected int64
 		for _, statement := range statements {
-			slog.Debug("Executing...", slog.String("query", statement))
+			slog.Info("Executing...", slog.String("query", statement))
 			result, err := tx.Exec(statement)
 			if err != nil {
 				return 0, fmt.Errorf("failed to execute statement: %q, err: %w", statement, err)
@@ -87,6 +87,7 @@ func ExecStatements(dest Destination, statements []string, returnRowsAffected bo
 					return 0, fmt.Errorf("failed to get rows affected: %w", err)
 				}
 
+				fmt.Println("rowsAffected", _rowsAffected)
 				rowsAffected += _rowsAffected
 			}
 		}

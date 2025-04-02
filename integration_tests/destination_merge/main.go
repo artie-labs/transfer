@@ -62,7 +62,7 @@ func (mt *MergeTest) deleteData(numRows int) error {
 	for i := 0; i < numRows; i++ {
 		pkValueString := fmt.Sprintf("%d", i)
 		rowData := mt.framework.GenerateRowDataForMerge(i, true)
-		mt.framework.GetTableData().InsertRow(pkValueString, rowData, false)
+		mt.framework.GetTableData().InsertRow(pkValueString, rowData, true)
 	}
 
 	if _, err := mt.framework.GetDestination().Merge(mt.framework.GetContext(), mt.framework.GetTableData()); err != nil {
