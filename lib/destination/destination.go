@@ -42,27 +42,21 @@ type Baseline interface {
 
 // ExecStatements executes one or more statements against a [Destination].
 // If there is more than one statement, the statements will be executed inside of a transaction.
-func ExecStatements(dest Destination, statements []string, returnRowsAffected bool) (int64, error) {
+func ExecStatements(dest Destination, statements []string) error {
 	switch len(statements) {
 	case 0:
-		return 0, fmt.Errorf("statements is empty")
+		return fmt.Errorf("statements is empty")
 	case 1:
 		slog.Debug("Executing...", slog.String("query", statements[0]))
-		result, err := dest.Exec(statements[0])
-		if err != nil {
-			return 0, fmt.Errorf("failed to execute statement: %w", err)
+		if _, err := dest.Exec(statements[0]); err != nil {
+			return fmt.Errorf("failed to execute statement: %w", err)
 		}
 
-		rowsAffected, err := result.RowsAffected()
-		if err != nil {
-			return 0, fmt.Errorf("failed to get rows affected: %w", err)
-		}
-
-		return rowsAffected, nil
+		return nil
 	default:
 		tx, err := dest.Begin()
 		if err != nil {
-			return 0, fmt.Errorf("failed to start tx: %w", err)
+			return fmt.Errorf("failed to start tx: %w", err)
 		}
 		var committed bool
 		defer func() {
@@ -73,29 +67,18 @@ func ExecStatements(dest Destination, statements []string, returnRowsAffected bo
 			}
 		}()
 
-		var rowsAffected int64
 		for _, statement := range statements {
 			slog.Debug("Executing...", slog.String("query", statement))
-			result, err := tx.Exec(statement)
-			if err != nil {
-				return 0, fmt.Errorf("failed to execute statement: %q, err: %w", statement, err)
-			}
-
-			if returnRowsAffected {
-				_rowsAffected, err := result.RowsAffected()
-				if err != nil {
-					return 0, fmt.Errorf("failed to get rows affected: %w", err)
-				}
-
-				rowsAffected += _rowsAffected
+			if _, err := tx.Exec(statement); err != nil {
+				return fmt.Errorf("failed to execute statement: %q, err: %w", statement, err)
 			}
 		}
 
 		if err = tx.Commit(); err != nil {
-			return 0, fmt.Errorf("failed to commit statements: %v, err: %w", statements, err)
+			return fmt.Errorf("failed to commit statements: %v, err: %w", statements, err)
 		}
 
 		committed = true
-		return rowsAffected, nil
+		return nil
 	}
 }

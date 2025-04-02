@@ -212,10 +212,5 @@ func merge(ctx context.Context, dwh destination.Destination, tableData *optimiza
 		mergeStatements = _mergeStatements
 	}
 
-	// TODO: Enable rows affected and check the results.
-	if _, err := destination.ExecStatements(dwh, mergeStatements, false); err != nil {
-		return fmt.Errorf("failed to execute merge statements: %w", err)
-	}
-
-	return nil
+	return destination.ExecStatements(dwh, mergeStatements)
 }

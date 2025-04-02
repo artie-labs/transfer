@@ -151,15 +151,8 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 		return fmt.Errorf("failed to generate merge statements: %w", err)
 	}
 
-	results, err := destination.ExecStatements(dest, mergeStatements, true)
-	if err != nil {
+	if err := destination.ExecStatements(dest, mergeStatements); err != nil {
 		return fmt.Errorf("failed to execute merge statements: %w", err)
-	}
-
-	fmt.Println("results (actual)", results, "table data rows (expected)", int64(tableData.NumberOfRows()))
-	// If the row count does not match, we need to return an error.
-	if rows := int64(tableData.NumberOfRows()); rows != results {
-		return fmt.Errorf("row count mismatch, expected: %d, got: %d", rows, results)
 	}
 
 	return nil

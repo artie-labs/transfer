@@ -120,8 +120,7 @@ func (s *Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, includ
 	stagingTableID := shared.TempTableID(tableID)
 	dedupeQueries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt)
 
-	_, err := destination.ExecStatements(s, dedupeQueries, false)
-	return err
+	return destination.ExecStatements(s, dedupeQueries)
 }
 
 func LoadRedshift(ctx context.Context, cfg config.Config, _store *db.Store) (*Store, error) {
