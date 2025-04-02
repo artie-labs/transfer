@@ -59,8 +59,8 @@ bench_redshift:
 bench_mongo:
 	go test ./lib/cdc/mongo -bench=Bench -benchtime=20s
 
-.PHONY: dest-itest
-dest-itest:
+.PHONY: dest-itest-append
+dest-itest-append:
 	# This expects snowflake.yaml, bigquery.yaml, databricks.yaml in .personal/integration_tests
 	go run integration_tests/destination_append/main.go --config .personal/integration_tests/snowflake.yaml
 	go run integration_tests/destination_append/main.go --config .personal/integration_tests/bigquery.yaml
