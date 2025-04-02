@@ -48,7 +48,7 @@ func (at *AppendTest) Run() error {
 		return fmt.Errorf("failed to cleanup table: %w", err)
 	}
 
-	at.framework.SetupColumns()
+	at.framework.SetupColumns(nil)
 
 	appendRows := 200
 	appendEvery := 50

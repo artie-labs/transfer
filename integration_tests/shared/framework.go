@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -31,7 +32,7 @@ func NewTestFramework(ctx context.Context, dest destination.Destination, topicCo
 	}
 }
 
-func (tf *TestFramework) SetupColumns() {
+func (tf *TestFramework) SetupColumns(additionalColumns map[string]typing.KindDetails) {
 	cols := &columns.Columns{}
 	colTypes := map[string]typing.KindDetails{
 		"id":         typing.Integer,
@@ -44,7 +45,18 @@ func (tf *TestFramework) SetupColumns() {
 		cols.AddColumn(columns.NewColumn(colName, colType))
 	}
 
+	for colName, colType := range additionalColumns {
+		cols.AddColumn(columns.NewColumn(colName, colType))
+	}
+
 	tf.tableData = optimization.NewTableData(cols, config.Replication, []string{"id"}, tf.topicConfig, tf.tableID.Table())
+}
+
+func (tf *TestFramework) GenerateRowDataForMerge(pkValue int, delete bool) map[string]any {
+	row := tf.GenerateRowData(pkValue)
+	row[constants.DeleteColumnMarker] = delete
+	row[constants.OnlySetDeleteColumnMarker] = delete
+	return row
 }
 
 func (tf *TestFramework) GenerateRowData(pkValue int) map[string]any {

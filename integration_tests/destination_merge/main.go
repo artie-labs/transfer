@@ -8,10 +8,12 @@ import (
 
 	"github.com/artie-labs/transfer/integration_tests/shared"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/utils"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
+	"github.com/artie-labs/transfer/lib/typing"
 )
 
 type MergeTest struct {
@@ -27,7 +29,7 @@ func NewMergeTest(ctx context.Context, dest destination.Destination, topicConfig
 func (mt *MergeTest) generateInitialData(numRows int) error {
 	for i := 0; i < numRows; i++ {
 		pkValueString := fmt.Sprintf("%d", i)
-		rowData := mt.framework.GenerateRowData(i)
+		rowData := mt.framework.GenerateRowDataForMerge(i, false)
 		mt.framework.GetTableData().InsertRow(pkValueString, rowData, false)
 	}
 
@@ -42,7 +44,7 @@ func (mt *MergeTest) generateInitialData(numRows int) error {
 func (mt *MergeTest) updateExistingData(numRows int) error {
 	for i := 0; i < numRows; i++ {
 		pkValueString := fmt.Sprintf("%d", i)
-		rowData := mt.framework.GenerateRowData(i)
+		rowData := mt.framework.GenerateRowDataForMerge(i, false)
 		// Modify the value to indicate an update
 		rowData["value"] = float64(i) * 2.0
 		mt.framework.GetTableData().InsertRow(pkValueString, rowData, false)
@@ -59,9 +61,7 @@ func (mt *MergeTest) updateExistingData(numRows int) error {
 func (mt *MergeTest) deleteData(numRows int) error {
 	for i := 0; i < numRows; i++ {
 		pkValueString := fmt.Sprintf("%d", i)
-		rowData := mt.framework.GenerateRowData(i)
-		// Set deleted flag to true
-		rowData["__deleted"] = true
+		rowData := mt.framework.GenerateRowDataForMerge(i, true)
 		mt.framework.GetTableData().InsertRow(pkValueString, rowData, false)
 	}
 
@@ -74,7 +74,7 @@ func (mt *MergeTest) deleteData(numRows int) error {
 }
 
 func (mt *MergeTest) verifyUpdatedData(numRows int) error {
-	rows, err := mt.framework.GetDestination().Query(fmt.Sprintf("SELECT id, name, value FROM %s ORDER BY id", mt.framework.GetTableID().FullyQualifiedName()))
+	rows, err := mt.framework.GetDestination().Query(fmt.Sprintf("SELECT id, name, value FROM %s ORDER BY id ASC LIMIT %d", mt.framework.GetTableID().FullyQualifiedName(), numRows))
 	if err != nil {
 		return fmt.Errorf("failed to query table data: %w", err)
 	}
@@ -108,6 +108,10 @@ func (mt *MergeTest) verifyUpdatedData(numRows int) error {
 		return fmt.Errorf("unexpected extra rows found")
 	}
 
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("failed to get rows: %w", err)
+	}
+
 	return nil
 }
 
@@ -116,7 +120,10 @@ func (mt *MergeTest) Run() error {
 		return fmt.Errorf("failed to cleanup table: %w", err)
 	}
 
-	mt.framework.SetupColumns()
+	mt.framework.SetupColumns(map[string]typing.KindDetails{
+		constants.DeleteColumnMarker:        typing.Boolean,
+		constants.OnlySetDeleteColumnMarker: typing.Boolean,
+	})
 
 	numRows := 1000
 	if err := mt.generateInitialData(numRows); err != nil {
@@ -132,11 +139,12 @@ func (mt *MergeTest) Run() error {
 	}
 
 	// Update only 20% of the rows
-	if err := mt.updateExistingData(int(float64(numRows) * 0.2)); err != nil {
+	updatedRows := int(float64(numRows) * 0.2)
+	if err := mt.updateExistingData(updatedRows); err != nil {
 		return fmt.Errorf("failed to update data: %w", err)
 	}
 
-	if err := mt.verifyUpdatedData(numRows); err != nil {
+	if err := mt.verifyUpdatedData(updatedRows); err != nil {
 		return fmt.Errorf("failed to verify updated data: %w", err)
 	}
 
