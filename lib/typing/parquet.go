@@ -89,6 +89,7 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 	case EDecimal.Kind:
 		precision := k.ExtendedDecimalDetails.Precision()
 		if precision == decimal.PrecisionNotSpecified {
+			// Precision is required for a parquet DECIMAL type, as such, we should fall back on a STRING type.
 			return &Field{
 				Tag: FieldTag{
 					Name:          colName,
@@ -97,7 +98,12 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 				}.String(),
 			}, nil
 		}
+
 		scale := k.ExtendedDecimalDetails.Scale()
+		if scale > precision {
+			return nil, fmt.Errorf("scale (%d) must be less than or equal to precision (%d)", scale, precision)
+		}
+
 		return &Field{
 			Tag: FieldTag{
 				Name:          colName,
