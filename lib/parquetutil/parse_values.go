@@ -87,7 +87,7 @@ func ParseValue(colVal any, colKind typing.KindDetails) (any, error) {
 		// If the precision is not specified, we should return a string
 		return decimalValue.String(), nil
 	case typing.Integer.Kind:
-		return asInt64, nil
+		return asInt64(colVal)
 	}
 
 	return colVal, nil
