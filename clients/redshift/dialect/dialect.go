@@ -187,7 +187,6 @@ func (rd RedshiftDialect) BuildMergeQueries(
 	}
 
 	if !softDelete {
-		var err error
 		// We also need to remove __artie flags since it does not exist in the destination table
 		cols, err = columns.RemoveDeleteColumnMarker(cols)
 		if err != nil {
@@ -195,9 +194,8 @@ func (rd RedshiftDialect) BuildMergeQueries(
 		}
 	}
 
-	parts := []string{rd.buildMergeInsertQuery(tableID, subQuery, primaryKeys, cols)}
-	parts = append(parts, rd.buildMergeUpdateQueries(tableID, subQuery, primaryKeys, cols, softDelete)...)
-
+	parts := rd.buildMergeUpdateQueries(tableID, subQuery, primaryKeys, cols, softDelete)
+	parts = append(parts, rd.buildMergeInsertQuery(tableID, subQuery, primaryKeys, cols))
 	if !softDelete && containsHardDeletes {
 		parts = append(parts, rd.buildMergeDeleteQuery(tableID, subQuery, primaryKeys))
 	}
