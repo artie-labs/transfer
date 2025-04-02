@@ -9,10 +9,10 @@ import (
 
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/debezium/converters"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
-	"github.com/xitongsys/parquet-go/types"
 )
 
 func ParseValue(colVal any, colKind typing.KindDetails) (any, error) {
@@ -86,14 +86,13 @@ func ParseValue(colVal any, colKind typing.KindDetails) (any, error) {
 		}
 
 		precision := colKind.ExtendedDecimalDetails.Precision()
-		scale := colKind.ExtendedDecimalDetails.Scale()
 		if precision == decimal.PrecisionNotSpecified {
 			// If precision is not provided, just default to a string.
 			return decimalValue.String(), nil
 		}
 
-		fmt.Println("precision", precision, "scale", scale, "value", decimalValue.String())
-		return types.DECIMAL_BYTE_ARRAY_ToString([]byte(decimalValue.String()), int(precision), int(scale)), nil
+		bytes, _ := converters.EncodeDecimal(decimalValue.Value())
+		return string(bytes), nil
 	case typing.Integer.Kind:
 		return asInt64(colVal)
 	}
