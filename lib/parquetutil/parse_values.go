@@ -96,7 +96,7 @@ func ParseValue(colVal any, colKind typing.KindDetails) (any, error) {
 			return nil, fmt.Errorf("scale mismatch, expected: %d, got: %d", colKind.ExtendedDecimalDetails.Scale(), scale)
 		}
 
-		return encodedBytes, nil
+		return string(encodedBytes), nil
 	case typing.Integer.Kind:
 		fmt.Println("Incoming data", colVal, fmt.Sprintf("%T", colVal))
 		asInt64, err := asInt64(colVal)
