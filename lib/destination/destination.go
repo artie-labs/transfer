@@ -73,10 +73,21 @@ func ExecStatements(dest Destination, statements []string, returnRowsAffected bo
 			}
 		}()
 
+		var rowsAffected int64
 		for _, statement := range statements {
 			slog.Debug("Executing...", slog.String("query", statement))
-			if _, err = tx.Exec(statement); err != nil {
+			result, err := tx.Exec(statement)
+			if err != nil {
 				return 0, fmt.Errorf("failed to execute statement: %q, err: %w", statement, err)
+			}
+
+			if returnRowsAffected {
+				_rowsAffected, err := result.RowsAffected()
+				if err != nil {
+					return 0, fmt.Errorf("failed to get rows affected: %w", err)
+				}
+
+				rowsAffected += _rowsAffected
 			}
 		}
 
@@ -85,6 +96,6 @@ func ExecStatements(dest Destination, statements []string, returnRowsAffected bo
 		}
 
 		committed = true
-		return 0, nil
+		return rowsAffected, nil
 	}
 }
