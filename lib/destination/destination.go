@@ -69,7 +69,7 @@ func ExecStatements(dest Destination, statements []string) error {
 
 		for _, statement := range statements {
 			slog.Debug("Executing...", slog.String("query", statement))
-			if _, err := tx.Exec(statement); err != nil {
+			if _, err = tx.Exec(statement); err != nil {
 				return fmt.Errorf("failed to execute statement: %q, err: %w", statement, err)
 			}
 		}
@@ -77,7 +77,6 @@ func ExecStatements(dest Destination, statements []string) error {
 		if err = tx.Commit(); err != nil {
 			return fmt.Errorf("failed to commit statements: %v, err: %w", statements, err)
 		}
-
 		committed = true
 		return nil
 	}

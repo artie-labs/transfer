@@ -151,9 +151,8 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 		return fmt.Errorf("failed to generate merge statements: %w", err)
 	}
 
-	if err := destination.ExecStatements(dest, mergeStatements); err != nil {
+	if err = destination.ExecStatements(dest, mergeStatements); err != nil {
 		return fmt.Errorf("failed to execute merge statements: %w", err)
 	}
-
 	return nil
 }

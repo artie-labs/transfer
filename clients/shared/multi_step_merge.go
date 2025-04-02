@@ -212,5 +212,9 @@ func merge(ctx context.Context, dwh destination.Destination, tableData *optimiza
 		mergeStatements = _mergeStatements
 	}
 
-	return destination.ExecStatements(dwh, mergeStatements)
+	if err := destination.ExecStatements(dwh, mergeStatements); err != nil {
+		return fmt.Errorf("failed to execute merge statements: %w", err)
+	}
+
+	return nil
 }
