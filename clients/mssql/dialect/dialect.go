@@ -57,6 +57,28 @@ func (MSSQLDialect) BuildDedupeQueries(_, _ sql.TableIdentifier, _ []string, _ b
 	panic("not implemented") // We don't currently support deduping for MS SQL.
 }
 
+func (md MSSQLDialect) BuildInsertQuery(
+	tableID sql.TableIdentifier,
+	subQuery string,
+	cols []columns.Column,
+	primaryKeys []columns.Column,
+) string {
+	return fmt.Sprintf(`
+INSERT INTO %s (%s)
+SELECT %s FROM %s AS %s
+LEFT JOIN %s AS %s ON %s
+WHERE %s IS NULL;`,
+		// INSERT INTO %s (%s)
+		tableID.FullyQualifiedName(), strings.Join(sql.QuoteColumns(cols, md), ","),
+		// SELECT %s FROM %s AS %s
+		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, md), ","), subQuery, constants.StagingAlias,
+		// LEFT JOIN %s AS %s ON %s
+		tableID.FullyQualifiedName(), constants.TargetAlias, strings.Join(sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, md), " AND "),
+		// WHERE %s IS NULL; (we only need to specify one primary key since it's covered with equalitySQL parts)
+		sql.QuoteTableAliasColumn(constants.TargetAlias, primaryKeys[0], md),
+	)
+}
+
 func (md MSSQLDialect) BuildMergeQueries(
 	tableID sql.TableIdentifier,
 	subQuery string,
@@ -77,20 +99,7 @@ func (md MSSQLDialect) BuildMergeQueries(
 		// one for rows where all columns should be updated and
 		// one for rows where only the __artie_delete column should be updated.
 		return []string{
-			fmt.Sprintf(`
-INSERT INTO %s (%s)
-SELECT %s FROM %s AS %s
-LEFT JOIN %s AS %s ON %s
-WHERE %s IS NULL;`,
-				// INSERT INTO %s (%s)
-				tableID.FullyQualifiedName(), strings.Join(sql.QuoteColumns(cols, md), ","),
-				// SELECT %s FROM %s AS %s
-				strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, md), ","), subQuery, constants.StagingAlias,
-				// LEFT JOIN %s AS %s ON %s
-				tableID.FullyQualifiedName(), constants.TargetAlias, joinOn,
-				// WHERE %s IS NULL; (we only need to specify one primary key since it's covered with equalitySQL parts)
-				sql.QuoteTableAliasColumn(constants.TargetAlias, primaryKeys[0], md),
-			),
+			md.BuildInsertQuery(tableID, subQuery, cols, primaryKeys),
 			fmt.Sprintf(`
 UPDATE %s SET %s
 FROM %s AS %s LEFT JOIN %s AS %s ON %s
