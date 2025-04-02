@@ -9,10 +9,10 @@ import (
 
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/debezium/converters"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
+	"github.com/xitongsys/parquet-go/types"
 )
 
 func ParseValue(colVal any, colKind typing.KindDetails) (any, error) {
@@ -91,8 +91,8 @@ func ParseValue(colVal any, colKind typing.KindDetails) (any, error) {
 			return decimalValue.String(), nil
 		}
 
-		bytes, _ := converters.EncodeDecimal(decimalValue.Value())
-		return string(bytes), nil
+		scale := colKind.ExtendedDecimalDetails.Scale()
+		return types.StrIntToBinary(decimalValue.String(), "BigEndian", int(scale+precision), true), nil
 	case typing.Integer.Kind:
 		return asInt64(colVal)
 	}
