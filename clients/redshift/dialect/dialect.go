@@ -194,6 +194,8 @@ func (rd RedshiftDialect) BuildMergeQueries(
 		}
 	}
 
+	// We want to issue the update first, then the insert, then the delete.
+	// This order is important for us to avoid no-ops, where rows get inserted and then immediately updated.
 	parts := rd.buildMergeUpdateQueries(tableID, subQuery, primaryKeys, cols, softDelete)
 	parts = append(parts, rd.buildMergeInsertQuery(tableID, subQuery, primaryKeys, cols))
 	if !softDelete && containsHardDeletes {
