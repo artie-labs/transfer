@@ -9,3 +9,5 @@ package mocks
 //counterfeiter:generate -o=tableid.mock.go ../sql TableIdentifier
 
 //counterfeiter:generate -o=event.mock.go ../cdc Event
+
+//counterfeiter:generate -o=sql.result.mock.go database/sql Result
