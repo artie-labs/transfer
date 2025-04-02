@@ -92,11 +92,15 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 		wg.Add(1)
 		go func(tableName string) {
 			defer wg.Done()
-			for i := 0; i < 5; i++ {
+			for i := range 5 {
+				fakeResult := &mocks.FakeResult{}
+				fakeResult.RowsAffectedReturns(int64(i), nil)
+				f.fakeStore.ExecReturns(fakeResult, nil)
+
 				mockEvent := &mocks.FakeEvent{}
 				mockEvent.GetTableNameReturns(tableName)
 				mockEvent.GetDataReturns(map[string]any{
-					"id":                                fmt.Sprintf("pk-%d", i),
+					"id":                                fmt.Sprintf("-%d", i),
 					constants.DeleteColumnMarker:        true,
 					constants.OnlySetDeleteColumnMarker: true,
 					"pk":                                fmt.Sprintf("pk-%d", i),
