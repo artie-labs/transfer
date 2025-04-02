@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/typing/decimal"
+	"github.com/xitongsys/parquet-go/parquet"
 )
 
 type FieldTag struct {
@@ -104,11 +105,12 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 			return nil, fmt.Errorf("scale (%d) must be less than or equal to precision (%d)", scale, precision)
 		}
 
+		fmt.Println("colName", colName, "byte array", "decimal", "precision", precision, "scale", scale)
 		return &Field{
 			Tag: FieldTag{
 				Name:          colName,
 				Type:          ToPtr("BYTE_ARRAY"),
-				ConvertedType: ToPtr("DECIMAL"),
+				ConvertedType: ToPtr(parquet.ConvertedType_DECIMAL.String()),
 				Precision:     ToPtr(int(precision)),
 				Scale:         ToPtr(int(scale)),
 			}.String(),
