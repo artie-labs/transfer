@@ -114,6 +114,7 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 				ConvertedType: ToPtr(parquet.ConvertedType_DECIMAL.String()),
 				Precision:     ToPtr(int(precision)),
 				Scale:         ToPtr(int(scale)),
+				Length:        ToPtr(int(precision + scale)),
 			}.String(),
 		}, nil
 	case Boolean.Kind:
