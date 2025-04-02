@@ -32,8 +32,18 @@ func getSchema(schema string) string {
 	return schema
 }
 
-func (s *Store) DropTable(_ context.Context, _ sql.TableIdentifier) error {
-	return fmt.Errorf("not supported")
+func (s *Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error {
+	if !tableID.AllowToDrop() {
+		return fmt.Errorf("table %q is not allowed to be dropped", tableID.FullyQualifiedName())
+	}
+
+	if _, err := s.ExecContext(ctx, s.Dialect().BuildDropTableQuery(tableID)); err != nil {
+		return fmt.Errorf("failed to drop table: %w", err)
+	}
+
+	// We'll then clear it from our cache
+	s.configMap.RemoveTable(tableID)
+	return nil
 }
 
 func (s *Store) Dialect() sql.Dialect {
