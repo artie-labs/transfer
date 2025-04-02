@@ -157,7 +157,6 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 	}
 
 	fmt.Println("results (actual)", results, "table data rows (expected)", int64(tableData.NumberOfRows()))
-
 	// If the row count does not match, we need to return an error.
 	if rows := int64(tableData.NumberOfRows()); rows != results {
 		return fmt.Errorf("row count mismatch, expected: %d, got: %d", rows, results)
