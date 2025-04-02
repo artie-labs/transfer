@@ -10,6 +10,8 @@ import (
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/db"
+	"github.com/artie-labs/transfer/lib/destination/utils"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
@@ -84,6 +86,12 @@ func (f *FlushTestSuite) TestShouldFlush() {
 }
 
 func (f *FlushTestSuite) TestMemoryConcurrency() {
+	f.fakeStore = &mocks.FakeStore{}
+	store := db.Store(f.fakeStore)
+	var err error
+	f.dest, err = utils.LoadDestination(f.T().Context(), f.cfg, &store)
+	assert.NoError(f.T(), err)
+
 	tableNames := []string{"dusty", "snowflake", "postgres"}
 	var wg sync.WaitGroup
 
@@ -93,14 +101,10 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 		go func(tableName string) {
 			defer wg.Done()
 			for i := range 5 {
-				fakeResult := &mocks.FakeResult{}
-				fakeResult.RowsAffectedReturns(int64(i), nil)
-				f.fakeStore.ExecReturns(fakeResult, nil)
-
 				mockEvent := &mocks.FakeEvent{}
 				mockEvent.GetTableNameReturns(tableName)
 				mockEvent.GetDataReturns(map[string]any{
-					"id":                                fmt.Sprintf("-%d", i),
+					"id":                                fmt.Sprintf("pk-%d", i),
 					constants.DeleteColumnMarker:        true,
 					constants.OnlySetDeleteColumnMarker: true,
 					"pk":                                fmt.Sprintf("pk-%d", i),
@@ -109,11 +113,14 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 				}, nil)
 
 				evt, err := event.ToMemoryEvent(mockEvent, map[string]any{"id": fmt.Sprintf("pk-%d", i)}, kafkalib.TopicConfig{}, config.Replication)
-				assert.NoError(f.T(), err)
+				if err != nil {
+					assert.FailNow(f.T(), "error should be nil")
+				}
 
 				kafkaMsg := kafka.Message{Partition: 1, Offset: int64(i)}
-				_, _, err = evt.Save(f.cfg, f.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
-				assert.Nil(f.T(), err)
+				if _, _, err = evt.Save(f.cfg, f.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic)); err != nil {
+					assert.FailNow(f.T(), "error should be nil")
+				}
 			}
 		}(tableNames[idx])
 	}
@@ -124,9 +131,13 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 	for idx := range tableNames {
 		td := f.db.GetOrCreateTableData(tableNames[idx])
 		assert.Len(f.T(), td.Rows(), 5)
+
+		fakeResult := &mocks.FakeResult{}
+		fakeResult.RowsAffectedReturns(int64(td.NumberOfRows()), nil)
+		f.fakeStore.ExecReturnsOnCall(idx, fakeResult, nil)
 	}
 
-	assert.Nil(f.T(), Flush(f.T().Context(), f.db, f.dest, metrics.NullMetricsProvider{}, Args{}), "flush failed")
+	assert.NoError(f.T(), Flush(f.T().Context(), f.db, f.dest, metrics.NullMetricsProvider{}, Args{}))
 	assert.Equal(f.T(), f.fakeConsumer.CommitMessagesCallCount(), len(tableNames)) // Commit 3 times because 3 topics.
 
 	for i := 0; i < len(tableNames); i++ {
