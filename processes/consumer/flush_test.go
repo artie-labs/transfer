@@ -10,8 +10,6 @@ import (
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/db"
-	"github.com/artie-labs/transfer/lib/destination/utils"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
@@ -86,12 +84,6 @@ func (f *FlushTestSuite) TestShouldFlush() {
 }
 
 func (f *FlushTestSuite) TestMemoryConcurrency() {
-	f.fakeStore = &mocks.FakeStore{}
-	store := db.Store(f.fakeStore)
-	var err error
-	f.dest, err = utils.LoadDestination(f.T().Context(), f.cfg, &store)
-	assert.NoError(f.T(), err)
-
 	tableNames := []string{"dusty", "snowflake", "postgres"}
 	var wg sync.WaitGroup
 
@@ -128,13 +120,19 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 	wg.Wait()
 
 	// Verify all the tables exist.
+
+	var total int
 	for idx := range tableNames {
 		td := f.db.GetOrCreateTableData(tableNames[idx])
 		assert.Len(f.T(), td.Rows(), 5)
 
+		// The first exec is MERGE, then second is to drop the temporary table.
 		fakeResult := &mocks.FakeResult{}
 		fakeResult.RowsAffectedReturns(int64(td.NumberOfRows()), nil)
-		f.fakeStore.ExecReturnsOnCall(idx, fakeResult, nil)
+		f.fakeStore.ExecReturnsOnCall(total, fakeResult, nil)
+		f.fakeStore.ExecReturnsOnCall(total+1, nil, nil)
+
+		total += 2
 	}
 
 	assert.NoError(f.T(), Flush(f.T().Context(), f.db, f.dest, metrics.NullMetricsProvider{}, Args{}))
