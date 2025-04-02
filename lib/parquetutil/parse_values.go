@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/array"
@@ -84,7 +85,35 @@ func ParseValue(colVal any, colKind typing.KindDetails) (any, error) {
 		}
 
 		return decimalValue.String(), nil
+	case typing.Integer.Kind:
+		fmt.Println("Incoming data", colVal, fmt.Sprintf("%T", colVal))
+		asInt64, err := asInt64(colVal)
+		if err != nil {
+			return nil, err
+		}
+
+		return asInt64, nil
 	}
 
 	return colVal, nil
+}
+
+func asInt64(value any) (int64, error) {
+	switch castValue := value.(type) {
+	case string:
+		parsed, err := strconv.ParseInt(castValue, 10, 64)
+		if err != nil {
+			return 0, fmt.Errorf("failed to parse string to int64: %w", err)
+		}
+		return parsed, nil
+	case int16:
+		return int64(castValue), nil
+	case int32:
+		return int64(castValue), nil
+	case int:
+		return int64(castValue), nil
+	case int64:
+		return castValue, nil
+	}
+	return 0, fmt.Errorf("expected string/int/int16/int32/int64 got %T with value: %v", value, value)
 }
