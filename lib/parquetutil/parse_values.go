@@ -85,7 +85,16 @@ func ParseValue(colVal any, colKind typing.KindDetails) (any, error) {
 			return nil, err
 		}
 
-		return types.DECIMAL_BYTE_ARRAY_ToString([]byte(decimalValue.String()), int(decimalValue.Details().Precision()), int(decimalValue.Details().Scale())), nil
+		precision := colKind.ExtendedDecimalDetails.Precision()
+		scale := colKind.ExtendedDecimalDetails.Scale()
+		if precision == decimal.PrecisionNotSpecified {
+			// If precision is not provided, just default to a string.
+			return decimalValue.String(), nil
+		}
+
+		fmt.Println("precision", precision, "scale", scale)
+
+		return types.DECIMAL_BYTE_ARRAY_ToString([]byte(decimalValue.String()), int(precision), int(scale)), nil
 	case typing.Integer.Kind:
 		return asInt64(colVal)
 	}
