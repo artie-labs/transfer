@@ -7,6 +7,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/stretchr/testify/assert"
+	"github.com/xitongsys/parquet-go/types"
 )
 
 func TestParseValue(t *testing.T) {
@@ -51,7 +52,7 @@ func TestParseValue(t *testing.T) {
 		)
 
 		assert.NoError(t, err)
-		assert.Equal(t, "5000.22320", value)
+		assert.Equal(t, "5000.22320", types.DECIMAL_BYTE_ARRAY_ToString([]byte(value.(string)), 30, 5))
 	}
 	{
 		// Time
