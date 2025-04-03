@@ -106,7 +106,8 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 			return nil, fmt.Errorf("scale (%d) must be less than or equal to precision (%d)", scale, precision)
 		}
 
-		fmt.Println("colName", colName, "byte array", "decimal", "precision", precision, "scale", scale)
+		length := (precision + 1) / 2
+
 		return &Field{
 			Tag: FieldTag{
 				Name:          colName,
@@ -114,7 +115,7 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 				ConvertedType: ToPtr(parquet.ConvertedType_DECIMAL.String()),
 				Precision:     ToPtr(int(precision)),
 				Scale:         ToPtr(int(scale)),
-				Length:        ToPtr(int(scale + precision)),
+				Length:        ToPtr(int(length)),
 			}.String(),
 		}, nil
 	case Boolean.Kind:

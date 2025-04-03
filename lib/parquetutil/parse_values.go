@@ -93,7 +93,8 @@ func ParseValue(colVal any, colKind typing.KindDetails) (any, error) {
 		}
 
 		scale := colKind.ExtendedDecimalDetails.Scale()
-		return types.StrToParquetType(decimalValue.String(), typing.ToPtr(parquet.Type_FIXED_LEN_BYTE_ARRAY), typing.ToPtr(parquet.ConvertedType_DECIMAL), int(scale+precision), int(scale))
+		length := (precision + 1) / 2
+		return types.StrToParquetType(decimalValue.String(), typing.ToPtr(parquet.Type_FIXED_LEN_BYTE_ARRAY), typing.ToPtr(parquet.ConvertedType_DECIMAL), int(length), int(scale))
 	case typing.Integer.Kind:
 		return asInt64(colVal)
 	}
