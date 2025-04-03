@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/typing/decimal"
+	"github.com/xitongsys/parquet-go/parquet"
 )
 
 type FieldTag struct {
@@ -89,6 +90,7 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 	case EDecimal.Kind:
 		precision := k.ExtendedDecimalDetails.Precision()
 		if precision == decimal.PrecisionNotSpecified {
+			// Precision is required for a parquet DECIMAL type, as such, we should fall back on a STRING type.
 			return &Field{
 				Tag: FieldTag{
 					Name:          colName,
@@ -97,14 +99,20 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 				}.String(),
 			}, nil
 		}
+
 		scale := k.ExtendedDecimalDetails.Scale()
+		if scale > precision {
+			return nil, fmt.Errorf("scale (%d) must be less than or equal to precision (%d)", scale, precision)
+		}
+
 		return &Field{
 			Tag: FieldTag{
 				Name:          colName,
-				Type:          ToPtr("BYTE_ARRAY"),
-				ConvertedType: ToPtr("DECIMAL"),
+				Type:          ToPtr(parquet.Type_FIXED_LEN_BYTE_ARRAY.String()),
+				ConvertedType: ToPtr(parquet.ConvertedType_DECIMAL.String()),
 				Precision:     ToPtr(int(precision)),
 				Scale:         ToPtr(int(scale)),
+				Length:        ToPtr(int(k.ExtendedDecimalDetails.TwosComplementByteArrLength())),
 			}.String(),
 		}, nil
 	case Boolean.Kind:
