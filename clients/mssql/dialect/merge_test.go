@@ -12,8 +12,6 @@ import (
 
 func TestMSSQLDialect_BuildInsertQuery(t *testing.T) {
 	dialect := MSSQLDialect{}
-
-	// Create test data
 	tableID := &mocks.FakeTableIdentifier{}
 	tableID.FullyQualifiedNameReturns("database.schema.table")
 
@@ -35,14 +33,11 @@ INSERT INTO database.schema.table ("id","name","__artie_delete")
 SELECT stg."id",stg."name",stg."__artie_delete" FROM SELECT * FROM staging AS stg
 LEFT JOIN database.schema.table AS tgt ON tgt.id = stg.id
 WHERE tgt."id" IS NULL;`
-
 	assert.Equal(t, expectedQuery, query)
 }
 
 func TestMSSQLDialect_BuildUpdateAllColumnsQuery(t *testing.T) {
 	dialect := MSSQLDialect{}
-
-	// Create test data
 	tableID := &mocks.FakeTableIdentifier{}
 	tableID.FullyQualifiedNameReturns("database.schema.table")
 
@@ -68,8 +63,6 @@ WHERE COALESCE(stg."__artie_only_set_delete", 0) = 0;`
 
 func TestMSSQLDialect_BuildUpdateDeleteColumnQuery(t *testing.T) {
 	dialect := MSSQLDialect{}
-
-	// Create test data
 	tableID := &mocks.FakeTableIdentifier{}
 	tableID.FullyQualifiedNameReturns("database.schema.table")
 
@@ -90,15 +83,10 @@ WHERE COALESCE(stg."__artie_only_set_delete", 0) = 1;`
 
 func TestMSSQLDialect_BuildRegularMergeQueries(t *testing.T) {
 	dialect := MSSQLDialect{}
-
-	// Create test data
 	tableID := &mocks.FakeTableIdentifier{}
 	tableID.FullyQualifiedNameReturns("database.schema.table")
 
 	subQuery := "SELECT * FROM staging"
-	primaryKeys := []columns.Column{
-		columns.NewColumn("id", typing.String),
-	}
 	cols := []columns.Column{
 		columns.NewColumn("id", typing.String),
 		columns.NewColumn("name", typing.String),
@@ -106,7 +94,7 @@ func TestMSSQLDialect_BuildRegularMergeQueries(t *testing.T) {
 	joinOn := "tgt.id = stg.id"
 
 	// Test the function
-	queries, err := dialect.buildRegularMergeQueries(tableID, subQuery, primaryKeys, cols, joinOn)
+	queries, err := dialect.buildRegularMergeQueries(tableID, subQuery, cols, joinOn)
 
 	// Verify the result
 	assert.NoError(t, err)
@@ -124,8 +112,6 @@ WHEN NOT MATCHED AND COALESCE(stg."__artie_delete", 1) = 0 THEN INSERT ("id","na
 
 func TestMSSQLDialect_BuildSoftDeleteMergeQueries(t *testing.T) {
 	dialect := MSSQLDialect{}
-
-	// Create test data
 	tableID := &mocks.FakeTableIdentifier{}
 	tableID.FullyQualifiedNameReturns("database.schema.table")
 
