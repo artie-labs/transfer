@@ -78,7 +78,6 @@ func ExecStatements(dest Destination, statements []string) error {
 			return fmt.Errorf("failed to commit statements: %v, err: %w", statements, err)
 		}
 		committed = true
-
 		return nil
 	}
 }

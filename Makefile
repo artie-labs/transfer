@@ -59,10 +59,18 @@ bench_redshift:
 bench_mongo:
 	go test ./lib/cdc/mongo -bench=Bench -benchtime=20s
 
-.PHONY: dest-itest
-dest-itest:
-	go run integration_tests/destination/main.go --config .personal/integration_tests/snowflake.yaml
-	go run integration_tests/destination/main.go --config .personal/integration_tests/bigquery.yaml
-	go run integration_tests/destination/main.go --config .personal/integration_tests/databricks.yaml
-	go run integration_tests/destination/main.go --config .personal/integration_tests/redshift.yaml
-	go run integration_tests/destination/main.go --config .personal/integration_tests/mssql.yaml
+.PHONY: dest-itest-append
+dest-itest-append:
+	go run integration_tests/destination_append/main.go --config .personal/integration_tests/snowflake.yaml
+	go run integration_tests/destination_append/main.go --config .personal/integration_tests/bigquery.yaml
+	go run integration_tests/destination_append/main.go --config .personal/integration_tests/databricks.yaml
+	go run integration_tests/destination_append/main.go --config .personal/integration_tests/redshift.yaml
+	go run integration_tests/destination_append/main.go --config .personal/integration_tests/mssql.yaml
+
+.PHONY: dest-itest-merge
+dest-itest-merge:
+	go run integration_tests/destination_merge/main.go --config .personal/integration_tests/snowflake.yaml
+	go run integration_tests/destination_merge/main.go --config .personal/integration_tests/bigquery.yaml
+	go run integration_tests/destination_merge/main.go --config .personal/integration_tests/databricks.yaml
+	go run integration_tests/destination_merge/main.go --config .personal/integration_tests/redshift.yaml
+	go run integration_tests/destination_merge/main.go --config .personal/integration_tests/mssql.yaml

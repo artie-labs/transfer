@@ -89,8 +89,7 @@ func Open(driverName, dsn string) (Store, error) {
 		return nil, fmt.Errorf("failed to start a SQL client for driver %q: %w", driverName, err)
 	}
 
-	err = db.Ping()
-	if err != nil {
+	if err = db.Ping(); err != nil {
 		return nil, fmt.Errorf("failed to validate the DB connection for driver %q: %w", driverName, err)
 	}
 
