@@ -100,6 +100,7 @@ func ParseValue(colVal any, colKind typing.KindDetails) (any, error) {
 	return colVal, nil
 }
 
+// TODO: Move this into a Primative converter package.
 func asInt64(value any) (int64, error) {
 	switch castValue := value.(type) {
 	case string:
