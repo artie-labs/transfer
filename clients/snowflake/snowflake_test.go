@@ -18,6 +18,7 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/kafkalib/partition"
+	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -114,6 +115,10 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 
 	s.stageStore.configMap.AddTable(s.identifierFor(tableData), types.NewDestinationTableConfig(anotherCols, true))
 
+	fakeResult := &mocks.FakeResult{}
+	fakeResult.RowsAffectedReturns(int64(len(rowsData)), nil)
+	s.fakeStageStore.ExecReturns(fakeResult, nil)
+
 	commitTx, err := s.stageStore.Merge(s.T().Context(), tableData)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
@@ -161,6 +166,11 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 	}
 
 	s.stageStore.configMap.AddTable(s.identifierFor(tableData), types.NewDestinationTableConfig(cols.GetColumns(), true))
+
+	fakeResult := &mocks.FakeResult{}
+	fakeResult.RowsAffectedReturns(int64(len(rowsData)), nil)
+	s.fakeStageStore.ExecReturns(fakeResult, nil)
+
 	commitTx, err := s.stageStore.Merge(s.T().Context(), tableData)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
@@ -221,6 +231,11 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	tableID := s.identifierFor(tableData)
 	fqName := tableID.FullyQualifiedName()
 	s.stageStore.configMap.AddTable(tableID, types.NewDestinationTableConfig(cols.GetColumns(), true))
+
+	fakeResult := &mocks.FakeResult{}
+	fakeResult.RowsAffectedReturns(int64(len(rowsData)), nil)
+	s.fakeStageStore.ExecReturns(fakeResult, nil)
+
 	commitTx, err := s.stageStore.Merge(s.T().Context(), tableData)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
@@ -306,6 +321,10 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	_config := types.NewDestinationTableConfig(sflkCols.GetColumns(), true)
 	s.stageStore.configMap.AddTable(s.identifierFor(tableData), _config)
 
+	fakeResult := &mocks.FakeResult{}
+	fakeResult.RowsAffectedReturns(int64(len(rowsData)), nil)
+	s.fakeStageStore.ExecReturns(fakeResult, nil)
+
 	commitTx, err := s.stageStore.Merge(s.T().Context(), tableData)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
@@ -332,10 +351,14 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 		break
 	}
 
+	fakeResult = &mocks.FakeResult{}
+	fakeResult.RowsAffectedReturns(int64(len(rowsData)), nil)
+	s.fakeStageStore.ExecReturns(fakeResult, nil)
+
 	commitTx, err = s.stageStore.Merge(s.T().Context(), tableData)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
-	s.fakeStageStore.ExecReturns(nil, nil)
+
 	assert.Equal(s.T(), 4, s.fakeStageStore.ExecCallCount())
 	assert.Equal(s.T(), 6, s.fakeStageStore.ExecContextCallCount())
 

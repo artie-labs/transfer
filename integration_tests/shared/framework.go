@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/artie-labs/transfer/clients/mssql/dialect"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
@@ -69,7 +70,16 @@ func (tf *TestFramework) GenerateRowData(pkValue int) map[string]any {
 }
 
 func (tf *TestFramework) VerifyRowCount(expected int) error {
-	rows, err := tf.dest.Query(fmt.Sprintf("SELECT COUNT(*) FROM %s", tf.tableID.FullyQualifiedName()))
+	query := fmt.Sprintf("SELECT COUNT(*) FROM %s", tf.tableID.FullyQualifiedName())
+	if tf.topicConfig.SoftDelete {
+		if _, ok := tf.dest.Dialect().(dialect.MSSQLDialect); ok {
+			query = fmt.Sprintf("%s WHERE %s = 0", query, constants.DeleteColumnMarker)
+		} else {
+			query = fmt.Sprintf("%s WHERE %s IS FALSE", query, constants.DeleteColumnMarker)
+		}
+	}
+
+	rows, err := tf.dest.Query(query)
 	if err != nil {
 		return fmt.Errorf("failed to query table: %w", err)
 	}

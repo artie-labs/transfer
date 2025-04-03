@@ -119,7 +119,9 @@ func (s *Store) SweepTemporaryTables(_ context.Context) error {
 func (s *Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
 	stagingTableID := shared.TempTableID(tableID)
 	dedupeQueries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt)
-	return destination.ExecStatements(s, dedupeQueries)
+
+	_, err := destination.ExecStatements(s, dedupeQueries, false)
+	return err
 }
 
 func LoadRedshift(ctx context.Context, cfg config.Config, _store *db.Store) (*Store, error) {

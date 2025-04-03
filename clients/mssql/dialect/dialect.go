@@ -78,6 +78,17 @@ func (md MSSQLDialect) BuildMergeQueries(
 		// one for rows where only the __artie_delete column should be updated.
 		return []string{
 			fmt.Sprintf(`
+UPDATE %s SET %s
+FROM %s AS %s LEFT JOIN %s AS %s ON %s
+WHERE COALESCE(%s, 0) = 0;`,
+				// UPDATE table set [all columns]
+				constants.TargetAlias, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, md),
+				// FROM staging AS stg LEFT JOIN target AS tgt ON tgt.pk = stg.pk
+				subQuery, constants.StagingAlias, tableID.FullyQualifiedName(), constants.TargetAlias, joinOn,
+				// WHERE __artie_only_set_delete = 0
+				sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, md),
+			),
+			fmt.Sprintf(`
 INSERT INTO %s (%s)
 SELECT %s FROM %s AS %s
 LEFT JOIN %s AS %s ON %s
@@ -90,17 +101,6 @@ WHERE %s IS NULL;`,
 				tableID.FullyQualifiedName(), constants.TargetAlias, joinOn,
 				// WHERE %s IS NULL; (we only need to specify one primary key since it's covered with equalitySQL parts)
 				sql.QuoteTableAliasColumn(constants.TargetAlias, primaryKeys[0], md),
-			),
-			fmt.Sprintf(`
-UPDATE %s SET %s
-FROM %s AS %s LEFT JOIN %s AS %s ON %s
-WHERE COALESCE(%s, 0) = 0;`,
-				// UPDATE table set [all columns]
-				constants.TargetAlias, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, md),
-				// FROM staging AS stg LEFT JOIN target AS tgt ON tgt.pk = stg.pk
-				subQuery, constants.StagingAlias, tableID.FullyQualifiedName(), constants.TargetAlias, joinOn,
-				// WHERE __artie_only_set_delete = 0
-				sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, md),
 			),
 			fmt.Sprintf(`
 UPDATE %s SET %s

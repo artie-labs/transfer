@@ -92,7 +92,7 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 		wg.Add(1)
 		go func(tableName string) {
 			defer wg.Done()
-			for i := 0; i < 5; i++ {
+			for i := range 5 {
 				mockEvent := &mocks.FakeEvent{}
 				mockEvent.GetTableNameReturns(tableName)
 				mockEvent.GetDataReturns(map[string]any{
@@ -105,11 +105,14 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 				}, nil)
 
 				evt, err := event.ToMemoryEvent(mockEvent, map[string]any{"id": fmt.Sprintf("pk-%d", i)}, kafkalib.TopicConfig{}, config.Replication)
-				assert.NoError(f.T(), err)
+				if err != nil {
+					assert.FailNow(f.T(), "error should be nil")
+				}
 
 				kafkaMsg := kafka.Message{Partition: 1, Offset: int64(i)}
-				_, _, err = evt.Save(f.cfg, f.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
-				assert.Nil(f.T(), err)
+				if _, _, err = evt.Save(f.cfg, f.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic)); err != nil {
+					assert.FailNow(f.T(), "error should be nil")
+				}
 			}
 		}(tableNames[idx])
 	}
@@ -117,12 +120,25 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 	wg.Wait()
 
 	// Verify all the tables exist.
+	var total int
 	for idx := range tableNames {
 		td := f.db.GetOrCreateTableData(tableNames[idx])
 		assert.Len(f.T(), td.Rows(), 5)
+
+		// The first exec is MERGE, then second is to drop the temporary table.
+		fakeResult := &mocks.FakeResult{}
+		fakeResult.RowsAffectedReturns(int64(td.NumberOfRows()), nil)
+
+		fakeResultTwo := &mocks.FakeResult{}
+		fakeResultTwo.RowsAffectedReturns(int64(td.NumberOfRows()), nil)
+
+		f.fakeStore.ExecReturnsOnCall(total, fakeResult, nil)
+		f.fakeStore.ExecReturnsOnCall(total+1, fakeResultTwo, nil)
+
+		total += 2
 	}
 
-	assert.Nil(f.T(), Flush(f.T().Context(), f.db, f.dest, metrics.NullMetricsProvider{}, Args{}), "flush failed")
+	assert.NoError(f.T(), Flush(f.T().Context(), f.db, f.dest, metrics.NullMetricsProvider{}, Args{}))
 	assert.Equal(f.T(), f.fakeConsumer.CommitMessagesCallCount(), len(tableNames)) // Commit 3 times because 3 topics.
 
 	for i := 0; i < len(tableNames); i++ {
