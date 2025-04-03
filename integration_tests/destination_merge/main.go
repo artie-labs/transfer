@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/artie-labs/transfer/clients/mssql/dialect"
 	"github.com/artie-labs/transfer/integration_tests/shared"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -62,7 +63,7 @@ func (mt *MergeTest) deleteData(numRows int) error {
 	for i := 0; i < numRows; i++ {
 		pkValueString := fmt.Sprintf("%d", i)
 		rowData := mt.framework.GenerateRowDataForMerge(i, true)
-		mt.framework.GetTableData().InsertRow(pkValueString, rowData, false)
+		mt.framework.GetTableData().InsertRow(pkValueString, rowData, true)
 	}
 
 	if _, err := mt.framework.GetDestination().Merge(mt.framework.GetContext(), mt.framework.GetTableData()); err != nil {
@@ -74,7 +75,12 @@ func (mt *MergeTest) deleteData(numRows int) error {
 }
 
 func (mt *MergeTest) verifyUpdatedData(numRows int) error {
-	rows, err := mt.framework.GetDestination().Query(fmt.Sprintf("SELECT id, name, value FROM %s ORDER BY id ASC LIMIT %d", mt.framework.GetTableID().FullyQualifiedName(), numRows))
+	query := fmt.Sprintf("SELECT id, name, value FROM %s ORDER BY id ASC LIMIT %d", mt.framework.GetTableID().FullyQualifiedName(), numRows)
+	if _, ok := mt.framework.GetDestination().Dialect().(dialect.MSSQLDialect); ok {
+		query = fmt.Sprintf("SELECT TOP %d id, name, value FROM %s ORDER BY id ASC", numRows, mt.framework.GetTableID().FullyQualifiedName())
+	}
+
+	rows, err := mt.framework.GetDestination().Query(query)
 	if err != nil {
 		return fmt.Errorf("failed to query table data: %w", err)
 	}
