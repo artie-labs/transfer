@@ -12,6 +12,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
+	"github.com/xitongsys/parquet-go/parquet"
 	"github.com/xitongsys/parquet-go/types"
 )
 
@@ -92,7 +93,7 @@ func ParseValue(colVal any, colKind typing.KindDetails) (any, error) {
 		}
 
 		scale := colKind.ExtendedDecimalDetails.Scale()
-		return types.StrIntToBinary(decimalValue.String(), "BigEndian", int(scale+precision), true), nil
+		return types.StrToParquetType(decimalValue.String(), typing.ToPtr(parquet.Type_FIXED_LEN_BYTE_ARRAY), typing.ToPtr(parquet.ConvertedType_DECIMAL), int(scale+precision), int(scale))
 	case typing.Integer.Kind:
 		return asInt64(colVal)
 	}
