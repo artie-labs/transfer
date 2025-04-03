@@ -92,7 +92,12 @@ func ParseValue(colVal any, colKind typing.KindDetails) (any, error) {
 		}
 
 		bytes, _ := converters.EncodeDecimal(decimalValue.Value())
-		return string(padBytesLeft(bytes, int(colKind.ExtendedDecimalDetails.TwosComplementByteArrLength()))), nil
+		bytes, err = padBytesLeft(bytes, int(colKind.ExtendedDecimalDetails.TwosComplementByteArrLength()))
+		if err != nil {
+			return nil, err
+		}
+
+		return string(bytes), nil
 	case typing.Integer.Kind:
 		return asInt64(colVal)
 	}
@@ -122,12 +127,16 @@ func asInt64(value any) (int64, error) {
 }
 
 // padBytesLeft pads the left side of the bytes with zeros.
-func padBytesLeft(bytes []byte, length int) []byte {
-	if len(bytes) >= length {
-		return bytes
+func padBytesLeft(bytes []byte, length int) ([]byte, error) {
+	if len(bytes) == length {
+		return bytes, nil
+	}
+
+	if len(bytes) > length {
+		return nil, fmt.Errorf("bytes (%d) are longer than the length: %d", len(bytes), length)
 	}
 
 	padded := make([]byte, length)
 	copy(padded[length-len(bytes):], bytes)
-	return padded
+	return padded, nil
 }
