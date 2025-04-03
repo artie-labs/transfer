@@ -53,7 +53,6 @@ func ExecStatements(dest Destination, statements []string, returnRowsAffected bo
 			return 0, fmt.Errorf("failed to execute statement: %w", err)
 		}
 
-		fmt.Println("result", result)
 		rowsAffected, err := result.RowsAffected()
 		if err != nil {
 			return 0, fmt.Errorf("failed to get rows affected: %w", err)
