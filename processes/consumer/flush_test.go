@@ -128,8 +128,12 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 		// The first exec is MERGE, then second is to drop the temporary table.
 		fakeResult := &mocks.FakeResult{}
 		fakeResult.RowsAffectedReturns(int64(td.NumberOfRows()), nil)
+
+		fakeResultTwo := &mocks.FakeResult{}
+		fakeResultTwo.RowsAffectedReturns(int64(td.NumberOfRows()), nil)
+
 		f.fakeStore.ExecReturnsOnCall(total, fakeResult, nil)
-		f.fakeStore.ExecReturnsOnCall(total+1, fakeResult, nil)
+		f.fakeStore.ExecReturnsOnCall(total+1, fakeResultTwo, nil)
 
 		total += 2
 	}
