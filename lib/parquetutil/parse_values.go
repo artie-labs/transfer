@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/debezium/converters"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
@@ -83,8 +85,58 @@ func ParseValue(colVal any, colKind typing.KindDetails) (any, error) {
 			return nil, err
 		}
 
-		return decimalValue.String(), nil
+		precision := colKind.ExtendedDecimalDetails.Precision()
+		if precision == decimal.PrecisionNotSpecified {
+			// If precision is not provided, just default to a string.
+			return decimalValue.String(), nil
+		}
+
+		bytes, _ := converters.EncodeDecimal(decimalValue.Value())
+		bytes, err = padBytesLeft(bytes, int(colKind.ExtendedDecimalDetails.TwosComplementByteArrLength()))
+		if err != nil {
+			return nil, err
+		}
+
+		return string(bytes), nil
+	case typing.Integer.Kind:
+		return asInt64(colVal)
 	}
 
 	return colVal, nil
+}
+
+// TODO: Move this into a Primative converter package.
+func asInt64(value any) (int64, error) {
+	switch castValue := value.(type) {
+	case string:
+		parsed, err := strconv.ParseInt(castValue, 10, 64)
+		if err != nil {
+			return 0, fmt.Errorf("failed to parse string to int64: %w", err)
+		}
+		return parsed, nil
+	case int16:
+		return int64(castValue), nil
+	case int32:
+		return int64(castValue), nil
+	case int:
+		return int64(castValue), nil
+	case int64:
+		return castValue, nil
+	}
+	return 0, fmt.Errorf("expected string/int/int16/int32/int64 got %T with value: %v", value, value)
+}
+
+// padBytesLeft pads the left side of the bytes with zeros.
+func padBytesLeft(bytes []byte, length int) ([]byte, error) {
+	if len(bytes) == length {
+		return bytes, nil
+	}
+
+	if len(bytes) > length {
+		return nil, fmt.Errorf("bytes (%d) are longer than the length: %d", len(bytes), length)
+	}
+
+	padded := make([]byte, length)
+	copy(padded[length-len(bytes):], bytes)
+	return padded, nil
 }

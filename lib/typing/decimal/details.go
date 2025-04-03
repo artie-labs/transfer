@@ -17,6 +17,12 @@ type Details struct {
 	precision int32
 }
 
+// TwosComplementByteArrLength - returns the length of the twos complement byte array for the decimal.
+// This is used to determine the length of the byte array for the decimal.
+func (d Details) TwosComplementByteArrLength() int32 {
+	return (d.precision + 1) / 2
+}
+
 func NewDetails(precision int32, scale int32) Details {
 	if precision == 0 {
 		// MySQL, PostgreSQL, and SQLServer do not allow a zero precision, so this should never happen.
