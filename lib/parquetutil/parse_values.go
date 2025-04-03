@@ -92,9 +92,7 @@ func ParseValue(colVal any, colKind typing.KindDetails) (any, error) {
 		}
 
 		bytes, _ := converters.EncodeDecimal(decimalValue.Value())
-
-		bytes = padBytesLeft(bytes, int(colKind.ExtendedDecimalDetails.TwosComplementByteArrLength()))
-		return string(bytes), nil
+		return string(padBytesLeft(bytes, int(colKind.ExtendedDecimalDetails.TwosComplementByteArrLength()))), nil
 	case typing.Integer.Kind:
 		return asInt64(colVal)
 	}
