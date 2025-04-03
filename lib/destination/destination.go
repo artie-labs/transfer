@@ -87,8 +87,6 @@ func ExecStatements(dest Destination, statements []string, returnRowsAffected bo
 				if err != nil {
 					return 0, fmt.Errorf("failed to get rows affected: %w", err)
 				}
-
-				fmt.Println("rowsAffected", _rowsAffected)
 				rowsAffected += _rowsAffected
 			}
 		}

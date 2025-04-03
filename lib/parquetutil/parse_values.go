@@ -8,7 +8,9 @@ import (
 
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/debezium/converters"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/converters/primitives"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
@@ -83,8 +85,37 @@ func ParseValue(colVal any, colKind typing.KindDetails) (any, error) {
 			return nil, err
 		}
 
-		return decimalValue.String(), nil
+		precision := colKind.ExtendedDecimalDetails.Precision()
+		if precision == decimal.PrecisionNotSpecified {
+			// If precision is not provided, just default to a string.
+			return decimalValue.String(), nil
+		}
+
+		bytes, _ := converters.EncodeDecimal(decimalValue.Value())
+		bytes, err = padBytesLeft(bytes, int(colKind.ExtendedDecimalDetails.TwosComplementByteArrLength()))
+		if err != nil {
+			return nil, err
+		}
+
+		return string(bytes), nil
+	case typing.Integer.Kind:
+		return primitives.Int64Converter{}.Convert(colVal)
 	}
 
 	return colVal, nil
+}
+
+// padBytesLeft pads the left side of the bytes with zeros.
+func padBytesLeft(bytes []byte, length int) ([]byte, error) {
+	if len(bytes) == length {
+		return bytes, nil
+	}
+
+	if len(bytes) > length {
+		return nil, fmt.Errorf("bytes (%d) are longer than the length: %d", len(bytes), length)
+	}
+
+	padded := make([]byte, length)
+	copy(padded[length-len(bytes):], bytes)
+	return padded, nil
 }

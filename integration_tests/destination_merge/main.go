@@ -82,7 +82,7 @@ func (mt *MergeTest) verifyUpdatedData(numRows int) error {
 
 	rows, err := mt.framework.GetDestination().Query(query)
 	if err != nil {
-		return fmt.Errorf("failed to query table data: %w, query: %q", err, query)
+		return fmt.Errorf("failed to query table data: %w", err)
 	}
 
 	for i := 0; i < numRows; i++ {
