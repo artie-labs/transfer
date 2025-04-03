@@ -9,11 +9,10 @@ import (
 
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/debezium/converters"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
-	"github.com/xitongsys/parquet-go/parquet"
-	"github.com/xitongsys/parquet-go/types"
 )
 
 func ParseValue(colVal any, colKind typing.KindDetails) (any, error) {
@@ -92,13 +91,10 @@ func ParseValue(colVal any, colKind typing.KindDetails) (any, error) {
 			return decimalValue.String(), nil
 		}
 
-		return types.StrToParquetType(
-			decimalValue.String(),
-			typing.ToPtr(parquet.Type_FIXED_LEN_BYTE_ARRAY),
-			typing.ToPtr(parquet.ConvertedType_DECIMAL),
-			int(colKind.ExtendedDecimalDetails.TwosComplementByteArrLength()),
-			int(colKind.ExtendedDecimalDetails.Scale()),
-		)
+		bytes, _ := converters.EncodeDecimal(decimalValue.Value())
+
+		bytes = padBytesLeft(bytes, int(colKind.ExtendedDecimalDetails.TwosComplementByteArrLength()))
+		return string(bytes), nil
 	case typing.Integer.Kind:
 		return asInt64(colVal)
 	}
@@ -125,4 +121,15 @@ func asInt64(value any) (int64, error) {
 		return castValue, nil
 	}
 	return 0, fmt.Errorf("expected string/int/int16/int32/int64 got %T with value: %v", value, value)
+}
+
+// padBytesLeft pads the left side of the bytes with zeros.
+func padBytesLeft(bytes []byte, length int) []byte {
+	if len(bytes) >= length {
+		return bytes
+	}
+
+	padded := make([]byte, length)
+	copy(padded[length-len(bytes):], bytes)
+	return padded
 }
