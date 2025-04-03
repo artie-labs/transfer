@@ -69,7 +69,7 @@ func (md MSSQLDialect) BuildMergeQueries(
 	joinOn := strings.Join(sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, md), " AND ")
 	cols, err := columns.RemoveOnlySetDeleteColumnMarker(cols)
 	if err != nil {
-		return []string{}, err
+		return nil, err
 	}
 
 	if softDelete {
@@ -82,7 +82,7 @@ func (md MSSQLDialect) BuildMergeQueries(
 		return nil, err
 	}
 
-	return md.buildRegularMergeQueries(tableID, subQuery, primaryKeys, cols, joinOn)
+	return md.buildRegularMergeQueries(tableID, subQuery, cols, joinOn)
 }
 
 // buildSoftDeleteMergeQueries builds the queries for soft delete merge operations
@@ -167,7 +167,6 @@ WHERE COALESCE(%s, 0) = 1;`,
 func (md MSSQLDialect) buildRegularMergeQueries(
 	tableID sql.TableIdentifier,
 	subQuery string,
-	primaryKeys []columns.Column,
 	cols []columns.Column,
 	joinOn string,
 ) ([]string, error) {
