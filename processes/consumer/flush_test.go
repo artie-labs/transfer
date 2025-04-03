@@ -120,7 +120,6 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 	wg.Wait()
 
 	// Verify all the tables exist.
-
 	var total int
 	for idx := range tableNames {
 		td := f.db.GetOrCreateTableData(tableNames[idx])
@@ -130,7 +129,7 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 		fakeResult := &mocks.FakeResult{}
 		fakeResult.RowsAffectedReturns(int64(td.NumberOfRows()), nil)
 		f.fakeStore.ExecReturnsOnCall(total, fakeResult, nil)
-		f.fakeStore.ExecReturnsOnCall(total+1, nil, nil)
+		f.fakeStore.ExecReturnsOnCall(total+1, fakeResult, nil)
 
 		total += 2
 	}
