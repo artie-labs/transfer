@@ -75,14 +75,14 @@ func (mt *MergeTest) deleteData(numRows int) error {
 }
 
 func (mt *MergeTest) verifyUpdatedData(numRows int) error {
-	limitVerb := "LIMIT"
+	query := fmt.Sprintf("SELECT id, name, value FROM %s ORDER BY id ASC LIMIT %d", mt.framework.GetTableID().FullyQualifiedName(), numRows)
 	if _, ok := mt.framework.GetDestination().Dialect().(dialect.MSSQLDialect); ok {
-		limitVerb = "TOP"
+		query = fmt.Sprintf("SELECT TOP %d id, name, value FROM %s ORDER BY id ASC", numRows, mt.framework.GetTableID().FullyQualifiedName())
 	}
 
-	rows, err := mt.framework.GetDestination().Query(fmt.Sprintf("SELECT id, name, value FROM %s ORDER BY id ASC %s %d", mt.framework.GetTableID().FullyQualifiedName(), limitVerb, numRows))
+	rows, err := mt.framework.GetDestination().Query(query)
 	if err != nil {
-		return fmt.Errorf("failed to query table data: %w", err)
+		return fmt.Errorf("failed to query table data: %w, query: %q", err, query)
 	}
 
 	for i := 0; i < numRows; i++ {
