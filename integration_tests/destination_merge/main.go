@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/artie-labs/transfer/clients/mssql/dialect"
 	"github.com/artie-labs/transfer/integration_tests/shared"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -74,7 +75,12 @@ func (mt *MergeTest) deleteData(numRows int) error {
 }
 
 func (mt *MergeTest) verifyUpdatedData(numRows int) error {
-	rows, err := mt.framework.GetDestination().Query(fmt.Sprintf("SELECT id, name, value FROM %s ORDER BY id ASC LIMIT %d", mt.framework.GetTableID().FullyQualifiedName(), numRows))
+	limitVerb := "LIMIT"
+	if _, ok := mt.framework.GetDestination().Dialect().(dialect.MSSQLDialect); ok {
+		limitVerb = "TOP"
+	}
+
+	rows, err := mt.framework.GetDestination().Query(fmt.Sprintf("SELECT id, name, value FROM %s ORDER BY id ASC %s %d", mt.framework.GetTableID().FullyQualifiedName(), limitVerb, numRows))
 	if err != nil {
 		return fmt.Errorf("failed to query table data: %w", err)
 	}
