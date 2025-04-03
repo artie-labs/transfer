@@ -92,7 +92,13 @@ func ParseValue(colVal any, colKind typing.KindDetails) (any, error) {
 			return decimalValue.String(), nil
 		}
 
-		return types.StrToParquetType(decimalValue.String(), typing.ToPtr(parquet.Type_FIXED_LEN_BYTE_ARRAY), typing.ToPtr(parquet.ConvertedType_DECIMAL), int(colKind.ExtendedDecimalDetails.TwosComplementByteArrLength()), int(colKind.ExtendedDecimalDetails.Scale()))
+		return types.StrToParquetType(
+			decimalValue.String(),
+			typing.ToPtr(parquet.Type_FIXED_LEN_BYTE_ARRAY),
+			typing.ToPtr(parquet.ConvertedType_DECIMAL),
+			int(colKind.ExtendedDecimalDetails.TwosComplementByteArrLength()),
+			int(colKind.ExtendedDecimalDetails.Scale()),
+		)
 	case typing.Integer.Kind:
 		return asInt64(colVal)
 	}
