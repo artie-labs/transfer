@@ -93,7 +93,7 @@ func (f *FlushTestSuite) TestShouldFlush() {
 
 	// Set up expectations for the SQL mock
 	// First, expect the DESC TABLE query
-	f.mockDB.ExpectQuery("DESC TABLE \"CUSTOMER\".\"PUBLIC\".\"POSTGRES\"").
+	f.mockDB.ExpectQuery(regexp.QuoteMeta(`DESC TABLE "CUSTOMER"."PUBLIC"."POSTGRES"`)).
 		WillReturnRows(sqlmock.NewRows([]string{"name", "type", "kind", "null", "default", "primary key", "unique key", "check", "expression", "comment"}).
 			AddRow("id", "VARCHAR", "COLUMN", "YES", "", "NO", "NO", "", "", "").
 			AddRow("pk", "VARCHAR", "COLUMN", "YES", "", "NO", "NO", "", "", "").
@@ -104,8 +104,7 @@ func (f *FlushTestSuite) TestShouldFlush() {
 
 	// Then expect the INSERT queries
 	for i := 0; i < int(float64(f.cfg.BufferRows)*1.5); i++ {
-		f.mockDB.ExpectExec("INSERT INTO \"CUSTOMER\".\"PUBLIC\".\"POSTGRES\"").
-			WillReturnResult(sqlmock.NewResult(1, 1))
+		f.mockDB.ExpectExec(regexp.QuoteMeta(`INSERT INTO "CUSTOMER"."PUBLIC"."POSTGRES"`)).WillReturnResult(sqlmock.NewResult(1, 1))
 	}
 
 	// Expect CREATE TABLE and DROP TABLE operations for temporary tables
