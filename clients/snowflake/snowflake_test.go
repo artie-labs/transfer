@@ -149,7 +149,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 	}
 
 	rowsData := make(map[string]map[string]any)
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		rowsData[fmt.Sprintf("pk-%d", i)] = map[string]any{
 			"id":         i,
 			"created_at": time.Now().Format(time.RFC3339Nano),
@@ -211,7 +211,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 
 	rowsData := make(map[string]map[string]any)
 
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		rowsData[fmt.Sprintf("pk-%d", i)] = map[string]any{
 			"id":         i,
 			"created_at": time.Now().Format(time.RFC3339Nano),
@@ -274,7 +274,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	}
 
 	rowsData := make(map[string]map[string]any)
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		rowsData[fmt.Sprintf("pk-%d", i)] = map[string]any{
 			"id":         i,
 			"created_at": time.Now().Format(time.RFC3339Nano),
