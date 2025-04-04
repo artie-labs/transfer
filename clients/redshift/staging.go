@@ -86,8 +86,18 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	}
 
 	copyStmt := s.dialect().BuildCopyStatement(tempTableID, cols, s3Uri, credentialsClause)
-	if _, err = s.Exec(copyStmt); err != nil {
+	result, err := s.Exec(copyStmt)
+	if err != nil {
 		return fmt.Errorf("failed to run COPY for temporary table: %w", err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rows != int64(len(tableData.Rows())) {
+		return fmt.Errorf("expected %d rows to be inserted, but got %d", len(tableData.Rows()), rows)
 	}
 
 	return nil

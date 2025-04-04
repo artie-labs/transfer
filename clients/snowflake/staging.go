@@ -81,7 +81,8 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		copyCommand += " " + additionalSettings.AdditionalCopyClause
 	}
 
-	if _, err = s.ExecContext(ctx, copyCommand); err != nil {
+	result, err := s.ExecContext(ctx, copyCommand)
+	if err != nil {
 		// For non-temp tables, we should try to delete the staging file if COPY INTO fails.
 		// This is because [PURGE = TRUE] will only delete the staging files upon a successful COPY INTO.
 		// We also only need to do this for non-temp tables because these staging files will linger, since we create a new temporary table per attempt.
@@ -92,6 +93,15 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		}
 
 		return fmt.Errorf("failed to run copy into temporary table: %w", err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rows != int64(len(tableData.Rows())) {
+		return fmt.Errorf("expected %d rows to be inserted, but got %d", len(tableData.Rows()), rows)
 	}
 
 	return nil
