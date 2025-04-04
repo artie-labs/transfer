@@ -49,37 +49,37 @@ func (f *FlushTestSuite) TestMemoryBasic() {
 	assert.Equal(f.T(), uint(5), f.db.GetOrCreateTableData("foo").NumberOfRows())
 }
 
-// func (f *FlushTestSuite) TestShouldFlush() {
-// 	var flush bool
-// 	var flushReason string
+func (f *FlushTestSuite) TestShouldFlush() {
+	var flush bool
+	var flushReason string
 
-// 	for i := 0; i < int(float64(f.cfg.BufferRows)*1.5); i++ {
-// 		mockEvent := &mocks.FakeEvent{}
-// 		mockEvent.GetTableNameReturns("postgres")
-// 		mockEvent.GetDataReturns(map[string]any{
-// 			"id":                                fmt.Sprintf("pk-%d", i),
-// 			constants.DeleteColumnMarker:        true,
-// 			constants.OnlySetDeleteColumnMarker: true,
-// 			"pk":                                fmt.Sprintf("pk-%d", i),
-// 			"foo":                               "bar",
-// 			"cat":                               "dog",
-// 		}, nil)
+	for i := 0; i < int(float64(f.cfg.BufferRows)*1.5); i++ {
+		mockEvent := &mocks.FakeEvent{}
+		mockEvent.GetTableNameReturns("postgres")
+		mockEvent.GetDataReturns(map[string]any{
+			"id":                                fmt.Sprintf("pk-%d", i),
+			constants.DeleteColumnMarker:        true,
+			constants.OnlySetDeleteColumnMarker: true,
+			"pk":                                fmt.Sprintf("pk-%d", i),
+			"foo":                               "bar",
+			"cat":                               "dog",
+		}, nil)
 
-// 		evt, err := event.ToMemoryEvent(mockEvent, map[string]any{"id": fmt.Sprintf("pk-%d", i)}, kafkalib.TopicConfig{}, config.Replication)
-// 		assert.NoError(f.T(), err)
+		evt, err := event.ToMemoryEvent(mockEvent, map[string]any{"id": fmt.Sprintf("pk-%d", i)}, kafkalib.TopicConfig{}, config.Replication)
+		assert.NoError(f.T(), err)
 
-// 		kafkaMsg := kafka.Message{Partition: 1, Offset: int64(i)}
-// 		flush, flushReason, err = evt.Save(f.cfg, f.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
-// 		assert.Nil(f.T(), err)
+		kafkaMsg := kafka.Message{Partition: 1, Offset: int64(i)}
+		flush, flushReason, err = evt.Save(f.cfg, f.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
+		assert.NoError(f.T(), err)
 
-// 		if flush {
-// 			break
-// 		}
-// 	}
+		if flush {
+			break
+		}
+	}
 
-// 	assert.Equal(f.T(), "rows", flushReason)
-// 	assert.True(f.T(), flush, "Flush successfully triggered via pool size.")
-// }
+	assert.Equal(f.T(), "rows", flushReason)
+	assert.True(f.T(), flush, "Flush successfully triggered via pool size.")
+}
 
 // func (f *FlushTestSuite) TestMemoryConcurrency() {
 // 	tableNames := []string{"dusty", "snowflake", "postgres"}
