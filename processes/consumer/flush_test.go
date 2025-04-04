@@ -128,7 +128,6 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 
 	assert.NoError(f.T(), Flush(f.T().Context(), f.db, f.dest, metrics.NullMetricsProvider{}, Args{}))
 	assert.Equal(f.T(), f.fakeConsumer.CommitMessagesCallCount(), len(tableNames)) // Commit 3 times because 3 topics.
-
 	for i := range len(tableNames) {
 		_, kafkaMessages := f.fakeConsumer.CommitMessagesArgsForCall(i)
 		assert.Equal(f.T(), len(kafkaMessages), 1) // There's only 1 partition right now
