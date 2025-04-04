@@ -25,17 +25,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func retrieveTableNameFromCreateTable(t *testing.T, query string) string {
-	t.Helper()
-	parts := strings.Split(query, ".")
-	assert.Len(t, parts, 3)
-
-	tableNamePart := parts[2]
-	tableNameParts := strings.Split(tableNamePart, " ")
-	assert.True(t, len(tableNameParts) > 2, tableNamePart)
-	return strings.ReplaceAll(tableNameParts[0], `"`, "")
-}
-
 func (s *SnowflakeTestSuite) identifierFor(tableData *optimization.TableData) sql.TableIdentifier {
 	return s.stageStore.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 }
