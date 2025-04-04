@@ -115,9 +115,16 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 
 	s.stageStore.configMap.AddTable(s.identifierFor(tableData), types.NewDestinationTableConfig(anotherCols, true))
 
+	fakeCopyResult := &mocks.FakeResult{}
+	fakeCopyResult.RowsAffectedReturns(int64(len(tableData.Rows())), nil)
+	s.fakeStageStore.ExecContextReturnsOnCall(2, fakeCopyResult, nil)
+
 	commitTx, err := s.stageStore.Merge(s.T().Context(), tableData)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
+
+	assert.Equal(s.T(), 2, s.fakeStageStore.ExecCallCount())
+	assert.Equal(s.T(), 3, s.fakeStageStore.ExecContextCallCount())
 
 	_col, isOk := tableData.ReadOnlyInMemoryCols().GetColumn("first_name")
 	assert.True(s.T(), isOk)
@@ -141,7 +148,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 
 	rowsData := make(map[string]map[string]any)
 
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		rowsData[fmt.Sprintf("pk-%d", i)] = map[string]any{
 			"id":         i,
 			"created_at": time.Now().Format(time.RFC3339Nano),
@@ -162,6 +169,11 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 	}
 
 	s.stageStore.configMap.AddTable(s.identifierFor(tableData), types.NewDestinationTableConfig(cols.GetColumns(), true))
+
+	fakeCopyResult := &mocks.FakeResult{}
+	fakeCopyResult.RowsAffectedReturns(int64(len(tableData.Rows())), nil)
+	s.fakeStageStore.ExecContextReturnsOnCall(2, fakeCopyResult, nil)
+
 	commitTx, err := s.stageStore.Merge(s.T().Context(), tableData)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
@@ -196,7 +208,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	}
 
 	rowsData := make(map[string]map[string]any)
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		rowsData[fmt.Sprintf("pk-%d", i)] = map[string]any{
 			"id":         i,
 			"created_at": time.Now().Format(time.RFC3339Nano),
@@ -220,14 +232,15 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	tableID := s.identifierFor(tableData)
 	fqName := tableID.FullyQualifiedName()
 	s.stageStore.configMap.AddTable(tableID, types.NewDestinationTableConfig(cols.GetColumns(), true))
+
+	fakeCopyResult := &mocks.FakeResult{}
+	fakeCopyResult.RowsAffectedReturns(int64(len(tableData.Rows())), nil)
+	s.fakeStageStore.ExecContextReturnsOnCall(2, fakeCopyResult, nil)
+
 	commitTx, err := s.stageStore.Merge(s.T().Context(), tableData)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
-	s.fakeStageStore.ExecReturns(nil, nil)
 
-	fakeCopyResult := &mocks.FakeResult{}
-	fakeCopyResult.RowsAffectedReturns(int64(len(tableData.Rows())))
-	s.fakeStageStore.ExecReturnsOnCall(2, fakeCopyResult, nil)
 	// CREATE TABLE IF NOT EXISTS customer.public.orders___artie_Mwv9YADmRy (id int,name string,__artie_delete boolean,created_at timestamp_tz) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='__artie_null_value' EMPTY_FIELD_AS_NULL=FALSE) COMMENT='expires:2023-06-27 11:54:03 UTC'
 	_, createQuery, _ := s.fakeStageStore.ExecContextArgsForCall(0)
 	tableName := retrieveTableNameFromCreateTable(s.T(), createQuery)
@@ -264,7 +277,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	}
 
 	rowsData := make(map[string]map[string]any)
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		rowsData[fmt.Sprintf("pk-%d", i)] = map[string]any{
 			"id":         i,
 			"created_at": time.Now().Format(time.RFC3339Nano),
@@ -309,10 +322,13 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	_config := types.NewDestinationTableConfig(sflkCols.GetColumns(), true)
 	s.stageStore.configMap.AddTable(s.identifierFor(tableData), _config)
 
+	fakeCopyResult := &mocks.FakeResult{}
+	fakeCopyResult.RowsAffectedReturns(int64(len(tableData.Rows())), nil)
+	s.fakeStageStore.ExecContextReturnsOnCall(2, fakeCopyResult, nil)
+
 	commitTx, err := s.stageStore.Merge(s.T().Context(), tableData)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
-	s.fakeStageStore.ExecReturns(nil, nil)
 	assert.Equal(s.T(), 2, s.fakeStageStore.ExecCallCount())
 	assert.Equal(s.T(), 3, s.fakeStageStore.ExecContextCallCount())
 
@@ -334,6 +350,9 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 		tableData.SetInMemoryColumns(inMemColumns)
 		break
 	}
+
+	fakeCopyResult.RowsAffectedReturns(int64(len(tableData.Rows())), nil)
+	s.fakeStageStore.ExecContextReturnsOnCall(5, fakeCopyResult, nil)
 
 	commitTx, err = s.stageStore.Merge(s.T().Context(), tableData)
 	assert.NoError(s.T(), err)
