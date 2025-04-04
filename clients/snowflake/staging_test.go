@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -81,57 +82,65 @@ func (s *SnowflakeTestSuite) runTestCaseWithReset(fn func()) {
 	fn()
 }
 
-// func (s *SnowflakeTestSuite) TestBackfillColumn() {
-// 	tableID := dialect.NewTableIdentifier("db", "public", "tableName")
+func (s *SnowflakeTestSuite) TestBackfillColumn() {
+	tableID := dialect.NewTableIdentifier("db", "public", "tableName")
 
-// 	needsBackfillCol := columns.NewColumn("foo", typing.Boolean)
-// 	needsBackfillCol.SetDefaultValue(true)
-// 	needsBackfillColDefault := columns.NewColumn("default", typing.Boolean)
-// 	needsBackfillColDefault.SetDefaultValue(true)
+	needsBackfillCol := columns.NewColumn("foo", typing.Boolean)
+	needsBackfillCol.SetDefaultValue(true)
+	needsBackfillColDefault := columns.NewColumn("default", typing.Boolean)
+	needsBackfillColDefault.SetDefaultValue(true)
 
-// 	s.runTestCaseWithReset(func() {
-// 		// col that doesn't have default value
-// 		assert.NoError(s.T(), shared.BackfillColumn(s.stageStore, columns.NewColumn("foo", typing.Invalid), tableID))
-// 		assert.Equal(s.T(), 0, s.fakeStageStore.ExecCallCount())
-// 	})
+	s.runTestCaseWithReset(func() {
+		// col that doesn't have default value
+		assert.NoError(s.T(), shared.BackfillColumn(s.stageStore, columns.NewColumn("foo", typing.Invalid), tableID))
+		assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
+	})
 
-// 	s.runTestCaseWithReset(func() {
-// 		// col that has default value but already backfilled
-// 		backfilledCol := columns.NewColumn("foo", typing.Boolean)
-// 		backfilledCol.SetDefaultValue(true)
-// 		backfilledCol.SetBackfilled(true)
-// 		assert.NoError(s.T(), shared.BackfillColumn(s.stageStore, backfilledCol, tableID))
-// 		assert.Equal(s.T(), 0, s.fakeStageStore.ExecCallCount())
-// 	})
+	s.runTestCaseWithReset(func() {
+		// col that has default value but already backfilled
+		backfilledCol := columns.NewColumn("foo", typing.Boolean)
+		backfilledCol.SetDefaultValue(true)
+		backfilledCol.SetBackfilled(true)
+		assert.NoError(s.T(), shared.BackfillColumn(s.stageStore, backfilledCol, tableID))
+		assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
+	})
 
-// 	s.runTestCaseWithReset(func() {
-// 		// col that has default value that needs to be backfilled
-// 		assert.NoError(s.T(), shared.BackfillColumn(s.stageStore, needsBackfillCol, tableID))
-// 		assert.Equal(s.T(), 2, s.fakeStageStore.ExecCallCount())
-// 	})
+	s.runTestCaseWithReset(func() {
+		// col that has default value that needs to be backfilled
+		backfillQuery := regexp.QuoteMeta(`UPDATE "DB"."PUBLIC"."TABLENAME" as t SET t."FOO" = true WHERE t."FOO" IS NULL;`)
+		s.mockDB.ExpectExec(backfillQuery).WillReturnResult(sqlmock.NewResult(0, 0))
 
-// 	s.runTestCaseWithReset(func() {
-// 		// default col that has default value that needs to be backfilled
-// 		assert.NoError(s.T(), shared.BackfillColumn(s.stageStore, needsBackfillColDefault, tableID))
+		commentQuery := regexp.QuoteMeta(`COMMENT ON COLUMN "DB"."PUBLIC"."TABLENAME"."FOO" IS '{"backfilled": true}';`)
+		s.mockDB.ExpectExec(commentQuery).WillReturnResult(sqlmock.NewResult(0, 0))
 
-// 		backfillSQL, _ := s.fakeStageStore.ExecArgsForCall(0)
-// 		assert.Equal(s.T(), `UPDATE "DB"."PUBLIC"."TABLENAME" as t SET t."DEFAULT" = true WHERE t."DEFAULT" IS NULL;`, backfillSQL)
+		assert.NoError(s.T(), shared.BackfillColumn(s.stageStore, needsBackfillCol, tableID))
+		assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
+	})
 
-// 		commentSQL, _ := s.fakeStageStore.ExecArgsForCall(1)
-// 		assert.Equal(s.T(), `COMMENT ON COLUMN "DB"."PUBLIC"."TABLENAME"."DEFAULT" IS '{"backfilled": true}';`, commentSQL)
-// 	})
+	s.runTestCaseWithReset(func() {
+		// default col that has default value that needs to be backfilled
+		backfillQuery := regexp.QuoteMeta(`UPDATE "DB"."PUBLIC"."TABLENAME" as t SET t."DEFAULT" = true WHERE t."DEFAULT" IS NULL;`)
+		s.mockDB.ExpectExec(backfillQuery).WillReturnResult(sqlmock.NewResult(0, 0))
 
-// 	s.runTestCaseWithReset(func() {
-// 		// default col that has default value that needs to be backfilled (repeat)
-// 		assert.NoError(s.T(), shared.BackfillColumn(s.stageStore, needsBackfillColDefault, tableID))
+		commentQuery := regexp.QuoteMeta(`COMMENT ON COLUMN "DB"."PUBLIC"."TABLENAME"."DEFAULT" IS '{"backfilled": true}';`)
+		s.mockDB.ExpectExec(commentQuery).WillReturnResult(sqlmock.NewResult(0, 0))
 
-// 		backfillSQL, _ := s.fakeStageStore.ExecArgsForCall(0)
-// 		assert.Equal(s.T(), `UPDATE "DB"."PUBLIC"."TABLENAME" as t SET t."DEFAULT" = true WHERE t."DEFAULT" IS NULL;`, backfillSQL)
+		assert.NoError(s.T(), shared.BackfillColumn(s.stageStore, needsBackfillColDefault, tableID))
+		assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
+	})
 
-// 		commentSQL, _ := s.fakeStageStore.ExecArgsForCall(1)
-// 		assert.Equal(s.T(), `COMMENT ON COLUMN "DB"."PUBLIC"."TABLENAME"."DEFAULT" IS '{"backfilled": true}';`, commentSQL)
-// 	})
-// }
+	s.runTestCaseWithReset(func() {
+		// default col that has default value that needs to be backfilled (repeat)
+		backfillQuery := regexp.QuoteMeta(`UPDATE "DB"."PUBLIC"."TABLENAME" as t SET t."DEFAULT" = true WHERE t."DEFAULT" IS NULL;`)
+		s.mockDB.ExpectExec(backfillQuery).WillReturnResult(sqlmock.NewResult(0, 0))
+
+		commentQuery := regexp.QuoteMeta(`COMMENT ON COLUMN "DB"."PUBLIC"."TABLENAME"."DEFAULT" IS '{"backfilled": true}';`)
+		s.mockDB.ExpectExec(commentQuery).WillReturnResult(sqlmock.NewResult(0, 0))
+
+		assert.NoError(s.T(), shared.BackfillColumn(s.stageStore, needsBackfillColDefault, tableID))
+		assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
+	})
+}
 
 // generateTableData - returns tableName and tableData
 func generateTableData(rows int) (dialect.TableIdentifier, *optimization.TableData) {
