@@ -18,6 +18,7 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/kafkalib/partition"
+	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -195,7 +196,6 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	}
 
 	rowsData := make(map[string]map[string]any)
-
 	for i := 0; i < 5; i++ {
 		rowsData[fmt.Sprintf("pk-%d", i)] = map[string]any{
 			"id":         i,
@@ -205,7 +205,6 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	}
 
 	tblName := "orders"
-
 	topicConfig := kafkalib.TopicConfig{
 		Database:  "customer",
 		TableName: tblName,
@@ -225,6 +224,10 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
 	s.fakeStageStore.ExecReturns(nil, nil)
+
+	fakeCopyResult := &mocks.FakeResult{}
+	fakeCopyResult.RowsAffectedReturns(int64(len(tableData.Rows())))
+	s.fakeStageStore.ExecReturnsOnCall(2, fakeCopyResult, nil)
 	// CREATE TABLE IF NOT EXISTS customer.public.orders___artie_Mwv9YADmRy (id int,name string,__artie_delete boolean,created_at timestamp_tz) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='__artie_null_value' EMPTY_FIELD_AS_NULL=FALSE) COMMENT='expires:2023-06-27 11:54:03 UTC'
 	_, createQuery, _ := s.fakeStageStore.ExecContextArgsForCall(0)
 	tableName := retrieveTableNameFromCreateTable(s.T(), createQuery)
