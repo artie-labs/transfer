@@ -241,6 +241,14 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 
 		resp, err := result.FullResponse(ctx)
 		if err != nil {
+			if resp != nil {
+				if rowErrs := resp.GetRowErrors(); len(rowErrs) > 0 {
+					for _, rowErr := range rowErrs {
+						slog.Info("Encountered a row error", slog.String("rowErr", rowErr.String()))
+					}
+				}
+			}
+
 			return fmt.Errorf("failed to get response: %w", err)
 		}
 
