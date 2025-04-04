@@ -7,11 +7,13 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/maputil"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -81,7 +83,9 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		copyCommand += " " + additionalSettings.AdditionalCopyClause
 	}
 
-	result, err := s.ExecContext(ctx, copyCommand)
+	// COPY INTO does not implement [RowsAffected]. Instead, we'll treat this as a query and then parse the output:
+	// https://docs.snowflake.com/en/sql-reference/sql/copy-into-table#output
+	sqlRows, err := s.QueryContext(ctx, copyCommand)
 	if err != nil {
 		// For non-temp tables, we should try to delete the staging file if COPY INTO fails.
 		// This is because [PURGE = TRUE] will only delete the staging files upon a successful COPY INTO.
@@ -95,14 +99,29 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		return fmt.Errorf("failed to run copy into temporary table: %w", err)
 	}
 
-	rows, err := result.RowsAffected()
+	rows, err := sql.RowsToObjects(sqlRows)
 	if err != nil {
-		return fmt.Errorf("failed to get rows affected: %w", err)
+		return fmt.Errorf("failed to convert rows to objects: %w", err)
+	}
+
+	var rowsLoaded int64
+	for _, row := range rows {
+		rowsLoadedStr, err := maputil.GetTypeFromMap[string](row, "rows_loaded")
+		if err != nil {
+			return fmt.Errorf("failed to get rows loaded: %w", err)
+		}
+
+		_rowsLoaded, err := strconv.ParseInt(rowsLoadedStr, 10, 64)
+		if err != nil {
+			return fmt.Errorf("failed to parse rows loaded: %w", err)
+		}
+
+		rowsLoaded += _rowsLoaded
 	}
 
 	expectedRows := int64(len(tableData.Rows()))
-	if rows != expectedRows {
-		return fmt.Errorf("expected %d rows to be inserted, but got %d", expectedRows, rows)
+	if rowsLoaded != expectedRows {
+		return fmt.Errorf("expected %d rows to be inserted, but got %d", expectedRows, rowsLoaded)
 	}
 
 	return nil
