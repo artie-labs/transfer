@@ -118,7 +118,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 	s.stageStore.configMap.AddTable(s.identifierFor(tableData), types.NewDestinationTableConfig(anotherCols, true))
 
 	// Set up expectations for CREATE TABLE - use regex pattern to match the actual table name with suffix
-	createTableRegex := regexp.QuoteMeta(`CREATE TABLE IF NOT EXISTS "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`" ("ID" string,"FIRST_NAME" string,"INVALID_COLUMN" invalid,"__ARTIE_DELETE" boolean,"__ARTIE_ONLY_SET_DELETE" boolean) DATA_RETENTION_TIME_IN_DAYS = 0 STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='__artie_null_value' EMPTY_FIELD_AS_NULL=FALSE)`)
+	createTableRegex := regexp.QuoteMeta(`CREATE TABLE IF NOT EXISTS "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`" ("ID" string,"FIRST_NAME" string,"__ARTIE_DELETE" boolean,"__ARTIE_ONLY_SET_DELETE" boolean) DATA_RETENTION_TIME_IN_DAYS = 0 STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='__artie_null_value' EMPTY_FIELD_AS_NULL=FALSE)`)
 	s.mockDB.ExpectExec(createTableRegex).WillReturnResult(sqlmock.NewResult(0, 0))
 
 	// Set up expectations for PUT - use regex pattern to match the actual table name with suffix
@@ -126,7 +126,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 	s.mockDB.ExpectExec(putQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
 
 	// Set up expectations for COPY INTO - use regex pattern to match the actual table name with suffix
-	copyQueryRegex := regexp.QuoteMeta(`COPY INTO "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`" ("ID","FIRST_NAME","INVALID_COLUMN","__ARTIE_DELETE","__ARTIE_ONLY_SET_DELETE") FROM (SELECT $1,$2,$3,$4,$5 FROM @"CUSTOMER"."PUBLIC"."%`) + `.*` + regexp.QuoteMeta(`") FILES = ('CUSTOMER.PUBLIC.`) + `.*` + regexp.QuoteMeta(`.csv.gz')`)
+	copyQueryRegex := regexp.QuoteMeta(`COPY INTO "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`" ("ID","FIRST_NAME","__ARTIE_DELETE","__ARTIE_ONLY_SET_DELETE") FROM (SELECT $1,$2,$3,$4 FROM @"CUSTOMER"."PUBLIC"."%`) + `.*` + regexp.QuoteMeta(`") FILES = ('CUSTOMER.PUBLIC.`) + `.*` + regexp.QuoteMeta(`.csv.gz')`)
 	s.mockDB.ExpectExec(copyQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
 
 	// Set up expectations for MERGE - use regex pattern to match the actual table name with suffix
