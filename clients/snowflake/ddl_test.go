@@ -1,13 +1,18 @@
 package snowflake
 
 import (
+	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/clients/snowflake/dialect"
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
@@ -99,19 +104,23 @@ func (s *SnowflakeTestSuite) TestManipulateShouldDeleteColumn() {
 		time.Now().Add(24*time.Hour), false))
 }
 
-// func (s *SnowflakeTestSuite) TestGetTableConfig() {
-// 	// If the table does not exist, snowflakeTableConfig should say so.
-// 	fqName := "customers.public.orders22"
-// 	s.fakeStageStore.QueryReturns(nil, fmt.Errorf("Table '%s' does not exist or not authorized", fqName))
+func (s *SnowflakeTestSuite) TestGetTableConfig() {
+	// If the table does not exist, snowflakeTableConfig should say so.
+	fqName := "customers.public.orders22"
 
-// 	tableData := optimization.NewTableData(nil, config.Replication, nil,
-// 		kafkalib.TopicConfig{Database: "customers", Schema: "public", TableName: "orders22"}, "foo")
+	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "customers", Schema: "public", TableName: "orders22"}, "foo")
 
-// 	tableConfig, err := s.stageStore.GetTableConfig(s.identifierFor(tableData), tableData.TopicConfig().DropDeletedColumns)
-// 	assert.NotNil(s.T(), tableConfig, "config is nil")
-// 	assert.NoError(s.T(), err)
+	s.mockDB.ExpectQuery(regexp.QuoteMeta(`DESC TABLE "CUSTOMERS"."PUBLIC"."FOO"`)).
+		WillReturnError(fmt.Errorf("Table '%s' does not exist or not authorized", fqName))
 
-// 	assert.True(s.T(), tableConfig.CreateTable())
-// 	assert.Len(s.T(), tableConfig.GetColumns(), 0)
-// 	assert.False(s.T(), tableConfig.DropDeletedColumns())
-// }
+	tableConfig, err := s.stageStore.GetTableConfig(s.identifierFor(tableData), tableData.TopicConfig().DropDeletedColumns)
+	assert.NotNil(s.T(), tableConfig, "config is nil")
+	assert.NoError(s.T(), err)
+
+	assert.True(s.T(), tableConfig.CreateTable())
+	assert.Len(s.T(), tableConfig.GetColumns(), 0)
+	assert.False(s.T(), tableConfig.DropDeletedColumns())
+
+	// Verify all expectations were met
+	assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
+}
