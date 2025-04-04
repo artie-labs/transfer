@@ -100,8 +100,9 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		return fmt.Errorf("failed to get rows affected: %w", err)
 	}
 
-	if rows != int64(len(tableData.Rows())) {
-		return fmt.Errorf("expected %d rows to be inserted, but got %d", len(tableData.Rows()), rows)
+	expectedRows := int64(len(tableData.Rows()))
+	if rows != expectedRows {
+		return fmt.Errorf("expected %d rows to be inserted, but got %d", expectedRows, rows)
 	}
 
 	return nil
