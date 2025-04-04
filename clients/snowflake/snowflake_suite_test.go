@@ -3,18 +3,19 @@ package snowflake
 import (
 	"testing"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/db"
-	"github.com/artie-labs/transfer/lib/mocks"
+	"github.com/artie-labs/transfer/lib/typing"
 )
 
 type SnowflakeTestSuite struct {
 	suite.Suite
-	fakeStageStore *mocks.FakeStore
-	stageStore     *Store
+	mockDB     sqlmock.Sqlmock
+	stageStore *Store
 }
 
 func (s *SnowflakeTestSuite) SetupTest() {
@@ -22,12 +23,11 @@ func (s *SnowflakeTestSuite) SetupTest() {
 }
 
 func (s *SnowflakeTestSuite) ResetStore() {
-	s.fakeStageStore = &mocks.FakeStore{}
-	stageStore := db.Store(s.fakeStageStore)
-	var err error
-	s.stageStore, err = LoadSnowflake(config.Config{
-		Snowflake: &config.Snowflake{},
-	}, &stageStore)
+	_db, mock, err := sqlmock.New()
+	assert.NoError(s.T(), err)
+
+	s.mockDB = mock
+	s.stageStore, err = LoadSnowflake(config.Config{Snowflake: &config.Snowflake{}}, typing.ToPtr(db.NewStoreWrapperForTest(_db)))
 	assert.NoError(s.T(), err)
 }
 

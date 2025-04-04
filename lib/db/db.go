@@ -27,6 +27,12 @@ type storeWrapper struct {
 	*sql.DB
 }
 
+func NewStoreWrapperForTest(db *sql.DB) Store {
+	return &storeWrapper{
+		DB: db,
+	}
+}
+
 func (s *storeWrapper) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
 	var result sql.Result
 	var err error

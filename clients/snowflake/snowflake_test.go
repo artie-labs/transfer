@@ -293,7 +293,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 		"id":                                typing.Integer,
 		"created_at":                        typing.TimestampTZ,
 		"name":                              typing.String,
-		constants.DeleteColumnMarker:        typing.Boolean,
+		constants.DeleteColumnMarker:        typing.Boolean
 		constants.OnlySetDeleteColumnMarker: typing.Boolean,
 	}
 
