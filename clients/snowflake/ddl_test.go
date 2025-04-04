@@ -2,7 +2,6 @@ package snowflake
 
 import (
 	"fmt"
-	"regexp"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -109,9 +108,7 @@ func (s *SnowflakeTestSuite) TestGetTableConfig() {
 	fqName := "customers.public.orders22"
 
 	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "customers", Schema: "public", TableName: "orders22"}, "foo")
-
-	s.mockDB.ExpectQuery(regexp.QuoteMeta(`DESC TABLE "CUSTOMERS"."PUBLIC"."FOO"`)).
-		WillReturnError(fmt.Errorf("Table '%s' does not exist or not authorized", fqName))
+	s.mockDB.ExpectQuery(`DESC TABLE "CUSTOMERS"."PUBLIC"."FOO"`).WillReturnError(fmt.Errorf("Table '%s' does not exist or not authorized", fqName))
 
 	tableConfig, err := s.stageStore.GetTableConfig(s.identifierFor(tableData), tableData.TopicConfig().DropDeletedColumns)
 	assert.NotNil(s.T(), tableConfig, "config is nil")
