@@ -151,8 +151,18 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 	}
 
 	copyCommand := s.dialect().BuildCopyIntoQuery(tempTableID, ordinalColumns, file.DBFSFilePath())
-	if _, err = s.ExecContext(ctx, copyCommand); err != nil {
+	result, err := s.ExecContext(ctx, copyCommand)
+	if err != nil {
 		return fmt.Errorf("failed to run COPY INTO for temporary table: %w", err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rows != int64(len(tableData.Rows())) {
+		return fmt.Errorf("expected %d rows to be inserted, but got %d", len(tableData.Rows()), rows)
 	}
 
 	return nil
