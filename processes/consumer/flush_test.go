@@ -83,6 +83,21 @@ func (f *FlushTestSuite) TestShouldFlush() {
 	assert.True(f.T(), flush, "Flush successfully triggered via pool size.")
 }
 
+// Create a thread-safe mock implementation to avoid data races
+type threadSafeResult struct {
+	rowsAffected int64
+	err          error
+}
+
+// Implement the sql.Result interface methods
+func (r *threadSafeResult) LastInsertId() (int64, error) {
+	return 0, nil
+}
+
+func (r *threadSafeResult) RowsAffected() (int64, error) {
+	return r.rowsAffected, r.err
+}
+
 func (f *FlushTestSuite) TestMemoryConcurrency() {
 	tableNames := []string{"dusty", "snowflake", "postgres"}
 	var wg sync.WaitGroup
@@ -116,14 +131,19 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 
 	wg.Wait()
 
+	// Create an instance of our thread-safe mock
+	threadSafeMock := &threadSafeResult{
+		rowsAffected: 5,
+		err:          nil,
+	}
+
+	// Set up the mock store to use our thread-safe implementation
+	f.fakeStore.ExecContextReturns(threadSafeMock, nil)
+
 	// Verify all the tables exist.
 	for idx := range tableNames {
 		td := f.db.GetOrCreateTableData(tableNames[idx])
 		assert.Len(f.T(), td.Rows(), 5)
-
-		fakeCopyIntoResult := &mocks.FakeResult{}
-		fakeCopyIntoResult.RowsAffectedReturns(int64(5), nil)
-		f.fakeStore.ExecContextReturns(fakeCopyIntoResult, nil)
 	}
 
 	assert.NoError(f.T(), Flush(f.T().Context(), f.db, f.dest, metrics.NullMetricsProvider{}, Args{}))
