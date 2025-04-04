@@ -119,24 +119,16 @@ func (s *SnowflakeTestSuite) TestBackfillColumn() {
 
 	s.runTestCaseWithReset(func() {
 		// default col that has default value that needs to be backfilled
-		backfillQuery := regexp.QuoteMeta(`UPDATE "DB"."PUBLIC"."TABLENAME" as t SET t."DEFAULT" = true WHERE t."DEFAULT" IS NULL;`)
-		s.mockDB.ExpectExec(backfillQuery).WillReturnResult(sqlmock.NewResult(0, 0))
-
-		commentQuery := regexp.QuoteMeta(`COMMENT ON COLUMN "DB"."PUBLIC"."TABLENAME"."DEFAULT" IS '{"backfilled": true}';`)
-		s.mockDB.ExpectExec(commentQuery).WillReturnResult(sqlmock.NewResult(0, 0))
-
+		s.mockDB.ExpectExec(`UPDATE "DB"."PUBLIC"."TABLENAME" as t SET t."DEFAULT" = true WHERE t."DEFAULT" IS NULL;`).WillReturnResult(sqlmock.NewResult(0, 0))
+		s.mockDB.ExpectExec(`COMMENT ON COLUMN "DB"."PUBLIC"."TABLENAME"."DEFAULT" IS '{"backfilled": true}';`).WillReturnResult(sqlmock.NewResult(0, 0))
 		assert.NoError(s.T(), shared.BackfillColumn(s.stageStore, needsBackfillColDefault, tableID))
 		assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
 	})
 
 	s.runTestCaseWithReset(func() {
 		// default col that has default value that needs to be backfilled (repeat)
-		backfillQuery := regexp.QuoteMeta(`UPDATE "DB"."PUBLIC"."TABLENAME" as t SET t."DEFAULT" = true WHERE t."DEFAULT" IS NULL;`)
-		s.mockDB.ExpectExec(backfillQuery).WillReturnResult(sqlmock.NewResult(0, 0))
-
-		commentQuery := regexp.QuoteMeta(`COMMENT ON COLUMN "DB"."PUBLIC"."TABLENAME"."DEFAULT" IS '{"backfilled": true}';`)
-		s.mockDB.ExpectExec(commentQuery).WillReturnResult(sqlmock.NewResult(0, 0))
-
+		s.mockDB.ExpectExec(`UPDATE "DB"."PUBLIC"."TABLENAME" as t SET t."DEFAULT" = true WHERE t."DEFAULT" IS NULL;`).WillReturnResult(sqlmock.NewResult(0, 0))
+		s.mockDB.ExpectExec(`COMMENT ON COLUMN "DB"."PUBLIC"."TABLENAME"."DEFAULT" IS '{"backfilled": true}';`).WillReturnResult(sqlmock.NewResult(0, 0))
 		assert.NoError(s.T(), shared.BackfillColumn(s.stageStore, needsBackfillColDefault, tableID))
 		assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
 	})
