@@ -72,16 +72,15 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 	// I want to delete the value, so I update Postgres and set the cell to be null
 	// TableData will think the column is invalid and tableConfig will think column = string
 	// Before we call merge, it should reconcile it.
-	colToKindDetailsMap := map[string]typing.KindDetails{
-		"id":                                typing.String,
-		"first_name":                        typing.String,
-		"invalid_column":                    typing.Invalid,
-		constants.DeleteColumnMarker:        typing.Boolean,
-		constants.OnlySetDeleteColumnMarker: typing.Boolean,
-	}
+	colToKindDetailsMap := maputil.NewOrderedMap[typing.KindDetails](true)
+	colToKindDetailsMap.Add("id", typing.String)
+	colToKindDetailsMap.Add("first_name", typing.String)
+	colToKindDetailsMap.Add("invalid_column", typing.Invalid)
+	colToKindDetailsMap.Add(constants.DeleteColumnMarker, typing.Boolean)
+	colToKindDetailsMap.Add(constants.OnlySetDeleteColumnMarker, typing.Boolean)
 
 	var cols columns.Columns
-	for colName, colKind := range colToKindDetailsMap {
+	for colName, colKind := range colToKindDetailsMap.All() {
 		cols.AddColumn(columns.NewColumn(colName, colKind))
 	}
 
@@ -119,7 +118,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 	s.stageStore.configMap.AddTable(s.identifierFor(tableData), types.NewDestinationTableConfig(anotherCols, true))
 
 	// Set up expectations for CREATE TABLE - use regex pattern to match the actual table name with suffix
-	createTableRegex := regexp.QuoteMeta(`CREATE TABLE IF NOT EXISTS "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`" \("__ARTIE_ONLY_SET_DELETE" boolean,"ID" string,"FIRST_NAME" string,"__ARTIE_DELETE" boolean\) DATA_RETENTION_TIME_IN_DAYS = 0 STAGE_COPY_OPTIONS = \( PURGE = TRUE \) STAGE_FILE_FORMAT = \( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='__artie_null_value' EMPTY_FIELD_AS_NULL=FALSE\)`)
+	createTableRegex := regexp.QuoteMeta(`CREATE TABLE IF NOT EXISTS "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`" ("ID" string,"FIRST_NAME" string,"INVALID_COLUMN" invalid,"__ARTIE_DELETE" boolean,"__ARTIE_ONLY_SET_DELETE" boolean) DATA_RETENTION_TIME_IN_DAYS = 0 STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='__artie_null_value' EMPTY_FIELD_AS_NULL=FALSE)`)
 	s.mockDB.ExpectExec(createTableRegex).WillReturnResult(sqlmock.NewResult(0, 0))
 
 	// Set up expectations for PUT - use regex pattern to match the actual table name with suffix
@@ -127,7 +126,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 	s.mockDB.ExpectExec(putQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
 
 	// Set up expectations for COPY INTO - use regex pattern to match the actual table name with suffix
-	copyQueryRegex := regexp.QuoteMeta(`COPY INTO "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`" \("ID","NAME","__ARTIE_DELETE","__ARTIE_ONLY_SET_DELETE","CREATED_AT"\) FROM \(SELECT \$1,\$2,\$3,\$4,\$5 FROM @"CUSTOMER"."PUBLIC"."%`) + `.*` + regexp.QuoteMeta(`"\) FILES = \('CUSTOMER.PUBLIC.`) + `.*` + regexp.QuoteMeta(`.csv.gz'\)`)
+	copyQueryRegex := regexp.QuoteMeta(`COPY INTO "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`" ("ID","FIRST_NAME","INVALID_COLUMN","__ARTIE_DELETE","__ARTIE_ONLY_SET_DELETE") FROM (SELECT $1,$2,$3,$4,$5 FROM @"CUSTOMER"."PUBLIC"."%`) + `.*` + regexp.QuoteMeta(`") FILES = ('CUSTOMER.PUBLIC.`) + `.*` + regexp.QuoteMeta(`.csv.gz')`)
 	s.mockDB.ExpectExec(copyQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
 
 	// Set up expectations for MERGE - use regex pattern to match the actual table name with suffix
@@ -341,7 +340,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	s.mockDB.ExpectExec(putQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
 
 	// Set up expectations for COPY INTO - use regex pattern to match the actual table name with suffix
-	copyQueryRegex := regexp.QuoteMeta(`COPY INTO "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`" \("ID","NAME","__ARTIE_DELETE","__ARTIE_ONLY_SET_DELETE","CREATED_AT"\) FROM \(SELECT \$1,\$2,\$3,\$4,\$5 FROM @"CUSTOMER"."PUBLIC"."%`) + `.*` + regexp.QuoteMeta(`"\) FILES = \('CUSTOMER.PUBLIC.`) + `.*` + regexp.QuoteMeta(`.csv.gz'\)`)
+	copyQueryRegex := regexp.QuoteMeta(`COPY INTO "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`" ("ID","NAME","__ARTIE_DELETE","__ARTIE_ONLY_SET_DELETE","CREATED_AT") FROM (SELECT $1,$2,$3,$4,$5 FROM @"CUSTOMER"."PUBLIC"."%`) + `.*` + regexp.QuoteMeta(`") FILES = ('CUSTOMER.PUBLIC.`) + `.*` + regexp.QuoteMeta(`.csv.gz')`)
 	s.mockDB.ExpectExec(copyQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
 
 	// Set up expectations for MERGE - use regex pattern to match the actual table name with suffix
@@ -377,7 +376,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	}
 
 	// Second merge - Set up expectations for CREATE TABLE - use regex pattern to match the actual table name with suffix
-	createTableRegex2 := regexp.QuoteMeta(`CREATE TABLE IF NOT EXISTS "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`" \("ID" int,"CREATED_AT" timestamp_tz,"NAME" string,"__ARTIE_DELETE" boolean,"__ARTIE_ONLY_SET_DELETE" boolean,"NEW" string\) DATA_RETENTION_TIME_IN_DAYS = 0 STAGE_COPY_OPTIONS = \( PURGE = TRUE \) STAGE_FILE_FORMAT = \( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='__artie_null_value' EMPTY_FIELD_AS_NULL=FALSE\)`)
+	createTableRegex2 := regexp.QuoteMeta(`CREATE TABLE IF NOT EXISTS "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`" ("ID" int,"CREATED_AT" timestamp_tz,"NAME" string,"__ARTIE_DELETE" boolean,"__ARTIE_ONLY_SET_DELETE" boolean,"NEW" string) DATA_RETENTION_TIME_IN_DAYS = 0 STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='__artie_null_value' EMPTY_FIELD_AS_NULL=FALSE)`)
 	s.mockDB.ExpectExec(createTableRegex2).WillReturnResult(sqlmock.NewResult(0, 0))
 
 	// Set up expectations for PUT - use regex pattern to match the actual table name with suffix
