@@ -6,10 +6,12 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/config"
@@ -91,7 +93,7 @@ func (s *SnowflakeTestSuite) TestBackfillColumn() {
 	s.runTestCaseWithReset(func() {
 		// col that doesn't have default value
 		assert.NoError(s.T(), shared.BackfillColumn(s.stageStore, columns.NewColumn("foo", typing.Invalid), tableID))
-		assert.Equal(s.T(), 0, s.fakeStageStore.ExecCallCount())
+		assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
 	})
 
 	s.runTestCaseWithReset(func() {
@@ -100,35 +102,32 @@ func (s *SnowflakeTestSuite) TestBackfillColumn() {
 		backfilledCol.SetDefaultValue(true)
 		backfilledCol.SetBackfilled(true)
 		assert.NoError(s.T(), shared.BackfillColumn(s.stageStore, backfilledCol, tableID))
-		assert.Equal(s.T(), 0, s.fakeStageStore.ExecCallCount())
+		assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
 	})
 
 	s.runTestCaseWithReset(func() {
 		// col that has default value that needs to be backfilled
+		s.mockDB.ExpectExec(`UPDATE "DB"."PUBLIC"."TABLENAME" as t SET t."FOO" = true WHERE t."FOO" IS NULL;`).WillReturnResult(sqlmock.NewResult(0, 0))
+		s.mockDB.ExpectExec(`COMMENT ON COLUMN "DB"."PUBLIC"."TABLENAME"."FOO" IS '{"backfilled": true}';`).WillReturnResult(sqlmock.NewResult(0, 0))
+
 		assert.NoError(s.T(), shared.BackfillColumn(s.stageStore, needsBackfillCol, tableID))
-		assert.Equal(s.T(), 2, s.fakeStageStore.ExecCallCount())
+		assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
 	})
 
 	s.runTestCaseWithReset(func() {
 		// default col that has default value that needs to be backfilled
+		s.mockDB.ExpectExec(`UPDATE "DB"."PUBLIC"."TABLENAME" as t SET t."DEFAULT" = true WHERE t."DEFAULT" IS NULL;`).WillReturnResult(sqlmock.NewResult(0, 0))
+		s.mockDB.ExpectExec(`COMMENT ON COLUMN "DB"."PUBLIC"."TABLENAME"."DEFAULT" IS '{"backfilled": true}';`).WillReturnResult(sqlmock.NewResult(0, 0))
 		assert.NoError(s.T(), shared.BackfillColumn(s.stageStore, needsBackfillColDefault, tableID))
-
-		backfillSQL, _ := s.fakeStageStore.ExecArgsForCall(0)
-		assert.Equal(s.T(), `UPDATE "DB"."PUBLIC"."TABLENAME" as t SET t."DEFAULT" = true WHERE t."DEFAULT" IS NULL;`, backfillSQL)
-
-		commentSQL, _ := s.fakeStageStore.ExecArgsForCall(1)
-		assert.Equal(s.T(), `COMMENT ON COLUMN "DB"."PUBLIC"."TABLENAME"."DEFAULT" IS '{"backfilled": true}';`, commentSQL)
+		assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
 	})
 
 	s.runTestCaseWithReset(func() {
 		// default col that has default value that needs to be backfilled (repeat)
+		s.mockDB.ExpectExec(`UPDATE "DB"."PUBLIC"."TABLENAME" as t SET t."DEFAULT" = true WHERE t."DEFAULT" IS NULL;`).WillReturnResult(sqlmock.NewResult(0, 0))
+		s.mockDB.ExpectExec(`COMMENT ON COLUMN "DB"."PUBLIC"."TABLENAME"."DEFAULT" IS '{"backfilled": true}';`).WillReturnResult(sqlmock.NewResult(0, 0))
 		assert.NoError(s.T(), shared.BackfillColumn(s.stageStore, needsBackfillColDefault, tableID))
-
-		backfillSQL, _ := s.fakeStageStore.ExecArgsForCall(0)
-		assert.Equal(s.T(), `UPDATE "DB"."PUBLIC"."TABLENAME" as t SET t."DEFAULT" = true WHERE t."DEFAULT" IS NULL;`, backfillSQL)
-
-		commentSQL, _ := s.fakeStageStore.ExecArgsForCall(1)
-		assert.Equal(s.T(), `COMMENT ON COLUMN "DB"."PUBLIC"."TABLENAME"."DEFAULT" IS '{"backfilled": true}';`, commentSQL)
+		assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
 	})
 }
 
@@ -163,37 +162,41 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 	sflkTc := s.stageStore.GetConfigMap().GetTableConfig(tempTableID)
 
 	{
-		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(s.T().Context(), tableData, sflkTc, tempTableID, tempTableID, types.AdditionalSettings{}, true))
-		assert.Equal(s.T(), 0, s.fakeStageStore.ExecCallCount())
-		assert.Equal(s.T(), 3, s.fakeStageStore.ExecContextCallCount())
-
-		// First call is to create the temp table
-		_, createQuery, _ := s.fakeStageStore.ExecContextArgsForCall(0)
-
-		prefixQuery := fmt.Sprintf(
-			`CREATE TABLE IF NOT EXISTS %s ("USER_ID" string,"FIRST_NAME" string,"LAST_NAME" string,"DUSTY" string) DATA_RETENTION_TIME_IN_DAYS = 0 STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='__artie_null_value' EMPTY_FIELD_AS_NULL=FALSE)`, tempTableName)
-		containsPrefix := strings.HasPrefix(createQuery, prefixQuery)
-		assert.True(s.T(), containsPrefix, fmt.Sprintf("createQuery:%v, prefixQuery:%s", createQuery, prefixQuery))
-		resourceName := addPrefixToTableName(tempTableID, "%")
-		// Second call is a PUT
+		// Set up expectations for the first test case
+		// Use regexp.MustCompile to properly escape special characters
+		createTableRegex := regexp.QuoteMeta(fmt.Sprintf(
+			`CREATE TABLE IF NOT EXISTS %s ("USER_ID" string,"FIRST_NAME" string,"LAST_NAME" string,"DUSTY" string) DATA_RETENTION_TIME_IN_DAYS = 0 STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='__artie_null_value' EMPTY_FIELD_AS_NULL=FALSE)`, tempTableName))
+		s.mockDB.ExpectExec(createTableRegex).WillReturnResult(sqlmock.NewResult(0, 0))
 
 		stagingTableID := tempTableID.WithTable("%" + tempTableID.Table())
-		_, putQuery, _ := s.fakeStageStore.ExecContextArgsForCall(1)
-		assert.Equal(s.T(),
-			fmt.Sprintf(`PUT 'file://%s' @"DATABASE"."SCHEMA".%s AUTO_COMPRESS=TRUE`,
-				filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv", strings.ReplaceAll(tempTableName, `"`, ""))),
-				stagingTableID.EscapedTable(),
-			), putQuery)
-		// Third call is a COPY INTO
-		_, copyQuery, _ := s.fakeStageStore.ExecContextArgsForCall(2)
-		assert.Equal(s.T(), fmt.Sprintf(`COPY INTO %s ("USER_ID","FIRST_NAME","LAST_NAME","DUSTY") FROM (SELECT $1,$2,$3,$4 FROM @%s) FILES = ('%s.csv.gz')`,
-			tempTableName, resourceName, strings.ReplaceAll(tempTableName, `"`, "")), copyQuery)
+		putQueryRegex := regexp.QuoteMeta(fmt.Sprintf(`PUT 'file://%s' @"DATABASE"."SCHEMA".%s AUTO_COMPRESS=TRUE`,
+			filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv", strings.ReplaceAll(tempTableName, `"`, ""))),
+			stagingTableID.EscapedTable()))
+		s.mockDB.ExpectExec(putQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
+
+		resourceName := addPrefixToTableName(tempTableID, "%")
+		copyQueryRegex := regexp.QuoteMeta(fmt.Sprintf(`COPY INTO %s ("USER_ID","FIRST_NAME","LAST_NAME","DUSTY") FROM (SELECT $1,$2,$3,$4 FROM @%s) FILES = ('%s.csv.gz')`,
+			tempTableName, resourceName, strings.ReplaceAll(tempTableName, `"`, "")))
+		s.mockDB.ExpectExec(copyQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
+
+		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(s.T().Context(), tableData, sflkTc, tempTableID, tempTableID, types.AdditionalSettings{}, true))
+		assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
 	}
 	{
-		// Don't create the temporary table.
+		// Set up expectations for the second test case (don't create temporary table)
+		stagingTableID := tempTableID.WithTable("%" + tempTableID.Table())
+		putQueryRegex := regexp.QuoteMeta(fmt.Sprintf(`PUT 'file://%s' @"DATABASE"."SCHEMA".%s AUTO_COMPRESS=TRUE`,
+			filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv", strings.ReplaceAll(tempTableName, `"`, ""))),
+			stagingTableID.EscapedTable()))
+		s.mockDB.ExpectExec(putQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
+
+		resourceName := addPrefixToTableName(tempTableID, "%")
+		copyQueryRegex := regexp.QuoteMeta(fmt.Sprintf(`COPY INTO %s ("USER_ID","FIRST_NAME","LAST_NAME","DUSTY") FROM (SELECT $1,$2,$3,$4 FROM @%s) FILES = ('%s.csv.gz')`,
+			tempTableName, resourceName, strings.ReplaceAll(tempTableName, `"`, "")))
+		s.mockDB.ExpectExec(copyQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
+
 		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(s.T().Context(), tableData, sflkTc, tempTableID, tempTableID, types.AdditionalSettings{}, false))
-		assert.Equal(s.T(), 0, s.fakeStageStore.ExecCallCount())
-		assert.Equal(s.T(), 5, s.fakeStageStore.ExecContextCallCount())
+		assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
 	}
 }
 

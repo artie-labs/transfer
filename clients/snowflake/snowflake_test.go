@@ -2,13 +2,13 @@ package snowflake
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/clients/shared"
@@ -18,22 +18,12 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/kafkalib/partition"
+	"github.com/artie-labs/transfer/lib/maputil"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
-
-func retrieveTableNameFromCreateTable(t *testing.T, query string) string {
-	t.Helper()
-	parts := strings.Split(query, ".")
-	assert.Len(t, parts, 3)
-
-	tableNamePart := parts[2]
-	tableNameParts := strings.Split(tableNamePart, " ")
-	assert.True(t, len(tableNameParts) > 2, tableNamePart)
-	return strings.ReplaceAll(tableNameParts[0], `"`, "")
-}
 
 func (s *SnowflakeTestSuite) identifierFor(tableData *optimization.TableData) sql.TableIdentifier {
 	return s.stageStore.IdentifierFor(tableData.TopicConfig(), tableData.Name())
@@ -52,11 +42,13 @@ func (s *SnowflakeTestSuite) TestDropTable() {
 		assert.True(s.T(), ok)
 
 		snowflakeTableID = snowflakeTableID.WithDisableDropProtection(true).(dialect.TableIdentifier)
-		assert.NoError(s.T(), s.stageStore.DropTable(s.T().Context(), snowflakeTableID))
 
-		// Check store to see it drop
-		_, query, _ := s.fakeStageStore.ExecContextArgsForCall(0)
-		assert.Equal(s.T(), query, `DROP TABLE IF EXISTS "CUSTOMER"."PUBLIC"."__ARTIE_FOO"`)
+		// Set up expectation for DROP TABLE query
+		s.mockDB.ExpectExec(`DROP TABLE IF EXISTS "CUSTOMER"."PUBLIC"."__ARTIE_FOO"`).WillReturnResult(sqlmock.NewResult(0, 0))
+
+		assert.NoError(s.T(), s.stageStore.DropTable(s.T().Context(), snowflakeTableID))
+		assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
+
 		// Cache should be empty as well.
 		assert.Nil(s.T(), s.stageStore.configMap.GetTableConfig(snowflakeTableID))
 	}
@@ -68,16 +60,15 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 	// I want to delete the value, so I update Postgres and set the cell to be null
 	// TableData will think the column is invalid and tableConfig will think column = string
 	// Before we call merge, it should reconcile it.
-	colToKindDetailsMap := map[string]typing.KindDetails{
-		"id":                                typing.String,
-		"first_name":                        typing.String,
-		"invalid_column":                    typing.Invalid,
-		constants.DeleteColumnMarker:        typing.Boolean,
-		constants.OnlySetDeleteColumnMarker: typing.Boolean,
-	}
+	colToKindDetailsMap := maputil.NewOrderedMap[typing.KindDetails](true)
+	colToKindDetailsMap.Add("id", typing.String)
+	colToKindDetailsMap.Add("first_name", typing.String)
+	colToKindDetailsMap.Add("invalid_column", typing.Invalid)
+	colToKindDetailsMap.Add(constants.DeleteColumnMarker, typing.Boolean)
+	colToKindDetailsMap.Add(constants.OnlySetDeleteColumnMarker, typing.Boolean)
 
 	var cols columns.Columns
-	for colName, colKind := range colToKindDetailsMap {
+	for colName, colKind := range colToKindDetailsMap.All() {
 		cols.AddColumn(columns.NewColumn(colName, colKind))
 	}
 
@@ -114,9 +105,30 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 
 	s.stageStore.configMap.AddTable(s.identifierFor(tableData), types.NewDestinationTableConfig(anotherCols, true))
 
+	// Set up expectations for CREATE TABLE - use regex pattern to match the actual table name with suffix
+	createTableRegex := regexp.QuoteMeta(`CREATE TABLE IF NOT EXISTS "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`" ("ID" string,"FIRST_NAME" string,"__ARTIE_DELETE" boolean,"__ARTIE_ONLY_SET_DELETE" boolean) DATA_RETENTION_TIME_IN_DAYS = 0 STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='__artie_null_value' EMPTY_FIELD_AS_NULL=FALSE)`)
+	s.mockDB.ExpectExec(createTableRegex).WillReturnResult(sqlmock.NewResult(0, 0))
+
+	// Set up expectations for PUT - use regex pattern to match the actual table name with suffix
+	putQueryRegex := regexp.QuoteMeta(`PUT 'file://`) + `.*` + regexp.QuoteMeta(`' @"CUSTOMER"."PUBLIC"."%`) + `.*` + regexp.QuoteMeta(`" AUTO_COMPRESS=TRUE`)
+	s.mockDB.ExpectExec(putQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
+
+	// Set up expectations for COPY INTO - use regex pattern to match the actual table name with suffix
+	copyQueryRegex := regexp.QuoteMeta(`COPY INTO "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`" ("ID","FIRST_NAME","__ARTIE_DELETE","__ARTIE_ONLY_SET_DELETE") FROM (SELECT $1,$2,$3,$4 FROM @"CUSTOMER"."PUBLIC"."%`) + `.*` + regexp.QuoteMeta(`") FILES = ('CUSTOMER.PUBLIC.`) + `.*` + regexp.QuoteMeta(`.csv.gz')`)
+	s.mockDB.ExpectExec(copyQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
+
+	// Set up expectations for MERGE - use regex pattern to match the actual table name with suffix
+	mergeQueryRegex := regexp.QuoteMeta(`MERGE INTO "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`"`)
+	s.mockDB.ExpectExec(mergeQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
+
+	// Set up expectations for DROP TABLE - use regex pattern to match the actual table name with suffix
+	dropQueryRegex := regexp.QuoteMeta(`DROP TABLE IF EXISTS "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`"`)
+	s.mockDB.ExpectExec(dropQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
+
 	commitTx, err := s.stageStore.Merge(s.T().Context(), tableData)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
+	assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
 
 	_col, isOk := tableData.ReadOnlyInMemoryCols().GetColumn("first_name")
 	assert.True(s.T(), isOk)
@@ -124,23 +136,20 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 }
 
 func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
-	colToKindDetailsMap := map[string]typing.KindDetails{
-		"id":                                typing.Integer,
-		"name":                              typing.String,
-		constants.DeleteColumnMarker:        typing.Boolean,
-		constants.OnlySetDeleteColumnMarker: typing.Boolean,
-		// Add kindDetails to created_at
-		"created_at": typing.MustParseValue("", nil, time.Now().Format(time.RFC3339Nano)),
-	}
+	colToKindDetailsMap := maputil.NewOrderedMap[typing.KindDetails](true)
+	colToKindDetailsMap.Add("id", typing.Integer)
+	colToKindDetailsMap.Add("name", typing.String)
+	colToKindDetailsMap.Add(constants.DeleteColumnMarker, typing.Boolean)
+	colToKindDetailsMap.Add(constants.OnlySetDeleteColumnMarker, typing.Boolean)
+	colToKindDetailsMap.Add("created_at", typing.MustParseValue("", nil, time.Now().Format(time.RFC3339Nano)))
 
 	var cols columns.Columns
-	for colName, colKind := range colToKindDetailsMap {
+	for colName, colKind := range colToKindDetailsMap.All() {
 		cols.AddColumn(columns.NewColumn(colName, colKind))
 	}
 
 	rowsData := make(map[string]map[string]any)
-
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		rowsData[fmt.Sprintf("pk-%d", i)] = map[string]any{
 			"id":         i,
 			"created_at": time.Now().Format(time.RFC3339Nano),
@@ -161,42 +170,48 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 	}
 
 	s.stageStore.configMap.AddTable(s.identifierFor(tableData), types.NewDestinationTableConfig(cols.GetColumns(), true))
+
+	// Set up expectations for CREATE TABLE - use regex pattern to match the actual table name with suffix
+	createTableRegex := regexp.QuoteMeta(`CREATE TABLE IF NOT EXISTS "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`" ("ID" int,"NAME" string,"__ARTIE_DELETE" boolean,"__ARTIE_ONLY_SET_DELETE" boolean,"CREATED_AT" string) DATA_RETENTION_TIME_IN_DAYS = 0 STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='__artie_null_value' EMPTY_FIELD_AS_NULL=FALSE)`)
+	s.mockDB.ExpectExec(createTableRegex).WillReturnResult(sqlmock.NewResult(0, 0))
+
+	// Set up expectations for PUT - use regex pattern to match the actual table name with suffix
+	putQueryRegex := regexp.QuoteMeta(`PUT 'file://`) + `.*` + regexp.QuoteMeta(`' @"CUSTOMER"."PUBLIC"."%`) + `.*` + regexp.QuoteMeta(`" AUTO_COMPRESS=TRUE`)
+	s.mockDB.ExpectExec(putQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
+
+	// Set up expectations for COPY INTO - use regex pattern to match the actual table name with suffix
+	copyQueryRegex := regexp.QuoteMeta(`COPY INTO "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`" ("ID","NAME","__ARTIE_DELETE","__ARTIE_ONLY_SET_DELETE","CREATED_AT") FROM (SELECT $1,$2,$3,$4,$5 FROM @"CUSTOMER"."PUBLIC"."%`) + `.*` + regexp.QuoteMeta(`") FILES = ('CUSTOMER.PUBLIC.`) + `.*` + regexp.QuoteMeta(`.csv.gz')`)
+	s.mockDB.ExpectExec(copyQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
+
+	// Set up expectations for MERGE - use regex pattern to match the actual table name with suffix
+	mergeQueryRegex := regexp.QuoteMeta(`MERGE INTO "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`"`)
+	s.mockDB.ExpectExec(mergeQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
+
+	// Set up expectations for DROP TABLE - use regex pattern to match the actual table name with suffix
+	dropQueryRegex := regexp.QuoteMeta(`DROP TABLE IF EXISTS "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`"`)
+	s.mockDB.ExpectExec(dropQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
+
 	commitTx, err := s.stageStore.Merge(s.T().Context(), tableData)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
-	assert.Equal(s.T(), 2, s.fakeStageStore.ExecCallCount())
-	assert.Equal(s.T(), 3, s.fakeStageStore.ExecContextCallCount())
+	assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
 }
 
 func (s *SnowflakeTestSuite) TestExecuteMerge() {
-	colNames := []string{
-		"id",
-		"name",
-		constants.DeleteColumnMarker,
-		constants.OnlySetDeleteColumnMarker,
-		"created_at",
-	}
-
-	colToKindDetailsMap := map[string]typing.KindDetails{
-		"id":                                typing.Integer,
-		"name":                              typing.String,
-		constants.DeleteColumnMarker:        typing.Boolean,
-		constants.OnlySetDeleteColumnMarker: typing.Boolean,
-		// Add kindDetails to created_at
-		"created_at": typing.MustParseValue("", nil, time.Now().Format(time.RFC3339Nano)),
-	}
-
+	colToKindDetailsMap := maputil.NewOrderedMap[typing.KindDetails](true)
+	colToKindDetailsMap.Add("id", typing.Integer)
+	colToKindDetailsMap.Add("name", typing.String)
+	colToKindDetailsMap.Add(constants.DeleteColumnMarker, typing.Boolean)
+	colToKindDetailsMap.Add(constants.OnlySetDeleteColumnMarker, typing.Boolean)
+	colToKindDetailsMap.Add("created_at", typing.MustParseValue("", nil, time.Now().Format(time.RFC3339Nano)))
 	var cols columns.Columns
-	for _, colName := range colNames {
-		kd, ok := colToKindDetailsMap[colName]
-		assert.True(s.T(), ok, colName)
-
-		cols.AddColumn(columns.NewColumn(colName, kd))
+	for colName, kindDetails := range colToKindDetailsMap.All() {
+		cols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
 
 	rowsData := make(map[string]map[string]any)
 
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		rowsData[fmt.Sprintf("pk-%d", i)] = map[string]any{
 			"id":         i,
 			"created_at": time.Now().Format(time.RFC3339Nano),
@@ -219,34 +234,32 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	}
 
 	tableID := s.identifierFor(tableData)
-	fqName := tableID.FullyQualifiedName()
 	s.stageStore.configMap.AddTable(tableID, types.NewDestinationTableConfig(cols.GetColumns(), true))
+
+	// Set up expectations for CREATE TABLE - use regex pattern to match the actual table name with suffix
+	createTableRegex := regexp.QuoteMeta(`CREATE TABLE IF NOT EXISTS "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`" ("ID" int,"NAME" string,"__ARTIE_DELETE" boolean,"__ARTIE_ONLY_SET_DELETE" boolean,"CREATED_AT" string) DATA_RETENTION_TIME_IN_DAYS = 0 STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='__artie_null_value' EMPTY_FIELD_AS_NULL=FALSE)`)
+	s.mockDB.ExpectExec(createTableRegex).WillReturnResult(sqlmock.NewResult(0, 0))
+
+	// Set up expectations for PUT - use regex pattern to match the actual table name with suffix
+	putQueryRegex := regexp.QuoteMeta(`PUT 'file://`) + `.*` + regexp.QuoteMeta(`' @"CUSTOMER"."PUBLIC"."%`) + `.*` + regexp.QuoteMeta(`" AUTO_COMPRESS=TRUE`)
+	s.mockDB.ExpectExec(putQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
+
+	// Set up expectations for COPY INTO - use regex pattern to match the actual table name with suffix
+	copyQueryRegex := regexp.QuoteMeta(`COPY INTO "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`" ("ID","NAME","__ARTIE_DELETE","__ARTIE_ONLY_SET_DELETE","CREATED_AT") FROM (SELECT $1,$2,$3,$4,$5 FROM @"CUSTOMER"."PUBLIC"."%`) + `.*` + regexp.QuoteMeta(`") FILES = ('CUSTOMER.PUBLIC.`) + `.*` + regexp.QuoteMeta(`.csv.gz')`)
+	s.mockDB.ExpectExec(copyQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
+
+	// Set up expectations for MERGE - use regex pattern to match the actual table name with suffix
+	mergeQueryRegex := regexp.QuoteMeta(`MERGE INTO "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`"`)
+	s.mockDB.ExpectExec(mergeQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
+
+	// Set up expectations for DROP TABLE - use regex pattern to match the actual table name with suffix
+	dropQueryRegex := regexp.QuoteMeta(`DROP TABLE IF EXISTS "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`"`)
+	s.mockDB.ExpectExec(dropQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
+
 	commitTx, err := s.stageStore.Merge(s.T().Context(), tableData)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
-	s.fakeStageStore.ExecReturns(nil, nil)
-	// CREATE TABLE IF NOT EXISTS customer.public.orders___artie_Mwv9YADmRy (id int,name string,__artie_delete boolean,created_at timestamp_tz) STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='__artie_null_value' EMPTY_FIELD_AS_NULL=FALSE) COMMENT='expires:2023-06-27 11:54:03 UTC'
-	_, createQuery, _ := s.fakeStageStore.ExecContextArgsForCall(0)
-	tableName := retrieveTableNameFromCreateTable(s.T(), createQuery)
-	assert.Equal(s.T(), fmt.Sprintf(`CREATE TABLE IF NOT EXISTS "CUSTOMER"."PUBLIC"."%s" ("ID" int,"NAME" string,"__ARTIE_DELETE" boolean,"__ARTIE_ONLY_SET_DELETE" boolean,"CREATED_AT" string) DATA_RETENTION_TIME_IN_DAYS = 0 STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='__artie_null_value' EMPTY_FIELD_AS_NULL=FALSE)`, tableName), createQuery)
-
-	// PUT file:///tmp/CUSTOMER.PUBLIC.orders.csv @"CUSTOMER"."PUBLIC"."%%orders" AUTO_COMPRESS=TRUE
-	_, putQuery, _ := s.fakeStageStore.ExecContextArgsForCall(1)
-	assert.Equal(s.T(), fmt.Sprintf(`PUT 'file://%s' @"CUSTOMER"."PUBLIC"."%%%s" AUTO_COMPRESS=TRUE`, filepath.Join(os.TempDir(), fmt.Sprintf("CUSTOMER.PUBLIC.%s.csv", tableName)), tableName), putQuery)
-
-	// COPY INTO customer.public.orders___artie_Mwv9YADmRy (id,name,__artie_delete,created_at) FROM (SELECT $1,$2,$3,$4 FROM @customer.public.%orders___artie_Mwv9YADmRy
-	_, copyQuery, _ := s.fakeStageStore.ExecContextArgsForCall(2)
-	assert.Equal(s.T(), fmt.Sprintf(`COPY INTO "CUSTOMER"."PUBLIC"."%s" ("ID","NAME","__ARTIE_DELETE","__ARTIE_ONLY_SET_DELETE","CREATED_AT") FROM (SELECT $1,$2,$3,$4,$5 FROM @"CUSTOMER"."PUBLIC"."%%%s") FILES = ('CUSTOMER.PUBLIC.%s.csv.gz')`, tableName, tableName, tableName), copyQuery)
-
-	mergeQuery, _ := s.fakeStageStore.ExecArgsForCall(0)
-	assert.Contains(s.T(), mergeQuery, fmt.Sprintf("MERGE INTO %s", fqName), fmt.Sprintf("query: %v, destKind: %v", mergeQuery, constants.Snowflake))
-
-	// Drop a table now.
-	dropQuery, _ := s.fakeStageStore.ExecArgsForCall(1)
-	assert.Equal(s.T(), fmt.Sprintf(`DROP TABLE IF EXISTS "CUSTOMER"."PUBLIC"."%s"`, tableName), dropQuery)
-
-	assert.Equal(s.T(), 2, s.fakeStageStore.ExecCallCount())
-	assert.Equal(s.T(), 3, s.fakeStageStore.ExecContextCallCount())
+	assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
 }
 
 // TestExecuteMergeDeletionFlagRemoval is going to run execute merge twice.
@@ -261,7 +274,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	}
 
 	rowsData := make(map[string]map[string]any)
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		rowsData[fmt.Sprintf("pk-%d", i)] = map[string]any{
 			"id":         i,
 			"created_at": time.Now().Format(time.RFC3339Nano),
@@ -269,17 +282,15 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 		}
 	}
 
-	colToKindDetailsMap := map[string]typing.KindDetails{
-		"id":                                typing.Integer,
-		"name":                              typing.String,
-		constants.DeleteColumnMarker:        typing.Boolean,
-		constants.OnlySetDeleteColumnMarker: typing.Boolean,
-		// Add kindDetails to created_at
-		"created_at": typing.TimestampTZ,
-	}
+	colToKindDetailsMap := maputil.NewOrderedMap[typing.KindDetails](true)
+	colToKindDetailsMap.Add("id", typing.Integer)
+	colToKindDetailsMap.Add("name", typing.String)
+	colToKindDetailsMap.Add(constants.DeleteColumnMarker, typing.Boolean)
+	colToKindDetailsMap.Add(constants.OnlySetDeleteColumnMarker, typing.Boolean)
+	colToKindDetailsMap.Add("created_at", typing.TimestampTZ)
 
 	var cols columns.Columns
-	for colName, colKind := range colToKindDetailsMap {
+	for colName, colKind := range colToKindDetailsMap.All() {
 		cols.AddColumn(columns.NewColumn(colName, colKind))
 	}
 
@@ -289,16 +300,15 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 		tableData.InsertRow(pk, row, false)
 	}
 
-	snowflakeColToKindDetailsMap := map[string]typing.KindDetails{
-		"id":                                typing.Integer,
-		"created_at":                        typing.TimestampTZ,
-		"name":                              typing.String,
-		constants.DeleteColumnMarker:        typing.Boolean,
-		constants.OnlySetDeleteColumnMarker: typing.Boolean,
-	}
+	snowflakeColToKindDetailsMap := maputil.NewOrderedMap[typing.KindDetails](true)
+	snowflakeColToKindDetailsMap.Add("id", typing.Integer)
+	snowflakeColToKindDetailsMap.Add("created_at", typing.TimestampTZ)
+	snowflakeColToKindDetailsMap.Add("name", typing.String)
+	snowflakeColToKindDetailsMap.Add(constants.DeleteColumnMarker, typing.Boolean)
+	snowflakeColToKindDetailsMap.Add(constants.OnlySetDeleteColumnMarker, typing.Boolean)
 
 	var sflkCols columns.Columns
-	for colName, colKind := range snowflakeColToKindDetailsMap {
+	for colName, colKind := range snowflakeColToKindDetailsMap.All() {
 		sflkCols.AddColumn(columns.NewColumn(colName, colKind))
 	}
 
@@ -306,12 +316,30 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	_config := types.NewDestinationTableConfig(sflkCols.GetColumns(), true)
 	s.stageStore.configMap.AddTable(s.identifierFor(tableData), _config)
 
+	// First merge - Set up expectations for CREATE TABLE - use regex pattern to match the actual table name with suffix
+	createTableRegex := regexp.QuoteMeta(`CREATE TABLE IF NOT EXISTS "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`" ("ID" int,"NAME" string,"__ARTIE_DELETE" boolean,"__ARTIE_ONLY_SET_DELETE" boolean,"CREATED_AT" timestamp_tz) DATA_RETENTION_TIME_IN_DAYS = 0 STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='__artie_null_value' EMPTY_FIELD_AS_NULL=FALSE)`)
+	s.mockDB.ExpectExec(createTableRegex).WillReturnResult(sqlmock.NewResult(0, 0))
+
+	// Set up expectations for PUT - use regex pattern to match the actual table name with suffix
+	putQueryRegex := regexp.QuoteMeta(`PUT 'file://`) + `.*` + regexp.QuoteMeta(`' @"CUSTOMER"."PUBLIC"."%`) + `.*` + regexp.QuoteMeta(`" AUTO_COMPRESS=TRUE`)
+	s.mockDB.ExpectExec(putQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
+
+	// Set up expectations for COPY INTO - use regex pattern to match the actual table name with suffix
+	copyQueryRegex := regexp.QuoteMeta(`COPY INTO "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`" ("ID","NAME","__ARTIE_DELETE","__ARTIE_ONLY_SET_DELETE","CREATED_AT") FROM (SELECT $1,$2,$3,$4,$5 FROM @"CUSTOMER"."PUBLIC"."%`) + `.*` + regexp.QuoteMeta(`") FILES = ('CUSTOMER.PUBLIC.`) + `.*` + regexp.QuoteMeta(`.csv.gz')`)
+	s.mockDB.ExpectExec(copyQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
+
+	// Set up expectations for MERGE - use regex pattern to match the actual table name with suffix
+	mergeQueryRegex := regexp.QuoteMeta(`MERGE INTO "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`"`)
+	s.mockDB.ExpectExec(mergeQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
+
+	// Set up expectations for DROP TABLE - use regex pattern to match the actual table name with suffix
+	dropQueryRegex := regexp.QuoteMeta(`DROP TABLE IF EXISTS "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`"`)
+	s.mockDB.ExpectExec(dropQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
+
 	commitTx, err := s.stageStore.Merge(s.T().Context(), tableData)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
-	s.fakeStageStore.ExecReturns(nil, nil)
-	assert.Equal(s.T(), 2, s.fakeStageStore.ExecCallCount())
-	assert.Equal(s.T(), 3, s.fakeStageStore.ExecContextCallCount())
+	assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
 
 	// Check the temp deletion table now.
 	assert.Equal(s.T(), len(s.stageStore.configMap.GetTableConfig(s.identifierFor(tableData)).ReadOnlyColumnsToDelete()), 1,
@@ -332,12 +360,27 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 		break
 	}
 
+	// Second merge - Set up expectations for CREATE TABLE - use regex pattern to match the actual table name with suffix
+	createTableRegex2 := regexp.QuoteMeta(`CREATE TABLE IF NOT EXISTS "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`" ("ID" int,"CREATED_AT" timestamp_tz,"NAME" string,"__ARTIE_DELETE" boolean,"__ARTIE_ONLY_SET_DELETE" boolean,"NEW" string) DATA_RETENTION_TIME_IN_DAYS = 0 STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='__artie_null_value' EMPTY_FIELD_AS_NULL=FALSE)`)
+	s.mockDB.ExpectExec(createTableRegex2).WillReturnResult(sqlmock.NewResult(0, 0))
+
+	// Set up expectations for PUT - use regex pattern to match the actual table name with suffix
+	s.mockDB.ExpectExec(putQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
+
+	// Set up expectations for COPY INTO - use regex pattern to match the actual table name with suffix
+	copyQueryRegex2 := regexp.QuoteMeta(`COPY INTO "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`" ("ID","CREATED_AT","NAME","__ARTIE_DELETE","__ARTIE_ONLY_SET_DELETE","NEW") FROM (SELECT $1,$2,$3,$4,$5,$6 FROM @"CUSTOMER"."PUBLIC"."%`) + `.*` + regexp.QuoteMeta(`") FILES = ('CUSTOMER.PUBLIC.`) + `.*` + regexp.QuoteMeta(`.csv.gz')`)
+	s.mockDB.ExpectExec(copyQueryRegex2).WillReturnResult(sqlmock.NewResult(0, 0))
+
+	// Set up expectations for MERGE - use regex pattern to match the actual table name with suffix
+	s.mockDB.ExpectExec(mergeQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
+
+	// Set up expectations for DROP TABLE - use regex pattern to match the actual table name with suffix
+	s.mockDB.ExpectExec(dropQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
+
 	commitTx, err = s.stageStore.Merge(s.T().Context(), tableData)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
-	s.fakeStageStore.ExecReturns(nil, nil)
-	assert.Equal(s.T(), 4, s.fakeStageStore.ExecCallCount())
-	assert.Equal(s.T(), 6, s.fakeStageStore.ExecContextCallCount())
+	assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
 
 	// Caught up now, so columns should be 0.
 	assert.Len(s.T(), s.stageStore.configMap.GetTableConfig(s.identifierFor(tableData)).ReadOnlyColumnsToDelete(), 0)
@@ -348,6 +391,8 @@ func (s *SnowflakeTestSuite) TestExecuteMergeExitEarly() {
 	commitTx, err := s.stageStore.Merge(s.T().Context(), tableData)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
+	// No SQL should be executed for empty table data
+	assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
 }
 
 func (s *SnowflakeTestSuite) TestStore_AdditionalEqualityStrings() {

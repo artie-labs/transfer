@@ -106,10 +106,9 @@ func (s *SnowflakeTestSuite) TestManipulateShouldDeleteColumn() {
 func (s *SnowflakeTestSuite) TestGetTableConfig() {
 	// If the table does not exist, snowflakeTableConfig should say so.
 	fqName := "customers.public.orders22"
-	s.fakeStageStore.QueryReturns(nil, fmt.Errorf("Table '%s' does not exist or not authorized", fqName))
 
-	tableData := optimization.NewTableData(nil, config.Replication, nil,
-		kafkalib.TopicConfig{Database: "customers", Schema: "public", TableName: "orders22"}, "foo")
+	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "customers", Schema: "public", TableName: "orders22"}, "foo")
+	s.mockDB.ExpectQuery(`DESC TABLE "CUSTOMERS"."PUBLIC"."FOO"`).WillReturnError(fmt.Errorf("Table '%s' does not exist or not authorized", fqName))
 
 	tableConfig, err := s.stageStore.GetTableConfig(s.identifierFor(tableData), tableData.TopicConfig().DropDeletedColumns)
 	assert.NotNil(s.T(), tableConfig, "config is nil")
@@ -118,4 +117,7 @@ func (s *SnowflakeTestSuite) TestGetTableConfig() {
 	assert.True(s.T(), tableConfig.CreateTable())
 	assert.Len(s.T(), tableConfig.GetColumns(), 0)
 	assert.False(s.T(), tableConfig.DropDeletedColumns())
+
+	// Verify all expectations were met
+	assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
 }
