@@ -120,6 +120,10 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 	for idx := range tableNames {
 		td := f.db.GetOrCreateTableData(tableNames[idx])
 		assert.Len(f.T(), td.Rows(), 5)
+
+		fakeCopyIntoResult := &mocks.FakeResult{}
+		fakeCopyIntoResult.RowsAffectedReturns(int64(5), nil)
+		f.fakeStore.ExecContextReturns(fakeCopyIntoResult, nil)
 	}
 
 	assert.NoError(f.T(), Flush(f.T().Context(), f.db, f.dest, metrics.NullMetricsProvider{}, Args{}))
