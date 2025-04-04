@@ -16,6 +16,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -163,6 +164,10 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 	sflkTc := s.stageStore.GetConfigMap().GetTableConfig(tempTableID)
 
 	{
+		fakeCopyResult := &mocks.FakeResult{}
+		fakeCopyResult.RowsAffectedReturns(int64(len(tableData.Rows())), nil)
+		s.fakeStageStore.ExecContextReturnsOnCall(2, fakeCopyResult, nil)
+
 		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(s.T().Context(), tableData, sflkTc, tempTableID, tempTableID, types.AdditionalSettings{}, true))
 		assert.Equal(s.T(), 0, s.fakeStageStore.ExecCallCount())
 		assert.Equal(s.T(), 3, s.fakeStageStore.ExecContextCallCount())
@@ -191,6 +196,10 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 	}
 	{
 		// Don't create the temporary table.
+		fakeCopyResult := &mocks.FakeResult{}
+		fakeCopyResult.RowsAffectedReturns(int64(len(tableData.Rows())), nil)
+		s.fakeStageStore.ExecContextReturnsOnCall(4, fakeCopyResult, nil)
+
 		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(s.T().Context(), tableData, sflkTc, tempTableID, tempTableID, types.AdditionalSettings{}, false))
 		assert.Equal(s.T(), 0, s.fakeStageStore.ExecCallCount())
 		assert.Equal(s.T(), 5, s.fakeStageStore.ExecContextCallCount())

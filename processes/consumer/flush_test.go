@@ -27,7 +27,7 @@ func (f *FlushTestSuite) TestMemoryBasic() {
 	mockEvent := &mocks.FakeEvent{}
 	mockEvent.GetTableNameReturns("foo")
 
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		mockEvent.GetDataReturns(map[string]any{
 			"id":                                fmt.Sprintf("pk-%d", i),
 			constants.DeleteColumnMarker:        true,
@@ -42,7 +42,7 @@ func (f *FlushTestSuite) TestMemoryBasic() {
 		kafkaMsg := kafka.Message{Partition: 1, Offset: 1}
 
 		_, _, err = evt.Save(f.cfg, f.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
-		assert.Nil(f.T(), err)
+		assert.NoError(f.T(), err)
 
 		td := f.db.GetOrCreateTableData("foo")
 		assert.Equal(f.T(), int(td.NumberOfRows()), i+1)
@@ -72,7 +72,7 @@ func (f *FlushTestSuite) TestShouldFlush() {
 
 		kafkaMsg := kafka.Message{Partition: 1, Offset: int64(i)}
 		flush, flushReason, err = evt.Save(f.cfg, f.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
-		assert.Nil(f.T(), err)
+		assert.NoError(f.T(), err)
 
 		if flush {
 			break
@@ -81,6 +81,21 @@ func (f *FlushTestSuite) TestShouldFlush() {
 
 	assert.Equal(f.T(), "rows", flushReason)
 	assert.True(f.T(), flush, "Flush successfully triggered via pool size.")
+}
+
+// Create a thread-safe mock implementation to avoid data races
+type threadSafeResult struct {
+	rowsAffected int64
+	err          error
+}
+
+// Implement the sql.Result interface methods
+func (r *threadSafeResult) LastInsertId() (int64, error) {
+	return 0, nil
+}
+
+func (r *threadSafeResult) RowsAffected() (int64, error) {
+	return r.rowsAffected, r.err
 }
 
 func (f *FlushTestSuite) TestMemoryConcurrency() {
@@ -109,12 +124,21 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 
 				kafkaMsg := kafka.Message{Partition: 1, Offset: int64(i)}
 				_, _, err = evt.Save(f.cfg, f.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
-				assert.Nil(f.T(), err)
+				assert.NoError(f.T(), err)
 			}
 		}(tableNames[idx])
 	}
 
 	wg.Wait()
+
+	// Create an instance of our thread-safe mock
+	threadSafeMock := &threadSafeResult{
+		rowsAffected: 5,
+		err:          nil,
+	}
+
+	// Set up the mock store to use our thread-safe implementation
+	f.fakeStore.ExecContextReturns(threadSafeMock, nil)
 
 	// Verify all the tables exist.
 	for idx := range tableNames {
@@ -122,10 +146,9 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 		assert.Len(f.T(), td.Rows(), 5)
 	}
 
-	assert.Nil(f.T(), Flush(f.T().Context(), f.db, f.dest, metrics.NullMetricsProvider{}, Args{}), "flush failed")
+	assert.NoError(f.T(), Flush(f.T().Context(), f.db, f.dest, metrics.NullMetricsProvider{}, Args{}))
 	assert.Equal(f.T(), f.fakeConsumer.CommitMessagesCallCount(), len(tableNames)) // Commit 3 times because 3 topics.
-
-	for i := 0; i < len(tableNames); i++ {
+	for i := range len(tableNames) {
 		_, kafkaMessages := f.fakeConsumer.CommitMessagesArgsForCall(i)
 		assert.Equal(f.T(), len(kafkaMessages), 1) // There's only 1 partition right now
 
