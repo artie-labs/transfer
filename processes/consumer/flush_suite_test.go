@@ -3,10 +3,9 @@ package consumer
 import (
 	"testing"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
-
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/models"
