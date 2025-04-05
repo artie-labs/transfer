@@ -92,7 +92,7 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 		wg.Add(1)
 		go func(tableName string) {
 			defer wg.Done()
-			for i := 0; i < 5; i++ {
+			for i := range 5 {
 				mockEvent := &mocks.FakeEvent{}
 				mockEvent.GetTableNameReturns(tableName)
 				mockEvent.GetDataReturns(map[string]any{
@@ -109,7 +109,7 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 
 				kafkaMsg := kafka.Message{Partition: 1, Offset: int64(i)}
 				_, _, err = evt.Save(f.cfg, f.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
-				assert.Nil(f.T(), err)
+				assert.NoError(f.T(), err)
 			}
 		}(tableNames[idx])
 	}
@@ -122,7 +122,7 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 		assert.Len(f.T(), td.Rows(), 5)
 	}
 
-	assert.Nil(f.T(), Flush(f.T().Context(), f.db, f.dest, metrics.NullMetricsProvider{}, Args{}), "flush failed")
+	assert.Nil(f.T(), Flush(f.T().Context(), f.db, f.baseline, metrics.NullMetricsProvider{}, Args{}), "flush failed")
 	assert.Equal(f.T(), f.fakeConsumer.CommitMessagesCallCount(), len(tableNames)) // Commit 3 times because 3 topics.
 
 	for i := 0; i < len(tableNames); i++ {
