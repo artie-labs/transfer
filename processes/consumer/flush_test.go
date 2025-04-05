@@ -111,6 +111,8 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 				AddRow("cat", "STRING", "COLUMN", "Y", "", "N", "N", "", "", "", "").
 				AddRow("__artie_delete", "BOOLEAN", "COLUMN", "Y", "", "N", "N", "", "", "", "").
 				AddRow("__artie_only_set_delete", "BOOLEAN", "COLUMN", "Y", "", "N", "N", "", "", "", ""))
+
+			f.mockDB.ExpectExec(`ALTER TABLE "CUSTOMER"\."PUBLIC"\.".*" ADD COLUMN IF NOT EXISTS \"PK\" string`).WillReturnResult(sqlmock.NewResult(0, 0))
 		}
 
 		// Flush data and assert commit messages.
