@@ -54,7 +54,7 @@ func (f *FlushTestSuite) TestShouldFlush() {
 	var flush bool
 	var flushReason string
 
-	for i := 0; i < int(float64(f.cfg.BufferRows)*1.5); i++ {
+	for i := range int(float64(f.cfg.BufferRows) * 1.5) {
 		mockEvent := &mocks.FakeEvent{}
 		mockEvent.GetTableNameReturns("postgres")
 		mockEvent.GetDataReturns(map[string]any{
