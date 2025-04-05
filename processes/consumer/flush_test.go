@@ -2,7 +2,6 @@ package consumer
 
 import (
 	"fmt"
-	"regexp"
 	"sync"
 	"time"
 
@@ -106,8 +105,7 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 			td := f.db.GetOrCreateTableData(tableNames[idx])
 			assert.Len(f.T(), td.Rows(), 5)
 
-			query := regexp.QuoteMeta(`DESC TABLE "CUSTOMER"."PUBLIC".".*"`)
-			f.mockDB.ExpectQuery(query).WillReturnRows(sqlmock.NewRows([]string{"name", "type", "kind", "null?", "default", "primary key", "unique key", "check", "expression", "comment", "policy name"}).
+			f.mockDB.ExpectQuery(`DESC TABLE "CUSTOMER"\."PUBLIC"\.".*"`).WillReturnRows(sqlmock.NewRows([]string{"name", "type", "kind", "null?", "default", "primary key", "unique key", "check", "expression", "comment", "policy name"}).
 				AddRow("id", "STRING", "COLUMN", "Y", "", "N", "N", "", "", "", "").
 				AddRow("foo", "STRING", "COLUMN", "Y", "", "N", "N", "", "", "", "").
 				AddRow("cat", "STRING", "COLUMN", "Y", "", "N", "N", "", "", "", "").
