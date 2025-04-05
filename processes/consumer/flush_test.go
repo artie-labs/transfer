@@ -27,7 +27,7 @@ func (f *FlushTestSuite) TestMemoryBasic() {
 	mockEvent := &mocks.FakeEvent{}
 	mockEvent.GetTableNameReturns("foo")
 
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		mockEvent.GetDataReturns(map[string]any{
 			"id":                                fmt.Sprintf("pk-%d", i),
 			constants.DeleteColumnMarker:        true,
@@ -42,7 +42,7 @@ func (f *FlushTestSuite) TestMemoryBasic() {
 		kafkaMsg := kafka.Message{Partition: 1, Offset: 1}
 
 		_, _, err = evt.Save(f.cfg, f.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
-		assert.Nil(f.T(), err)
+		assert.NoError(f.T(), err)
 
 		td := f.db.GetOrCreateTableData("foo")
 		assert.Equal(f.T(), int(td.NumberOfRows()), i+1)
@@ -72,7 +72,7 @@ func (f *FlushTestSuite) TestShouldFlush() {
 
 		kafkaMsg := kafka.Message{Partition: 1, Offset: int64(i)}
 		flush, flushReason, err = evt.Save(f.cfg, f.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
-		assert.Nil(f.T(), err)
+		assert.NoError(f.T(), err)
 
 		if flush {
 			break
