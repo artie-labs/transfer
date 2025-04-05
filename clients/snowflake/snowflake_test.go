@@ -115,7 +115,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 
 	// Set up expectations for COPY INTO - use regex pattern to match the actual table name with suffix
 	copyQueryRegex := regexp.QuoteMeta(`COPY INTO "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`" ("ID","FIRST_NAME","__ARTIE_DELETE","__ARTIE_ONLY_SET_DELETE") FROM (SELECT $1,$2,$3,$4 FROM @"CUSTOMER"."PUBLIC"."%`) + `.*` + regexp.QuoteMeta(`") FILES = ('CUSTOMER.PUBLIC.`) + `.*` + regexp.QuoteMeta(`.csv.gz')`)
-	s.mockDB.ExpectExec(copyQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
+	s.mockDB.ExpectQuery(copyQueryRegex).WillReturnRows(sqlmock.NewRows([]string{"rows_loaded"}).AddRow(fmt.Sprintf("%d", tableData.NumberOfRows())))
 
 	// Set up expectations for MERGE - use regex pattern to match the actual table name with suffix
 	mergeQueryRegex := regexp.QuoteMeta(`MERGE INTO "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`"`)
@@ -181,7 +181,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 
 	// Set up expectations for COPY INTO - use regex pattern to match the actual table name with suffix
 	copyQueryRegex := regexp.QuoteMeta(`COPY INTO "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`" ("ID","NAME","__ARTIE_DELETE","__ARTIE_ONLY_SET_DELETE","CREATED_AT") FROM (SELECT $1,$2,$3,$4,$5 FROM @"CUSTOMER"."PUBLIC"."%`) + `.*` + regexp.QuoteMeta(`") FILES = ('CUSTOMER.PUBLIC.`) + `.*` + regexp.QuoteMeta(`.csv.gz')`)
-	s.mockDB.ExpectExec(copyQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
+	s.mockDB.ExpectQuery(copyQueryRegex).WillReturnRows(sqlmock.NewRows([]string{"rows_loaded"}).AddRow(fmt.Sprintf("%d", tableData.NumberOfRows())))
 
 	// Set up expectations for MERGE - use regex pattern to match the actual table name with suffix
 	mergeQueryRegex := regexp.QuoteMeta(`MERGE INTO "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`"`)
@@ -210,7 +210,6 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	}
 
 	rowsData := make(map[string]map[string]any)
-
 	for i := range 5 {
 		rowsData[fmt.Sprintf("pk-%d", i)] = map[string]any{
 			"id":         i,
@@ -220,7 +219,6 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	}
 
 	tblName := "orders"
-
 	topicConfig := kafkalib.TopicConfig{
 		Database:  "customer",
 		TableName: tblName,
@@ -246,7 +244,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 
 	// Set up expectations for COPY INTO - use regex pattern to match the actual table name with suffix
 	copyQueryRegex := regexp.QuoteMeta(`COPY INTO "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`" ("ID","NAME","__ARTIE_DELETE","__ARTIE_ONLY_SET_DELETE","CREATED_AT") FROM (SELECT $1,$2,$3,$4,$5 FROM @"CUSTOMER"."PUBLIC"."%`) + `.*` + regexp.QuoteMeta(`") FILES = ('CUSTOMER.PUBLIC.`) + `.*` + regexp.QuoteMeta(`.csv.gz')`)
-	s.mockDB.ExpectExec(copyQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
+	s.mockDB.ExpectQuery(copyQueryRegex).WillReturnRows(sqlmock.NewRows([]string{"rows_loaded"}).AddRow(fmt.Sprintf("%d", tableData.NumberOfRows())))
 
 	// Set up expectations for MERGE - use regex pattern to match the actual table name with suffix
 	mergeQueryRegex := regexp.QuoteMeta(`MERGE INTO "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`"`)
@@ -326,7 +324,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 
 	// Set up expectations for COPY INTO - use regex pattern to match the actual table name with suffix
 	copyQueryRegex := regexp.QuoteMeta(`COPY INTO "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`" ("ID","NAME","__ARTIE_DELETE","__ARTIE_ONLY_SET_DELETE","CREATED_AT") FROM (SELECT $1,$2,$3,$4,$5 FROM @"CUSTOMER"."PUBLIC"."%`) + `.*` + regexp.QuoteMeta(`") FILES = ('CUSTOMER.PUBLIC.`) + `.*` + regexp.QuoteMeta(`.csv.gz')`)
-	s.mockDB.ExpectExec(copyQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
+	s.mockDB.ExpectQuery(copyQueryRegex).WillReturnRows(sqlmock.NewRows([]string{"rows_loaded"}).AddRow(fmt.Sprintf("%d", tableData.NumberOfRows())))
 
 	// Set up expectations for MERGE - use regex pattern to match the actual table name with suffix
 	mergeQueryRegex := regexp.QuoteMeta(`MERGE INTO "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`"`)
@@ -369,7 +367,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 
 	// Set up expectations for COPY INTO - use regex pattern to match the actual table name with suffix
 	copyQueryRegex2 := regexp.QuoteMeta(`COPY INTO "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`" ("ID","CREATED_AT","NAME","__ARTIE_DELETE","__ARTIE_ONLY_SET_DELETE","NEW") FROM (SELECT $1,$2,$3,$4,$5,$6 FROM @"CUSTOMER"."PUBLIC"."%`) + `.*` + regexp.QuoteMeta(`") FILES = ('CUSTOMER.PUBLIC.`) + `.*` + regexp.QuoteMeta(`.csv.gz')`)
-	s.mockDB.ExpectExec(copyQueryRegex2).WillReturnResult(sqlmock.NewResult(0, 0))
+	s.mockDB.ExpectQuery(copyQueryRegex2).WillReturnRows(sqlmock.NewRows([]string{"rows_loaded"}).AddRow(fmt.Sprintf("%d", tableData.NumberOfRows())))
 
 	// Set up expectations for MERGE - use regex pattern to match the actual table name with suffix
 	s.mockDB.ExpectExec(mergeQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))

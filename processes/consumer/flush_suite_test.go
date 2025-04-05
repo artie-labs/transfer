@@ -3,6 +3,7 @@ package consumer
 import (
 	"testing"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
 
@@ -24,7 +25,7 @@ func SetKafkaConsumer(_topicToConsumer map[string]kafkalib.Consumer) {
 
 type FlushTestSuite struct {
 	suite.Suite
-	fakeStore    *mocks.FakeStore
+	mockDB       sqlmock.Sqlmock
 	fakeConsumer *mocks.FakeConsumer
 	cfg          config.Config
 	db           *models.DatabaseData
@@ -32,8 +33,11 @@ type FlushTestSuite struct {
 }
 
 func (f *FlushTestSuite) SetupTest() {
-	f.fakeStore = &mocks.FakeStore{}
-	store := db.Store(f.fakeStore)
+	_db, mock, err := sqlmock.New()
+	assert.NoError(f.T(), err)
+
+	f.mockDB = mock
+	store := db.NewStoreWrapperForTest(_db)
 
 	tc := &kafkalib.TopicConfig{
 		Database:     "db",
@@ -61,7 +65,6 @@ func (f *FlushTestSuite) SetupTest() {
 		FlushSizeKb:          500,
 	}
 
-	var err error
 	f.dest, err = utils.LoadDestination(f.T().Context(), f.cfg, &store)
 	assert.NoError(f.T(), err)
 
