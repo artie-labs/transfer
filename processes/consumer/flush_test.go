@@ -40,7 +40,6 @@ func (f *FlushTestSuite) TestMemoryBasic() {
 		assert.NoError(f.T(), err)
 
 		kafkaMsg := kafka.Message{Partition: 1, Offset: 1}
-
 		_, _, err = evt.Save(f.cfg, f.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
 		assert.NoError(f.T(), err)
 
@@ -48,7 +47,7 @@ func (f *FlushTestSuite) TestMemoryBasic() {
 		assert.Equal(f.T(), int(td.NumberOfRows()), i+1)
 	}
 
-	assert.Equal(f.T(), uint(5), f.db.GetOrCreateTableData("foo").NumberOfRows())
+	assert.Equal(f.T(), f.db.GetOrCreateTableData("foo").NumberOfRows(), uint(5))
 }
 
 func (f *FlushTestSuite) TestShouldFlush() {
@@ -126,7 +125,7 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 	assert.NoError(f.T(), Flush(f.T().Context(), f.db, f.baseline, metrics.NullMetricsProvider{}, Args{}))
 	assert.Equal(f.T(), f.fakeConsumer.CommitMessagesCallCount(), len(tableNames)) // Commit 3 times because 3 topics.
 
-	for i := 0; i < len(tableNames); i++ {
+	for i := range len(tableNames) {
 		_, kafkaMessages := f.fakeConsumer.CommitMessagesArgsForCall(i)
 		assert.Equal(f.T(), len(kafkaMessages), 1) // There's only 1 partition right now
 
