@@ -3,17 +3,12 @@ package consumer
 import (
 	"testing"
 
-	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
-
-	"github.com/artie-labs/transfer/lib/config"
-	"github.com/artie-labs/transfer/lib/db"
-	"github.com/artie-labs/transfer/lib/destination/utils"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/models"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -25,20 +20,14 @@ func SetKafkaConsumer(_topicToConsumer map[string]kafkalib.Consumer) {
 
 type FlushTestSuite struct {
 	suite.Suite
-	mockDB       sqlmock.Sqlmock
 	fakeConsumer *mocks.FakeConsumer
 	cfg          config.Config
 	db           *models.DatabaseData
-	dest         destination.Destination
+	fakeBaseline *mocks.FakeBaseline
+	baseline     destination.Baseline
 }
 
 func (f *FlushTestSuite) SetupTest() {
-	_db, mock, err := sqlmock.New()
-	assert.NoError(f.T(), err)
-
-	f.mockDB = mock
-	store := db.NewStoreWrapperForTest(_db)
-
 	tc := &kafkalib.TopicConfig{
 		Database:     "db",
 		Schema:       "schema",
@@ -65,11 +54,9 @@ func (f *FlushTestSuite) SetupTest() {
 		FlushSizeKb:          500,
 	}
 
-	f.dest, err = utils.LoadDestination(f.T().Context(), f.cfg, &store)
-	assert.NoError(f.T(), err)
-
+	f.fakeBaseline = &mocks.FakeBaseline{}
+	f.baseline = f.fakeBaseline
 	f.db = models.NewMemoryDB()
-
 	f.fakeConsumer = &mocks.FakeConsumer{}
 	SetKafkaConsumer(map[string]kafkalib.Consumer{"foo": f.fakeConsumer})
 }
