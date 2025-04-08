@@ -70,7 +70,7 @@ func (s Store) dialect() dialect.DatabricksDialect {
 	return dialect.DatabricksDialect{}
 }
 
-func (s Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
+func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
 	stagingTableID := shared.TempTableID(tableID)
 	defer func() {
 		// Drop the staging table once we're done with the dedupe.
@@ -79,7 +79,7 @@ func (s Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, include
 
 	for _, query := range s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt) {
 		// Databricks doesn't support transactions, so we can't wrap this in a transaction.
-		if _, err := s.Exec(query); err != nil {
+		if _, err := s.ExecContext(ctx, query); err != nil {
 			return fmt.Errorf("failed to execute query: %w", err)
 		}
 	}
@@ -213,7 +213,7 @@ func (s Store) SweepTemporaryTables(ctx context.Context) error {
 	ctx = driverctx.NewContextWithStagingInfo(ctx, []string{"/var", "tmp"})
 	// Remove the temporary files from volumes
 	for _, tc := range tcs {
-		rows, err := s.Query(s.dialect().BuildSweepFilesFromVolumesQuery(tc.Database, tc.Schema, s.volume))
+		rows, err := s.QueryContext(ctx, s.dialect().BuildSweepFilesFromVolumesQuery(tc.Database, tc.Schema, s.volume))
 		if err != nil {
 			return fmt.Errorf("failed to sweep files from volumes: %w", err)
 		}
@@ -238,7 +238,7 @@ func (s Store) SweepTemporaryTables(ctx context.Context) error {
 	}
 
 	// Delete the temporary tables
-	return shared.Sweep(s, tcs, s.dialect().BuildSweepQuery)
+	return shared.Sweep(ctx, s, tcs, s.dialect().BuildSweepQuery)
 }
 
 func LoadStore(cfg config.Config) (Store, error) {

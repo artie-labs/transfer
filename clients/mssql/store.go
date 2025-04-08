@@ -76,16 +76,16 @@ func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sq
 	return s.specificIdentifierFor(topicConfig, table)
 }
 
-func (s *Store) SweepTemporaryTables(_ context.Context) error {
+func (s *Store) SweepTemporaryTables(ctx context.Context) error {
 	tcs, err := s.config.TopicConfigs()
 	if err != nil {
 		return err
 	}
 
-	return shared.Sweep(s, tcs, s.dialect().BuildSweepQuery)
+	return shared.Sweep(ctx, s, tcs, s.dialect().BuildSweepQuery)
 }
 
-func (s *Store) Dedupe(_ sql.TableIdentifier, _ []string, _ bool) error {
+func (s *Store) Dedupe(_ context.Context, _ sql.TableIdentifier, _ []string, _ bool) error {
 	return nil // dedupe is not necessary for MS SQL
 }
 

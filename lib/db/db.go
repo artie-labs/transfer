@@ -78,6 +78,10 @@ func (s *storeWrapper) Exec(query string, args ...any) (sql.Result, error) {
 	return result, err
 }
 
+func (s *storeWrapper) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
+	return s.DB.QueryContext(ctx, query, args...)
+}
+
 func (s *storeWrapper) Query(query string, args ...any) (*sql.Rows, error) {
 	return s.DB.Query(query, args...)
 }

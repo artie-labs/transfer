@@ -32,7 +32,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 			return fmt.Errorf("failed to update table config with new string precision: %w", err)
 		}
 
-		if _, err = s.Exec(s.dialect().BuildIncreaseStringPrecisionQuery(parentTableID, colName, newValue)); err != nil {
+		if _, err = s.ExecContext(ctx, s.dialect().BuildIncreaseStringPrecisionQuery(parentTableID, colName, newValue)); err != nil {
 			return fmt.Errorf("failed to increase string precision for table %q: %w", parentTableID.FullyQualifiedName(), err)
 		}
 	}
@@ -86,7 +86,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	}
 
 	copyStmt := s.dialect().BuildCopyStatement(tempTableID, cols, s3Uri, credentialsClause)
-	if _, err = s.Exec(copyStmt); err != nil {
+	if _, err = s.ExecContext(ctx, copyStmt); err != nil {
 		return fmt.Errorf("failed to run COPY for temporary table: %w", err)
 	}
 
