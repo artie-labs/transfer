@@ -74,7 +74,7 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, u
 	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
 	temporaryTableID := shared.TempTableID(tableID)
 
-	defer func() { _ = ddl.DropTemporaryTable(s, temporaryTableID, false) }()
+	defer func() { _ = ddl.DropTemporaryTable(ctx, s, temporaryTableID, false) }()
 
 	err := shared.Append(ctx, s, tableData, types.AdditionalSettings{
 		ColumnSettings: s.config.SharedDestinationSettings.ColumnSettings,
@@ -260,7 +260,7 @@ func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primary
 	stagingTableID := shared.TempTableID(tableID)
 	dedupeQueries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt)
 
-	defer func() { _ = ddl.DropTemporaryTable(s, stagingTableID, false) }()
+	defer func() { _ = ddl.DropTemporaryTable(ctx, s, stagingTableID, false) }()
 
 	return destination.ExecContextStatements(ctx, s, dedupeQueries)
 }

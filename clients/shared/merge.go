@@ -59,7 +59,7 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 
 	temporaryTableID := TempTableIDWithSuffix(dest.IdentifierFor(tableData.TopicConfig(), tableData.Name()), tableData.TempTableSuffix())
 	defer func() {
-		if dropErr := ddl.DropTemporaryTable(dest, temporaryTableID, false); dropErr != nil {
+		if dropErr := ddl.DropTemporaryTable(ctx, dest, temporaryTableID, false); dropErr != nil {
 			slog.Warn("Failed to drop temporary table", slog.Any("err", dropErr), slog.String("tableName", temporaryTableID.FullyQualifiedName()))
 		}
 	}()

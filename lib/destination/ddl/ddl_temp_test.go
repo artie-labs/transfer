@@ -52,7 +52,7 @@ func (d *DDLTestSuite) Test_DropTemporaryTableCaseSensitive() {
 
 		for tableIndex, table := range tablesToDrop {
 			tableIdentifier := dest.IdentifierFor(kafkalib.TopicConfig{}, fmt.Sprintf("%s_%s", table, constants.ArtiePrefix))
-			_ = ddl.DropTemporaryTable(dest, tableIdentifier, false)
+			_ = ddl.DropTemporaryTable(d.T().Context(), dest, tableIdentifier, false)
 
 			// There should be the same number of DROP table calls as the number of tables to drop.
 			assert.Equal(d.T(), tableIndex+1, fakeStore.ExecCallCount())
@@ -73,7 +73,7 @@ func (d *DDLTestSuite) Test_DropTemporaryTable() {
 	// Should not drop since these do not have Artie prefix in the name.
 	for _, table := range doNotDropTables {
 		tableID := d.bigQueryStore.IdentifierFor(kafkalib.TopicConfig{}, table)
-		_ = ddl.DropTemporaryTable(d.snowflakeStagesStore, tableID, false)
+		_ = ddl.DropTemporaryTable(d.T().Context(), d.snowflakeStagesStore, tableID, false)
 		assert.Equal(d.T(), 0, d.fakeSnowflakeStagesStore.ExecCallCount())
 	}
 
@@ -88,14 +88,14 @@ func (d *DDLTestSuite) Test_DropTemporaryTable() {
 
 		for _, doNotDropTable := range doNotDropTables {
 			doNotDropTableID := d.bigQueryStore.IdentifierFor(kafkalib.TopicConfig{}, doNotDropTable)
-			_ = ddl.DropTemporaryTable(_dwh, doNotDropTableID, false)
+			_ = ddl.DropTemporaryTable(d.T().Context(), _dwh, doNotDropTableID, false)
 
 			assert.Equal(d.T(), 0, fakeStore.ExecCallCount())
 		}
 
 		for index, table := range doNotDropTables {
 			fullTableID := d.bigQueryStore.IdentifierFor(kafkalib.TopicConfig{}, fmt.Sprintf("%s_%s", table, constants.ArtiePrefix))
-			_ = ddl.DropTemporaryTable(_dwh, fullTableID, false)
+			_ = ddl.DropTemporaryTable(d.T().Context(), _dwh, fullTableID, false)
 
 			count := index + 1
 			assert.Equal(d.T(), count, fakeStore.ExecCallCount())
@@ -129,7 +129,7 @@ func (d *DDLTestSuite) Test_DropTemporaryTable_Errors() {
 		for _, shouldReturnErr := range []bool{true, false} {
 			for _, table := range tablesToDrop {
 				tableID := d.bigQueryStore.IdentifierFor(kafkalib.TopicConfig{}, fmt.Sprintf("%s_%s", table, constants.ArtiePrefix))
-				err := ddl.DropTemporaryTable(_dwh, tableID, shouldReturnErr)
+				err := ddl.DropTemporaryTable(d.T().Context(), _dwh, tableID, shouldReturnErr)
 				if shouldReturnErr {
 					assert.ErrorContains(d.T(), err, randomErr.Error())
 				} else {
