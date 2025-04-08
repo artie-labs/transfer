@@ -86,10 +86,6 @@ func (s *storeWrapper) Query(query string, args ...any) (*sql.Rows, error) {
 	return s.DB.Query(query, args...)
 }
 
-func (s *storeWrapper) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
-	return s.DB.QueryContext(ctx, query, args...)
-}
-
 func (s *storeWrapper) Begin() (*sql.Tx, error) {
 	return s.DB.Begin()
 }
