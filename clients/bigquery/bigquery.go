@@ -93,7 +93,7 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, u
 		temporaryTableID.FullyQualifiedName(),
 	)
 
-	if _, err = s.Exec(query); err != nil {
+	if _, err = s.ExecContext(ctx, query); err != nil {
 		return fmt.Errorf("failed to insert data into target table: %w", err)
 	}
 
@@ -256,14 +256,13 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 	})
 }
 
-func (s *Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
+func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
 	stagingTableID := shared.TempTableID(tableID)
-
 	dedupeQueries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt)
 
 	defer func() { _ = ddl.DropTemporaryTable(s, stagingTableID, false) }()
 
-	return destination.ExecStatements(s, dedupeQueries)
+	return destination.ExecContextStatements(ctx, s, dedupeQueries)
 }
 
 func (s *Store) SweepTemporaryTables(_ context.Context) error {
