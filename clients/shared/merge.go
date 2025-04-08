@@ -76,7 +76,7 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 
 		var backfillErr error
 		for attempts := 0; attempts < backfillMaxRetries; attempts++ {
-			backfillErr = BackfillColumn(dest, col, tableID)
+			backfillErr = BackfillColumn(ctx, dest, col, tableID)
 			if backfillErr == nil {
 				err = tableConfig.UpsertColumn(col.Name(), columns.UpsertColumnArg{
 					Backfilled: typing.ToPtr(true),
