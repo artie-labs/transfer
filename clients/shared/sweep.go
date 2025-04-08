@@ -1,6 +1,7 @@
 package shared
 
 import (
+	"context"
 	"log/slog"
 
 	"github.com/artie-labs/transfer/lib/destination"
@@ -10,11 +11,11 @@ import (
 
 type GetQueryFunc func(dbName string, schemaName string) (string, []any)
 
-func Sweep(dest destination.Destination, topicConfigs []*kafkalib.TopicConfig, getQueryFunc GetQueryFunc) error {
+func Sweep(ctx context.Context, dest destination.Destination, topicConfigs []*kafkalib.TopicConfig, getQueryFunc GetQueryFunc) error {
 	slog.Info("Looking to see if there are any dangling artie temporary tables to delete...")
 	for _, topicConfig := range kafkalib.GetUniqueTopicConfigs(topicConfigs) {
 		query, args := getQueryFunc(topicConfig.Database, topicConfig.Schema)
-		rows, err := dest.Query(query, args...)
+		rows, err := dest.QueryContext(ctx, query, args...)
 		if err != nil {
 			return err
 		}
