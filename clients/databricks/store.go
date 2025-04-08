@@ -213,7 +213,7 @@ func (s Store) SweepTemporaryTables(ctx context.Context) error {
 	ctx = driverctx.NewContextWithStagingInfo(ctx, []string{"/var", "tmp"})
 	// Remove the temporary files from volumes
 	for _, tc := range tcs {
-		rows, err := s.Query(s.dialect().BuildSweepFilesFromVolumesQuery(tc.Database, tc.Schema, s.volume))
+		rows, err := s.QueryContext(ctx, s.dialect().BuildSweepFilesFromVolumesQuery(tc.Database, tc.Schema, s.volume))
 		if err != nil {
 			return fmt.Errorf("failed to sweep files from volumes: %w", err)
 		}
@@ -238,7 +238,7 @@ func (s Store) SweepTemporaryTables(ctx context.Context) error {
 	}
 
 	// Delete the temporary tables
-	return shared.Sweep(s, tcs, s.dialect().BuildSweepQuery)
+	return shared.Sweep(ctx, s, tcs, s.dialect().BuildSweepQuery)
 }
 
 func LoadStore(cfg config.Config) (Store, error) {
