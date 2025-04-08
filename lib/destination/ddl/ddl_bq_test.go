@@ -201,12 +201,12 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 	}
 
 	// Because containsOtherOperations is false, it should have never tried to delete.
-	assert.Equal(d.T(), 0, d.fakeBigQueryStore.ExecCallCount())
+	assert.Equal(d.T(), 0, d.fakeBigQueryStore.ExecContextCallCount())
 
 	// Timestamp got increased, but containsOtherOperations is false, so it should not have tried to delete.
 	for _, column := range cols.GetColumns() {
 		assert.NoError(d.T(), shared.AlterTableDropColumns(d.T().Context(), d.bigQueryStore, tc, tableID, []columns.Column{column}, ts.Add(2*constants.DeletionConfidencePadding), false))
 	}
 
-	assert.Equal(d.T(), 0, d.fakeBigQueryStore.ExecCallCount())
+	assert.Equal(d.T(), 0, d.fakeBigQueryStore.ExecContextCallCount())
 }
