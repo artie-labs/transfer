@@ -93,7 +93,7 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, u
 		temporaryTableID.FullyQualifiedName(),
 	)
 
-	if _, err = s.Exec(query); err != nil {
+	if _, err = s.ExecContext(ctx, query); err != nil {
 		return fmt.Errorf("failed to insert data into target table: %w", err)
 	}
 
