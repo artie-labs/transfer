@@ -56,8 +56,18 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		}
 	}
 
-	if _, err = stmt.ExecContext(ctx); err != nil {
+	results, err := stmt.ExecContext(ctx)
+	if err != nil {
 		return fmt.Errorf("failed to finalize bulk insert: %w", err)
+	}
+
+	rowsLoaded, err := results.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if expectedRows := int64(tableData.NumberOfRows()); rowsLoaded != expectedRows {
+		return fmt.Errorf("expected %d rows to be loaded, but got %d", expectedRows, rowsLoaded)
 	}
 
 	if err = tx.Commit(); err != nil {
