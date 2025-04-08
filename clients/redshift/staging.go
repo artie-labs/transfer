@@ -24,11 +24,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 
 	for colName, newValue := range colToNewLengthMap {
 		// Try to upsert columns first. If this fails, we won't need to update the destination table.
-		err = tableConfig.UpsertColumn(colName, columns.UpsertColumnArg{
-			StringPrecision: typing.ToPtr(newValue),
-		})
-
-		if err != nil {
+		if err = tableConfig.UpsertColumn(colName, columns.UpsertColumnArg{StringPrecision: typing.ToPtr(newValue)}); err != nil {
 			return fmt.Errorf("failed to update table config with new string precision: %w", err)
 		}
 
@@ -70,7 +66,6 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 
 	// Load fp into s3, get S3 URI and pass it down.
 	s3Uri, err := awslib.UploadLocalFileToS3(ctx, args)
-
 	if err != nil {
 		return fmt.Errorf("failed to upload %q to s3: %w", fp, err)
 	}
@@ -86,8 +81,18 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	}
 
 	copyStmt := s.dialect().BuildCopyStatement(tempTableID, cols, s3Uri, credentialsClause)
-	if _, err = s.ExecContext(ctx, copyStmt); err != nil {
+	result, err := s.ExecContext(ctx, copyStmt)
+	if err != nil {
 		return fmt.Errorf("failed to run COPY for temporary table: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected by the COPY statement: %w", err)
+	}
+
+	if expectedRows := tableData.NumberOfRows(); int64(expectedRows) != rowsAffected {
+		return fmt.Errorf("expected %d rows to be affected by the COPY statement, but got %d", expectedRows, rowsAffected)
 	}
 
 	return nil
