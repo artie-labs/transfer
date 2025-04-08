@@ -41,7 +41,6 @@ type Baseline interface {
 	IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sqllib.TableIdentifier
 }
 
-// This is the same code as [ExecStatements], but it takes a context.
 func ExecContextStatements(ctx context.Context, dest Destination, statements []string) error {
 	switch len(statements) {
 	case 0:
