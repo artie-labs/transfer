@@ -81,7 +81,6 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, u
 		UseTempTable:   true,
 		TempTableID:    temporaryTableID,
 	})
-
 	if err != nil {
 		return fmt.Errorf("failed to append: %w", err)
 	}
@@ -93,8 +92,18 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, u
 		temporaryTableID.FullyQualifiedName(),
 	)
 
-	if _, err = s.ExecContext(ctx, query); err != nil {
+	result, err := s.ExecContext(ctx, query)
+	if err != nil {
 		return fmt.Errorf("failed to insert data into target table: %w", err)
+	}
+
+	rowsLoaded, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if expectedRows := int64(tableData.NumberOfRows()); rowsLoaded != expectedRows {
+		return fmt.Errorf("expected %d rows to be loaded, but got %d", expectedRows, rowsLoaded)
 	}
 
 	return nil
