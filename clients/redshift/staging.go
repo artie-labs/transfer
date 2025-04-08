@@ -81,18 +81,18 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	}
 
 	copyStmt := s.dialect().BuildCopyStatement(tempTableID, cols, s3Uri, credentialsClause)
-	result, err := s.ExecContext(ctx, copyStmt)
-	if err != nil {
+	if _, err = s.ExecContext(ctx, copyStmt); err != nil {
 		return fmt.Errorf("failed to run COPY for temporary table: %w", err)
 	}
 
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("failed to get rows affected by the COPY statement: %w", err)
+	// Ref: https://docs.aws.amazon.com/redshift/latest/dg/PG_LAST_COPY_COUNT.html
+	var rowsLoaded int64
+	if err = s.QueryRowContext(ctx, `SELECT pg_last_copy_count();`).Scan(&rowsLoaded); err != nil {
+		return fmt.Errorf("failed to check rows loaded: %w", err)
 	}
 
-	if expectedRows := tableData.NumberOfRows(); int64(expectedRows) != rowsAffected {
-		return fmt.Errorf("expected %d rows to be affected by the COPY statement, but got %d", expectedRows, rowsAffected)
+	if rowsLoaded != int64(tableData.NumberOfRows()) {
+		return fmt.Errorf("expected %d rows to be loaded, but got %d", tableData.NumberOfRows(), rowsLoaded)
 	}
 
 	return nil
