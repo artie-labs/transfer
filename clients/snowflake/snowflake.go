@@ -52,13 +52,13 @@ func (s *Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns b
 	}.GetTableConfig()
 }
 
-func (s *Store) SweepTemporaryTables(_ context.Context) error {
+func (s *Store) SweepTemporaryTables(ctx context.Context) error {
 	tcs, err := s.config.TopicConfigs()
 	if err != nil {
 		return err
 	}
 
-	return shared.Sweep(s, tcs, s.dialect().BuildSweepQuery)
+	return shared.Sweep(ctx, s, tcs, s.dialect().BuildSweepQuery)
 }
 
 func (s *Store) Dialect() sql.Dialect {
