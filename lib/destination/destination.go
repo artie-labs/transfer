@@ -41,6 +41,8 @@ type Baseline interface {
 	IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sqllib.TableIdentifier
 }
 
+// ExecContextStatements executes one or more statements against a [Destination].
+// If there is more than one statement, the statements will be executed inside of a transaction.
 func ExecContextStatements(ctx context.Context, dest Destination, statements []string) error {
 	switch len(statements) {
 	case 0:
