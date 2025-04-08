@@ -74,7 +74,7 @@ func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryK
 	stagingTableID := shared.TempTableID(tableID)
 	defer func() {
 		// Drop the staging table once we're done with the dedupe.
-		_ = ddl.DropTemporaryTable(s, stagingTableID, false)
+		_ = ddl.DropTemporaryTable(ctx, s, stagingTableID, false)
 	}()
 
 	for _, query := range s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt) {

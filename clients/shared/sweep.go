@@ -28,7 +28,7 @@ func Sweep(ctx context.Context, dest destination.Destination, topicConfigs []*ka
 			}
 
 			if ddl.ShouldDeleteFromName(tableName) {
-				err = ddl.DropTemporaryTable(dest, dest.IdentifierFor(topicConfig, tableName), true)
+				err = ddl.DropTemporaryTable(ctx, dest, dest.IdentifierFor(topicConfig, tableName), true)
 				if err != nil {
 					return err
 				}

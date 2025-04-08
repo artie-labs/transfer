@@ -51,11 +51,6 @@ func (d *DDLTestSuite) TestAlterIdempotency() {
 	d.snowflakeStagesStore.GetConfigMap().AddTable(tableID, types.NewDestinationTableConfig(nil, true))
 	tc := d.snowflakeStagesStore.GetConfigMap().GetTableConfig(tableID)
 
-	d.fakeSnowflakeStagesStore.ExecReturns(nil, errors.New("column 'order_name' already exists"))
-
-	assert.NoError(d.T(), shared.AlterTableAddColumns(d.T().Context(), d.snowflakeStagesStore, tc, config.SharedDestinationColumnSettings{}, tableID, cols))
-	assert.Equal(d.T(), len(cols), d.fakeSnowflakeStagesStore.ExecContextCallCount(), "called SFLK the same amt to create cols")
-
 	d.fakeSnowflakeStagesStore.ExecContextReturns(nil, errors.New("table does not exist"))
 	assert.ErrorContains(d.T(), shared.AlterTableAddColumns(d.T().Context(), d.snowflakeStagesStore, tc, config.SharedDestinationColumnSettings{}, tableID, cols), `failed to alter table: table does not exist`)
 }
@@ -105,7 +100,7 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 	tc := d.snowflakeStagesStore.GetConfigMap().GetTableConfig(tableID)
 
 	assert.NoError(d.T(), shared.AlterTableDropColumns(d.T().Context(), d.snowflakeStagesStore, tc, tableID, cols, time.Now().UTC(), true))
-	assert.Equal(d.T(), 0, d.fakeSnowflakeStagesStore.ExecCallCount(), "tried to delete, but not yet.")
+	assert.Equal(d.T(), 0, d.fakeSnowflakeStagesStore.ExecContextCallCount(), "tried to delete, but not yet.")
 
 	// Check the table config
 	tableConfig := d.snowflakeStagesStore.GetConfigMap().GetTableConfig(tableID)

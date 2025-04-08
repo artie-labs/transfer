@@ -191,11 +191,12 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 		allColsMap[allCol] = true
 	}
 
-	for i := 0; i < d.fakeSnowflakeStagesStore.ExecCallCount(); i++ {
-		execQuery, _ := d.fakeSnowflakeStagesStore.ExecArgsForCall(0)
+	assert.True(d.T(), d.fakeSnowflakeStagesStore.ExecContextCallCount() > 0)
+	for i := 0; i < d.fakeSnowflakeStagesStore.ExecContextCallCount(); i++ {
+		_, execQuery, _ := d.fakeSnowflakeStagesStore.ExecContextArgsForCall(0)
 		var found bool
 		for key := range allColsMap {
-			if execQuery == fmt.Sprintf(`ALTER TABLE %s drop COLUMN "%s"`, snowflakeName, strings.ToUpper(key)) {
+			if execQuery == fmt.Sprintf(`ALTER TABLE %s DROP COLUMN IF EXISTS "%s"`, snowflakeName, strings.ToUpper(key)) {
 				found = true
 			}
 		}
@@ -203,11 +204,12 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 		assert.True(d.T(), found, execQuery)
 	}
 
-	for i := 0; i < d.fakeBigQueryStore.ExecCallCount(); i++ {
-		execQuery, _ := d.fakeBigQueryStore.ExecArgsForCall(0)
+	assert.True(d.T(), d.fakeBigQueryStore.ExecContextCallCount() > 0)
+	for i := 0; i < d.fakeBigQueryStore.ExecContextCallCount(); i++ {
+		_, execQuery, _ := d.fakeBigQueryStore.ExecContextArgsForCall(0)
 		var found bool
 		for key := range allColsMap {
-			if execQuery == fmt.Sprintf("ALTER TABLE %s drop COLUMN `%s`", bqName, key) {
+			if execQuery == fmt.Sprintf("ALTER TABLE %s DROP COLUMN `%s`", bqName, key) {
 				found = true
 			}
 		}
@@ -215,11 +217,13 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 		assert.True(d.T(), found, execQuery)
 	}
 
-	for i := 0; i < d.fakeRedshiftStore.ExecCallCount(); i++ {
-		execQuery, _ := d.fakeRedshiftStore.ExecArgsForCall(0)
+	assert.True(d.T(), d.fakeRedshiftStore.ExecContextCallCount() > 0)
+	for i := 0; i < d.fakeRedshiftStore.ExecContextCallCount(); i++ {
+		_, execQuery, _ := d.fakeRedshiftStore.ExecContextArgsForCall(0)
+
 		var found bool
 		for key := range allColsMap {
-			if execQuery == fmt.Sprintf(`ALTER TABLE %s drop COLUMN "%s"`, redshiftName, key) {
+			if execQuery == fmt.Sprintf(`ALTER TABLE %s DROP COLUMN "%s"`, redshiftName, key) {
 				found = true
 			}
 		}

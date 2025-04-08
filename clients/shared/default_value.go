@@ -1,6 +1,7 @@
 package shared
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"time"
@@ -72,7 +73,7 @@ func DefaultValue(column columns.Column, dialect sql.Dialect) (any, error) {
 	return column.DefaultValue(), nil
 }
 
-func BackfillColumn(dest destination.Destination, column columns.Column, tableID sql.TableIdentifier) error {
+func BackfillColumn(ctx context.Context, dest destination.Destination, column columns.Column, tableID sql.TableIdentifier) error {
 	dialect := dest.Dialect()
 	switch dialect.GetDefaultValueStrategy() {
 	case sql.Backfill:
@@ -103,7 +104,7 @@ func BackfillColumn(dest destination.Destination, column columns.Column, tableID
 			slog.String("table", tableID.FullyQualifiedName()),
 		)
 
-		if _, err = dest.Exec(query); err != nil {
+		if _, err = dest.ExecContext(ctx, query); err != nil {
 			return fmt.Errorf("failed to backfill, err: %w, query: %v", err, query)
 		}
 
@@ -115,7 +116,7 @@ func BackfillColumn(dest destination.Destination, column columns.Column, tableID
 			)
 		}
 
-		_, err = dest.Exec(query)
+		_, err = dest.ExecContext(ctx, query)
 		return err
 	case sql.Native:
 		// TODO: Support native strat
