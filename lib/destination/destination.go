@@ -19,7 +19,6 @@ type Destination interface {
 	Dialect() sqllib.Dialect
 	Dedupe(ctx context.Context, tableID sqllib.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error
 	SweepTemporaryTables(ctx context.Context) error
-	Exec(query string, args ...any) (sql.Result, error)
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
 	Query(query string, args ...any) (*sql.Rows, error)
 	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
