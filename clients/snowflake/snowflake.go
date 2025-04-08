@@ -79,10 +79,10 @@ func (s *Store) GetConfigMap() *types.DestinationTableConfigMap {
 
 // Dedupe takes a table and will remove duplicates based on the primary key(s).
 // These queries are inspired and modified from: https://stackoverflow.com/a/71515946
-func (s *Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
+func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
 	stagingTableID := shared.TempTableID(tableID)
 	dedupeQueries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt)
-	return destination.ExecStatements(s, dedupeQueries)
+	return destination.ExecContextStatements(ctx, s, dedupeQueries)
 }
 
 func LoadSnowflake(cfg config.Config, _store *db.Store) (*Store, error) {

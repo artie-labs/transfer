@@ -85,7 +85,7 @@ func (s *Store) SweepTemporaryTables(_ context.Context) error {
 	return shared.Sweep(s, tcs, s.dialect().BuildSweepQuery)
 }
 
-func (s *Store) Dedupe(_ sql.TableIdentifier, _ []string, _ bool) error {
+func (s *Store) Dedupe(_ context.Context, _ sql.TableIdentifier, _ []string, _ bool) error {
 	return nil // dedupe is not necessary for MS SQL
 }
 

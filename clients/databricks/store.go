@@ -70,7 +70,7 @@ func (s Store) dialect() dialect.DatabricksDialect {
 	return dialect.DatabricksDialect{}
 }
 
-func (s Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
+func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
 	stagingTableID := shared.TempTableID(tableID)
 	defer func() {
 		// Drop the staging table once we're done with the dedupe.
@@ -79,7 +79,7 @@ func (s Store) Dedupe(tableID sql.TableIdentifier, primaryKeys []string, include
 
 	for _, query := range s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt) {
 		// Databricks doesn't support transactions, so we can't wrap this in a transaction.
-		if _, err := s.Exec(query); err != nil {
+		if _, err := s.ExecContext(ctx, query); err != nil {
 			return fmt.Errorf("failed to execute query: %w", err)
 		}
 	}

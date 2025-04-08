@@ -17,7 +17,7 @@ type Destination interface {
 
 	// SQL specific commands
 	Dialect() sqllib.Dialect
-	Dedupe(tableID sqllib.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error
+	Dedupe(ctx context.Context, tableID sqllib.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error
 	SweepTemporaryTables(ctx context.Context) error
 	Exec(query string, args ...any) (sql.Result, error)
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
@@ -40,8 +40,48 @@ type Baseline interface {
 	IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sqllib.TableIdentifier
 }
 
-// ExecStatements executes one or more statements against a [Destination].
-// If there is more than one statement, the statements will be executed inside of a transaction.
+// This is the same code as [ExecStatements], but it takes a context.
+func ExecContextStatements(ctx context.Context, dest Destination, statements []string) error {
+	switch len(statements) {
+	case 0:
+		return fmt.Errorf("statements is empty")
+	case 1:
+		slog.Debug("Executing...", slog.String("query", statements[0]))
+		if _, err := dest.ExecContext(ctx, statements[0]); err != nil {
+			return fmt.Errorf("failed to execute statement: %w", err)
+		}
+
+		return nil
+	default:
+		tx, err := dest.Begin()
+		if err != nil {
+			return fmt.Errorf("failed to start tx: %w", err)
+		}
+		var committed bool
+		defer func() {
+			if !committed {
+				if rollbackErr := tx.Rollback(); rollbackErr != nil {
+					slog.Warn("Unable to rollback", slog.Any("err", rollbackErr))
+				}
+			}
+		}()
+
+		for _, statement := range statements {
+			slog.Debug("Executing...", slog.String("query", statement))
+			if _, err = tx.ExecContext(ctx, statement); err != nil {
+				return fmt.Errorf("failed to execute statement: %q, err: %w", statement, err)
+			}
+		}
+
+		if err = tx.Commit(); err != nil {
+			return fmt.Errorf("failed to commit statements: %v, err: %w", statements, err)
+		}
+		committed = true
+		return nil
+	}
+}
+
+// TODO: Deprecate in favor of [ExecContextStatements]
 func ExecStatements(dest Destination, statements []string) error {
 	switch len(statements) {
 	case 0:
