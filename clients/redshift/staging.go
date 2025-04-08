@@ -24,11 +24,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 
 	for colName, newValue := range colToNewLengthMap {
 		// Try to upsert columns first. If this fails, we won't need to update the destination table.
-		err = tableConfig.UpsertColumn(colName, columns.UpsertColumnArg{
-			StringPrecision: typing.ToPtr(newValue),
-		})
-
-		if err != nil {
+		if err = tableConfig.UpsertColumn(colName, columns.UpsertColumnArg{StringPrecision: typing.ToPtr(newValue)}); err != nil {
 			return fmt.Errorf("failed to update table config with new string precision: %w", err)
 		}
 
@@ -70,7 +66,6 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 
 	// Load fp into s3, get S3 URI and pass it down.
 	s3Uri, err := awslib.UploadLocalFileToS3(ctx, args)
-
 	if err != nil {
 		return fmt.Errorf("failed to upload %q to s3: %w", fp, err)
 	}
@@ -88,6 +83,16 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	copyStmt := s.dialect().BuildCopyStatement(tempTableID, cols, s3Uri, credentialsClause)
 	if _, err = s.ExecContext(ctx, copyStmt); err != nil {
 		return fmt.Errorf("failed to run COPY for temporary table: %w", err)
+	}
+
+	// Ref: https://docs.aws.amazon.com/redshift/latest/dg/PG_LAST_COPY_COUNT.html
+	var rowsLoaded int64
+	if err = s.QueryRowContext(ctx, `SELECT pg_last_copy_count();`).Scan(&rowsLoaded); err != nil {
+		return fmt.Errorf("failed to check rows loaded: %w", err)
+	}
+
+	if rowsLoaded != int64(tableData.NumberOfRows()) {
+		return fmt.Errorf("expected %d rows to be loaded, but got %d", tableData.NumberOfRows(), rowsLoaded)
 	}
 
 	return nil

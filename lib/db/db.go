@@ -19,6 +19,7 @@ type Store interface {
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
 	Query(query string, args ...any) (*sql.Rows, error)
 	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 	Begin() (*sql.Tx, error)
 	IsRetryableError(err error) bool
 }
@@ -57,6 +58,10 @@ func (s *storeWrapper) ExecContext(ctx context.Context, query string, args ...an
 
 func (s *storeWrapper) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
 	return s.DB.QueryContext(ctx, query, args...)
+}
+
+func (s *storeWrapper) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
+	return s.DB.QueryRowContext(ctx, query, args...)
 }
 
 func (s *storeWrapper) Query(query string, args ...any) (*sql.Rows, error) {
