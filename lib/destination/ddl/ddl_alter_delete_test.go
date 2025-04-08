@@ -191,6 +191,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 		allColsMap[allCol] = true
 	}
 
+	assert.True(d.T(), d.fakeSnowflakeStagesStore.ExecContextCallCount() > 0)
 	for i := 0; i < d.fakeSnowflakeStagesStore.ExecContextCallCount(); i++ {
 		_, execQuery, _ := d.fakeSnowflakeStagesStore.ExecContextArgsForCall(0)
 		var found bool
@@ -203,6 +204,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 		assert.True(d.T(), found, execQuery)
 	}
 
+	assert.True(d.T(), d.fakeBigQueryStore.ExecContextCallCount() > 0)
 	for i := 0; i < d.fakeBigQueryStore.ExecContextCallCount(); i++ {
 		_, execQuery, _ := d.fakeBigQueryStore.ExecContextArgsForCall(0)
 		var found bool
@@ -215,6 +217,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 		assert.True(d.T(), found, execQuery)
 	}
 
+	assert.True(d.T(), d.fakeRedshiftStore.ExecContextCallCount() > 0)
 	for i := 0; i < d.fakeRedshiftStore.ExecContextCallCount(); i++ {
 		_, execQuery, _ := d.fakeRedshiftStore.ExecContextArgsForCall(0)
 
