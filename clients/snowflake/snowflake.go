@@ -135,24 +135,9 @@ func (s *Store) setupExternalStage(ctx context.Context) error {
 		return fmt.Errorf("failed to describe external stage: %w", err)
 	}
 
-	// Create the external stage
-	createStageQuery := fmt.Sprintf(`
-		CREATE OR REPLACE STAGE artie_external_stage
-		URL = 's3://%s/%s'
-		CREDENTIALS = (
-			AWS_KEY_ID = '%s'
-			AWS_SECRET_KEY = '%s'
-		)
-		FILE_FORMAT = (
-			TYPE = 'CSV'
-			FIELD_DELIMITER = '\t'
-			FIELD_OPTIONALLY_ENCLOSED_BY = '"'
-			NULL_IF = '__artie_null_value'
-			EMPTY_FIELD_AS_NULL = FALSE
-		)
-	`, s3Config.Bucket, s3Config.Prefix, s3Config.AwsAccessKeyID, s3Config.AwsSecretAccessKey)
-
-	if _, err := s.ExecContext(context.Background(), createStageQuery); err != nil {
+	externalStage := s.config.Snowflake.ExternalStage
+	createStageQuery := s.dialect().BuildCreateStageQuery(externalStage.ExternalStageName, externalStage.Bucket, externalStage.CredentialsClause)
+	if _, err := s.ExecContext(ctx, createStageQuery); err != nil {
 		return fmt.Errorf("failed to create external stage: %w", err)
 	}
 
