@@ -116,21 +116,18 @@ func LoadSnowflake(ctx context.Context, cfg config.Config, _store *db.Store) (*S
 		Store:     store,
 	}
 
-	// Set up external stage if configured
-	if err := s.setupExternalStage(ctx); err != nil {
+	if err = s.ensureExternalStageExists(ctx); err != nil {
 		return nil, fmt.Errorf("failed to set up external stage: %w", err)
 	}
 
 	return s, nil
 }
 
-// setupExternalStage creates and configures the external stage if specified in the config
-func (s *Store) setupExternalStage(ctx context.Context) error {
+func (s *Store) ensureExternalStageExists(ctx context.Context) error {
 	if !s.useExternalStage() {
 		return nil
 	}
 
-	// Ensure the external stage exists
 	if _, err := s.QueryContext(ctx, fmt.Sprintf(`DESCRIBE STAGE %s`, s.config.Snowflake.ExternalStage.ExternalStageName)); err != nil {
 		return fmt.Errorf("failed to describe external stage: %w", err)
 	}
