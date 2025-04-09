@@ -85,7 +85,6 @@ type ExternalStage struct {
 	// Credentials clause is what we will use to authenticate with S3.
 	// It can be static credentials or an AWS_ROLE.
 	CredentialsClause string `yaml:"credentials,omitempty"`
-	AwsRegion         string `yaml:"awsRegion"`
 	Prefix            string `yaml:"prefix"`
 }
 

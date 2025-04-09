@@ -12,6 +12,7 @@ import (
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/environ"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/sql"
 )
@@ -126,6 +127,11 @@ func LoadSnowflake(ctx context.Context, cfg config.Config, _store *db.Store) (*S
 func (s *Store) ensureExternalStageExists(ctx context.Context) error {
 	if !s.useExternalStage() {
 		return nil
+	}
+
+	// If we're using external stage, then we need [AWS_REGION] to be set.
+	if err := environ.MustGetEnv("AWS_REGION"); err != nil {
+		return err
 	}
 
 	if _, err := s.QueryContext(ctx, fmt.Sprintf(`DESCRIBE STAGE %s`, s.config.Snowflake.ExternalStage.ExternalStageName)); err != nil {

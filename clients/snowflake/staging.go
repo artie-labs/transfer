@@ -76,25 +76,21 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		}
 	}()
 
-	var putQuery string
 	if s.useExternalStage() {
 		// Upload to S3 using our built-in library
 		_, err = awslib.UploadLocalFileToS3(ctx, awslib.UploadArgs{
 			Bucket:           s.config.Snowflake.ExternalStage.Bucket,
-			OptionalS3Prefix: filepath.Join(s.config.Snowflake.ExternalStage.Prefix, tempTableID.Table()),
+			OptionalS3Prefix: filepath.Join(s.config.Snowflake.ExternalStage.Prefix, tempTableID.FullyQualifiedName()),
 			FilePath:         file.FilePath,
-			Region:           s.config.Snowflake.ExternalStage.AwsRegion,
+			Region:           os.Getenv("AWS_REGION"),
 		})
 		if err != nil {
 			return fmt.Errorf("failed to upload file to S3: %w", err)
 		}
-
-		// For external stage, we don't need to run PUT command
-		putQuery = ""
 	} else {
 		// Upload the CSV file to Snowflake internal stage
 		tableStageName := addPrefixToTableName(tempTableID, "%")
-		putQuery = fmt.Sprintf("PUT 'file://%s' @%s AUTO_COMPRESS=TRUE", file.FilePath, tableStageName)
+		putQuery := fmt.Sprintf("PUT 'file://%s' @%s AUTO_COMPRESS=TRUE", file.FilePath, tableStageName)
 		if _, err = s.ExecContext(ctx, putQuery); err != nil {
 			return fmt.Errorf("failed to run PUT for temporary table: %w", err)
 		}
