@@ -85,7 +85,7 @@ func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primary
 	return destination.ExecContextStatements(ctx, s, dedupeQueries)
 }
 
-func LoadSnowflake(cfg config.Config, _store *db.Store) (*Store, error) {
+func LoadSnowflake(ctx context.Context, cfg config.Config, _store *db.Store) (*Store, error) {
 	if _store != nil {
 		// Used for tests.
 		return &Store{
@@ -117,7 +117,7 @@ func LoadSnowflake(cfg config.Config, _store *db.Store) (*Store, error) {
 	}
 
 	// Set up external stage if configured
-	if err := s.setupExternalStage(); err != nil {
+	if err := s.setupExternalStage(ctx); err != nil {
 		return nil, fmt.Errorf("failed to set up external stage: %w", err)
 	}
 
@@ -125,12 +125,15 @@ func LoadSnowflake(cfg config.Config, _store *db.Store) (*Store, error) {
 }
 
 // setupExternalStage creates and configures the external stage if specified in the config
-func (s *Store) setupExternalStage() error {
-	if s.config.Snowflake.ExternalStage == nil || s.config.Snowflake.ExternalStage.S3 == nil {
+func (s *Store) setupExternalStage(ctx context.Context) error {
+	if !s.useExternalStage() {
 		return nil
 	}
 
-	s3Config := s.config.Snowflake.ExternalStage.S3
+	// Ensure the external stage exists
+	if _, err := s.QueryContext(ctx, fmt.Sprintf(`DESCRIBE STAGE %s`, s.config.Snowflake.ExternalStage.ExternalStageName)); err != nil {
+		return fmt.Errorf("failed to describe external stage: %w", err)
+	}
 
 	// Create the external stage
 	createStageQuery := fmt.Sprintf(`

@@ -52,6 +52,10 @@ func castColValStaging(colVal any, colKind typing.KindDetails) (string, error) {
 	return replaceExceededValues(value, colKind), nil
 }
 
+func (s Store) useExternalStage() bool {
+	return s.config.Snowflake.ExternalStage != nil && s.config.Snowflake.ExternalStage.Enabled
+}
+
 func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
 		if err := shared.CreateTempTable(ctx, s, tableData, dwh, additionalSettings.ColumnSettings, tempTableID); err != nil {
@@ -72,22 +76,14 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		}
 	}()
 
-	// Determine if we should use external stage
-	useExternalStage := s.config.Snowflake.ExternalStage != nil && s.config.Snowflake.ExternalStage.S3 != nil
-
 	var putQuery string
-	if useExternalStage {
-		// For external stage, we need to upload directly to S3
-		s3Config := s.config.Snowflake.ExternalStage.S3
-
+	if s.useExternalStage() {
 		// Upload to S3 using our built-in library
 		_, err = awslib.UploadLocalFileToS3(ctx, awslib.UploadArgs{
-			Bucket:                     s3Config.Bucket,
-			OptionalS3Prefix:           filepath.Join(s3Config.Prefix, tempTableID.Table()),
-			FilePath:                   file.FilePath,
-			OverrideAWSAccessKeyID:     s3Config.AwsAccessKeyID,
-			OverrideAWSAccessKeySecret: s3Config.AwsSecretAccessKey,
-			Region:                     s3Config.AwsRegion,
+			Bucket:           s.config.Snowflake.ExternalStage.Bucket,
+			OptionalS3Prefix: filepath.Join(s.config.Snowflake.ExternalStage.Prefix, tempTableID.Table()),
+			FilePath:         file.FilePath,
+			Region:           s.config.Snowflake.ExternalStage.AwsRegion,
 		})
 		if err != nil {
 			return fmt.Errorf("failed to upload file to S3: %w", err)
@@ -106,8 +102,8 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 
 	// We are appending gz to the file name since it was compressed by the PUT command.
 	var copyCommand string
-	if useExternalStage {
-		copyCommand = s.dialect().BuildCopyIntoTableQueryFromExternalStage(tempTableID, tableData.ReadOnlyInMemoryCols().ValidColumns(), file.FileName)
+	if s.useExternalStage() {
+		copyCommand = s.dialect().BuildCopyIntoTableQueryFromExternalStage(tempTableID, tableData.ReadOnlyInMemoryCols().ValidColumns(), s.config.Snowflake.ExternalStage.ExternalStageName, file.FileName)
 	} else {
 		tableStageName := addPrefixToTableName(tempTableID, "%")
 		copyCommand = s.dialect().BuildCopyIntoTableQuery(tempTableID, tableData.ReadOnlyInMemoryCols().ValidColumns(), tableStageName, fmt.Sprintf("%s.gz", file.FileName))
@@ -124,7 +120,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		// For non-temp tables, we should try to delete the staging file if COPY INTO fails.
 		// This is because [PURGE = TRUE] will only delete the staging files upon a successful COPY INTO.
 		// We also only need to do this for non-temp tables because these staging files will linger, since we create a new temporary table per attempt.
-		if !createTempTable && !useExternalStage {
+		if !createTempTable && !s.useExternalStage() {
 			if _, deleteErr := s.ExecContext(ctx, s.dialect().BuildRemoveFilesFromStage(addPrefixToTableName(tempTableID, "%"), "")); deleteErr != nil {
 				slog.Warn("Failed to remove all files from stage", slog.Any("deleteErr", deleteErr))
 			}

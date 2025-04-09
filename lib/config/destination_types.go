@@ -77,17 +77,16 @@ type Snowflake struct {
 }
 
 type ExternalStage struct {
+	Enabled           bool   `yaml:"enabled"`
+	ExternalStageName string `yaml:"externalStageName"`
 	// S3 configuration for the external stage
-	S3 *S3StageConfig `yaml:"s3"`
-}
+	Bucket string `yaml:"bucket"`
 
-type S3StageConfig struct {
-	Bucket             string `yaml:"bucket"`
-	AwsAccessKeyID     string `yaml:"awsAccessKeyID"`
-	AwsSecretAccessKey string `yaml:"awsSecretAccessKey"`
-	AwsRegion          string `yaml:"awsRegion"`
-	// Prefix is the folder path within the bucket where files will be stored
-	Prefix string `yaml:"prefix"`
+	// Credentials clause is what we will use to authenticate with S3.
+	// It can be static credentials or an AWS_ROLE.
+	CredentialsClause string `yaml:"credentials,omitempty"`
+	AwsRegion         string `yaml:"awsRegion"`
+	Prefix            string `yaml:"prefix"`
 }
 
 type Iceberg struct {

@@ -219,11 +219,11 @@ func (sd SnowflakeDialect) BuildCopyIntoTableQuery(tableID sql.TableIdentifier, 
 }
 
 // BuildCopyIntoTableQueryFromExternalStage builds a COPY INTO query that uses an external stage
-func (sd SnowflakeDialect) BuildCopyIntoTableQueryFromExternalStage(tableID sql.TableIdentifier, columns []columns.Column, fileName string) string {
-	return fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @artie_external_stage/%s) FILES = ('%s')",
+func (sd SnowflakeDialect) BuildCopyIntoTableQueryFromExternalStage(tableID sql.TableIdentifier, columns []columns.Column, stageName string, fileName string) string {
+	return fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @%s/%s) FILES = ('%s')",
 		// COPY INTO <table> (<columns>)
 		tableID.FullyQualifiedName(), strings.Join(sql.QuoteColumns(columns, sd), ","),
-		// FROM (SELECT <columns> FROM @artie_external_stage/<table>/<file_name>)
-		sd.EscapeColumns(columns, ","), tableID.Table(), fileName,
+		// FROM (SELECT <columns> FROM @<stage>/<fully_qualified_name>/<file_name>)
+		sd.EscapeColumns(columns, ","), stageName, tableID.FullyQualifiedName(), fileName,
 	)
 }
