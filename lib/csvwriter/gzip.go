@@ -28,6 +28,10 @@ func NewGzipWriter(fp string) (*GzipWriter, error) {
 	}, nil
 }
 
+func (g *GzipWriter) FileName() string {
+	return g.file.Name()
+}
+
 func (g *GzipWriter) Write(row []string) error {
 	return g.writer.Write(row)
 }

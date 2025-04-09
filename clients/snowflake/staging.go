@@ -13,6 +13,7 @@ import (
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/awslib"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/csvwriter"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/maputil"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -96,13 +97,16 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		}
 	}
 
-	// We are appending gz to the file name since it was compressed by the PUT command.
 	tableStageName := addPrefixToTableName(tempTableID, "%")
+	// We are appending gz to the file name since it was compressed by the PUT command.
+	fileName := fmt.Sprintf("%s.gz", file.FileName)
 	if s.useExternalStage() {
 		tableStageName = filepath.Join(s.config.Snowflake.ExternalStage.ExternalStageName, s.config.Snowflake.ExternalStage.Prefix, tempTableID.FullyQualifiedName())
+		// We don't need to append .gz to the file name since it was already compressed by [s.writeTemporaryTableFileGZIP]
+		fileName = file.FileName
 	}
 
-	copyCommand := s.dialect().BuildCopyIntoTableQuery(tempTableID, tableData.ReadOnlyInMemoryCols().ValidColumns(), tableStageName, fmt.Sprintf("%s.gz", file.FileName))
+	copyCommand := s.dialect().BuildCopyIntoTableQuery(tempTableID, tableData.ReadOnlyInMemoryCols().ValidColumns(), tableStageName, fileName)
 	if additionalSettings.AdditionalCopyClause != "" {
 		copyCommand += " " + additionalSettings.AdditionalCopyClause
 	}
@@ -156,7 +160,45 @@ type File struct {
 	FileName string
 }
 
+func (s *Store) writeTemporaryTableFileGZIP(tableData *optimization.TableData, newTableID sql.TableIdentifier) (File, error) {
+	fp := filepath.Join(os.TempDir(), strings.ReplaceAll(newTableID.FullyQualifiedName(), `"`, ""))
+	gzipWriter, err := csvwriter.NewGzipWriter(fp)
+	if err != nil {
+		return File{}, fmt.Errorf("failed to create gzip writer: %w", err)
+	}
+
+	defer gzipWriter.Close()
+
+	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
+	for _, value := range tableData.Rows() {
+		var row []string
+		for _, col := range columns {
+			castedValue, castErr := castColValStaging(value[col.Name()], col.KindDetails)
+			if castErr != nil {
+				return File{}, castErr
+			}
+
+			row = append(row, castedValue)
+		}
+
+		if err = gzipWriter.Write(row); err != nil {
+			return File{}, fmt.Errorf("failed to write to csv: %w", err)
+		}
+	}
+
+	if err = gzipWriter.Flush(); err != nil {
+		return File{}, fmt.Errorf("failed to flush gzip writer: %w", err)
+	}
+
+	return File{FilePath: fp, FileName: gzipWriter.FileName()}, nil
+}
+
+// TODO: Deprecate this in favor of writing GZIP delta files directly without relying on Snowflake's auto compression
 func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID sql.TableIdentifier) (File, error) {
+	if s.useExternalStage() {
+		return s.writeTemporaryTableFileGZIP(tableData, newTableID)
+	}
+
 	fileName := fmt.Sprintf("%s.csv", strings.ReplaceAll(newTableID.FullyQualifiedName(), `"`, ""))
 	fp := filepath.Join(os.TempDir(), fileName)
 	file, err := os.Create(fp)
