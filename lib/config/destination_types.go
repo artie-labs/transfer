@@ -68,9 +68,26 @@ type Snowflake struct {
 	Host        string `yaml:"host"`
 	Application string `yaml:"application"`
 
+	// ExternalStage configuration
+	ExternalStage *ExternalStage `yaml:"externalStage,omitempty"`
+
 	// AdditionalParameters - This will be added to the connection string.
 	// Ref: https://docs.snowflake.com/en/sql-reference/parameters
 	AdditionalParameters map[string]string `yaml:"additionalParameters,omitempty"`
+}
+
+type ExternalStage struct {
+	// S3 configuration for the external stage
+	S3 *S3StageConfig `yaml:"s3"`
+}
+
+type S3StageConfig struct {
+	Bucket             string `yaml:"bucket"`
+	AwsAccessKeyID     string `yaml:"awsAccessKeyID"`
+	AwsSecretAccessKey string `yaml:"awsSecretAccessKey"`
+	AwsRegion          string `yaml:"awsRegion"`
+	// Prefix is the folder path within the bucket where files will be stored
+	Prefix string `yaml:"prefix"`
 }
 
 type Iceberg struct {

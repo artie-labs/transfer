@@ -110,9 +110,48 @@ func LoadSnowflake(cfg config.Config, _store *db.Store) (*Store, error) {
 		return nil, err
 	}
 
-	return &Store{
+	s := &Store{
 		configMap: &types.DestinationTableConfigMap{},
 		config:    cfg,
 		Store:     store,
-	}, nil
+	}
+
+	// Set up external stage if configured
+	if err := s.setupExternalStage(); err != nil {
+		return nil, fmt.Errorf("failed to set up external stage: %w", err)
+	}
+
+	return s, nil
+}
+
+// setupExternalStage creates and configures the external stage if specified in the config
+func (s *Store) setupExternalStage() error {
+	if s.config.Snowflake.ExternalStage == nil || s.config.Snowflake.ExternalStage.S3 == nil {
+		return nil
+	}
+
+	s3Config := s.config.Snowflake.ExternalStage.S3
+
+	// Create the external stage
+	createStageQuery := fmt.Sprintf(`
+		CREATE OR REPLACE STAGE artie_external_stage
+		URL = 's3://%s/%s'
+		CREDENTIALS = (
+			AWS_KEY_ID = '%s'
+			AWS_SECRET_KEY = '%s'
+		)
+		FILE_FORMAT = (
+			TYPE = 'CSV'
+			FIELD_DELIMITER = '\t'
+			FIELD_OPTIONALLY_ENCLOSED_BY = '"'
+			NULL_IF = '__artie_null_value'
+			EMPTY_FIELD_AS_NULL = FALSE
+		)
+	`, s3Config.Bucket, s3Config.Prefix, s3Config.AwsAccessKeyID, s3Config.AwsSecretAccessKey)
+
+	if _, err := s.ExecContext(context.Background(), createStageQuery); err != nil {
+		return fmt.Errorf("failed to create external stage: %w", err)
+	}
+
+	return nil
 }

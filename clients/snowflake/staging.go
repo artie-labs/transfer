@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/clients/shared"
+	"github.com/artie-labs/transfer/lib/awslib"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/maputil"
@@ -71,14 +72,47 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		}
 	}()
 
-	// Upload the CSV file to Snowflake, wrapping the file in single quotes to avoid special characters.
-	tableStageName := addPrefixToTableName(tempTableID, "%")
-	if _, err = s.ExecContext(ctx, fmt.Sprintf("PUT 'file://%s' @%s AUTO_COMPRESS=TRUE", file.FilePath, tableStageName)); err != nil {
-		return fmt.Errorf("failed to run PUT for temporary table: %w", err)
+	// Determine if we should use external stage
+	useExternalStage := s.config.Snowflake.ExternalStage != nil && s.config.Snowflake.ExternalStage.S3 != nil
+
+	var putQuery string
+	if useExternalStage {
+		// For external stage, we need to upload directly to S3
+		s3Config := s.config.Snowflake.ExternalStage.S3
+
+		// Upload to S3 using our built-in library
+		_, err = awslib.UploadLocalFileToS3(ctx, awslib.UploadArgs{
+			Bucket:                     s3Config.Bucket,
+			OptionalS3Prefix:           filepath.Join(s3Config.Prefix, tempTableID.Table()),
+			FilePath:                   file.FilePath,
+			OverrideAWSAccessKeyID:     s3Config.AwsAccessKeyID,
+			OverrideAWSAccessKeySecret: s3Config.AwsSecretAccessKey,
+			Region:                     s3Config.AwsRegion,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to upload file to S3: %w", err)
+		}
+
+		// For external stage, we don't need to run PUT command
+		putQuery = ""
+	} else {
+		// Upload the CSV file to Snowflake internal stage
+		tableStageName := addPrefixToTableName(tempTableID, "%")
+		putQuery = fmt.Sprintf("PUT 'file://%s' @%s AUTO_COMPRESS=TRUE", file.FilePath, tableStageName)
+		if _, err = s.ExecContext(ctx, putQuery); err != nil {
+			return fmt.Errorf("failed to run PUT for temporary table: %w", err)
+		}
 	}
 
 	// We are appending gz to the file name since it was compressed by the PUT command.
-	copyCommand := s.dialect().BuildCopyIntoTableQuery(tempTableID, tableData.ReadOnlyInMemoryCols().ValidColumns(), tableStageName, fmt.Sprintf("%s.gz", file.FileName))
+	var copyCommand string
+	if useExternalStage {
+		copyCommand = s.dialect().BuildCopyIntoTableQueryFromExternalStage(tempTableID, tableData.ReadOnlyInMemoryCols().ValidColumns(), file.FileName)
+	} else {
+		tableStageName := addPrefixToTableName(tempTableID, "%")
+		copyCommand = s.dialect().BuildCopyIntoTableQuery(tempTableID, tableData.ReadOnlyInMemoryCols().ValidColumns(), tableStageName, fmt.Sprintf("%s.gz", file.FileName))
+	}
+
 	if additionalSettings.AdditionalCopyClause != "" {
 		copyCommand += " " + additionalSettings.AdditionalCopyClause
 	}
@@ -90,7 +124,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		// For non-temp tables, we should try to delete the staging file if COPY INTO fails.
 		// This is because [PURGE = TRUE] will only delete the staging files upon a successful COPY INTO.
 		// We also only need to do this for non-temp tables because these staging files will linger, since we create a new temporary table per attempt.
-		if !createTempTable {
+		if !createTempTable && !useExternalStage {
 			if _, deleteErr := s.ExecContext(ctx, s.dialect().BuildRemoveFilesFromStage(addPrefixToTableName(tempTableID, "%"), "")); deleteErr != nil {
 				slog.Warn("Failed to remove all files from stage", slog.Any("deleteErr", deleteErr))
 			}
