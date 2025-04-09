@@ -101,7 +101,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	// We are appending gz to the file name since it was compressed by the PUT command.
 	fileName := fmt.Sprintf("%s.gz", file.FileName)
 	if s.useExternalStage() {
-		tableStageName = filepath.Join(s.config.Snowflake.ExternalStage.ExternalStageName, s.config.Snowflake.ExternalStage.Prefix, tempTableID.FullyQualifiedName())
+		tableStageName = filepath.Join(s.config.Snowflake.ExternalStage.Name, s.config.Snowflake.ExternalStage.Prefix, tempTableID.FullyQualifiedName())
 		// We don't need to append .gz to the file name since it was already compressed by [s.writeTemporaryTableFileGZIP]
 		fileName = file.FileName
 	}

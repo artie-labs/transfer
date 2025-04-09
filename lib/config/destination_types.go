@@ -77,8 +77,8 @@ type Snowflake struct {
 }
 
 type ExternalStage struct {
-	Enabled           bool   `yaml:"enabled"`
-	ExternalStageName string `yaml:"externalStageName"`
+	Enabled bool   `yaml:"enabled"`
+	Name    string `yaml:"name"`
 	// S3 configuration for the external stage
 	Bucket string `yaml:"bucket"`
 

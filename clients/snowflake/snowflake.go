@@ -134,12 +134,12 @@ func (s *Store) ensureExternalStageExists(ctx context.Context) error {
 		return err
 	}
 
-	if _, err := s.QueryContext(ctx, fmt.Sprintf(`DESCRIBE STAGE %s`, s.config.Snowflake.ExternalStage.ExternalStageName)); err != nil {
+	if _, err := s.QueryContext(ctx, fmt.Sprintf(`DESCRIBE STAGE %s`, s.config.Snowflake.ExternalStage.Name)); err != nil {
 		return fmt.Errorf("failed to describe external stage: %w", err)
 	}
 
 	externalStage := s.config.Snowflake.ExternalStage
-	createStageQuery := s.dialect().BuildCreateStageQuery(externalStage.ExternalStageName, externalStage.Bucket, externalStage.CredentialsClause)
+	createStageQuery := s.dialect().BuildCreateStageQuery(externalStage.Name, externalStage.Bucket, externalStage.CredentialsClause)
 	if _, err := s.ExecContext(ctx, createStageQuery); err != nil {
 		return fmt.Errorf("failed to create external stage: %w", err)
 	}
