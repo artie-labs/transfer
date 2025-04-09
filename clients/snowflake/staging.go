@@ -97,14 +97,12 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	}
 
 	// We are appending gz to the file name since it was compressed by the PUT command.
-	var copyCommand string
+	tableStageName := addPrefixToTableName(tempTableID, "%")
 	if s.useExternalStage() {
-		copyCommand = s.dialect().BuildCopyIntoTableQueryFromExternalStage(tempTableID, tableData.ReadOnlyInMemoryCols().ValidColumns(), s.config.Snowflake.ExternalStage.ExternalStageName, file.FileName)
-	} else {
-		tableStageName := addPrefixToTableName(tempTableID, "%")
-		copyCommand = s.dialect().BuildCopyIntoTableQuery(tempTableID, tableData.ReadOnlyInMemoryCols().ValidColumns(), tableStageName, fmt.Sprintf("%s.gz", file.FileName))
+		tableStageName = filepath.Join(s.config.Snowflake.ExternalStage.ExternalStageName, s.config.Snowflake.ExternalStage.Prefix, tempTableID.FullyQualifiedName())
 	}
 
+	copyCommand := s.dialect().BuildCopyIntoTableQuery(tempTableID, tableData.ReadOnlyInMemoryCols().ValidColumns(), tableStageName, fmt.Sprintf("%s.gz", file.FileName))
 	if additionalSettings.AdditionalCopyClause != "" {
 		copyCommand += " " + additionalSettings.AdditionalCopyClause
 	}

@@ -217,13 +217,3 @@ func (sd SnowflakeDialect) BuildCopyIntoTableQuery(tableID sql.TableIdentifier, 
 		sd.EscapeColumns(columns, ","), stageName, fileName,
 	)
 }
-
-// BuildCopyIntoTableQueryFromExternalStage builds a COPY INTO query that uses an external stage
-func (sd SnowflakeDialect) BuildCopyIntoTableQueryFromExternalStage(tableID sql.TableIdentifier, columns []columns.Column, stageName string, fileName string) string {
-	return fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @%s/%s) FILES = ('%s')",
-		// COPY INTO <table> (<columns>)
-		tableID.FullyQualifiedName(), strings.Join(sql.QuoteColumns(columns, sd), ","),
-		// FROM (SELECT <columns> FROM @<stage>/<fully_qualified_name>/<file_name>)
-		sd.EscapeColumns(columns, ","), stageName, tableID.FullyQualifiedName(), fileName,
-	)
-}
