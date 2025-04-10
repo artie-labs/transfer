@@ -2,6 +2,7 @@ package shared
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 
 	"github.com/artie-labs/transfer/lib/destination"
@@ -20,7 +21,7 @@ func Sweep(ctx context.Context, dest destination.Destination, topicConfigs []*ka
 			return err
 		}
 
-		for rows != nil && rows.Next() {
+		for rows.Next() {
 			var tableSchema, tableName string
 			if err = rows.Scan(&tableSchema, &tableName); err != nil {
 				return err
@@ -31,6 +32,10 @@ func Sweep(ctx context.Context, dest destination.Destination, topicConfigs []*ka
 					return err
 				}
 			}
+		}
+
+		if err = rows.Err(); err != nil {
+			return fmt.Errorf("failed to iterate over rows: %w", err)
 		}
 	}
 
