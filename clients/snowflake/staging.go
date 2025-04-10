@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/clients/shared"
+	"github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/awslib"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/csvwriter"
@@ -70,6 +71,8 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		return fmt.Errorf("failed to load temporary table: %w", err)
 	}
 
+	fmt.Println(file.FileName)
+
 	defer func() {
 		// In the case where PUT or COPY fails, we'll at least delete the temporary file.
 		if deleteErr := os.RemoveAll(file.FilePath); deleteErr != nil {
@@ -81,7 +84,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		// Upload to S3 using our built-in library
 		_, err = awslib.UploadLocalFileToS3(ctx, awslib.UploadArgs{
 			Bucket:           s.config.Snowflake.ExternalStage.Bucket,
-			OptionalS3Prefix: filepath.Join(s.config.Snowflake.ExternalStage.Prefix, tempTableID.FullyQualifiedName()),
+			OptionalS3Prefix: filepath.Join(s.config.Snowflake.ExternalStage.Prefix),
 			FilePath:         file.FilePath,
 			Region:           os.Getenv("AWS_REGION"),
 		})
@@ -101,7 +104,13 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	// We are appending gz to the file name since it was compressed by the PUT command.
 	fileName := fmt.Sprintf("%s.gz", file.FileName)
 	if s.useExternalStage() {
-		tableStageName = filepath.Join(s.config.Snowflake.ExternalStage.Name, s.config.Snowflake.ExternalStage.Prefix, tempTableID.FullyQualifiedName())
+		castedTableID, ok := tempTableID.(dialect.TableIdentifier)
+		if !ok {
+			return fmt.Errorf("failed to cast table identifier: %w", err)
+		}
+
+		// Fix the S3 path by ensuring there's a slash between the stage name and the file name
+		tableStageName = fmt.Sprintf("%s.%s.%s/", castedTableID.Database(), castedTableID.Schema(), filepath.Join(s.config.Snowflake.ExternalStage.Name, s.config.Snowflake.ExternalStage.Prefix))
 		// We don't need to append .gz to the file name since it was already compressed by [s.writeTemporaryTableFileGZIP]
 		fileName = file.FileName
 	}
@@ -110,6 +119,8 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	if additionalSettings.AdditionalCopyClause != "" {
 		copyCommand += " " + additionalSettings.AdditionalCopyClause
 	}
+
+	fmt.Println(copyCommand)
 
 	// COPY INTO does not implement [RowsAffected]. Instead, we'll treat this as a query and then parse the output:
 	// https://docs.snowflake.com/en/sql-reference/sql/copy-into-table#output
@@ -161,7 +172,7 @@ type File struct {
 }
 
 func (s *Store) writeTemporaryTableFileGZIP(tableData *optimization.TableData, newTableID sql.TableIdentifier) (File, error) {
-	fp := filepath.Join(os.TempDir(), strings.ReplaceAll(newTableID.FullyQualifiedName(), `"`, ""))
+	fp := filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv.gz", strings.ReplaceAll(newTableID.FullyQualifiedName(), `"`, "")))
 	gzipWriter, err := csvwriter.NewGzipWriter(fp)
 	if err != nil {
 		return File{}, fmt.Errorf("failed to create gzip writer: %w", err)

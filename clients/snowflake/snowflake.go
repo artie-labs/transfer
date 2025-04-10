@@ -3,6 +3,7 @@ package snowflake
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/snowflakedb/gosnowflake"
 
@@ -129,19 +130,27 @@ func (s *Store) ensureExternalStageExists(ctx context.Context) error {
 		return nil
 	}
 
+	_, err := s.ExecContext(ctx, "USE DATABASE customers")
+	if err != nil {
+		return fmt.Errorf("failed to use database: %w", err)
+	}
 	// If we're using external stage, then we need [AWS_REGION] to be set.
 	if err := environ.MustGetEnv("AWS_REGION"); err != nil {
 		return err
 	}
 
-	if _, err := s.QueryContext(ctx, fmt.Sprintf(`DESCRIBE STAGE %s`, s.config.Snowflake.ExternalStage.Name)); err != nil {
-		return fmt.Errorf("failed to describe external stage: %w", err)
-	}
+	_, err = s.QueryContext(ctx, fmt.Sprintf(`DESCRIBE STAGE %s`, s.config.Snowflake.ExternalStage.Name))
+	if err != nil {
+		if strings.Contains(err.Error(), "does not exist") {
+			createStageQuery := s.dialect().BuildCreateStageQuery(s.config.Snowflake.ExternalStage.Name, s.config.Snowflake.ExternalStage.Bucket, s.config.Snowflake.ExternalStage.CredentialsClause)
+			if _, err := s.ExecContext(ctx, createStageQuery); err != nil {
+				return fmt.Errorf("failed to create external stage: %w", err)
+			}
 
-	externalStage := s.config.Snowflake.ExternalStage
-	createStageQuery := s.dialect().BuildCreateStageQuery(externalStage.Name, externalStage.Bucket, externalStage.CredentialsClause)
-	if _, err := s.ExecContext(ctx, createStageQuery); err != nil {
-		return fmt.Errorf("failed to create external stage: %w", err)
+			return nil
+		}
+
+		return fmt.Errorf("failed to describe external stage: %w", err)
 	}
 
 	return nil
