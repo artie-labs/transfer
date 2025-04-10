@@ -38,7 +38,7 @@ func (s *Store) Validate() error {
 	return nil
 }
 
-func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {
+func (s *Store) IdentifierFor(topicConfig kafkalib.DatabaseAndSchema, table string) sql.TableIdentifier {
 	return NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table, s.config.S3.TableNameSeparator)
 }
 
@@ -46,7 +46,7 @@ func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sq
 // It will look like something like this:
 // > folderName/fullyQualifiedTableName/YYYY-MM-DD
 func (s *Store) ObjectPrefix(tableData *optimization.TableData) string {
-	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
+	tableID := s.IdentifierFor(tableData.TopicConfig().DatabaseAndSchema(), tableData.Name())
 	fqTableName := tableID.FullyQualifiedName()
 	// Adding date= prefix so that it adheres to the partitioning format for Hive.
 	yyyyMMDDFormat := fmt.Sprintf("date=%s", time.Now().Format(ext.PostgresDateFormat))

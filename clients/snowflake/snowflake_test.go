@@ -26,7 +26,7 @@ import (
 )
 
 func (s *SnowflakeTestSuite) identifierFor(tableData *optimization.TableData) sql.TableIdentifier {
-	return s.stageStore.IdentifierFor(tableData.TopicConfig(), tableData.Name())
+	return s.stageStore.IdentifierFor(tableData.TopicConfig().DatabaseAndSchema(), tableData.Name())
 }
 
 func (s *SnowflakeTestSuite) TestDropTable() {
@@ -423,7 +423,7 @@ func TestTempTableIDWithSuffix(t *testing.T) {
 	}
 
 	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "db", Schema: "schema"}, "table")
-	tableID := (&Store{}).IdentifierFor(tableData.TopicConfig(), tableData.Name())
+	tableID := (&Store{}).IdentifierFor(tableData.TopicConfig().DatabaseAndSchema(), tableData.Name())
 	tempTableName := shared.TempTableIDWithSuffix(tableID, "sUfFiX").FullyQualifiedName()
 	assert.Equal(t, `"DB"."SCHEMA"."TABLE___ARTIE_SUFFIX"`, trimTTL(tempTableName))
 }

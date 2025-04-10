@@ -13,7 +13,7 @@ type GetQueryFunc func(dbName string, schemaName string) (string, []any)
 
 func Sweep(ctx context.Context, dest destination.Destination, topicConfigs []*kafkalib.TopicConfig, getQueryFunc GetQueryFunc) error {
 	slog.Info("Looking to see if there are any dangling artie temporary tables to delete...")
-	for _, topicConfig := range kafkalib.GetUniqueTopicConfigs(topicConfigs) {
+	for _, topicConfig := range kafkalib.GetUniqueDatabaseAndSchemaPairs(topicConfigs) {
 		query, args := getQueryFunc(topicConfig.Database, topicConfig.Schema)
 		rows, err := dest.QueryContext(ctx, query, args...)
 		if err != nil {

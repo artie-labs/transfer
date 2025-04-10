@@ -9,15 +9,19 @@ import (
 	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
-// GetUniqueTopicConfigs - will return a list of unique TopicConfigs based on the database and schema in O(n) time.
-func GetUniqueTopicConfigs(tcs []*TopicConfig) []TopicConfig {
-	var uniqueTopicConfigs []TopicConfig
-	seenMap := make(map[string]bool)
+type DatabaseAndSchema struct {
+	Database string
+	Schema   string
+}
+
+func GetUniqueDatabaseAndSchemaPairs(tcs []*TopicConfig) []DatabaseAndSchema {
+	var uniqueTopicConfigs []DatabaseAndSchema
+	seenMap := make(map[DatabaseAndSchema]bool)
 	for _, tc := range tcs {
-		key := fmt.Sprintf("%s###%s", tc.Database, tc.Schema)
+		key := tc.DatabaseAndSchema()
 		if _, isOk := seenMap[key]; !isOk {
-			seenMap[key] = true                                  // Mark this as seen
-			uniqueTopicConfigs = append(uniqueTopicConfigs, *tc) // Now add this to the list
+			seenMap[key] = true
+			uniqueTopicConfigs = append(uniqueTopicConfigs, key)
 		}
 	}
 
@@ -65,6 +69,10 @@ type TopicConfig struct {
 
 	// Internal metadata
 	opsToSkipMap map[string]bool `yaml:"-"`
+}
+
+func (t TopicConfig) DatabaseAndSchema() DatabaseAndSchema {
+	return DatabaseAndSchema{Database: t.Database, Schema: t.Schema}
 }
 
 const (
