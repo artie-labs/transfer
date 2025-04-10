@@ -25,7 +25,7 @@ func TestTempTableIDWithSuffix(t *testing.T) {
 
 	store := &Store{config: config.Config{BigQuery: &config.BigQuery{ProjectID: "123454321"}}}
 	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "db", Schema: "schema"}, "table")
-	tableID := store.IdentifierFor(tableData.TopicConfig().DatabaseAndSchema(), tableData.Name())
+	tableID := store.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name())
 	tempTableName := shared.TempTableIDWithSuffix(tableID, "sUfFiX").FullyQualifiedName()
 	assert.Equal(t, "`123454321`.`db`.`table___artie_sUfFiX`", trimTTL(tempTableName))
 }

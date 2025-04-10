@@ -33,13 +33,13 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 
 	originalColumnLength := len(cols.GetColumns())
 
-	bqTableID := d.bigQueryStore.IdentifierFor(td.TopicConfig().DatabaseAndSchema(), td.Name())
+	bqTableID := d.bigQueryStore.IdentifierFor(td.TopicConfig().BuildDatabaseAndSchemaPair(), td.Name())
 	bqName := bqTableID.FullyQualifiedName()
 
-	redshiftTableID := d.redshiftStore.IdentifierFor(td.TopicConfig().DatabaseAndSchema(), td.Name())
+	redshiftTableID := d.redshiftStore.IdentifierFor(td.TopicConfig().BuildDatabaseAndSchemaPair(), td.Name())
 	redshiftName := redshiftTableID.FullyQualifiedName()
 
-	snowflakeTableID := d.snowflakeStagesStore.IdentifierFor(td.TopicConfig().DatabaseAndSchema(), td.Name())
+	snowflakeTableID := d.snowflakeStagesStore.IdentifierFor(td.TopicConfig().BuildDatabaseAndSchemaPair(), td.Name())
 	snowflakeName := snowflakeTableID.FullyQualifiedName()
 
 	// Testing 3 scenarios here

@@ -23,7 +23,7 @@ func TestGetUniqueDatabaseAndSchemaPairs(t *testing.T) {
 
 		actual := GetUniqueDatabaseAndSchemaPairs(tcs)
 		assert.Len(t, actual, 1)
-		assert.Equal(t, tcs[0].DatabaseAndSchema(), actual[0])
+		assert.Equal(t, tcs[0].BuildDatabaseAndSchemaPair(), actual[0])
 	}
 	{
 		// 2 topic configs (both the same)
@@ -40,7 +40,7 @@ func TestGetUniqueDatabaseAndSchemaPairs(t *testing.T) {
 
 		actual := GetUniqueDatabaseAndSchemaPairs(tcs)
 		assert.Len(t, actual, 1)
-		assert.Equal(t, tcs[0].DatabaseAndSchema(), actual[0])
+		assert.Equal(t, tcs[0].BuildDatabaseAndSchemaPair(), actual[0])
 	}
 	{
 		// 3 topic configs (2 the same)
@@ -61,8 +61,8 @@ func TestGetUniqueDatabaseAndSchemaPairs(t *testing.T) {
 
 		actual := GetUniqueDatabaseAndSchemaPairs(tcs)
 		assert.Len(t, actual, 2)
-		assert.Equal(t, tcs[0].DatabaseAndSchema(), actual[0])
-		assert.Equal(t, tcs[2].DatabaseAndSchema(), actual[1])
+		assert.Equal(t, tcs[0].BuildDatabaseAndSchemaPair(), actual[0])
+		assert.Equal(t, tcs[2].BuildDatabaseAndSchemaPair(), actual[1])
 	}
 }
 

@@ -75,7 +75,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (b
 	return true, nil
 }
 
-func (s *Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchema, table string) sql.TableIdentifier {
+func (s *Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, table string) sql.TableIdentifier {
 	return dialect.NewTableIdentifier(databaseAndSchema.Schema, table)
 }
 

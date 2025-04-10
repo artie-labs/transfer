@@ -67,12 +67,12 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, _
 }
 
 // specificIdentifierFor returns a MS SQL [TableIdentifier] for a [TopicConfig] + table name.
-func (s *Store) specificIdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchema, table string) dialect.TableIdentifier {
+func (s *Store) specificIdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, table string) dialect.TableIdentifier {
 	return dialect.NewTableIdentifier(getSchema(databaseAndSchema.Schema), table)
 }
 
 // IdentifierFor returns a generic [sql.TableIdentifier] interface for a [TopicConfig] + table name.
-func (s *Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchema, table string) sql.TableIdentifier {
+func (s *Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, table string) sql.TableIdentifier {
 	return s.specificIdentifierFor(databaseAndSchema, table)
 }
 

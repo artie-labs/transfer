@@ -58,7 +58,7 @@ func (s Store) Append(ctx context.Context, tableData *optimization.TableData, _ 
 	return shared.Append(ctx, s, tableData, types.AdditionalSettings{})
 }
 
-func (s Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchema, table string) sql.TableIdentifier {
+func (s Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, table string) sql.TableIdentifier {
 	return dialect.NewTableIdentifier(databaseAndSchema.Database, databaseAndSchema.Schema, table)
 }
 

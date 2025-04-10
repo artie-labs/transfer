@@ -22,7 +22,7 @@ type Store struct {
 	config    config.Config
 }
 
-func (s *Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchema, table string) sql.TableIdentifier {
+func (s *Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, table string) sql.TableIdentifier {
 	return dialect.NewTableIdentifier(databaseAndSchema.Database, databaseAndSchema.Schema, table)
 }
 

@@ -15,7 +15,7 @@ func Append(ctx context.Context, dest destination.Destination, tableData *optimi
 		return nil
 	}
 
-	tableID := dest.IdentifierFor(tableData.TopicConfig().DatabaseAndSchema(), tableData.Name())
+	tableID := dest.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name())
 	tableConfig, err := dest.GetTableConfig(tableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
 		return fmt.Errorf("failed to get table config: %w", err)

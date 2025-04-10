@@ -9,16 +9,16 @@ import (
 	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
-type DatabaseAndSchema struct {
+type DatabaseAndSchemaPair struct {
 	Database string
 	Schema   string
 }
 
-func GetUniqueDatabaseAndSchemaPairs(tcs []*TopicConfig) []DatabaseAndSchema {
-	var uniqueTopicConfigs []DatabaseAndSchema
-	seenMap := make(map[DatabaseAndSchema]bool)
+func GetUniqueDatabaseAndSchemaPairs(tcs []*TopicConfig) []DatabaseAndSchemaPair {
+	var uniqueTopicConfigs []DatabaseAndSchemaPair
+	seenMap := make(map[DatabaseAndSchemaPair]bool)
 	for _, tc := range tcs {
-		key := tc.DatabaseAndSchema()
+		key := tc.BuildDatabaseAndSchemaPair()
 		if _, isOk := seenMap[key]; !isOk {
 			seenMap[key] = true
 			uniqueTopicConfigs = append(uniqueTopicConfigs, key)
@@ -71,8 +71,8 @@ type TopicConfig struct {
 	opsToSkipMap map[string]bool `yaml:"-"`
 }
 
-func (t TopicConfig) DatabaseAndSchema() DatabaseAndSchema {
-	return DatabaseAndSchema{Database: t.Database, Schema: t.Schema}
+func (t TopicConfig) BuildDatabaseAndSchemaPair() DatabaseAndSchemaPair {
+	return DatabaseAndSchemaPair{Database: t.Database, Schema: t.Schema}
 }
 
 const (

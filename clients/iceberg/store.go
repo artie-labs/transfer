@@ -36,7 +36,7 @@ func (s Store) Append(ctx context.Context, tableData *optimization.TableData, us
 		return nil
 	}
 
-	tableID := s.IdentifierFor(tableData.TopicConfig().DatabaseAndSchema(), tableData.Name())
+	tableID := s.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name())
 	tempTableID := shared.TempTableIDWithSuffix(tableID, tableData.TempTableSuffix())
 	tableConfig, err := s.GetTableConfig(ctx, tableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
@@ -118,7 +118,7 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bo
 		return false, nil
 	}
 
-	tableID := s.IdentifierFor(tableData.TopicConfig().DatabaseAndSchema(), tableData.Name())
+	tableID := s.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name())
 	temporaryTableID := shared.TempTableIDWithSuffix(tableID, tableData.TempTableSuffix())
 	tableConfig, err := s.GetTableConfig(ctx, tableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
@@ -206,7 +206,7 @@ func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryK
 	return nil
 }
 
-func (s Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchema, table string) sql.TableIdentifier {
+func (s Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, table string) sql.TableIdentifier {
 	return dialect.NewTableIdentifier(databaseAndSchema.Database, databaseAndSchema.Schema, table)
 }
 

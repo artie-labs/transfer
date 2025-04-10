@@ -51,7 +51,7 @@ func (d *DDLTestSuite) Test_DropTemporaryTableCaseSensitive() {
 		}
 
 		for tableIndex, table := range tablesToDrop {
-			tableIdentifier := dest.IdentifierFor(kafkalib.DatabaseAndSchema{Database: "db", Schema: "schema"}, fmt.Sprintf("%s_%s", table, constants.ArtiePrefix))
+			tableIdentifier := dest.IdentifierFor(kafkalib.DatabaseAndSchemaPair{Database: "db", Schema: "schema"}, fmt.Sprintf("%s_%s", table, constants.ArtiePrefix))
 			_ = ddl.DropTemporaryTable(d.T().Context(), dest, tableIdentifier, false)
 
 			// There should be the same number of DROP table calls as the number of tables to drop.
@@ -72,7 +72,7 @@ func (d *DDLTestSuite) Test_DropTemporaryTable() {
 
 	// Should not drop since these do not have Artie prefix in the name.
 	for _, table := range doNotDropTables {
-		tableID := d.bigQueryStore.IdentifierFor(kafkalib.DatabaseAndSchema{Database: "db", Schema: "schema"}, table)
+		tableID := d.bigQueryStore.IdentifierFor(kafkalib.DatabaseAndSchemaPair{Database: "db", Schema: "schema"}, table)
 		_ = ddl.DropTemporaryTable(d.T().Context(), d.snowflakeStagesStore, tableID, false)
 		assert.Equal(d.T(), 0, d.fakeSnowflakeStagesStore.ExecContextCallCount())
 	}
@@ -87,14 +87,14 @@ func (d *DDLTestSuite) Test_DropTemporaryTable() {
 		}
 
 		for _, doNotDropTable := range doNotDropTables {
-			doNotDropTableID := d.bigQueryStore.IdentifierFor(kafkalib.DatabaseAndSchema{Database: "db", Schema: "schema"}, doNotDropTable)
+			doNotDropTableID := d.bigQueryStore.IdentifierFor(kafkalib.DatabaseAndSchemaPair{Database: "db", Schema: "schema"}, doNotDropTable)
 			_ = ddl.DropTemporaryTable(d.T().Context(), _dwh, doNotDropTableID, false)
 
 			assert.Equal(d.T(), 0, fakeStore.ExecContextCallCount())
 		}
 
 		for index, table := range doNotDropTables {
-			fullTableID := d.bigQueryStore.IdentifierFor(kafkalib.DatabaseAndSchema{Database: "db", Schema: "schema"}, fmt.Sprintf("%s_%s", table, constants.ArtiePrefix))
+			fullTableID := d.bigQueryStore.IdentifierFor(kafkalib.DatabaseAndSchemaPair{Database: "db", Schema: "schema"}, fmt.Sprintf("%s_%s", table, constants.ArtiePrefix))
 			_ = ddl.DropTemporaryTable(d.T().Context(), _dwh, fullTableID, false)
 
 			count := index + 1
@@ -128,7 +128,7 @@ func (d *DDLTestSuite) Test_DropTemporaryTable_Errors() {
 		var count int
 		for _, shouldReturnErr := range []bool{true, false} {
 			for _, table := range tablesToDrop {
-				tableID := d.bigQueryStore.IdentifierFor(kafkalib.DatabaseAndSchema{Database: "db", Schema: "schema"}, fmt.Sprintf("%s_%s", table, constants.ArtiePrefix))
+				tableID := d.bigQueryStore.IdentifierFor(kafkalib.DatabaseAndSchemaPair{Database: "db", Schema: "schema"}, fmt.Sprintf("%s_%s", table, constants.ArtiePrefix))
 				err := ddl.DropTemporaryTable(d.T().Context(), _dwh, tableID, shouldReturnErr)
 				if shouldReturnErr {
 					assert.ErrorContains(d.T(), err, randomErr.Error())
