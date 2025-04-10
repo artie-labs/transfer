@@ -42,7 +42,11 @@ func (SnowflakeDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (st
 	return fmt.Sprintf("DESC TABLE %s", tableID.FullyQualifiedName()), nil, nil
 }
 
-func (SnowflakeDialect) BuildCreateStageQuery(stageName string, bucket string, credentialsClause string) string {
-	return fmt.Sprintf(`CREATE OR REPLACE STAGE %s URL = 's3://%s' CREDENTIALS = ( %s ) FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='%s' EMPTY_FIELD_AS_NULL=FALSE)`,
-		stageName, bucket, credentialsClause, constants.NullValuePlaceholder)
+func (SnowflakeDialect) BuildCreateStageQuery(dbName string, schemaName string, stageName string, bucket string, credentialsClause string) string {
+	return fmt.Sprintf(`CREATE OR REPLACE STAGE %s.%s.%s URL = 's3://%s' CREDENTIALS = ( %s ) FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='%s' EMPTY_FIELD_AS_NULL=FALSE)`,
+		dbName, schemaName, stageName, bucket, credentialsClause, constants.NullValuePlaceholder)
+}
+
+func (SnowflakeDialect) BuildDescribeStageQuery(dbName string, schemaName string, stageName string) string {
+	return fmt.Sprintf(`DESCRIBE STAGE %s.%s.%s`, dbName, schemaName, stageName)
 }
