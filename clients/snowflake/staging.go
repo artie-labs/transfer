@@ -71,8 +71,6 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		return fmt.Errorf("failed to load temporary table: %w", err)
 	}
 
-	fmt.Println(file.FileName)
-
 	defer func() {
 		// In the case where PUT or COPY fails, we'll at least delete the temporary file.
 		if deleteErr := os.RemoveAll(file.FilePath); deleteErr != nil {
@@ -119,8 +117,6 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	if additionalSettings.AdditionalCopyClause != "" {
 		copyCommand += " " + additionalSettings.AdditionalCopyClause
 	}
-
-	fmt.Println(copyCommand)
 
 	// COPY INTO does not implement [RowsAffected]. Instead, we'll treat this as a query and then parse the output:
 	// https://docs.snowflake.com/en/sql-reference/sql/copy-into-table#output
