@@ -139,8 +139,7 @@ func (s *Store) ensureExternalStageExists(ctx context.Context) error {
 		return err
 	}
 
-	_, err = s.QueryContext(ctx, fmt.Sprintf(`DESCRIBE STAGE %s`, s.config.Snowflake.ExternalStage.Name))
-	if err != nil {
+	if _, err = s.QueryContext(ctx, fmt.Sprintf(`DESCRIBE STAGE %s`, s.config.Snowflake.ExternalStage.Name)); err != nil {
 		if strings.Contains(err.Error(), "does not exist") {
 			createStageQuery := s.dialect().BuildCreateStageQuery(s.config.Snowflake.ExternalStage.Name, s.config.Snowflake.ExternalStage.Bucket, s.config.Snowflake.ExternalStage.CredentialsClause)
 			if _, err := s.ExecContext(ctx, createStageQuery); err != nil {
