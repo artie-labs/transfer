@@ -67,13 +67,13 @@ func (BigQueryDialect) KindForDataType(rawBqType string, _ string) (typing.KindD
 	// https://cloud.google.com/bigquery/docs/reference/standard-sql/data-types#decimal_types
 	case "numeric":
 		if len(parameters) == 0 {
-			// This is a specific thing to BigQuery
-			// A `NUMERIC` type without precision or scale specified is NUMERIC(38, 9)
+			// BigQuery [NUMERIC] type will default to NUMERIC(38, 9)
 			return typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(38, 9)), nil
 		}
 		return typing.ParseNumeric(parameters)
 	case "bignumeric":
 		if len(parameters) == 0 {
+			// BigQuery [BIGNUMERIC] type will default to BIGNUMERIC(76, 38)
 			return typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(76, 38)), nil
 		}
 		return typing.ParseNumeric(parameters)
