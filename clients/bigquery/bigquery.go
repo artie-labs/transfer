@@ -188,36 +188,6 @@ func (s *Store) GetClient(ctx context.Context) *bigquery.Client {
 	return client
 }
 
-func (s *Store) verifyRowCount(ctx context.Context, tableID sql.TableIdentifier, expectedCount uint) error {
-	// Cast to BigQuery-specific TableIdentifier
-	bqTableID, err := typing.AssertType[dialect.TableIdentifier](tableID)
-	if err != nil {
-		return fmt.Errorf("failed to cast table identifier: %w", err)
-	}
-
-	// Wait for streaming buffer to be empty and get the final row count
-	var rowCount uint64
-	for i := 0; i < 10; i++ {
-		time.Sleep(500 * time.Millisecond)
-		resp, err := s.bqClient.Dataset(bqTableID.Dataset()).Table(bqTableID.Table()).Metadata(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to get %q metadata: %w", bqTableID.FullyQualifiedName(), err)
-		}
-
-		rowCount = resp.NumRows
-		if resp.StreamingBuffer != nil {
-			rowCount += resp.StreamingBuffer.EstimatedRows
-		}
-
-		// If streaming buffer is empty and row count matches, we're done
-		if resp.StreamingBuffer == nil && rowCount == uint64(expectedCount) {
-			return nil
-		}
-	}
-
-	return fmt.Errorf("row count mismatch after write, expected: %d, got: %d", expectedCount, rowCount)
-}
-
 func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier, tableData *optimization.TableData) error {
 	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
 
