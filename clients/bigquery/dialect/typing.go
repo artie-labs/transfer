@@ -7,6 +7,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
 
 func (BigQueryDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, settings config.SharedDestinationColumnSettings) string {
@@ -63,11 +64,17 @@ func (BigQueryDialect) KindForDataType(rawBqType string, _ string) (typing.KindD
 
 	// Geography, geometry date, time, varbinary, binary are currently not supported.
 	switch strings.TrimSpace(bqType[:idxStop]) {
-	case "numeric", "bignumeric":
+	// https://cloud.google.com/bigquery/docs/reference/standard-sql/data-types#decimal_types
+	case "numeric":
 		if len(parameters) == 0 {
 			// This is a specific thing to BigQuery
 			// A `NUMERIC` type without precision or scale specified is NUMERIC(38, 9)
-			return typing.EDecimal, nil
+			return typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(38, 9)), nil
+		}
+		return typing.ParseNumeric(parameters)
+	case "bignumeric":
+		if len(parameters) == 0 {
+			return typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(76, 38)), nil
 		}
 		return typing.ParseNumeric(parameters)
 	case "decimal", "float", "float64", "bigdecimal":
