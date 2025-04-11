@@ -140,11 +140,17 @@ func (s *Store) ensureExternalStageExists(ctx context.Context) error {
 		return fmt.Errorf("failed to get topic configs: %w", err)
 	}
 
-	for _, tc := range kafkalib.GetUniqueTopicConfigs(tcs) {
-		describeQuery := s.dialect().BuildDescribeStageQuery(tc.Database, tc.Schema, s.config.Snowflake.ExternalStage.Name)
+	for _, dbAndSchemaPair := range kafkalib.GetUniqueDatabaseAndSchemaPairs(tcs) {
+		describeQuery := s.dialect().BuildDescribeStageQuery(dbAndSchemaPair.Database, dbAndSchemaPair.Schema, s.config.Snowflake.ExternalStage.Name)
 		if _, err := s.QueryContext(ctx, describeQuery); err != nil {
 			if strings.Contains(err.Error(), "does not exist") {
-				createStageQuery := s.dialect().BuildCreateStageQuery(tc.Database, tc.Schema, s.config.Snowflake.ExternalStage.Name, s.config.Snowflake.ExternalStage.Bucket, s.config.Snowflake.ExternalStage.CredentialsClause)
+				createStageQuery := s.dialect().BuildCreateStageQuery(
+					dbAndSchemaPair.Database,
+					dbAndSchemaPair.Schema,
+					s.config.Snowflake.ExternalStage.Name,
+					s.config.Snowflake.ExternalStage.Bucket,
+					s.config.Snowflake.ExternalStage.CredentialsClause,
+				)
 				if _, err := s.ExecContext(ctx, createStageQuery); err != nil {
 					return fmt.Errorf("failed to create external stage: %w", err)
 				}
