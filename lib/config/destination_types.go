@@ -68,9 +68,24 @@ type Snowflake struct {
 	Host        string `yaml:"host"`
 	Application string `yaml:"application"`
 
+	// ExternalStage configuration
+	ExternalStage *ExternalStage `yaml:"externalStage,omitempty"`
+
 	// AdditionalParameters - This will be added to the connection string.
 	// Ref: https://docs.snowflake.com/en/sql-reference/parameters
 	AdditionalParameters map[string]string `yaml:"additionalParameters,omitempty"`
+}
+
+type ExternalStage struct {
+	Enabled bool   `yaml:"enabled"`
+	Name    string `yaml:"name"`
+	// S3 configuration for the external stage
+	Bucket string `yaml:"bucket"`
+
+	// Credentials clause is what we will use to authenticate with S3.
+	// It can be static credentials or an AWS_ROLE.
+	CredentialsClause string `yaml:"credentialsClause,omitempty"`
+	Prefix            string `yaml:"prefix"`
 }
 
 type Iceberg struct {

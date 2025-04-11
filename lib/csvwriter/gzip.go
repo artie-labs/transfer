@@ -4,6 +4,7 @@ import (
 	"compress/gzip"
 	"encoding/csv"
 	"os"
+	"path/filepath"
 )
 
 type GzipWriter struct {
@@ -26,6 +27,10 @@ func NewGzipWriter(fp string) (*GzipWriter, error) {
 		gzip:   gzipWriter,
 		writer: csvWriter,
 	}, nil
+}
+
+func (g *GzipWriter) FileName() string {
+	return filepath.Base(g.file.Name())
 }
 
 func (g *GzipWriter) Write(row []string) error {

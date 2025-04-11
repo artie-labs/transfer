@@ -11,7 +11,10 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/clients/shared"
+	"github.com/artie-labs/transfer/clients/snowflake/dialect"
+	"github.com/artie-labs/transfer/lib/awslib"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/csvwriter"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/maputil"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -51,6 +54,10 @@ func castColValStaging(colVal any, colKind typing.KindDetails) (string, error) {
 	return replaceExceededValues(value, colKind), nil
 }
 
+func (s Store) useExternalStage() bool {
+	return s.config.Snowflake.ExternalStage != nil && s.config.Snowflake.ExternalStage.Enabled
+}
+
 func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
 		if err := shared.CreateTempTable(ctx, s, tableData, dwh, additionalSettings.ColumnSettings, tempTableID); err != nil {
@@ -71,14 +78,42 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		}
 	}()
 
-	// Upload the CSV file to Snowflake, wrapping the file in single quotes to avoid special characters.
-	tableStageName := addPrefixToTableName(tempTableID, "%")
-	if _, err = s.ExecContext(ctx, fmt.Sprintf("PUT 'file://%s' @%s AUTO_COMPRESS=TRUE", file.FilePath, tableStageName)); err != nil {
-		return fmt.Errorf("failed to run PUT for temporary table: %w", err)
+	if s.useExternalStage() {
+		// Upload to S3 using our built-in library
+		_, err = awslib.UploadLocalFileToS3(ctx, awslib.UploadArgs{
+			Bucket:           s.config.Snowflake.ExternalStage.Bucket,
+			OptionalS3Prefix: filepath.Join(s.config.Snowflake.ExternalStage.Prefix),
+			FilePath:         file.FilePath,
+			Region:           os.Getenv("AWS_REGION"),
+		})
+		if err != nil {
+			return fmt.Errorf("failed to upload file to S3: %w", err)
+		}
+	} else {
+		// Upload the CSV file to Snowflake internal stage
+		tableStageName := addPrefixToTableName(tempTableID, "%")
+		putQuery := fmt.Sprintf("PUT 'file://%s' @%s AUTO_COMPRESS=TRUE", file.FilePath, tableStageName)
+		if _, err = s.ExecContext(ctx, putQuery); err != nil {
+			return fmt.Errorf("failed to run PUT for temporary table: %w", err)
+		}
 	}
 
+	tableStageName := addPrefixToTableName(tempTableID, "%")
 	// We are appending gz to the file name since it was compressed by the PUT command.
-	copyCommand := s.dialect().BuildCopyIntoTableQuery(tempTableID, tableData.ReadOnlyInMemoryCols().ValidColumns(), tableStageName, fmt.Sprintf("%s.gz", file.FileName))
+	fileName := fmt.Sprintf("%s.gz", file.FileName)
+	if s.useExternalStage() {
+		castedTableID, ok := tempTableID.(dialect.TableIdentifier)
+		if !ok {
+			return fmt.Errorf("failed to cast table identifier: %w", err)
+		}
+
+		// Fix the S3 path by ensuring there's a slash between the stage name and the file name
+		tableStageName = fmt.Sprintf("%s.%s.%s/", castedTableID.Database(), castedTableID.Schema(), filepath.Join(s.config.Snowflake.ExternalStage.Name, s.config.Snowflake.ExternalStage.Prefix))
+		// We don't need to append .gz to the file name since it was already compressed by [s.writeTemporaryTableFileGZIP]
+		fileName = file.FileName
+	}
+
+	copyCommand := s.dialect().BuildCopyIntoTableQuery(tempTableID, tableData.ReadOnlyInMemoryCols().ValidColumns(), tableStageName, fileName)
 	if additionalSettings.AdditionalCopyClause != "" {
 		copyCommand += " " + additionalSettings.AdditionalCopyClause
 	}
@@ -90,7 +125,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		// For non-temp tables, we should try to delete the staging file if COPY INTO fails.
 		// This is because [PURGE = TRUE] will only delete the staging files upon a successful COPY INTO.
 		// We also only need to do this for non-temp tables because these staging files will linger, since we create a new temporary table per attempt.
-		if !createTempTable {
+		if !createTempTable && !s.useExternalStage() {
 			if _, deleteErr := s.ExecContext(ctx, s.dialect().BuildRemoveFilesFromStage(addPrefixToTableName(tempTableID, "%"), "")); deleteErr != nil {
 				slog.Warn("Failed to remove all files from stage", slog.Any("deleteErr", deleteErr))
 			}
@@ -132,7 +167,45 @@ type File struct {
 	FileName string
 }
 
+func (s *Store) writeTemporaryTableFileGZIP(tableData *optimization.TableData, newTableID sql.TableIdentifier) (File, error) {
+	fp := filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv.gz", strings.ReplaceAll(newTableID.FullyQualifiedName(), `"`, "")))
+	gzipWriter, err := csvwriter.NewGzipWriter(fp)
+	if err != nil {
+		return File{}, fmt.Errorf("failed to create gzip writer: %w", err)
+	}
+
+	defer gzipWriter.Close()
+
+	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
+	for _, value := range tableData.Rows() {
+		var row []string
+		for _, col := range columns {
+			castedValue, castErr := castColValStaging(value[col.Name()], col.KindDetails)
+			if castErr != nil {
+				return File{}, castErr
+			}
+
+			row = append(row, castedValue)
+		}
+
+		if err = gzipWriter.Write(row); err != nil {
+			return File{}, fmt.Errorf("failed to write to csv: %w", err)
+		}
+	}
+
+	if err = gzipWriter.Flush(); err != nil {
+		return File{}, fmt.Errorf("failed to flush gzip writer: %w", err)
+	}
+
+	return File{FilePath: fp, FileName: gzipWriter.FileName()}, nil
+}
+
+// TODO: Deprecate this in favor of writing GZIP delta files directly without relying on Snowflake's auto compression
 func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID sql.TableIdentifier) (File, error) {
+	if s.useExternalStage() {
+		return s.writeTemporaryTableFileGZIP(tableData, newTableID)
+	}
+
 	fileName := fmt.Sprintf("%s.csv", strings.ReplaceAll(newTableID.FullyQualifiedName(), `"`, ""))
 	fp := filepath.Join(os.TempDir(), fileName)
 	file, err := os.Create(fp)

@@ -30,6 +30,7 @@ func TestGzipWriter(t *testing.T) {
 	assert.NoError(t, writer.Flush())
 	assert.NoError(t, writer.Close())
 	assert.ErrorContains(t, writer.Close(), "already closed")
+	assert.Equal(t, "test.csv.gz", writer.FileName())
 
 	// Verify the file contents
 	file, err := os.Open(filePath)
@@ -69,6 +70,7 @@ func TestGzipWriterLargeData(t *testing.T) {
 
 	assert.NoError(t, writer.Flush())
 	assert.NoError(t, writer.Close())
+	assert.Equal(t, "large_test.csv.gz", writer.FileName())
 
 	// Verify the file contents
 	file, err := os.Open(filePath)

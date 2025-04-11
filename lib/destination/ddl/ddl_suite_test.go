@@ -47,7 +47,7 @@ func (d *DDLTestSuite) SetupTest() {
 	snowflakeCfg := config.Config{
 		Snowflake: &config.Snowflake{},
 	}
-	d.snowflakeStagesStore, err = snowflake.LoadSnowflake(snowflakeCfg, &snowflakeStagesStore)
+	d.snowflakeStagesStore, err = snowflake.LoadSnowflake(d.T().Context(), snowflakeCfg, &snowflakeStagesStore)
 	assert.NoError(d.T(), err)
 
 	d.fakeRedshiftStore = &mocks.FakeStore{}

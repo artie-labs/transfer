@@ -3,6 +3,7 @@ package snowflake
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/snowflakedb/gosnowflake"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/types"
+	"github.com/artie-labs/transfer/lib/environ"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/sql"
 )
@@ -85,7 +87,7 @@ func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primary
 	return destination.ExecContextStatements(ctx, s, dedupeQueries)
 }
 
-func LoadSnowflake(cfg config.Config, _store *db.Store) (*Store, error) {
+func LoadSnowflake(ctx context.Context, cfg config.Config, _store *db.Store) (*Store, error) {
 	if _store != nil {
 		// Used for tests.
 		return &Store{
@@ -110,9 +112,53 @@ func LoadSnowflake(cfg config.Config, _store *db.Store) (*Store, error) {
 		return nil, err
 	}
 
-	return &Store{
+	s := &Store{
 		configMap: &types.DestinationTableConfigMap{},
 		config:    cfg,
 		Store:     store,
-	}, nil
+	}
+
+	if err = s.ensureExternalStageExists(ctx); err != nil {
+		return nil, fmt.Errorf("failed to set up external stage: %w", err)
+	}
+
+	return s, nil
+}
+
+func (s *Store) ensureExternalStageExists(ctx context.Context) error {
+	if !s.useExternalStage() {
+		return nil
+	}
+
+	// If we're using external stage, then we need [AWS_REGION] to be set.
+	if err := environ.MustGetEnv("AWS_REGION"); err != nil {
+		return err
+	}
+
+	tcs, err := s.config.TopicConfigs()
+	if err != nil {
+		return fmt.Errorf("failed to get topic configs: %w", err)
+	}
+
+	for _, dbAndSchemaPair := range kafkalib.GetUniqueDatabaseAndSchemaPairs(tcs) {
+		describeQuery := s.dialect().BuildDescribeStageQuery(dbAndSchemaPair.Database, dbAndSchemaPair.Schema, s.config.Snowflake.ExternalStage.Name)
+		if _, err := s.QueryContext(ctx, describeQuery); err != nil {
+			if strings.Contains(err.Error(), "does not exist") {
+				createStageQuery := s.dialect().BuildCreateStageQuery(
+					dbAndSchemaPair.Database,
+					dbAndSchemaPair.Schema,
+					s.config.Snowflake.ExternalStage.Name,
+					s.config.Snowflake.ExternalStage.Bucket,
+					s.config.Snowflake.ExternalStage.CredentialsClause,
+				)
+				if _, err := s.ExecContext(ctx, createStageQuery); err != nil {
+					return fmt.Errorf("failed to create external stage: %w", err)
+				}
+			} else {
+				return fmt.Errorf("failed to describe external stage: %w", err)
+			}
+		}
+	}
+
+	return nil
 }
