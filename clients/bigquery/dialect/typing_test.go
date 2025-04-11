@@ -72,6 +72,14 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 			}
 		}
 		{
+			// NUMERIC (no precision or scale)
+			kd, err := dialect.KindForDataType("numeric", "")
+			assert.NoError(t, err)
+			assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
+			assert.Equal(t, int32(38), kd.ExtendedDecimalDetails.Precision())
+			assert.Equal(t, int32(9), kd.ExtendedDecimalDetails.Scale())
+		}
+		{
 			// Numeric(5)
 			kd, err := dialect.KindForDataType("NUMERIC(5)", "")
 			assert.NoError(t, err)
@@ -107,6 +115,14 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 			assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
 			assert.Equal(t, int32(5), kd.ExtendedDecimalDetails.Precision())
 			assert.Equal(t, int32(2), kd.ExtendedDecimalDetails.Scale())
+		}
+		{
+			// BIGNUMERIC (no precision or scale)
+			kd, err := dialect.KindForDataType("bignumeric", "")
+			assert.NoError(t, err)
+			assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
+			assert.Equal(t, int32(76), kd.ExtendedDecimalDetails.Precision())
+			assert.Equal(t, int32(38), kd.ExtendedDecimalDetails.Scale())
 		}
 	}
 	{
