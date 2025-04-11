@@ -61,8 +61,11 @@ func TestGetUniqueDatabaseAndSchemaPairs(t *testing.T) {
 
 		actual := GetUniqueDatabaseAndSchemaPairs(tcs)
 		assert.Len(t, actual, 2)
-		assert.Equal(t, tcs[0].BuildDatabaseAndSchemaPair(), actual[0])
-		assert.Equal(t, tcs[2].BuildDatabaseAndSchemaPair(), actual[1])
+		assert.ElementsMatch(t, []DatabaseAndSchemaPair{
+			tcs[0].BuildDatabaseAndSchemaPair(),
+			tcs[2].BuildDatabaseAndSchemaPair(),
+		}, actual)
+	}
 	}
 }
 
