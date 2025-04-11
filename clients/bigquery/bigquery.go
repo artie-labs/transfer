@@ -209,6 +209,23 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 
 		resp, err := result.FullResponse(ctx)
 		if err != nil {
+			if resp != nil {
+				if rowErrs := resp.GetRowErrors(); len(rowErrs) > 0 {
+					// Just log the first few errors
+					var errors []any
+					for i, rowErr := range rowErrs {
+						if i > 5 {
+							break
+						}
+
+						errors = append(errors, rowErr)
+					}
+
+					return fmt.Errorf("failed to append rows, encountered %d errors: %v", len(rowErrs), errors)
+				}
+
+			}
+
 			return fmt.Errorf("failed to get response: %w", err)
 		}
 

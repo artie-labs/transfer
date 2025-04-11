@@ -36,7 +36,11 @@ func (BigQueryDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, s
 	case typing.EDecimal.Kind:
 		// [kindDetails.ExtendedDecimalDetails] may be nil if the target data type is a variable numeric or bignumeric.
 		if kindDetails.ExtendedDecimalDetails == nil {
-			return "numeric"
+			if settings.BigQueryNumericForVariableNumeric {
+				return "bignumeric"
+			} else {
+				return "numeric"
+			}
 		}
 
 		return kindDetails.ExtendedDecimalDetails.BigQueryKind(settings.BigQueryNumericForVariableNumeric)
