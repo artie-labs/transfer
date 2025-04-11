@@ -66,7 +66,6 @@ func TestGetUniqueDatabaseAndSchemaPairs(t *testing.T) {
 			tcs[2].BuildDatabaseAndSchemaPair(),
 		}, actual)
 	}
-	}
 }
 
 func TestTopicConfig_String(t *testing.T) {
