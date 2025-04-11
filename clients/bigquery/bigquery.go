@@ -115,26 +115,6 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		return fmt.Errorf("failed to put table: %w", err)
 	}
 
-	if s.auditRows {
-		return s.auditStagingTable(ctx, bqTempTableID, tableData)
-	}
-
-	return nil
-}
-
-func (s *Store) auditStagingTable(ctx context.Context, bqTempTableID dialect.TableIdentifier, tableData *optimization.TableData) error {
-	expectedRowCount := uint64(tableData.NumberOfRows())
-
-	// With committed stream, we can get the count immediately
-	resp, err := s.bqClient.Dataset(bqTempTableID.Dataset()).Table(bqTempTableID.Table()).Metadata(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get %q metadata: %w", bqTempTableID.FullyQualifiedName(), err)
-	}
-
-	if resp.NumRows != expectedRowCount {
-		return fmt.Errorf("temporary table row count mismatch, expected: %d, got: %d", expectedRowCount, resp.NumRows)
-	}
-
 	return nil
 }
 
