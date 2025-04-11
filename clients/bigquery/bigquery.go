@@ -7,7 +7,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 
 	"cloud.google.com/go/bigquery"
 	"cloud.google.com/go/bigquery/storage/managedwriter"
@@ -116,39 +115,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		return fmt.Errorf("failed to put table: %w", err)
 	}
 
-	if s.auditRows {
-		return s.auditStagingTable(ctx, bqTempTableID, tableData)
-	}
-
 	return nil
-}
-
-func (s *Store) auditStagingTable(ctx context.Context, bqTempTableID dialect.TableIdentifier, tableData *optimization.TableData) error {
-	var stagingTableRowsCount uint64
-	expectedRowCount := uint64(tableData.NumberOfRows())
-	// The streaming metadata does not appear right away, we'll wait up to 5s for it to appear.
-	for i := 0; i < 10; i++ {
-		time.Sleep(500 * time.Millisecond)
-		resp, err := s.bqClient.Dataset(bqTempTableID.Dataset()).Table(bqTempTableID.Table()).Metadata(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to get %q metadata: %w", bqTempTableID.FullyQualifiedName(), err)
-		}
-
-		if stagingTableRowsCount == 0 {
-			stagingTableRowsCount = resp.NumRows
-		}
-
-		if resp.StreamingBuffer != nil {
-			stagingTableRowsCount += resp.StreamingBuffer.EstimatedRows
-		}
-
-		// [stagingTableRowsCount] could be higher since AppendRows is at least once delivery.
-		if stagingTableRowsCount >= expectedRowCount {
-			return nil
-		}
-	}
-
-	return fmt.Errorf("temporary table row count mismatch, expected: %d, got: %d", expectedRowCount, stagingTableRowsCount)
 }
 
 func (s *Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, table string) sql.TableIdentifier {
@@ -206,11 +173,12 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 	}
 	defer managedWriterClient.Close()
 
+	// Create a committed stream for exactly-once semantics
 	managedStream, err := managedWriterClient.NewManagedStream(ctx,
 		managedwriter.WithDestinationTable(
 			managedwriter.TableParentFromParts(bqTableID.ProjectID(), bqTableID.Dataset(), bqTableID.Table()),
 		),
-		managedwriter.WithType(managedwriter.DefaultStream),
+		managedwriter.WithType(managedwriter.CommittedStream),
 		managedwriter.WithSchemaDescriptor(schemaDescriptor),
 		managedwriter.EnableWriteRetries(true),
 	)
@@ -233,7 +201,7 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 		return bytes, nil
 	}
 
-	return batch.BySize(tableData.Rows(), maxRequestByteSize, false, encoder, func(chunk [][]byte, _ []map[string]any) error {
+	err = batch.BySize(tableData.Rows(), maxRequestByteSize, false, encoder, func(chunk [][]byte, _ []map[string]any) error {
 		result, err := managedStream.AppendRows(ctx, chunk)
 		if err != nil {
 			return fmt.Errorf("failed to append rows: %w", err)
@@ -254,6 +222,24 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 
 		return nil
 	})
+
+	if err != nil {
+		return fmt.Errorf("failed to write rows: %w", err)
+	}
+
+	// Get the final row count from the stream
+	rowCount, err := managedStream.Finalize(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to finalize stream: %w", err)
+	}
+
+	// Verify that we wrote all expected rows
+	expectedRows := uint64(tableData.NumberOfRows())
+	if uint64(rowCount) != expectedRows {
+		return fmt.Errorf("row count mismatch after write, expected: %d, got: %d", expectedRows, rowCount)
+	}
+
+	return nil
 }
 
 func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
