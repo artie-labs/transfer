@@ -188,6 +188,36 @@ func (s *Store) GetClient(ctx context.Context) *bigquery.Client {
 	return client
 }
 
+func (s *Store) verifyRowCount(ctx context.Context, tableID sql.TableIdentifier, expectedCount uint) error {
+	// Cast to BigQuery-specific TableIdentifier
+	bqTableID, err := typing.AssertType[dialect.TableIdentifier](tableID)
+	if err != nil {
+		return fmt.Errorf("failed to cast table identifier: %w", err)
+	}
+
+	// Wait for streaming buffer to be empty and get the final row count
+	var rowCount uint64
+	for i := 0; i < 10; i++ {
+		time.Sleep(500 * time.Millisecond)
+		resp, err := s.bqClient.Dataset(bqTableID.Dataset()).Table(bqTableID.Table()).Metadata(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to get %q metadata: %w", bqTableID.FullyQualifiedName(), err)
+		}
+
+		rowCount = resp.NumRows
+		if resp.StreamingBuffer != nil {
+			rowCount += resp.StreamingBuffer.EstimatedRows
+		}
+
+		// If streaming buffer is empty and row count matches, we're done
+		if resp.StreamingBuffer == nil && rowCount == uint64(expectedCount) {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("row count mismatch after write, expected: %d, got: %d", expectedCount, rowCount)
+}
+
 func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier, tableData *optimization.TableData) error {
 	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
 
@@ -206,11 +236,12 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 	}
 	defer managedWriterClient.Close()
 
+	// Create a committed stream for exactly-once semantics
 	managedStream, err := managedWriterClient.NewManagedStream(ctx,
 		managedwriter.WithDestinationTable(
 			managedwriter.TableParentFromParts(bqTableID.ProjectID(), bqTableID.Dataset(), bqTableID.Table()),
 		),
-		managedwriter.WithType(managedwriter.DefaultStream),
+		managedwriter.WithType(managedwriter.CommittedStream),
 		managedwriter.WithSchemaDescriptor(schemaDescriptor),
 		managedwriter.EnableWriteRetries(true),
 	)
@@ -233,7 +264,8 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 		return bytes, nil
 	}
 
-	return batch.BySize(tableData.Rows(), maxRequestByteSize, false, encoder, func(chunk [][]byte, _ []map[string]any) error {
+	var totalRowsWritten uint64
+	err = batch.BySize(tableData.Rows(), maxRequestByteSize, false, encoder, func(chunk [][]byte, _ []map[string]any) error {
 		result, err := managedStream.AppendRows(ctx, chunk)
 		if err != nil {
 			return fmt.Errorf("failed to append rows: %w", err)
@@ -252,8 +284,21 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 			return fmt.Errorf("failed to append rows, encountered %d errors", len(rowErrs))
 		}
 
+		// Track the number of rows written from the stream response
+		totalRowsWritten += uint64(len(chunk))
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+
+	// Verify that we wrote all expected rows
+	expectedRows := uint64(tableData.NumberOfRows())
+	if totalRowsWritten != expectedRows {
+		return fmt.Errorf("row count mismatch after write, expected: %d, got: %d", expectedRows, totalRowsWritten)
+	}
+
+	return nil
 }
 
 func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
