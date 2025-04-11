@@ -187,11 +187,6 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 	}
 	defer managedStream.Close()
 
-	slog.Info("Created BigQuery committed stream",
-		slog.String("table", bqTableID.FullyQualifiedName()),
-		slog.Int("numColumns", len(columns)),
-		slog.Int("numRows", int(tableData.NumberOfRows())))
-
 	encoder := func(row map[string]any) ([]byte, error) {
 		message, err := rowToMessage(row, columns, *messageDescriptor)
 		if err != nil {
@@ -227,8 +222,9 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 
 		return nil
 	})
+
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to write rows: %w", err)
 	}
 
 	// Get the final row count from the stream
@@ -242,10 +238,6 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 	if uint64(rowCount) != expectedRows {
 		return fmt.Errorf("row count mismatch after write, expected: %d, got: %d", expectedRows, rowCount)
 	}
-
-	slog.Info("Successfully wrote all rows to BigQuery",
-		slog.String("table", bqTableID.FullyQualifiedName()),
-		slog.Int64("rowsWritten", rowCount))
 
 	return nil
 }
