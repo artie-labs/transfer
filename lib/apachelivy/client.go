@@ -183,11 +183,12 @@ func (c Client) waitForSessionToBeReady(ctx context.Context) error {
 	}
 }
 
-func NewClient(ctx context.Context, url string, config map[string]any) (Client, error) {
+func NewClient(ctx context.Context, url string, config map[string]any, jars []string) (Client, error) {
 	client := Client{
 		url:         url,
 		httpClient:  &http.Client{},
 		sessionConf: config,
+		sessionJars: jars,
 	}
 
 	if err := client.newSession(ctx, SessionKindSql, true); err != nil {
