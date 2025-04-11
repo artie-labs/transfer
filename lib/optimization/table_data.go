@@ -319,12 +319,16 @@ func mergeColumn(inMemoryCol columns.Column, destCol columns.Column) columns.Col
 	}
 
 	// Copy over the decimal details
+
+	fmt.Println("inMemoryCol", inMemoryCol.Name(), "destCol", destCol.Name())
 	if destCol.KindDetails.ExtendedDecimalDetails != nil && inMemoryCol.KindDetails.ExtendedDecimalDetails == nil {
+		fmt.Println("setting inMemoryCol", inMemoryCol.Name(), "destCol", destCol.Name(), "extendedDecimalDetails", destCol.KindDetails.ExtendedDecimalDetails.Precision(), destCol.KindDetails.ExtendedDecimalDetails.Scale())
 		inMemoryCol.KindDetails.ExtendedDecimalDetails = destCol.KindDetails.ExtendedDecimalDetails
 	}
 
 	// If the destination column does not have extended decimal details, we should remove it from the in-memory column as well
 	if destCol.KindDetails.ExtendedDecimalDetails == nil && inMemoryCol.KindDetails.ExtendedDecimalDetails != nil {
+		fmt.Println("removing inMemoryCol", inMemoryCol.Name(), "destCol", destCol.Name(), "extendedDecimalDetails", inMemoryCol.KindDetails.ExtendedDecimalDetails.Precision(), inMemoryCol.KindDetails.ExtendedDecimalDetails.Scale())
 		inMemoryCol.KindDetails.ExtendedDecimalDetails = nil
 	}
 
