@@ -2,6 +2,7 @@ package shared
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 
 	"github.com/artie-labs/transfer/lib/destination"
@@ -13,26 +14,28 @@ type GetQueryFunc func(dbName string, schemaName string) (string, []any)
 
 func Sweep(ctx context.Context, dest destination.Destination, topicConfigs []*kafkalib.TopicConfig, getQueryFunc GetQueryFunc) error {
 	slog.Info("Looking to see if there are any dangling artie temporary tables to delete...")
-	for _, topicConfig := range kafkalib.GetUniqueTopicConfigs(topicConfigs) {
-		query, args := getQueryFunc(topicConfig.Database, topicConfig.Schema)
+	for _, dbAndSchemaPair := range kafkalib.GetUniqueDatabaseAndSchemaPairs(topicConfigs) {
+		query, args := getQueryFunc(dbAndSchemaPair.Database, dbAndSchemaPair.Schema)
 		rows, err := dest.QueryContext(ctx, query, args...)
 		if err != nil {
 			return err
 		}
 
-		for rows != nil && rows.Next() {
+		for rows.Next() {
 			var tableSchema, tableName string
-			err = rows.Scan(&tableSchema, &tableName)
-			if err != nil {
+			if err = rows.Scan(&tableSchema, &tableName); err != nil {
 				return err
 			}
 
 			if ddl.ShouldDeleteFromName(tableName) {
-				err = ddl.DropTemporaryTable(ctx, dest, dest.IdentifierFor(topicConfig, tableName), true)
-				if err != nil {
+				if err = ddl.DropTemporaryTable(ctx, dest, dest.IdentifierFor(dbAndSchemaPair, tableName), true); err != nil {
 					return err
 				}
 			}
+		}
+
+		if err = rows.Err(); err != nil {
+			return fmt.Errorf("failed to iterate over rows: %w", err)
 		}
 	}
 
