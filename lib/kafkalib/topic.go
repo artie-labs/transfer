@@ -2,6 +2,7 @@ package kafkalib
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 
@@ -15,17 +16,12 @@ type DatabaseAndSchemaPair struct {
 }
 
 func GetUniqueDatabaseAndSchemaPairs(tcs []*TopicConfig) []DatabaseAndSchemaPair {
-	var uniqueTopicConfigs []DatabaseAndSchemaPair
 	seenMap := make(map[DatabaseAndSchemaPair]bool)
 	for _, tc := range tcs {
-		key := tc.BuildDatabaseAndSchemaPair()
-		if _, isOk := seenMap[key]; !isOk {
-			seenMap[key] = true
-			uniqueTopicConfigs = append(uniqueTopicConfigs, key)
-		}
+		seenMap[tc.BuildDatabaseAndSchemaPair()] = true
 	}
 
-	return uniqueTopicConfigs
+	return slices.Collect(maps.Keys(seenMap))
 }
 
 type MultiStepMergeSettings struct {
