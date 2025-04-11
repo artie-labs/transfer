@@ -71,7 +71,7 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, u
 	// We can simplify this once Google has fully rolled out the ability to execute DML on recently streamed data
 	// See: https://cloud.google.com/bigquery/docs/write-api#use_data_manipulation_language_dml_with_recently_streamed_data
 	// For now, we'll need to append this to a temporary table and then append temporary table onto the target table
-	tableID := s.IdentifierFor(tableData.TopicConfig(), tableData.Name())
+	tableID := s.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name())
 	temporaryTableID := shared.TempTableID(tableID)
 
 	defer func() { _ = ddl.DropTemporaryTable(ctx, s, temporaryTableID, false) }()
@@ -151,8 +151,8 @@ func (s *Store) auditStagingTable(ctx context.Context, bqTempTableID dialect.Tab
 	return fmt.Errorf("temporary table row count mismatch, expected: %d, got: %d", expectedRowCount, stagingTableRowsCount)
 }
 
-func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {
-	return dialect.NewTableIdentifier(s.config.BigQuery.ProjectID, topicConfig.Database, table)
+func (s *Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, table string) sql.TableIdentifier {
+	return dialect.NewTableIdentifier(s.config.BigQuery.ProjectID, databaseAndSchema.Database, table)
 }
 
 func (s *Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {

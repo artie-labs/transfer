@@ -2,6 +2,7 @@ package kafkalib
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 
@@ -9,19 +10,18 @@ import (
 	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
-// GetUniqueTopicConfigs - will return a list of unique TopicConfigs based on the database and schema in O(n) time.
-func GetUniqueTopicConfigs(tcs []*TopicConfig) []TopicConfig {
-	var uniqueTopicConfigs []TopicConfig
-	seenMap := make(map[string]bool)
+type DatabaseAndSchemaPair struct {
+	Database string
+	Schema   string
+}
+
+func GetUniqueDatabaseAndSchemaPairs(tcs []*TopicConfig) []DatabaseAndSchemaPair {
+	seenMap := make(map[DatabaseAndSchemaPair]bool)
 	for _, tc := range tcs {
-		key := fmt.Sprintf("%s###%s", tc.Database, tc.Schema)
-		if _, isOk := seenMap[key]; !isOk {
-			seenMap[key] = true                                  // Mark this as seen
-			uniqueTopicConfigs = append(uniqueTopicConfigs, *tc) // Now add this to the list
-		}
+		seenMap[tc.BuildDatabaseAndSchemaPair()] = true
 	}
 
-	return uniqueTopicConfigs
+	return slices.Collect(maps.Keys(seenMap))
 }
 
 type MultiStepMergeSettings struct {
@@ -65,6 +65,10 @@ type TopicConfig struct {
 
 	// Internal metadata
 	opsToSkipMap map[string]bool `yaml:"-"`
+}
+
+func (t TopicConfig) BuildDatabaseAndSchemaPair() DatabaseAndSchemaPair {
+	return DatabaseAndSchemaPair{Database: t.Database, Schema: t.Schema}
 }
 
 const (

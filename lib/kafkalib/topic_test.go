@@ -7,10 +7,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetUniqueTopicConfigs(t *testing.T) {
+func TestGetUniqueDatabaseAndSchemaPairs(t *testing.T) {
 	{
 		// No topic configs
-		assert.Empty(t, GetUniqueTopicConfigs(nil))
+		assert.Empty(t, GetUniqueDatabaseAndSchemaPairs(nil))
 	}
 	{
 		// 1 topic config
@@ -21,9 +21,9 @@ func TestGetUniqueTopicConfigs(t *testing.T) {
 			},
 		}
 
-		actual := GetUniqueTopicConfigs(tcs)
+		actual := GetUniqueDatabaseAndSchemaPairs(tcs)
 		assert.Len(t, actual, 1)
-		assert.Equal(t, *tcs[0], actual[0])
+		assert.Equal(t, tcs[0].BuildDatabaseAndSchemaPair(), actual[0])
 	}
 	{
 		// 2 topic configs (both the same)
@@ -38,9 +38,9 @@ func TestGetUniqueTopicConfigs(t *testing.T) {
 			},
 		}
 
-		actual := GetUniqueTopicConfigs(tcs)
+		actual := GetUniqueDatabaseAndSchemaPairs(tcs)
 		assert.Len(t, actual, 1)
-		assert.Equal(t, *tcs[0], actual[0])
+		assert.Equal(t, tcs[0].BuildDatabaseAndSchemaPair(), actual[0])
 	}
 	{
 		// 3 topic configs (2 the same)
@@ -59,10 +59,10 @@ func TestGetUniqueTopicConfigs(t *testing.T) {
 			},
 		}
 
-		actual := GetUniqueTopicConfigs(tcs)
+		actual := GetUniqueDatabaseAndSchemaPairs(tcs)
 		assert.Len(t, actual, 2)
-		assert.Equal(t, *tcs[0], actual[0])
-		assert.Equal(t, *tcs[2], actual[1])
+		assert.Equal(t, tcs[0].BuildDatabaseAndSchemaPair(), actual[0])
+		assert.Equal(t, tcs[2].BuildDatabaseAndSchemaPair(), actual[1])
 	}
 }
 

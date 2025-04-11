@@ -24,8 +24,8 @@ type Store struct {
 	config    config.Config
 }
 
-func (s *Store) IdentifierFor(topicConfig kafkalib.TopicConfig, table string) sql.TableIdentifier {
-	return dialect.NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table)
+func (s *Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, table string) sql.TableIdentifier {
+	return dialect.NewTableIdentifier(databaseAndSchema.Database, databaseAndSchema.Schema, table)
 }
 
 func (s *Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error {
