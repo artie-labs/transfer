@@ -40,7 +40,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 		cols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
 
-	tableID := d.bigQueryStore.IdentifierFor(td.TopicConfig(), td.Name())
+	tableID := d.bigQueryStore.IdentifierFor(td.TopicConfig().BuildDatabaseAndSchemaPair(), td.Name())
 	fqName := tableID.FullyQualifiedName()
 	originalColumnLength := len(cols.GetColumns())
 	d.bigQueryStore.GetConfigMap().AddTable(tableID, types.NewDestinationTableConfig(cols.GetColumns(), true))
@@ -190,7 +190,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 		cols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
 
-	tableID := d.bigQueryStore.IdentifierFor(td.TopicConfig(), td.Name())
+	tableID := d.bigQueryStore.IdentifierFor(td.TopicConfig().BuildDatabaseAndSchemaPair(), td.Name())
 	d.bigQueryStore.GetConfigMap().AddTable(tableID, types.NewDestinationTableConfig(cols.GetColumns(), false))
 	tc := d.bigQueryStore.GetConfigMap().GetTableConfig(tableID)
 

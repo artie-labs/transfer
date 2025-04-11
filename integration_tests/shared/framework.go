@@ -27,7 +27,7 @@ func NewTestFramework(ctx context.Context, dest destination.Destination, topicCo
 	return &TestFramework{
 		ctx:         ctx,
 		dest:        dest,
-		tableID:     dest.IdentifierFor(topicConfig, topicConfig.TableName),
+		tableID:     dest.IdentifierFor(topicConfig.BuildDatabaseAndSchemaPair(), topicConfig.TableName),
 		topicConfig: topicConfig,
 	}
 }
