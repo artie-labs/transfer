@@ -32,8 +32,15 @@ type Kafka struct {
 }
 
 type SharedDestinationColumnSettings struct {
+	// TODO: Deprecate BigQueryNumericForVariableNumeric in favor of UseBigNumericForVariableNumeric
 	// BigQueryNumericForVariableNumeric - If enabled, we will use BigQuery's NUMERIC type for variable numeric types.
 	BigQueryNumericForVariableNumeric bool `yaml:"bigQueryNumericForVariableNumeric"`
+
+	UseBigNumericForVariableNumeric bool `yaml:"useBigNumericForVariableNumeric"`
+}
+
+func (s SharedDestinationColumnSettings) BigNumericForVariableNumeric() bool {
+	return s.UseBigNumericForVariableNumeric || s.BigQueryNumericForVariableNumeric
 }
 
 type SharedDestinationSettings struct {

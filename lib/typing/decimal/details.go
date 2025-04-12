@@ -80,16 +80,14 @@ func (d Details) RedshiftKind() string {
 }
 
 // BigQueryKind - is inferring logic from: https://cloud.google.com/bigquery/docs/reference/standard-sql/data-types#decimal_types
-func (d Details) BigQueryKind(bigQueryNumericForVariableNumeric bool) string {
+func (d Details) BigQueryKind(useBigNumericForVariableNumeric bool) string {
 	if d.precision == PrecisionNotSpecified {
-		if bigQueryNumericForVariableNumeric {
+		if useBigNumericForVariableNumeric {
 			return "BIGNUMERIC"
 		} else {
 			return "NUMERIC"
 		}
 	}
-
-	fmt.Println("d.precision", d.precision, "d.scale", d.scale, "d.isNumeric()", d.isNumeric(), "d.isBigNumeric()", d.isBigNumeric())
 
 	if d.isNumeric() {
 		return fmt.Sprintf("NUMERIC(%v, %v)", d.precision, d.scale)
