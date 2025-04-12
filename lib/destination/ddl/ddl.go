@@ -36,8 +36,7 @@ func BuildCreateTableSQL(settings config.SharedDestinationColumnSettings, dialec
 			primaryKeys = append(primaryKeys, colName)
 		}
 
-		kd := dialect.DataTypeForKind(col.KindDetails, col.PrimaryKey(), settings)
-		parts = append(parts, fmt.Sprintf("%s %s", colName, kd))
+		parts = append(parts, fmt.Sprintf("%s %s", colName, dialect.DataTypeForKind(col.KindDetails, col.PrimaryKey(), settings)))
 	}
 
 	if len(primaryKeys) > 0 {
