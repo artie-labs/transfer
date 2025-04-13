@@ -103,8 +103,9 @@ type S3Tables struct {
 	// Bucket - This is where all the ephemeral delta files will be stored.
 	Bucket string `yaml:"bucket"`
 	// Sourced from: https://mvnrepository.com/artifact/software.amazon.s3tables/s3-tables-catalog-for-iceberg-runtime
-	RuntimePackageOverride string   `yaml:"runtimePackageOverride,omitempty"`
-	SessionJars            []string `yaml:"sessionJars,omitempty"`
+	RuntimePackageOverride string            `yaml:"runtimePackageOverride,omitempty"`
+	SessionJars            []string          `yaml:"sessionJars,omitempty"`
+	SessionConfig          map[string]string `yaml:"sessionConfig,omitempty"`
 }
 
 func (s S3Tables) GetRuntimePackage() string {
@@ -112,7 +113,7 @@ func (s S3Tables) GetRuntimePackage() string {
 }
 
 func (s S3Tables) ApacheLivyConfig() map[string]any {
-	return map[string]any{
+	config := map[string]any{
 		// Used by SparkSQL to interact with Hadoop S3:
 		"spark.hadoop.fs.s3a.secret.key": s.AwsSecretAccessKey,
 		"spark.hadoop.fs.s3a.access.key": s.AwsAccessKeyID,
@@ -127,6 +128,12 @@ func (s S3Tables) ApacheLivyConfig() map[string]any {
 		"spark.sql.catalog.s3tablesbucket.warehouse":     s.BucketARN,
 		"spark.sql.catalog.s3tablesbucket.client.region": s.Region,
 	}
+
+	for key, value := range s.SessionConfig {
+		config[key] = value
+	}
+
+	return config
 }
 
 func (s S3Tables) CatalogName() string {
