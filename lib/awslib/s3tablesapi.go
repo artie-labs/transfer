@@ -32,6 +32,18 @@ func IsNotFoundError(err error) bool {
 	return strings.Contains(err.Error(), "https response error StatusCode: 404")
 }
 
+func (s S3TablesAPIWrapper) GetTableBucket(ctx context.Context) (s3tables.GetTableBucketOutput, error) {
+	resp, err := s.client.GetTableBucket(ctx, &s3tables.GetTableBucketInput{
+		TableBucketARN: aws.String(s.tableBucketARN),
+	})
+
+	if err != nil {
+		return s3tables.GetTableBucketOutput{}, err
+	}
+
+	return *resp, nil
+}
+
 func (s S3TablesAPIWrapper) GetNamespace(ctx context.Context, namespace string) (s3tables.GetNamespaceOutput, error) {
 	resp, err := s.client.GetNamespace(ctx, &s3tables.GetNamespaceInput{
 		Namespace:      aws.String(namespace),
