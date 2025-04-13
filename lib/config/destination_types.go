@@ -103,9 +103,11 @@ type S3Tables struct {
 	// Bucket - This is where all the ephemeral delta files will be stored.
 	Bucket string `yaml:"bucket"`
 	// Sourced from: https://mvnrepository.com/artifact/software.amazon.s3tables/s3-tables-catalog-for-iceberg-runtime
-	RuntimePackageOverride string            `yaml:"runtimePackageOverride,omitempty"`
-	SessionJars            []string          `yaml:"sessionJars,omitempty"`
-	SessionConfig          map[string]string `yaml:"sessionConfig,omitempty"`
+	RuntimePackageOverride string   `yaml:"runtimePackageOverride,omitempty"`
+	SessionJars            []string `yaml:"sessionJars,omitempty"`
+
+	// [SessionConfig] - Additional session configurations that we will specify when creating a new Livy session.
+	SessionConfig map[string]string `yaml:"sessionConfig,omitempty"`
 }
 
 func (s S3Tables) GetRuntimePackage() string {
