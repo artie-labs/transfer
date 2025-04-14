@@ -57,9 +57,7 @@ func (s Store) CreateTable(ctx context.Context, tableID sql.TableIdentifier, tab
 		colParts = append(colParts, colPart)
 	}
 
-	query := s.Dialect().BuildCreateTableQuery(tableID, false, colParts)
-	fmt.Println("query", query)
-	if err := s.apacheLivyClient.ExecContext(ctx, query); err != nil {
+	if err := s.apacheLivyClient.ExecContext(ctx, s.Dialect().BuildCreateTableQuery(tableID, false, colParts)); err != nil {
 		return fmt.Errorf("failed to create table: %w", err)
 	}
 
