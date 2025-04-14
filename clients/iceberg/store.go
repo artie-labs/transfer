@@ -27,6 +27,10 @@ type Store struct {
 	cm               *types.DestinationTableConfigMap
 }
 
+func (s Store) GetS3TablesAPI() awslib.S3TablesAPIWrapper {
+	return s.s3TablesAPI
+}
+
 func (s Store) Dialect() dialect.IcebergDialect {
 	return dialect.IcebergDialect{}
 }
@@ -211,10 +215,10 @@ func (s Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, t
 }
 
 func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {
-	apacheLivyClient, err := apachelivy.NewClient(ctx, cfg.Iceberg.ApacheLivyURL, cfg.Iceberg.S3Tables.ApacheLivyConfig(), cfg.Iceberg.S3Tables.SessionJars)
-	if err != nil {
-		return Store{}, err
-	}
+	// apacheLivyClient, err := apachelivy.NewClient(ctx, cfg.Iceberg.ApacheLivyURL, cfg.Iceberg.S3Tables.ApacheLivyConfig(), cfg.Iceberg.S3Tables.SessionJars)
+	// if err != nil {
+	// 	return Store{}, err
+	// }
 
 	awsCfg := aws.Config{
 		Region:      cfg.Iceberg.S3Tables.Region,
@@ -222,11 +226,11 @@ func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {
 	}
 
 	store := Store{
-		catalogName:      cfg.Iceberg.S3Tables.CatalogName(),
-		config:           cfg,
-		apacheLivyClient: apacheLivyClient,
-		cm:               &types.DestinationTableConfigMap{},
-		s3TablesAPI:      awslib.NewS3TablesAPI(awsCfg, cfg.Iceberg.S3Tables.BucketARN),
+		catalogName: cfg.Iceberg.S3Tables.CatalogName(),
+		config:      cfg,
+		// apacheLivyClient: apacheLivyClient,
+		cm:          &types.DestinationTableConfigMap{},
+		s3TablesAPI: awslib.NewS3TablesAPI(awsCfg, cfg.Iceberg.S3Tables.BucketARN),
 	}
 
 	for _, tc := range cfg.Kafka.TopicConfigs {

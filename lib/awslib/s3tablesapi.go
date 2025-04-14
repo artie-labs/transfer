@@ -2,9 +2,12 @@ package awslib
 
 import (
 	"context"
+	"encoding/json"
+	"io"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3tables"
 	"github.com/aws/aws-sdk-go-v2/service/s3tables/types"
 )
@@ -12,12 +15,14 @@ import (
 // Full API spec can be seen here: https://docs.aws.amazon.com/AmazonS3/latest/API/API_Operations_Amazon_S3_Tables.html
 type S3TablesAPIWrapper struct {
 	client         *s3tables.Client
+	s3Client       *s3.Client
 	tableBucketARN string
 }
 
 func NewS3TablesAPI(cfg aws.Config, tableBucketARN string) S3TablesAPIWrapper {
 	return S3TablesAPIWrapper{
 		client:         s3tables.NewFromConfig(cfg),
+		s3Client:       s3.NewFromConfig(cfg),
 		tableBucketARN: tableBucketARN,
 	}
 }
@@ -134,6 +139,20 @@ func (s S3TablesAPIWrapper) GetTable(ctx context.Context, namespace string, tabl
 	return *resp, nil
 }
 
+func (s S3TablesAPIWrapper) GetTableMetadata(ctx context.Context, s3URI string) (S3TableSchema, error) {
+	body, err := s.readFromS3URI(ctx, s3URI)
+	if err != nil {
+		return S3TableSchema{}, err
+	}
+
+	var tableSchema S3TableSchema
+	if err = json.Unmarshal([]byte(body), &tableSchema); err != nil {
+		return S3TableSchema{}, err
+	}
+
+	return tableSchema, nil
+}
+
 func (s S3TablesAPIWrapper) DeleteTable(ctx context.Context, namespace string, table string) error {
 	_, err := s.client.DeleteTable(ctx, &s3tables.DeleteTableInput{
 		Namespace:      aws.String(namespace),
@@ -142,4 +161,24 @@ func (s S3TablesAPIWrapper) DeleteTable(ctx context.Context, namespace string, t
 	})
 
 	return err
+}
+
+func (s S3TablesAPIWrapper) readFromS3URI(ctx context.Context, s3URI string) (string, error) {
+	s3URI = strings.TrimPrefix(s3URI, "s3://")
+
+	parts := strings.Split(s3URI, "/")
+	bucket := parts[0]
+	key := strings.Join(parts[1:], "/")
+
+	resp, err := s.s3Client.GetObject(ctx, &s3.GetObjectInput{Bucket: aws.String(bucket), Key: aws.String(key)})
+	if err != nil {
+		return "", err
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(body), nil
 }
