@@ -17,7 +17,7 @@ type S3TableSchema struct {
 	Schemas            []InnerSchemaObject `json:"schemas"`
 }
 
-func (s S3TableSchema) CurrentSchema() (InnerSchemaObject, error) {
+func (s S3TableSchema) RetrieveCurrentSchema() (InnerSchemaObject, error) {
 	for _, schema := range s.Schemas {
 		if schema.SchemaID == s.CurrentSchemaID {
 			return schema, nil

@@ -3,6 +3,7 @@ package awslib
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"strings"
 
@@ -164,13 +165,15 @@ func (s S3TablesAPIWrapper) DeleteTable(ctx context.Context, namespace string, t
 }
 
 func (s S3TablesAPIWrapper) readFromS3URI(ctx context.Context, s3URI string) (string, error) {
-	s3URI = strings.TrimPrefix(s3URI, "s3://")
+	parts := strings.Split(strings.TrimPrefix(s3URI, "s3://"), "/")
+	if len(parts) < 2 {
+		return "", fmt.Errorf("invalid s3URI: %q", s3URI)
+	}
 
-	parts := strings.Split(s3URI, "/")
-	bucket := parts[0]
-	key := strings.Join(parts[1:], "/")
-
-	resp, err := s.s3Client.GetObject(ctx, &s3.GetObjectInput{Bucket: aws.String(bucket), Key: aws.String(key)})
+	resp, err := s.s3Client.GetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(parts[0]),
+		Key:    aws.String(strings.Join(parts[1:], "/")),
+	})
 	if err != nil {
 		return "", err
 	}
