@@ -11,7 +11,7 @@ func TestDetails_BigQueryKind(t *testing.T) {
 	details := NewDetails(PrecisionNotSpecified, DefaultScale)
 	{
 		// numericTypeForVariableNumeric = false
-		assert.Equal(t, "STRING", details.BigQueryKind(false))
+		assert.Equal(t, "NUMERIC", details.BigQueryKind(false))
 	}
 	{
 		// numericTypeForVariableNumeric = true
@@ -36,7 +36,7 @@ func TestDecimalDetailsKind(t *testing.T) {
 			Precision:             -1,
 			ExpectedSnowflakeKind: "STRING",
 			ExpectedRedshiftKind:  "TEXT",
-			ExpectedBigQueryKind:  "STRING",
+			ExpectedBigQueryKind:  "NUMERIC",
 		},
 		{
 			Name:                  "numeric(39, 0)",
