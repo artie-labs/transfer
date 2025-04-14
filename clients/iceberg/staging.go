@@ -51,7 +51,7 @@ func (s Store) uploadToS3(ctx context.Context, fp string) (string, error) {
 }
 
 func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID sql.TableIdentifier) (string, error) {
-	fp := filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv.gz", newTableID.FullyQualifiedName()))
+	fp := filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv.gz", strings.ReplaceAll(newTableID.FullyQualifiedName(), "`", "")))
 	gzipWriter, err := csvwriter.NewGzipWriter(fp)
 	if err != nil {
 		return "", fmt.Errorf("failed to create gzip writer: %w", err)

@@ -211,7 +211,7 @@ func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryK
 }
 
 func (s Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, table string) sql.TableIdentifier {
-	return dialect.NewTableIdentifier(databaseAndSchema.Database, databaseAndSchema.Schema, table)
+	return dialect.NewTableIdentifier(s.catalogName, databaseAndSchema.Schema, table)
 }
 
 func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {

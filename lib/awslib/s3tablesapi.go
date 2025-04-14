@@ -3,6 +3,7 @@ package awslib
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3tables"
 	"github.com/aws/aws-sdk-go-v2/service/s3tables/types"
+	"github.com/aws/smithy-go"
 )
 
 // Full API spec can be seen here: https://docs.aws.amazon.com/AmazonS3/latest/API/API_Operations_Amazon_S3_Tables.html
@@ -33,9 +35,12 @@ func IsNotFoundError(err error) bool {
 		return false
 	}
 
-	// Example of an API not found error:
-	// operation error S3Tables: GetNamespace, https response error StatusCode: 404, RequestID: {{RequestID}}, NotFoundException: The specified namespace does not exist.
-	return strings.Contains(err.Error(), "https response error StatusCode: 404")
+	var apiErr smithy.APIError
+	if errors.As(err, &apiErr) && apiErr.ErrorCode() == "NotFoundException" {
+		return true
+	}
+
+	return false
 }
 
 func (s S3TablesAPIWrapper) GetTableBucket(ctx context.Context) (s3tables.GetTableBucketOutput, error) {
