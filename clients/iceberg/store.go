@@ -27,6 +27,10 @@ type Store struct {
 	cm               *types.DestinationTableConfigMap
 }
 
+func (s Store) GetS3TablesAPI() awslib.S3TablesAPIWrapper {
+	return s.s3TablesAPI
+}
+
 func (s Store) Dialect() dialect.IcebergDialect {
 	return dialect.IcebergDialect{}
 }

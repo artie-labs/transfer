@@ -2,9 +2,13 @@ package awslib
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"io"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3tables"
 	"github.com/aws/aws-sdk-go-v2/service/s3tables/types"
 )
@@ -12,12 +16,14 @@ import (
 // Full API spec can be seen here: https://docs.aws.amazon.com/AmazonS3/latest/API/API_Operations_Amazon_S3_Tables.html
 type S3TablesAPIWrapper struct {
 	client         *s3tables.Client
+	s3Client       *s3.Client
 	tableBucketARN string
 }
 
 func NewS3TablesAPI(cfg aws.Config, tableBucketARN string) S3TablesAPIWrapper {
 	return S3TablesAPIWrapper{
 		client:         s3tables.NewFromConfig(cfg),
+		s3Client:       s3.NewFromConfig(cfg),
 		tableBucketARN: tableBucketARN,
 	}
 }
@@ -30,6 +36,18 @@ func IsNotFoundError(err error) bool {
 	// Example of an API not found error:
 	// operation error S3Tables: GetNamespace, https response error StatusCode: 404, RequestID: {{RequestID}}, NotFoundException: The specified namespace does not exist.
 	return strings.Contains(err.Error(), "https response error StatusCode: 404")
+}
+
+func (s S3TablesAPIWrapper) GetTableBucket(ctx context.Context) (s3tables.GetTableBucketOutput, error) {
+	resp, err := s.client.GetTableBucket(ctx, &s3tables.GetTableBucketInput{
+		TableBucketARN: aws.String(s.tableBucketARN),
+	})
+
+	if err != nil {
+		return s3tables.GetTableBucketOutput{}, err
+	}
+
+	return *resp, nil
 }
 
 func (s S3TablesAPIWrapper) GetNamespace(ctx context.Context, namespace string) (s3tables.GetNamespaceOutput, error) {
@@ -122,6 +140,20 @@ func (s S3TablesAPIWrapper) GetTable(ctx context.Context, namespace string, tabl
 	return *resp, nil
 }
 
+func (s S3TablesAPIWrapper) GetTableMetadata(ctx context.Context, s3URI string) (S3TableSchema, error) {
+	body, err := s.readFromS3URI(ctx, s3URI)
+	if err != nil {
+		return S3TableSchema{}, err
+	}
+
+	var tableSchema S3TableSchema
+	if err = json.Unmarshal([]byte(body), &tableSchema); err != nil {
+		return S3TableSchema{}, err
+	}
+
+	return tableSchema, nil
+}
+
 func (s S3TablesAPIWrapper) DeleteTable(ctx context.Context, namespace string, table string) error {
 	_, err := s.client.DeleteTable(ctx, &s3tables.DeleteTableInput{
 		Namespace:      aws.String(namespace),
@@ -130,4 +162,28 @@ func (s S3TablesAPIWrapper) DeleteTable(ctx context.Context, namespace string, t
 	})
 
 	return err
+}
+
+func (s S3TablesAPIWrapper) readFromS3URI(ctx context.Context, s3URI string) (string, error) {
+	bucket, key, found := strings.Cut(strings.TrimPrefix(s3URI, "s3://"), "/")
+	if !found {
+		return "", fmt.Errorf("invalid s3URI: %q", s3URI)
+	}
+
+	resp, err := s.s3Client.GetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
+	})
+	if err != nil {
+		return "", err
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	defer resp.Body.Close()
+
+	return string(body), nil
 }
