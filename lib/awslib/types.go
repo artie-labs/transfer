@@ -1,6 +1,10 @@
 package awslib
 
-import "github.com/google/uuid"
+import (
+	"fmt"
+
+	"github.com/google/uuid"
+)
 
 // Ref: https://iceberg.apache.org/spec/#table-metadata-and-snapshots
 type S3TableSchema struct {
@@ -11,6 +15,16 @@ type S3TableSchema struct {
 	LastUpdatedMS      int                 `json:"last-updated-ms"`
 	CurrentSchemaID    int                 `json:"current-schema-id"`
 	Schemas            []InnerSchemaObject `json:"schemas"`
+}
+
+func (s S3TableSchema) CurrentSchema() (InnerSchemaObject, error) {
+	for _, schema := range s.Schemas {
+		if schema.SchemaID == s.CurrentSchemaID {
+			return schema, nil
+		}
+	}
+
+	return InnerSchemaObject{}, fmt.Errorf("current schema not found")
 }
 
 type InnerSchemaObject struct {
