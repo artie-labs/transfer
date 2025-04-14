@@ -97,11 +97,16 @@ func (s Store) EnsureNamespaceExists(ctx context.Context, namespace string) erro
 }
 
 func (s Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
+	castedTableID, ok := tableID.(dialect.TableIdentifier)
+	if !ok {
+		return nil, fmt.Errorf("failed to cast table id to dialect table identifier")
+	}
+
 	if tableCfg := s.cm.GetTableConfig(tableID); tableCfg != nil {
 		return tableCfg, nil
 	}
 
-	cols, err := s.describeTable(ctx, tableID)
+	cols, err := s.describeTable(ctx, castedTableID)
 	if err != nil {
 		if s.Dialect().IsTableDoesNotExistErr(err) {
 			tableCfg := types.NewDestinationTableConfig([]columns.Column{}, dropDeletedColumns)
@@ -211,7 +216,7 @@ func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryK
 }
 
 func (s Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, table string) sql.TableIdentifier {
-	return dialect.NewTableIdentifier(databaseAndSchema.Database, databaseAndSchema.Schema, table)
+	return dialect.NewTableIdentifier(s.catalogName, databaseAndSchema.Schema, table)
 }
 
 func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {
