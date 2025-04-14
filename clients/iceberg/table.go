@@ -2,11 +2,12 @@ package iceberg
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/artie-labs/transfer/clients/iceberg/dialect"
-	"github.com/artie-labs/transfer/lib/awslib"
+	"github.com/artie-labs/transfer/lib/apachelivy"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -15,33 +16,35 @@ import (
 )
 
 func (s Store) describeTable(ctx context.Context, tableID dialect.TableIdentifier) ([]columns.Column, error) {
-	out, err := s.s3TablesAPI.GetTable(ctx, tableID.Namespace(), tableID.Table())
+	query, _, _ := s.Dialect().BuildDescribeTableQuery(tableID)
+	output, err := s.apacheLivyClient.QueryContext(ctx, query)
 	if err != nil {
-		if awslib.IsNotFoundError(err) {
-			return nil, nil
-		}
-
-		return nil, fmt.Errorf("failed to get table: %w", err)
+		return nil, err
 	}
 
-	metadata, err := s.s3TablesAPI.GetTableMetadata(ctx, *out.MetadataLocation)
+	bytes, err := output.MarshalJSON()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get table metadata: %w", err)
+		return nil, err
 	}
 
-	currentSchema, err := metadata.RetrieveCurrentSchema()
-	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve current schema: %w", err)
+	var resp apachelivy.GetSchemaResponse
+	if err := json.Unmarshal(bytes, &resp); err != nil {
+		return nil, err
 	}
 
-	cols := make([]columns.Column, len(currentSchema.Fields))
-	for i, field := range currentSchema.Fields {
-		kind, err := s.Dialect().KindForDataType(field.Type, "notused")
+	returnedCols, err := resp.BuildColumns()
+	if err != nil {
+		return nil, err
+	}
+
+	cols := make([]columns.Column, len(returnedCols))
+	for i, returnedCol := range returnedCols {
+		kind, err := s.Dialect().KindForDataType(returnedCol.DataType, "notused")
 		if err != nil {
-			return nil, fmt.Errorf("failed to get kind for data type: %w", err)
+			return nil, err
 		}
 
-		cols[i] = columns.NewColumn(field.Name, kind)
+		cols[i] = columns.NewColumn(returnedCol.Name, kind)
 	}
 
 	return cols, nil
