@@ -15,7 +15,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func (s Store) describeTable(ctx context.Context, tableID dialect.TableIdentifier) ([]columns.Column, error) {
+func (s Store) describeTable(ctx context.Context, tableID sql.TableIdentifier) ([]columns.Column, error) {
 	query, _, _ := s.Dialect().BuildDescribeTableQuery(tableID)
 	output, err := s.apacheLivyClient.QueryContext(ctx, query)
 	if err != nil {

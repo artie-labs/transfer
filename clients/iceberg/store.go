@@ -97,16 +97,11 @@ func (s Store) EnsureNamespaceExists(ctx context.Context, namespace string) erro
 }
 
 func (s Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
-	castedTableID, ok := tableID.(dialect.TableIdentifier)
-	if !ok {
-		return nil, fmt.Errorf("failed to cast table id to dialect table identifier")
-	}
-
 	if tableCfg := s.cm.GetTableConfig(tableID); tableCfg != nil {
 		return tableCfg, nil
 	}
 
-	cols, err := s.describeTable(ctx, castedTableID)
+	cols, err := s.describeTable(ctx, tableID)
 	if err != nil {
 		if s.Dialect().IsTableDoesNotExistErr(err) {
 			tableCfg := types.NewDestinationTableConfig([]columns.Column{}, dropDeletedColumns)
