@@ -165,14 +165,14 @@ func (s S3TablesAPIWrapper) DeleteTable(ctx context.Context, namespace string, t
 }
 
 func (s S3TablesAPIWrapper) readFromS3URI(ctx context.Context, s3URI string) (string, error) {
-	parts := strings.Split(strings.TrimPrefix(s3URI, "s3://"), "/")
-	if len(parts) < 2 {
+	bucket, key, found := strings.Cut(strings.TrimPrefix(s3URI, "s3://"), "/")
+	if !found {
 		return "", fmt.Errorf("invalid s3URI: %q", s3URI)
 	}
 
 	resp, err := s.s3Client.GetObject(ctx, &s3.GetObjectInput{
-		Bucket: aws.String(parts[0]),
-		Key:    aws.String(strings.Join(parts[1:], "/")),
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
 	})
 	if err != nil {
 		return "", err
@@ -182,6 +182,8 @@ func (s S3TablesAPIWrapper) readFromS3URI(ctx context.Context, s3URI string) (st
 	if err != nil {
 		return "", err
 	}
+
+	defer resp.Body.Close()
 
 	return string(body), nil
 }
