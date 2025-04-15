@@ -89,7 +89,8 @@ type ExternalStage struct {
 }
 
 type Iceberg struct {
-	ApacheLivyURL string `yaml:"apacheLivyURL"`
+	ApacheLivyURL                   string `yaml:"apacheLivyURL"`
+	SessionHeartbeatTimeoutInSecond int    `yaml:"sessionHeartbeatTimeoutInSecond"`
 
 	// Current implementation of Iceberg uses S3Tables:
 	S3Tables *S3Tables `yaml:"s3Tables,omitempty"`
