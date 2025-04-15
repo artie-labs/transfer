@@ -2,6 +2,7 @@ package apachelivy
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -14,16 +15,18 @@ import (
 )
 
 const (
-	sleepBaseMs = 1_000
-	sleepMaxMs  = 3_000
+	sleepBaseMs                     = 1_000
+	sleepMaxMs                      = 3_000
+	defaultHeartbeatTimeoutInSecond = 300
 )
 
 type Client struct {
-	url         string
-	sessionID   int
-	httpClient  *http.Client
-	sessionConf map[string]any
-	sessionJars []string
+	url                             string
+	sessionID                       int
+	httpClient                      *http.Client
+	sessionConf                     map[string]any
+	sessionJars                     []string
+	sessionHeartbeatTimeoutInSecond int
 }
 
 func (c Client) QueryContext(ctx context.Context, query string) (GetStatementResponse, error) {
@@ -129,7 +132,7 @@ func (c Client) doRequest(ctx context.Context, method, path string, body []byte)
 }
 
 func (c *Client) newSession(ctx context.Context, kind SessionKind, blockUntilReady bool) error {
-	body, err := json.Marshal(CreateSessionRequest{Kind: string(kind), Jars: c.sessionJars, Conf: c.sessionConf})
+	body, err := json.Marshal(CreateSessionRequest{Kind: string(kind), Jars: c.sessionJars, Conf: c.sessionConf, HeartbeatTimeoutInSecond: c.sessionHeartbeatTimeoutInSecond})
 	if err != nil {
 		return err
 	}
@@ -183,12 +186,13 @@ func (c Client) waitForSessionToBeReady(ctx context.Context) error {
 	}
 }
 
-func NewClient(ctx context.Context, url string, config map[string]any, jars []string) (Client, error) {
+func NewClient(ctx context.Context, url string, config map[string]any, jars []string, heartbeatTimeoutInSecond int) (Client, error) {
 	client := Client{
-		url:         url,
-		httpClient:  &http.Client{},
-		sessionConf: config,
-		sessionJars: jars,
+		url:                             url,
+		httpClient:                      &http.Client{},
+		sessionConf:                     config,
+		sessionJars:                     jars,
+		sessionHeartbeatTimeoutInSecond: cmp.Or(heartbeatTimeoutInSecond, defaultHeartbeatTimeoutInSecond),
 	}
 
 	if err := client.newSession(ctx, SessionKindSql, true); err != nil {

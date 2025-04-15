@@ -42,9 +42,10 @@ type GetSessionResponse struct {
 }
 
 type CreateSessionRequest struct {
-	Kind string         `json:"kind"`
-	Jars []string       `json:"jars,omitempty"`
-	Conf map[string]any `json:"conf"`
+	Kind                     string         `json:"kind"`
+	Jars                     []string       `json:"jars,omitempty"`
+	Conf                     map[string]any `json:"conf"`
+	HeartbeatTimeoutInSecond int            `json:"heartbeatTimeoutInSecond,omitempty"`
 }
 
 type CreateSessionResponse struct {

@@ -27,6 +27,10 @@ type Store struct {
 	cm               *types.DestinationTableConfigMap
 }
 
+func (s Store) GetApacheLivyClient() apachelivy.Client {
+	return s.apacheLivyClient
+}
+
 func (s Store) GetS3TablesAPI() awslib.S3TablesAPIWrapper {
 	return s.s3TablesAPI
 }
@@ -215,7 +219,7 @@ func (s Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, t
 }
 
 func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {
-	apacheLivyClient, err := apachelivy.NewClient(ctx, cfg.Iceberg.ApacheLivyURL, cfg.Iceberg.S3Tables.ApacheLivyConfig(), cfg.Iceberg.S3Tables.SessionJars)
+	apacheLivyClient, err := apachelivy.NewClient(ctx, cfg.Iceberg.ApacheLivyURL, cfg.Iceberg.S3Tables.ApacheLivyConfig(), cfg.Iceberg.S3Tables.SessionJars, cfg.Iceberg.SessionHeartbeatTimeoutInSecond)
 	if err != nil {
 		return Store{}, err
 	}
