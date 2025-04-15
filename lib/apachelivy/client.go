@@ -132,7 +132,14 @@ func (c Client) doRequest(ctx context.Context, method, path string, body []byte)
 }
 
 func (c *Client) newSession(ctx context.Context, kind SessionKind, blockUntilReady bool) error {
-	body, err := json.Marshal(CreateSessionRequest{Kind: string(kind), Jars: c.sessionJars, Conf: c.sessionConf, HeartbeatTimeoutInSecond: c.sessionHeartbeatTimeoutInSecond})
+	request := CreateSessionRequest{
+		Kind:                     string(kind),
+		Jars:                     c.sessionJars,
+		Conf:                     c.sessionConf,
+		HeartbeatTimeoutInSecond: c.sessionHeartbeatTimeoutInSecond,
+	}
+
+	body, err := json.Marshal(request)
 	if err != nil {
 		return err
 	}
