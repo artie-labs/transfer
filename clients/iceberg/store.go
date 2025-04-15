@@ -219,7 +219,13 @@ func (s Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, t
 }
 
 func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {
-	apacheLivyClient, err := apachelivy.NewClient(ctx, cfg.Iceberg.ApacheLivyURL, cfg.Iceberg.S3Tables.ApacheLivyConfig(), cfg.Iceberg.S3Tables.SessionJars, cfg.Iceberg.SessionHeartbeatTimeoutInSecond)
+	apacheLivyClient, err := apachelivy.NewClient(
+		ctx,
+		cfg.Iceberg.ApacheLivyURL,
+		cfg.Iceberg.S3Tables.ApacheLivyConfig(),
+		cfg.Iceberg.S3Tables.SessionJars,
+		cfg.Iceberg.SessionHeartbeatTimeoutInSecond,
+	)
 	if err != nil {
 		return Store{}, err
 	}
