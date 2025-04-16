@@ -12,6 +12,7 @@ import (
 	"github.com/artie-labs/transfer/lib/apachelivy"
 	"github.com/artie-labs/transfer/lib/awslib"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -224,6 +225,35 @@ func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryK
 
 func (s Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, table string) sql.TableIdentifier {
 	return dialect.NewTableIdentifier(s.catalogName, databaseAndSchema.Schema, table)
+}
+
+func (s Store) SweepTemporaryTables(ctx context.Context) error {
+	tcs, err := s.config.TopicConfigs()
+	if err != nil {
+		return err
+	}
+
+	namespaces := make(map[string]bool)
+	for _, tc := range tcs {
+		namespaces[tc.Schema] = true
+	}
+
+	for namespace := range namespaces {
+		tables, err := s.s3TablesAPI.ListTables(ctx, namespace)
+		if err != nil {
+			return fmt.Errorf("failed to list tables: %w", err)
+		}
+
+		for _, table := range tables {
+			if ddl.ShouldDeleteFromName(*table.Name) {
+				if err := s.s3TablesAPI.DeleteTable(ctx, namespace, *table.Name); err != nil {
+					return fmt.Errorf("failed to delete table: %w", err)
+				}
+			}
+		}
+	}
+
+	return nil
 }
 
 func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {
