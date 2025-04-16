@@ -17,7 +17,7 @@ func (IcebergDialect) GetDefaultValueStrategy() sql.DefaultValueStrategy {
 }
 
 func (IcebergDialect) QuoteIdentifier(identifier string) string {
-	return fmt.Sprintf("`%s`", strings.ReplaceAll(identifier, "`", ""))
+	return fmt.Sprintf("`%s`", strings.ToLower(strings.ReplaceAll(identifier, "`", "")))
 }
 
 func (IcebergDialect) EscapeStruct(value string) string {
@@ -210,6 +210,7 @@ func (IcebergDialect) BuildCreateTemporaryView(viewName string, s3Path string) s
 	return fmt.Sprintf("CREATE OR REPLACE TEMPORARY VIEW %s USING csv %s;", viewName, getCSVOptions(s3Path))
 }
 
-func (id IcebergDialect) BuildAppendToTable(tableID sql.TableIdentifier, viewName string) string {
-	return fmt.Sprintf("INSERT INTO %s TABLE %s", tableID.FullyQualifiedName(), viewName)
+func (id IcebergDialect) BuildAppendToTable(tableID sql.TableIdentifier, viewName string, columns []string) string {
+	// Ref: https://downloads.apache.org/spark/docs/3.1.1/sql-ref-syntax-dml-insert-into.html
+	return fmt.Sprintf("INSERT INTO %s (%s) SELECT %s FROM %s", tableID.FullyQualifiedName(), strings.Join(columns, ", "), strings.Join(columns, ", "), viewName)
 }
