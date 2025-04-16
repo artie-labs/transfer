@@ -3,6 +3,8 @@ package iceberg
 import (
 	"context"
 	"fmt"
+	"maps"
+	"slices"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/credentials"
@@ -227,26 +229,16 @@ func (s Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, t
 	return dialect.NewTableIdentifier(s.catalogName, databaseAndSchema.Schema, table)
 }
 
-func (s Store) SweepTemporaryTables(ctx context.Context) error {
-	tcs, err := s.config.TopicConfigs()
-	if err != nil {
-		return err
-	}
-
-	namespaces := make(map[string]bool)
-	for _, tc := range tcs {
-		namespaces[tc.Schema] = true
-	}
-
-	for namespace := range namespaces {
-		tables, err := s.s3TablesAPI.ListTables(ctx, namespace)
+func SweepTemporaryTables(ctx context.Context, s3TablesAPI awslib.S3TablesAPIWrapper, namespaces []string) error {
+	for _, namespace := range namespaces {
+		tables, err := s3TablesAPI.ListTables(ctx, namespace)
 		if err != nil {
 			return fmt.Errorf("failed to list tables: %w", err)
 		}
 
 		for _, table := range tables {
 			if ddl.ShouldDeleteFromName(*table.Name) {
-				if err := s.s3TablesAPI.DeleteTable(ctx, namespace, *table.Name); err != nil {
+				if err := s3TablesAPI.DeleteTable(ctx, namespace, *table.Name); err != nil {
 					return fmt.Errorf("failed to delete table: %w", err)
 				}
 			}
@@ -281,14 +273,17 @@ func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {
 		s3TablesAPI:      awslib.NewS3TablesAPI(awsCfg, cfg.Iceberg.S3Tables.BucketARN),
 	}
 
+	namespaces := make(map[string]bool)
 	for _, tc := range cfg.Kafka.TopicConfigs {
 		if err := store.EnsureNamespaceExists(ctx, tc.Schema); err != nil {
 			return Store{}, fmt.Errorf("failed to ensure namespace exists: %w", err)
 		}
+
+		namespaces[tc.Schema] = true
 	}
 
 	// Then sweep the temporary tables.
-	if err = store.SweepTemporaryTables(ctx); err != nil {
+	if err = SweepTemporaryTables(ctx, store.s3TablesAPI, slices.Collect(maps.Keys(namespaces))); err != nil {
 		return Store{}, fmt.Errorf("failed to sweep temporary tables: %w", err)
 	}
 
