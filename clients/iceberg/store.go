@@ -80,9 +80,17 @@ func (s Store) Append(ctx context.Context, tableData *optimization.TableData, us
 		return fmt.Errorf("failed to prepare temporary table: %w", err)
 	}
 
+	validColumns := tableData.ReadOnlyInMemoryCols().ValidColumns()
+	validColumnNames := make([]string, len(validColumns))
+	for i, col := range validColumns {
+		validColumnNames[i] = col.Name()
+	}
+
 	// Then append the view into the target table
-	if err = s.apacheLivyClient.ExecContext(ctx, s.Dialect().BuildAppendToTable(tableID, tempTableID.EscapedTable())); err != nil {
-		return fmt.Errorf("failed to append to table: %w", err)
+
+	query := s.Dialect().BuildAppendToTable(tableID, tempTableID.EscapedTable(), validColumnNames)
+	if err = s.apacheLivyClient.ExecContext(ctx, query); err != nil {
+		return fmt.Errorf("failed to append to table: %w, query: %s", err, query)
 	}
 
 	return nil

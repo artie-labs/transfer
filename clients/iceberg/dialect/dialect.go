@@ -210,6 +210,6 @@ func (IcebergDialect) BuildCreateTemporaryView(viewName string, s3Path string) s
 	return fmt.Sprintf("CREATE OR REPLACE TEMPORARY VIEW %s USING csv %s;", viewName, getCSVOptions(s3Path))
 }
 
-func (id IcebergDialect) BuildAppendToTable(tableID sql.TableIdentifier, viewName string) string {
-	return fmt.Sprintf("INSERT INTO %s TABLE %s", tableID.FullyQualifiedName(), viewName)
+func (id IcebergDialect) BuildAppendToTable(tableID sql.TableIdentifier, viewName string, columns []string) string {
+	return fmt.Sprintf("INSERT INTO %s TABLE %s (%s)", tableID.FullyQualifiedName(), viewName, strings.Join(columns, ", "))
 }
