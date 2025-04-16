@@ -211,5 +211,6 @@ func (IcebergDialect) BuildCreateTemporaryView(viewName string, s3Path string) s
 }
 
 func (id IcebergDialect) BuildAppendToTable(tableID sql.TableIdentifier, viewName string, columns []string) string {
+	// Ref: https://downloads.apache.org/spark/docs/3.1.1/sql-ref-syntax-dml-insert-into.html
 	return fmt.Sprintf("INSERT INTO %s (%s) SELECT %s FROM %s", tableID.FullyQualifiedName(), strings.Join(columns, ", "), strings.Join(columns, ", "), viewName)
 }
