@@ -1,6 +1,7 @@
 package iceberg
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"log/slog"
@@ -37,7 +38,7 @@ func (s Store) uploadToS3(ctx context.Context, fp string) (string, error) {
 		FilePath:                   fp,
 		OverrideAWSAccessKeyID:     s.config.Iceberg.S3Tables.AwsAccessKeyID,
 		OverrideAWSAccessKeySecret: s.config.Iceberg.S3Tables.AwsSecretAccessKey,
-		Region:                     s.config.Iceberg.S3Tables.Region,
+		Region:                     cmp.Or(s.config.Iceberg.S3Tables.BucketRegion, s.config.Iceberg.S3Tables.Region),
 	})
 
 	if err != nil {
