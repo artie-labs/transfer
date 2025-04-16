@@ -17,7 +17,7 @@ func (IcebergDialect) GetDefaultValueStrategy() sql.DefaultValueStrategy {
 }
 
 func (IcebergDialect) QuoteIdentifier(identifier string) string {
-	return fmt.Sprintf("`%s`", strings.ReplaceAll(identifier, "`", ""))
+	return fmt.Sprintf("`%s`", strings.ToLower(strings.ReplaceAll(identifier, "`", "")))
 }
 
 func (IcebergDialect) EscapeStruct(value string) string {
