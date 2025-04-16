@@ -101,7 +101,6 @@ type S3Tables struct {
 	AwsSecretAccessKey string `yaml:"awsSecretAccessKey"`
 	BucketARN          string `yaml:"bucketARN"`
 	Region             string `yaml:"region"`
-	BucketRegion       string `yaml:"bucketRegion,omitempty"`
 	// Bucket - This is where all the ephemeral delta files will be stored.
 	Bucket string `yaml:"bucket"`
 	// Sourced from: https://mvnrepository.com/artifact/software.amazon.s3tables/s3-tables-catalog-for-iceberg-runtime
