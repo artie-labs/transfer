@@ -229,16 +229,16 @@ func (s Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, t
 	return dialect.NewTableIdentifier(s.catalogName, databaseAndSchema.Schema, table)
 }
 
-func SweepTemporaryTables(ctx context.Context, s3TablesAPI awslib.S3TablesAPIWrapper, namespaces []string) error {
+func SweepTemporaryTables(ctx context.Context, s3TablesAPI awslib.S3TablesAPIWrapper, _dialect dialect.IcebergDialect, namespaces []string) error {
 	for _, namespace := range namespaces {
-		tables, err := s3TablesAPI.ListTables(ctx, namespace)
+		tables, err := s3TablesAPI.ListTables(ctx, _dialect.BuildIdentifier(namespace))
 		if err != nil {
 			return fmt.Errorf("failed to list tables: %w", err)
 		}
 
 		for _, table := range tables {
 			if ddl.ShouldDeleteFromName(*table.Name) {
-				if err := s3TablesAPI.DeleteTable(ctx, namespace, *table.Name); err != nil {
+				if err := s3TablesAPI.DeleteTable(ctx, _dialect.BuildIdentifier(namespace), *table.Name); err != nil {
 					return fmt.Errorf("failed to delete table: %w", err)
 				}
 			}
@@ -275,7 +275,7 @@ func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {
 
 	namespaces := make(map[string]bool)
 	for _, tc := range cfg.Kafka.TopicConfigs {
-		if err := store.EnsureNamespaceExists(ctx, tc.Schema); err != nil {
+		if err := store.EnsureNamespaceExists(ctx, store.Dialect().BuildIdentifier(tc.Schema)); err != nil {
 			return Store{}, fmt.Errorf("failed to ensure namespace exists: %w", err)
 		}
 
@@ -283,7 +283,7 @@ func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {
 	}
 
 	// Then sweep the temporary tables.
-	if err = SweepTemporaryTables(ctx, store.s3TablesAPI, slices.Collect(maps.Keys(namespaces))); err != nil {
+	if err = SweepTemporaryTables(ctx, store.s3TablesAPI, store.Dialect(), slices.Collect(maps.Keys(namespaces))); err != nil {
 		return Store{}, fmt.Errorf("failed to sweep temporary tables: %w", err)
 	}
 

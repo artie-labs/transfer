@@ -12,12 +12,16 @@ import (
 
 type IcebergDialect struct{}
 
+func (IcebergDialect) BuildIdentifier(identifier string) string {
+	return strings.ToLower(identifier)
+}
+
 func (IcebergDialect) GetDefaultValueStrategy() sql.DefaultValueStrategy {
 	return sql.Native
 }
 
-func (IcebergDialect) QuoteIdentifier(identifier string) string {
-	return fmt.Sprintf("`%s`", strings.ToLower(strings.ReplaceAll(identifier, "`", "")))
+func (id IcebergDialect) QuoteIdentifier(identifier string) string {
+	return fmt.Sprintf("`%s`", id.BuildIdentifier(strings.ReplaceAll(identifier, "`", "")))
 }
 
 func (IcebergDialect) EscapeStruct(value string) string {
