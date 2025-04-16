@@ -287,5 +287,10 @@ func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {
 		}
 	}
 
+	// Then sweep the temporary tables.
+	if err = store.SweepTemporaryTables(ctx); err != nil {
+		return Store{}, fmt.Errorf("failed to sweep temporary tables: %w", err)
+	}
+
 	return store, nil
 }
