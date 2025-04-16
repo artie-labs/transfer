@@ -211,5 +211,5 @@ func (IcebergDialect) BuildCreateTemporaryView(viewName string, s3Path string) s
 }
 
 func (id IcebergDialect) BuildAppendToTable(tableID sql.TableIdentifier, viewName string, columns []string) string {
-	return fmt.Sprintf("INSERT INTO %s TABLE %s (%s)", tableID.FullyQualifiedName(), viewName, strings.Join(columns, ", "))
+	return fmt.Sprintf("INSERT INTO %s (%s) SELECT %s FROM %s", tableID.FullyQualifiedName(), strings.Join(columns, ", "), strings.Join(columns, ", "), viewName)
 }
