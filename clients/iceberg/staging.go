@@ -34,9 +34,11 @@ func castColValStaging(colVal any, colKind typing.KindDetails) (string, error) {
 
 func (s Store) uploadToS3(ctx context.Context, fp string) (string, error) {
 	s3URI, err := awslib.UploadLocalFileToS3(ctx, awslib.UploadArgs{
-		Bucket:   s.config.Iceberg.S3Tables.Bucket,
-		FilePath: fp,
-		Region:   cmp.Or(s.config.Iceberg.S3Tables.BucketRegion, s.config.Iceberg.S3Tables.Region),
+		Bucket:                     s.config.Iceberg.S3Tables.Bucket,
+		FilePath:                   fp,
+		OverrideAWSAccessKeyID:     s.config.Iceberg.S3Tables.AwsAccessKeyID,
+		OverrideAWSAccessKeySecret: s.config.Iceberg.S3Tables.AwsSecretAccessKey,
+		Region:                     cmp.Or(s.config.Iceberg.S3Tables.BucketRegion, s.config.Iceberg.S3Tables.Region),
 	})
 
 	if err != nil {
