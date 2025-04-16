@@ -2,6 +2,7 @@ package dialect
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/artie-labs/transfer/lib/sql"
 )
@@ -20,7 +21,7 @@ func NewTableIdentifier(catalog, namespace, table string) TableIdentifier {
 }
 
 func (ti TableIdentifier) Namespace() string {
-	return ti.namespace
+	return strings.ToLower(ti.namespace)
 }
 
 func (ti TableIdentifier) EscapedTable() string {
@@ -28,7 +29,7 @@ func (ti TableIdentifier) EscapedTable() string {
 }
 
 func (ti TableIdentifier) Table() string {
-	return ti.table
+	return strings.ToLower(ti.table)
 }
 
 func (ti TableIdentifier) WithTable(table string) sql.TableIdentifier {
