@@ -89,8 +89,8 @@ func (f Field) GetScaleAndPrecision() (int32, *int32, error) {
 	return scale, precisionPtr, nil
 }
 
-func (f Field) ToValueConverter() (converters.ValueConverter, error) {
-	switch f.DebeziumType {
+func buildValueConverter(dbzType SupportedDebeziumType, fieldType FieldType, itemsMetadata *Item) (converters.ValueConverter, error) {
+	switch dbzType {
 	// Passthrough converters
 	case UUID, LTree, Enum, EnumSet, Interval, XML:
 		return converters.StringPassthrough{}, nil
@@ -140,24 +140,34 @@ func (f Field) ToValueConverter() (converters.ValueConverter, error) {
 	case NanoTimestamp:
 		return converters.NanoTimestamp{}, nil
 	default:
-		if f.DebeziumType != "" {
-			slog.Warn("Unhandled Debezium type", slog.String("type", string(f.Type)), slog.String("debeziumType", string(f.DebeziumType)))
+		if dbzType != "" {
+			slog.Warn("Unhandled Debezium type", slog.String("type", string(fieldType)), slog.String("debeziumType", string(dbzType)))
 		}
 
-		switch f.Type {
+		switch fieldType {
 		case Array:
-			var json bool
-			if f.ItemsMetadata != nil {
-				json = f.ItemsMetadata.DebeziumType == JSON
+			// TODO: itemsMetadata should be required if the data type is an array.
+			// We can remove this TODO once Reader fully supports setting items metadata
+			if itemsMetadata == nil {
+				return converters.NewArray(nil), nil
 			}
 
-			return converters.NewArray(json), nil
+			converter, err := buildValueConverter(itemsMetadata.DebeziumType, itemsMetadata.Type, nil)
+			if err != nil {
+				return nil, err
+			}
+
+			return converters.NewArray(converter), nil
 		case Double, Float:
 			return converters.Float64{}, nil
 		}
 
 		return nil, nil
 	}
+}
+
+func (f Field) ToValueConverter() (converters.ValueConverter, error) {
+	return buildValueConverter(f.DebeziumType, f.Type, f.ItemsMetadata)
 }
 
 func (f Field) ToKindDetails() (typing.KindDetails, error) {
