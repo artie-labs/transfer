@@ -90,7 +90,6 @@ func (s Store) Append(ctx context.Context, tableData *optimization.TableData, us
 	}
 
 	// Then append the view into the target table
-
 	query := s.Dialect().BuildAppendToTable(tableID, tempTableID.EscapedTable(), validColumnNames)
 	if err = s.apacheLivyClient.ExecContext(ctx, query); err != nil {
 		return fmt.Errorf("failed to append to table: %w, query: %s", err, query)

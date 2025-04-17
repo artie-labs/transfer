@@ -9,12 +9,14 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/awslib"
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/csvwriter"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/values"
 )
 
@@ -29,6 +31,16 @@ func castColValStaging(colVal any, colKind typing.KindDetails) (string, error) {
 	}
 
 	return value, nil
+}
+
+func (s Store) buildColumnParts(columns []columns.Column) []string {
+	var colParts []string
+	for _, col := range columns {
+		colPart := fmt.Sprintf("%s %s", col.Name(), s.Dialect().DataTypeForKind(col.KindDetails, col.PrimaryKey(), config.SharedDestinationColumnSettings{}))
+		colParts = append(colParts, colPart)
+	}
+
+	return colParts
 }
 
 func (s Store) uploadToS3(ctx context.Context, fp string) (string, error) {
@@ -111,7 +123,7 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 	}
 
 	// Load the data into a temporary view
-	command := s.Dialect().BuildCreateTemporaryView(tempTableID.EscapedTable(), s3URI)
+	command := s.Dialect().BuildCreateTemporaryView(tempTableID.EscapedTable(), s.buildColumnParts(tableData.ReadOnlyInMemoryCols().ValidColumns()), s3URI)
 	if err := s.apacheLivyClient.ExecContext(ctx, command); err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
 	}
