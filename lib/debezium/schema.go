@@ -67,7 +67,7 @@ type Field struct {
 	DebeziumType SupportedDebeziumType `json:"name"`
 	Parameters   map[string]any        `json:"parameters"`
 	// [ItemsMetadata] is only populated if the literal type is an array.
-	ItemsMetadata *Item `json:"items,omitempty"`
+	ItemsMetadata *Field `json:"items,omitempty"`
 }
 
 func (f Field) GetScaleAndPrecision() (int32, *int32, error) {
@@ -146,12 +146,17 @@ func (f Field) ToValueConverter() (converters.ValueConverter, error) {
 
 		switch f.Type {
 		case Array:
-			var json bool
-			if f.ItemsMetadata != nil {
-				json = f.ItemsMetadata.DebeziumType == JSON
+			if f.ItemsMetadata == nil {
+				// TODO: Remove this condition once Reader fully supports setting items metadata
+				return converters.NewArray(nil), nil
 			}
 
-			return converters.NewArray(json), nil
+			converter, err := f.ItemsMetadata.ToValueConverter()
+			if err != nil {
+				return nil, err
+			}
+
+			return converters.NewArray(converter), nil
 		case Double, Float:
 			return converters.Float64{}, nil
 		}
