@@ -27,9 +27,38 @@ type Client struct {
 	sessionConf                     map[string]any
 	sessionJars                     []string
 	sessionHeartbeatTimeoutInSecond int
+
+	lastChecked time.Time
 }
 
-func (c Client) QueryContext(ctx context.Context, query string) (GetStatementResponse, error) {
+const sessionBufferSeconds = 30
+
+func (c *Client) ensureSession(ctx context.Context) error {
+	if c.sessionID == 0 {
+		c.lastChecked = time.Now()
+		return c.newSession(ctx, SessionKindSql, true)
+	}
+
+	if time.Since(c.lastChecked).Seconds() > (float64(c.sessionHeartbeatTimeoutInSecond) - sessionBufferSeconds) {
+		c.lastChecked = time.Now()
+		out, err := c.doRequest(ctx, "GET", fmt.Sprintf("/sessions/%d", c.sessionID), nil)
+		if out.httpStatus == http.StatusNotFound {
+			return c.newSession(ctx, SessionKindSql, true)
+		}
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c *Client) QueryContext(ctx context.Context, query string) (GetStatementResponse, error) {
+	if err := c.ensureSession(ctx); err != nil {
+		return GetStatementResponse{}, err
+	}
+
 	statementID, err := c.submitLivyStatement(ctx, query)
 	if err != nil {
 		return GetStatementResponse{}, err
@@ -43,7 +72,11 @@ func (c Client) QueryContext(ctx context.Context, query string) (GetStatementRes
 	return response, nil
 }
 
-func (c Client) ExecContext(ctx context.Context, query string) error {
+func (c *Client) ExecContext(ctx context.Context, query string) error {
+	if err := c.ensureSession(ctx); err != nil {
+		return err
+	}
+
 	statementID, err := c.submitLivyStatement(ctx, query)
 	if err != nil {
 		return err
@@ -57,16 +90,16 @@ func (c Client) ExecContext(ctx context.Context, query string) error {
 	return resp.Error(c.sessionID)
 }
 
-func (c Client) waitForStatement(ctx context.Context, statementID int) (GetStatementResponse, error) {
+func (c *Client) waitForStatement(ctx context.Context, statementID int) (GetStatementResponse, error) {
 	var count int
 	for {
-		respBytes, err := c.doRequest(ctx, "GET", fmt.Sprintf("/sessions/%d/statements/%d", c.sessionID, statementID), nil)
+		out, err := c.doRequest(ctx, "GET", fmt.Sprintf("/sessions/%d/statements/%d", c.sessionID, statementID), nil)
 		if err != nil {
 			return GetStatementResponse{}, err
 		}
 
 		var resp GetStatementResponse
-		if err := json.Unmarshal(respBytes, &resp); err != nil {
+		if err := json.Unmarshal(out.body, &resp); err != nil {
 			return GetStatementResponse{}, err
 		}
 
@@ -87,48 +120,53 @@ func (c Client) waitForStatement(ctx context.Context, statementID int) (GetState
 	}
 }
 
-func (c Client) submitLivyStatement(ctx context.Context, code string) (int, error) {
+func (c *Client) submitLivyStatement(ctx context.Context, code string) (int, error) {
 	reqBody, err := json.Marshal(CreateStatementRequest{Code: code, Kind: "sql"})
 	if err != nil {
 		return 0, err
 	}
 
-	respBytes, err := c.doRequest(ctx, "POST", fmt.Sprintf("/sessions/%d/statements", c.sessionID), reqBody)
+	out, err := c.doRequest(ctx, "POST", fmt.Sprintf("/sessions/%d/statements", c.sessionID), reqBody)
 	if err != nil {
 		return 0, err
 	}
 
 	var resp CreateStatementResponse
-	if err := json.Unmarshal(respBytes, &resp); err != nil {
+	if err := json.Unmarshal(out.body, &resp); err != nil {
 		return 0, err
 	}
 
 	return resp.ID, nil
 }
 
-func (c Client) doRequest(ctx context.Context, method, path string, body []byte) ([]byte, error) {
+type doRequestResponse struct {
+	body       []byte
+	httpStatus int
+}
+
+func (c *Client) doRequest(ctx context.Context, method, path string, body []byte) (doRequestResponse, error) {
 	req, err := http.NewRequestWithContext(ctx, method, c.url+path, bytes.NewBuffer(body))
 	if err != nil {
-		return nil, err
+		return doRequestResponse{}, err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return doRequestResponse{}, err
 	}
 
 	defer resp.Body.Close()
 	out, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return doRequestResponse{}, err
 	}
 
 	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
-		return out, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		return doRequestResponse{body: out, httpStatus: resp.StatusCode}, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	return out, nil
+	return doRequestResponse{body: out, httpStatus: resp.StatusCode}, nil
 }
 
 func (c *Client) newSession(ctx context.Context, kind SessionKind, blockUntilReady bool) error {
@@ -146,12 +184,12 @@ func (c *Client) newSession(ctx context.Context, kind SessionKind, blockUntilRea
 
 	resp, err := c.doRequest(ctx, "POST", "/sessions", body)
 	if err != nil {
-		slog.Warn("Failed to create session", slog.Any("err", err), slog.String("response", string(resp)))
+		slog.Warn("Failed to create session", slog.Any("err", err), slog.String("response", string(resp.body)))
 		return err
 	}
 
 	var createResp CreateSessionResponse
-	if err = json.Unmarshal(resp, &createResp); err != nil {
+	if err = json.Unmarshal(resp.body, &createResp); err != nil {
 		return err
 	}
 
@@ -165,16 +203,16 @@ func (c *Client) newSession(ctx context.Context, kind SessionKind, blockUntilRea
 	return nil
 }
 
-func (c Client) waitForSessionToBeReady(ctx context.Context) error {
+func (c *Client) waitForSessionToBeReady(ctx context.Context) error {
 	var count int
 	for {
-		respBytes, err := c.doRequest(ctx, "GET", fmt.Sprintf("/sessions/%d", c.sessionID), nil)
+		out, err := c.doRequest(ctx, "GET", fmt.Sprintf("/sessions/%d", c.sessionID), nil)
 		if err != nil {
 			return err
 		}
 
 		var resp GetSessionResponse
-		if err := json.Unmarshal(respBytes, &resp); err != nil {
+		if err := json.Unmarshal(out.body, &resp); err != nil {
 			return err
 		}
 
@@ -202,10 +240,5 @@ func NewClient(ctx context.Context, url string, config map[string]any, jars []st
 		sessionHeartbeatTimeoutInSecond: cmp.Or(heartbeatTimeoutInSecond, defaultHeartbeatTimeoutInSecond),
 	}
 
-	if err := client.newSession(ctx, SessionKindSql, true); err != nil {
-		return Client{}, err
-	}
-
-	slog.Info("Session has been created in Apache Livy", slog.Any("sessionID", client.sessionID))
 	return client, nil
 }
