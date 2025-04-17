@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"maps"
 	"slices"
-	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/credentials"
@@ -83,10 +82,6 @@ func (s Store) Append(ctx context.Context, tableData *optimization.TableData, us
 	if err = s.PrepareTemporaryTable(ctx, tableData, tableConfig, tempTableID); err != nil {
 		return fmt.Errorf("failed to prepare temporary table: %w", err)
 	}
-
-	fmt.Println("sleeping", tempTableID.FullyQualifiedName())
-	// Now query the temporary view
-	time.Sleep(30 * time.Second)
 
 	validColumns := tableData.ReadOnlyInMemoryCols().ValidColumns()
 	validColumnNames := make([]string, len(validColumns))
