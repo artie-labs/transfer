@@ -115,17 +115,17 @@ func TestArray_Convert(t *testing.T) {
 		// Array of JSON objects
 		{
 			// Invalid json
-			_, err := NewArray(JSON{}).Convert([]any{"hello"})
+			_, err := NewArray(JSON{}.Convert).Convert([]any{"hello"})
 			assert.ErrorContains(t, err, "invalid character 'h' looking for beginning of value")
 		}
 		{
 			// Invalid data type
-			_, err := NewArray(JSON{}).Convert([]any{123})
+			_, err := NewArray(JSON{}.Convert).Convert([]any{123})
 			assert.ErrorContains(t, err, "expected string, got int")
 		}
 		{
 			// Valid
-			value, err := NewArray(JSON{}).Convert([]any{`{"body": "they are on to us", "sender": "pablo"}`})
+			value, err := NewArray(JSON{}.Convert).Convert([]any{`{"body": "they are on to us", "sender": "pablo"}`})
 			assert.NoError(t, err)
 			assert.Len(t, value.([]any), 1)
 			fmt.Println("value", value)

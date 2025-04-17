@@ -114,7 +114,7 @@ func (a Array) Convert(value any) (any, error) {
 
 	elements, ok := value.([]any)
 	if !ok {
-		return nil, fmt.Errorf("expected []any, got %T", value)
+		return nil, fmt.Errorf("expected []any, got %T, value: %v", value, value)
 	}
 
 	convertedElements := make([]any, len(elements))

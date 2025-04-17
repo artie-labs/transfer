@@ -144,7 +144,7 @@ func (f Field) ToValueConverter() (converters.ValueConverter, error) {
 				// TODO: Remove this condition once Reader fully supports setting items metadata
 				return converters.NewArray(nil), nil
 			}
-			return converters.NewArray(f.ParseValue), nil
+			return converters.NewArray(f.ItemsMetadata.ParseValue), nil
 		case Double, Float:
 			return converters.Float64{}, nil
 		}
