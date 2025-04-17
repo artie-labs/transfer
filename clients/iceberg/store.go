@@ -84,9 +84,9 @@ func (s Store) Append(ctx context.Context, tableData *optimization.TableData, us
 		return fmt.Errorf("failed to prepare temporary table: %w", err)
 	}
 
+	fmt.Println("sleeping", tempTableID.FullyQualifiedName())
 	// Now query the temporary view
 	time.Sleep(30 * time.Second)
-	fmt.Println("sleeping", tempTableID.FullyQualifiedName())
 
 	validColumns := tableData.ReadOnlyInMemoryCols().ValidColumns()
 	validColumnNames := make([]string, len(validColumns))
