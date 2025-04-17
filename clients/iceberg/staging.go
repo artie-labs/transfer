@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/awslib"
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/csvwriter"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -110,8 +111,14 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 		return fmt.Errorf("failed to upload to s3: %w", err)
 	}
 
+	var colParts []string
+	for _, col := range tableData.ReadOnlyInMemoryCols().ValidColumns() {
+		colPart := fmt.Sprintf("%s %s", col.Name(), s.Dialect().DataTypeForKind(col.KindDetails, col.PrimaryKey(), config.SharedDestinationColumnSettings{}))
+		colParts = append(colParts, colPart)
+	}
+
 	// Load the data into a temporary view
-	command := s.Dialect().BuildCreateTemporaryView(tempTableID.EscapedTable(), s3URI)
+	command := s.Dialect().BuildCreateTemporaryView(tempTableID.EscapedTable(), colParts, s3URI)
 	if err := s.apacheLivyClient.ExecContext(ctx, command); err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
 	}
