@@ -90,12 +90,12 @@ func (Float64) Convert(value any) (any, error) {
 
 type ParseItemFunction func(value any) (any, error)
 
-func NewArray(parseItem ParseItemFunction) Array {
-	return Array{parseItem: parseItem}
+func NewArray(parseItemFunc ParseItemFunction) Array {
+	return Array{parseItemFunc: parseItemFunc}
 }
 
 type Array struct {
-	parseItem ParseItemFunction
+	parseItemFunc ParseItemFunction
 }
 
 func (Array) ToKindDetails() typing.KindDetails {
@@ -108,7 +108,7 @@ func (a Array) Convert(value any) (any, error) {
 	}
 
 	// If there's no converter, just return the value as is.
-	if a.parseItem == nil {
+	if a.parseItemFunc == nil {
 		return value, nil
 	}
 
@@ -119,7 +119,7 @@ func (a Array) Convert(value any) (any, error) {
 
 	convertedElements := make([]any, len(elements))
 	for i, element := range elements {
-		convertedElement, err := a.parseItem(element)
+		convertedElement, err := a.parseItemFunc(element)
 		if err != nil {
 			return nil, err
 		}
