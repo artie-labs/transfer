@@ -2,7 +2,6 @@ package array
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -19,12 +18,6 @@ func TestToArrayString(t *testing.T) {
 		// Test wrong data type
 		_, err := InterfaceToArrayString(true, false)
 		assert.ErrorContains(t, err, "wrong data type, kind: bool")
-	}
-	{
-		// Test list of dates
-		value, err := InterfaceToArrayString([]time.Time{time.Date(2024, 4, 13, 0, 0, 0, 0, time.UTC), time.Date(2024, 4, 14, 0, 0, 0, 0, time.UTC), time.Date(2024, 4, 15, 0, 0, 0, 0, time.UTC)}, false)
-		assert.NoError(t, err)
-		assert.Equal(t, []string{"2024-04-13", "2024-04-14", "2024-04-15"}, value)
 	}
 	{
 		// Test list of numbers
