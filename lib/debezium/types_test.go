@@ -174,7 +174,7 @@ func TestField_ParseValue(t *testing.T) {
 	}
 	{
 		// Array
-		field := Field{Type: Array, ItemsMetadata: &Item{DebeziumType: JSON}}
+		field := Field{Type: Array, ItemsMetadata: &Field{DebeziumType: JSON}}
 		value, err := field.ParseValue([]any{`{"foo": "bar", "foo": "bar"}`, `{"hello": "world"}`})
 		assert.NoError(t, err)
 		assert.Len(t, value.([]any), 2)

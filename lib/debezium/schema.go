@@ -53,12 +53,6 @@ const (
 	Map     FieldType = "map"
 )
 
-type Item struct {
-	Type         FieldType             `json:"type"`
-	Optional     bool                  `json:"optional"`
-	DebeziumType SupportedDebeziumType `json:"name"`
-}
-
 type Field struct {
 	Type         FieldType             `json:"type"`
 	Optional     bool                  `json:"optional"`
