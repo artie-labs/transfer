@@ -96,9 +96,5 @@ func IsJSON(str string) bool {
 		return false
 	}
 
-	firstChar := str[0]
-	if firstChar != '{' && firstChar != '[' {
-		return false
-	}
 	return json.Valid([]byte(str))
 }
