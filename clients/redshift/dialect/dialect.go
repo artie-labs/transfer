@@ -228,7 +228,7 @@ func (rd RedshiftDialect) BuildCopyStatement(tableID sql.TableIdentifier, cols [
 		quotedColumns[i] = rd.QuoteIdentifier(col)
 	}
 
-	return fmt.Sprintf(`COPY %s (%s) FROM %s DELIMITER '\t' NULL AS %s GZIP FORMAT CSV %s dateformat 'auto' timeformat 'auto';`,
+	return fmt.Sprintf(`COPY %s (%s) FROM %s DELIMITER '\t' NULL AS %s GZIP FORMAT CSV %s dateformat 'auto' timeformat 'auto' escape '"';`,
 		// COPY
 		tableID.FullyQualifiedName(), strings.Join(quotedColumns, ","),
 		// Filepath
