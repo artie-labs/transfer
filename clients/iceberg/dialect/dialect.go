@@ -207,11 +207,11 @@ func (IcebergDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) strin
 
 func getCSVOptions(fp string) string {
 	// Options are sourced from: https://spark.apache.org/docs/3.5.3/sql-data-sources-csv.html
-	return fmt.Sprintf(`OPTIONS (path '%s', sep '\t', header 'true', compression 'gzip', nullValue '%s', inferSchema 'true')`, fp, constants.NullValuePlaceholder)
+	return fmt.Sprintf(`OPTIONS (path '%s', sep '\t', header 'true', compression 'gzip', nullValue '%s', escape '"', inferSchema 'false', multiLine 'true')`, fp, constants.NullValuePlaceholder)
 }
 
-func (IcebergDialect) BuildCreateTemporaryView(viewName string, s3Path string) string {
-	return fmt.Sprintf("CREATE OR REPLACE TEMPORARY VIEW %s USING csv %s;", viewName, getCSVOptions(s3Path))
+func (IcebergDialect) BuildCreateTemporaryView(viewName string, colParts []string, s3Path string) string {
+	return fmt.Sprintf("CREATE OR REPLACE TEMPORARY VIEW %s ( %s ) USING csv %s;", viewName, strings.Join(colParts, ", "), getCSVOptions(s3Path))
 }
 
 func (id IcebergDialect) BuildAppendToTable(tableID sql.TableIdentifier, viewName string, columns []string) string {

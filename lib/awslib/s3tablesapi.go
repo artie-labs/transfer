@@ -166,6 +166,11 @@ func (s S3TablesAPIWrapper) DeleteTable(ctx context.Context, namespace string, t
 		TableBucketARN: aws.String(s.tableBucketARN),
 	})
 
+	// Swallow the not found error to avoid false positive error and align with other databases.
+	if IsNotFoundError(err) {
+		return nil
+	}
+
 	return err
 }
 
