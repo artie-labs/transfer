@@ -205,13 +205,13 @@ func (IcebergDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) strin
 	return fmt.Sprintf("TRUNCATE TABLE %s", tableID.FullyQualifiedName())
 }
 
-func getCSVOptions(fp string) string {
+func getCSVOptions(_ string) string {
 	// Options are sourced from: https://spark.apache.org/docs/3.5.3/sql-data-sources-csv.html
-	return fmt.Sprintf(`OPTIONS (sep '\t', header 'true', compression 'gzip', nullValue '%s', inferSchema 'true')`, fp, constants.NullValuePlaceholder)
+	return fmt.Sprintf(`OPTIONS (sep '\t', header 'true', compression 'gzip', nullValue '%s', inferSchema 'true')`, constants.NullValuePlaceholder)
 }
 
 func (IcebergDialect) BuildLoadCSV(tableID sql.TableIdentifier, s3Path string) string {
-	return fmt.Sprintf("INSERT INTO %s SELECT * FROM csv %s;", tableID.FullyQualifiedName(), getCSVOptions(s3Path))
+	return fmt.Sprintf("INSERT INTO %s SELECT * FROM csv.`%s` %s;", tableID.FullyQualifiedName(), s3Path, getCSVOptions(s3Path))
 }
 
 func (id IcebergDialect) BuildAppendToTable(tableID sql.TableIdentifier, viewName string, columns []string) string {
