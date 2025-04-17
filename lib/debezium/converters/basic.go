@@ -121,8 +121,9 @@ func (a Array) Convert(value any) (any, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		convertedElements[i] = convertedElement
 	}
 
-	return value, nil
+	return convertedElements, nil
 }

@@ -178,8 +178,7 @@ func TestField_ParseValue(t *testing.T) {
 		value, err := field.ParseValue([]any{`{"foo": "bar", "foo": "bar"}`, `{"hello": "world"}`})
 		assert.NoError(t, err)
 		assert.Len(t, value.([]any), 2)
-		assert.Equal(t, map[string]any{"foo": "bar"}, value.([]any)[0])
-		assert.Equal(t, map[string]any{"hello": "world"}, value.([]any)[1])
+		assert.ElementsMatch(t, []string{`{"foo":"bar"}`, `{"hello":"world"}`}, value)
 	}
 	{
 		// Int32
