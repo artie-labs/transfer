@@ -285,6 +285,16 @@ func TestField_ParseValue(t *testing.T) {
 		}
 	}
 	{
+		// Arrays
+		{
+			// Array of dates
+			field := Field{Type: Array, ItemsMetadata: &Field{Type: Int32, DebeziumType: Date}}
+			value, err := field.ParseValue([]any{20089, 20103, 20136})
+			assert.NoError(t, err)
+			assert.Equal(t, []any{"2025-01-01", "2025-01-15", "2025-02-17"}, value)
+		}
+	}
+	{
 		// Time
 		{
 			// Micro time
