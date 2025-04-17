@@ -20,5 +20,5 @@ func (d Date) Convert(value any) (any, error) {
 	}
 
 	// Represents the number of days since the epoch.
-	return time.UnixMilli(0).In(time.UTC).AddDate(0, 0, int(valueInt64)), nil
+	return time.UnixMilli(0).In(time.UTC).AddDate(0, 0, int(valueInt64)).Format(time.DateOnly), nil
 }
