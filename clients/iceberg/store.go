@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"maps"
 	"slices"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/credentials"
@@ -83,6 +84,10 @@ func (s Store) Append(ctx context.Context, tableData *optimization.TableData, us
 		return fmt.Errorf("failed to prepare temporary table: %w", err)
 	}
 
+	// Now query the temporary view
+	time.Sleep(30 * time.Second)
+	fmt.Println("sleeping", tempTableID.FullyQualifiedName())
+
 	validColumns := tableData.ReadOnlyInMemoryCols().ValidColumns()
 	validColumnNames := make([]string, len(validColumns))
 	for i, col := range validColumns {
@@ -90,7 +95,6 @@ func (s Store) Append(ctx context.Context, tableData *optimization.TableData, us
 	}
 
 	// Then append the view into the target table
-
 	query := s.Dialect().BuildAppendToTable(tableID, tempTableID.EscapedTable(), validColumnNames)
 	if err = s.apacheLivyClient.ExecContext(ctx, query); err != nil {
 		return fmt.Errorf("failed to append to table: %w, query: %s", err, query)
