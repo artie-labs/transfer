@@ -211,7 +211,7 @@ func getCSVOptions(fp string) string {
 }
 
 func (IcebergDialect) BuildLoadCSV(tableID sql.TableIdentifier, s3Path string) string {
-	return fmt.Sprintf("INSERT INTO %s USING csv %s;", tableID.FullyQualifiedName(), getCSVOptions(s3Path))
+	return fmt.Sprintf("INSERT INTO %s SELECT * FROM csv.`%s` %s;", tableID.FullyQualifiedName(), s3Path, getCSVOptions(s3Path))
 }
 
 func (id IcebergDialect) BuildAppendToTable(tableID sql.TableIdentifier, viewName string, columns []string) string {
