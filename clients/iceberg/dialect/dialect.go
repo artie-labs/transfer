@@ -210,8 +210,8 @@ func getCSVOptions(fp string) string {
 	return fmt.Sprintf(`OPTIONS (path '%s', sep '\t', header 'true', compression 'gzip', nullValue '%s', inferSchema 'true')`, fp, constants.NullValuePlaceholder)
 }
 
-func (IcebergDialect) BuildCreateTemporaryView(viewName string, s3Path string) string {
-	return fmt.Sprintf("CREATE OR REPLACE TEMPORARY VIEW %s USING csv %s;", viewName, getCSVOptions(s3Path))
+func (IcebergDialect) BuildLoadCSV(tableID sql.TableIdentifier, s3Path string) string {
+	return fmt.Sprintf("INSERT INTO %s USING csv %s;", tableID.FullyQualifiedName(), getCSVOptions(s3Path))
 }
 
 func (id IcebergDialect) BuildAppendToTable(tableID sql.TableIdentifier, viewName string, columns []string) string {

@@ -110,10 +110,15 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 		return fmt.Errorf("failed to upload to s3: %w", err)
 	}
 
+	// Create the temporary table
+	if err = s.createTable(ctx, tempTableID, tableData.ReadOnlyInMemoryCols().ValidColumns()); err != nil {
+		return fmt.Errorf("failed to create temporary table: %w", err)
+	}
+
 	// Load the data into a temporary view
-	command := s.Dialect().BuildCreateTemporaryView(tempTableID.EscapedTable(), s3URI)
+	command := s.Dialect().BuildLoadCSV(tempTableID, s3URI)
 	if err := s.apacheLivyClient.ExecContext(ctx, command); err != nil {
-		return fmt.Errorf("failed to load temporary table: %w", err)
+		return fmt.Errorf("failed to load temporary table: %w, command: %s", err, command)
 	}
 
 	return nil

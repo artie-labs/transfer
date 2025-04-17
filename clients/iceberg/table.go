@@ -50,7 +50,7 @@ func (s Store) describeTable(ctx context.Context, tableID sql.TableIdentifier) (
 	return cols, nil
 }
 
-func (s Store) CreateTable(ctx context.Context, tableID sql.TableIdentifier, tableConfig *types.DestinationTableConfig, cols []columns.Column) error {
+func (s Store) createTable(ctx context.Context, tableID sql.TableIdentifier, cols []columns.Column) error {
 	var colParts []string
 	for _, col := range cols {
 		colPart := fmt.Sprintf("%s %s", col.Name(), s.Dialect().DataTypeForKind(col.KindDetails, col.PrimaryKey(), config.SharedDestinationColumnSettings{}))
@@ -58,6 +58,14 @@ func (s Store) CreateTable(ctx context.Context, tableID sql.TableIdentifier, tab
 	}
 
 	if err := s.apacheLivyClient.ExecContext(ctx, s.Dialect().BuildCreateTableQuery(tableID, false, colParts)); err != nil {
+		return fmt.Errorf("failed to create table: %w", err)
+	}
+
+	return nil
+}
+
+func (s Store) CreateTable(ctx context.Context, tableID sql.TableIdentifier, tableConfig *types.DestinationTableConfig, cols []columns.Column) error {
+	if err := s.createTable(ctx, tableID, cols); err != nil {
 		return fmt.Errorf("failed to create table: %w", err)
 	}
 
