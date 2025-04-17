@@ -35,10 +35,12 @@ const sessionBufferSeconds = 30
 
 func (c *Client) ensureSession(ctx context.Context) error {
 	if c.sessionID == 0 {
+		c.lastChecked = time.Now()
 		return c.newSession(ctx, SessionKindSql, true)
 	}
 
 	if time.Since(c.lastChecked).Seconds() > (float64(c.sessionHeartbeatTimeoutInSecond) - sessionBufferSeconds) {
+		c.lastChecked = time.Now()
 		out, err := c.doRequest(ctx, "GET", fmt.Sprintf("/sessions/%d", c.sessionID), nil)
 		if out.httpStatus == http.StatusNotFound {
 			return c.newSession(ctx, SessionKindSql, true)
