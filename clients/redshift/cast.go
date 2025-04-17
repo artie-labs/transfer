@@ -29,6 +29,7 @@ func replaceExceededValues(colVal string, colKind typing.KindDetails, truncateEx
 		// Ref: https://docs.aws.amazon.com/redshift/latest/dg/limitations-super.html
 		if typing.IsJSON(colVal) {
 			if len(colVal) > maxSuperLength {
+				fmt.Println("colVal", colVal)
 				return Result{Value: fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker)}
 			}
 
@@ -46,6 +47,7 @@ func replaceExceededValues(colVal string, colKind typing.KindDetails, truncateEx
 		}
 
 		if shouldReplace := colValLength > maxLength; shouldReplace {
+			fmt.Println("colValLength", colValLength, "maxLength", maxLength, "colVal", colVal)
 			if truncateExceededValue {
 				return Result{Value: colVal[:maxLength]}
 			} else {
