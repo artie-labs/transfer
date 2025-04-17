@@ -57,6 +57,8 @@ func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTa
 		return "", fmt.Errorf("failed to create gzip writer: %w", err)
 	}
 
+	gzipWriter.SetComma(',')
+
 	defer gzipWriter.Close()
 
 	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()

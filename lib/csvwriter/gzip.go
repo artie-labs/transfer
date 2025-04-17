@@ -13,6 +13,10 @@ type GzipWriter struct {
 	writer *csv.Writer
 }
 
+func (g *GzipWriter) SetComma(comma rune) {
+	g.writer.Comma = comma
+}
+
 func NewGzipWriter(fp string) (*GzipWriter, error) {
 	file, err := os.Create(fp)
 	if err != nil {
