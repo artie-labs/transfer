@@ -207,7 +207,7 @@ func (IcebergDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) strin
 
 func getCSVOptions(_ string) string {
 	// Options are sourced from: https://spark.apache.org/docs/3.5.3/sql-data-sources-csv.html
-	return fmt.Sprintf(`OPTIONS (sep '\t', header 'true', compression 'gzip', nullValue '%s', inferSchema 'true')`, constants.NullValuePlaceholder)
+	return fmt.Sprintf(`OPTIONS (sep ',', header 'true', compression 'gzip', nullValue '%s', inferSchema 'true')`, constants.NullValuePlaceholder)
 }
 
 func (IcebergDialect) BuildLoadCSV(tableID sql.TableIdentifier, s3Path string) string {
