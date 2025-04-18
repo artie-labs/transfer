@@ -30,7 +30,7 @@ func replaceExceededValues(colVal string, colKind typing.KindDetails, truncateEx
 		// Ref: https://docs.aws.amazon.com/redshift/latest/dg/limitations-super.html
 		if typing.IsJSON(colVal) {
 			if len(colVal) > maxSuperLength {
-				return Result{Value: fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker)}
+				return Result{Value: fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker), Exceeded: true}
 			}
 
 			return Result{Value: colVal}
