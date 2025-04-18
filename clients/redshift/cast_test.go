@@ -85,8 +85,8 @@ func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 				}
 				{
 					// Masked (data type is a string)
-					result := replaceExceededValues(stringutil.Random(int(maxStringLength)+1), typing.String, false, false)
-					assert.Equal(r.T(), constants.ExceededValueMarker, result.Value)
+					result := replaceExceededValues(stringutil.Random(int(maxStringLength)+1), typing.Struct, false, false)
+					assert.Equal(r.T(), fmt.Sprintf(`"%s"`, constants.ExceededValueMarker), result.Value)
 					assert.Zero(r.T(), result.NewLength)
 				}
 			}
