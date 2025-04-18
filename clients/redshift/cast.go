@@ -15,6 +15,7 @@ type Result struct {
 	// NewLength - If the value exceeded the maximum length, this will be the new length of the value.
 	// This is only applicable if [expandStringPrecision] is enabled.
 	NewLength int32
+	Exceeded  bool
 }
 
 const (
@@ -36,7 +37,12 @@ func replaceExceededValues(colVal string, colKind typing.KindDetails, truncateEx
 		}
 
 		// Try again, but use [typing.String] instead.
-		return replaceExceededValues(colVal, typing.String, truncateExceededValue, expandStringPrecision)
+		result := replaceExceededValues(colVal, typing.String, truncateExceededValue, expandStringPrecision)
+		if result.Exceeded {
+			result.Value = fmt.Sprintf(`"%s"`, result.Value)
+		}
+
+		return result
 	case typing.String.Kind:
 		maxLength := typing.DefaultValueFromPtr[int32](colKind.OptionalStringPrecision, maxStringLength)
 		colValLength := int32(len(colVal))
@@ -47,9 +53,9 @@ func replaceExceededValues(colVal string, colKind typing.KindDetails, truncateEx
 
 		if shouldReplace := colValLength > maxLength; shouldReplace {
 			if truncateExceededValue {
-				return Result{Value: colVal[:maxLength]}
+				return Result{Value: colVal[:maxLength], Exceeded: true}
 			} else {
-				return Result{Value: constants.ExceededValueMarker}
+				return Result{Value: constants.ExceededValueMarker, Exceeded: true}
 			}
 		}
 	}
