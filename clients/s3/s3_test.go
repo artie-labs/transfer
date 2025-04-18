@@ -6,8 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/typing/ext"
-
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/lib/config"
@@ -51,7 +49,7 @@ func TestObjectPrefix(t *testing.T) {
 				AwsAccessKeyID:     "bar",
 				OutputFormat:       constants.ParquetFormat,
 			},
-			expectedFormat: fmt.Sprintf("db.public.table/date=%s", time.Now().Format(ext.PostgresDateFormat)),
+			expectedFormat: fmt.Sprintf("db.public.table/date=%s", time.Now().Format(time.DateOnly)),
 		},
 		{
 			name:      "valid #2 w/ folder",
@@ -63,7 +61,7 @@ func TestObjectPrefix(t *testing.T) {
 				OutputFormat:       constants.ParquetFormat,
 				FolderName:         "foo",
 			},
-			expectedFormat: fmt.Sprintf("foo/db.public.table/date=%s", time.Now().Format(ext.PostgresDateFormat)),
+			expectedFormat: fmt.Sprintf("foo/db.public.table/date=%s", time.Now().Format(time.DateOnly)),
 		},
 	}
 

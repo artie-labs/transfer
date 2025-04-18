@@ -3,7 +3,6 @@ package ext
 import "time"
 
 const (
-	PostgresDateFormat     = "2006-01-02"
 	PostgresTimeFormat     = PostgresTimeFormatNoTZ + TimezoneOffsetFormat
 	PostgresTimeFormatNoTZ = "15:04:05.999999" // microsecond precision, used because certain destinations do not like `Time` types to specify tz locale
 )
@@ -29,7 +28,7 @@ var supportedDateTimeLayouts = []string{
 }
 
 var supportedDateFormats = []string{
-	PostgresDateFormat,
+	time.DateOnly,
 }
 
 var SupportedTimeFormats = []string{
