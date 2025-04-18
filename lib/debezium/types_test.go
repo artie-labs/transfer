@@ -174,12 +174,11 @@ func TestField_ParseValue(t *testing.T) {
 	}
 	{
 		// Array
-		field := Field{Type: Array, ItemsMetadata: &Item{DebeziumType: JSON}}
+		field := Field{Type: Array, ItemsMetadata: &Field{DebeziumType: JSON}}
 		value, err := field.ParseValue([]any{`{"foo": "bar", "foo": "bar"}`, `{"hello": "world"}`})
 		assert.NoError(t, err)
 		assert.Len(t, value.([]any), 2)
-		assert.Equal(t, map[string]any{"foo": "bar"}, value.([]any)[0])
-		assert.Equal(t, map[string]any{"hello": "world"}, value.([]any)[1])
+		assert.ElementsMatch(t, []string{`{"foo":"bar"}`, `{"hello":"world"}`}, value)
 	}
 	{
 		// Int32
@@ -283,6 +282,16 @@ func TestField_ParseValue(t *testing.T) {
 			val, err := field.ParseValue(map[string]any{"srid": 4326, "wkb": "AQEAACDmEAAAAAAAAADAXkAAAAAAAIBDwA=="})
 			assert.NoError(t, err)
 			assert.Equal(t, `{"type":"Feature","geometry":{"type":"Point","coordinates":[123,-39]},"properties":null}`, val)
+		}
+	}
+	{
+		// Arrays
+		{
+			// Array of dates
+			field := Field{Type: Array, ItemsMetadata: &Field{Type: Int32, DebeziumType: Date}}
+			value, err := field.ParseValue([]any{20089, 20103, 20136})
+			assert.NoError(t, err)
+			assert.Equal(t, []any{"2025-01-01", "2025-01-15", "2025-02-17"}, value)
 		}
 	}
 	{

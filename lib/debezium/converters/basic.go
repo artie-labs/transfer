@@ -2,7 +2,6 @@ package converters
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -89,12 +88,14 @@ func (Float64) Convert(value any) (any, error) {
 	}
 }
 
-func NewArray(json bool) Array {
-	return Array{json: json}
+type ParseItemFunction func(value any) (any, error)
+
+func NewArray(parseItemFunc ParseItemFunction) Array {
+	return Array{parseItemFunc: parseItemFunc}
 }
 
 type Array struct {
-	json bool
+	parseItemFunc ParseItemFunction
 }
 
 func (Array) ToKindDetails() typing.KindDetails {
@@ -106,30 +107,25 @@ func (a Array) Convert(value any) (any, error) {
 		return constants.ToastUnavailableValuePlaceholder, nil
 	}
 
-	if a.json {
-		// Debezium will give us a list of JSON strings. We will then need to convert them to JSON objects.
-		elements, ok := value.([]any)
-		if !ok {
-			return nil, fmt.Errorf("expected []any, got %T", value)
-		}
-
-		convertedElements := make([]any, len(elements))
-		for i, element := range elements {
-			switch castedElement := element.(type) {
-			case string:
-				var obj any
-				if err := json.Unmarshal([]byte(castedElement), &obj); err != nil {
-					return nil, err
-				}
-
-				convertedElements[i] = obj
-			default:
-				return nil, fmt.Errorf("expected string, got %T, value '%v'", element, element)
-			}
-		}
-
-		return convertedElements, nil
+	// If there's no converter, just return the value as is.
+	if a.parseItemFunc == nil {
+		return value, nil
 	}
 
-	return value, nil
+	elements, ok := value.([]any)
+	if !ok {
+		return nil, fmt.Errorf("expected []any, got %T, value: %v", value, value)
+	}
+
+	convertedElements := make([]any, len(elements))
+	for i, element := range elements {
+		convertedElement, err := a.parseItemFunc(element)
+		if err != nil {
+			return nil, err
+		}
+
+		convertedElements[i] = convertedElement
+	}
+
+	return convertedElements, nil
 }

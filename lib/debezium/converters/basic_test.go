@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -114,20 +115,21 @@ func TestArray_Convert(t *testing.T) {
 		// Array of JSON objects
 		{
 			// Invalid json
-			_, err := NewArray(true).Convert([]any{"hello"})
+			_, err := NewArray(JSON{}.Convert).Convert([]any{"hello"})
 			assert.ErrorContains(t, err, "invalid character 'h' looking for beginning of value")
 		}
 		{
 			// Invalid data type
-			_, err := NewArray(true).Convert([]any{123})
-			assert.ErrorContains(t, err, "expected string, got int, value '123'")
+			_, err := NewArray(JSON{}.Convert).Convert([]any{123})
+			assert.ErrorContains(t, err, "expected string, got int")
 		}
 		{
 			// Valid
-			value, err := NewArray(true).Convert([]any{"{\"body\": \"they are on to us\", \"sender\": \"pablo\"}"})
+			value, err := NewArray(JSON{}.Convert).Convert([]any{`{"body": "they are on to us", "sender": "pablo"}`})
 			assert.NoError(t, err)
 			assert.Len(t, value.([]any), 1)
-			assert.Equal(t, map[string]any{"body": "they are on to us", "sender": "pablo"}, value.([]any)[0])
+			fmt.Println("value", value)
+			assert.ElementsMatch(t, []any{`{"body":"they are on to us","sender":"pablo"}`}, value.([]any))
 		}
 	}
 }
