@@ -19,7 +19,6 @@ import (
 	"github.com/artie-labs/transfer/lib/parquetutil"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/stringutil"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 type Store struct {
@@ -49,7 +48,7 @@ func (s *Store) ObjectPrefix(tableData *optimization.TableData) string {
 	tableID := s.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name())
 	fqTableName := tableID.FullyQualifiedName()
 	// Adding date= prefix so that it adheres to the partitioning format for Hive.
-	yyyyMMDDFormat := fmt.Sprintf("date=%s", time.Now().Format(ext.PostgresDateFormat))
+	yyyyMMDDFormat := fmt.Sprintf("date=%s", time.Now().Format(time.DateOnly))
 	if len(s.config.S3.FolderName) > 0 {
 		return strings.Join([]string{s.config.S3.FolderName, fqTableName, yyyyMMDDFormat}, "/")
 	}

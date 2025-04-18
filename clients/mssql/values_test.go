@@ -9,7 +9,6 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 func TestParseValue(t *testing.T) {
@@ -24,13 +23,13 @@ func TestParseValue(t *testing.T) {
 			// String
 			val, err := parseValue("2021-01-01", columns.NewColumn("date", typing.Date))
 			assert.NoError(t, err)
-			assert.Equal(t, "2021-01-01", val.(time.Time).Format(ext.PostgresDateFormat))
+			assert.Equal(t, "2021-01-01", val.(time.Time).Format(time.DateOnly))
 		}
 		{
 			// time.Time
 			val, err := parseValue(time.Date(2021, time.January, 1, 0, 0, 0, 0, time.UTC), columns.NewColumn("date", typing.Date))
 			assert.NoError(t, err)
-			assert.Equal(t, "2021-01-01", val.(time.Time).Format(ext.PostgresDateFormat))
+			assert.Equal(t, "2021-01-01", val.(time.Time).Format(time.DateOnly))
 		}
 	}
 	{

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -27,7 +28,7 @@ func ParseValue(colVal any, colKind typing.KindDetails) (any, error) {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
 		}
 
-		return _time.Format(ext.PostgresDateFormat), nil
+		return _time.Format(time.DateOnly), nil
 	case typing.Time.Kind:
 		_time, err := ext.ParseTimeFromAny(colVal)
 		if err != nil {

@@ -105,7 +105,7 @@ func (DateConverter) Convert(value any) (string, error) {
 		return "", fmt.Errorf("failed to cast colVal as date, colVal: '%v', err: %w", value, err)
 	}
 
-	return _time.Format(ext.PostgresDateFormat), nil
+	return _time.Format(time.DateOnly), nil
 }
 
 type TimeConverter struct{}
