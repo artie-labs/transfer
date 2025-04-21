@@ -45,6 +45,15 @@ const (
 	DefaultS3TablesPackage = "software.amazon.s3tables:s3-tables-catalog-for-iceberg-runtime:0.1.4"
 )
 
+var ArtieColumns = []string{
+	DeleteColumnMarker,
+	OnlySetDeleteColumnMarker,
+	UpdateColumnMarker,
+	DatabaseUpdatedColumnMarker,
+	OperationColumnMarker,
+	ExceededValueMarker,
+}
+
 // ExporterKind is used for the Telemetry package
 type ExporterKind string
 
