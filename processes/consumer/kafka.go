@@ -9,6 +9,7 @@ import (
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/cdc/format"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/cryptography"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/jitter"
 	"github.com/artie-labs/transfer/lib/kafkalib"
@@ -43,7 +44,7 @@ func (t *TopicToConsumer) Get(topic string) kafkalib.Consumer {
 	return t.topicToConsumer[topic]
 }
 
-func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client) {
+func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, aes *cryptography.AES256Encryption) {
 	kafkaConn := kafkalib.NewConnection(cfg.Kafka.EnableAWSMSKIAM, cfg.Kafka.DisableTLS, cfg.Kafka.Username, cfg.Kafka.Password)
 	slog.Info("Starting Kafka consumer...",
 		slog.Any("config", cfg.Kafka),
@@ -103,7 +104,7 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 					TopicToConfigFormatMap: tcFmtMap,
 				}
 
-				tableName, processErr := args.process(ctx, cfg, inMemDB, dest, metricsClient)
+				tableName, processErr := args.process(ctx, cfg, inMemDB, dest, metricsClient, aes)
 				if processErr != nil {
 					logger.Fatal("Failed to process message", slog.Any("err", processErr), slog.String("topic", kafkaMsg.Topic))
 				}
