@@ -111,13 +111,18 @@ func TestTopicConfig_Validate(t *testing.T) {
 		tc.CDCKeyFormat = validKeyFormat
 		assert.NoError(t, tc.Validate(), tc.String())
 	}
+
+	tc.ColumnsToInclude = []string{"col1", "col2"}
+	tc.ColumnsToExclude = []string{"col3"}
+	assert.ErrorContains(t, tc.Validate(), "cannot specify both columnsToInclude and columnsToExclude", tc.String())
+
+	tc.ColumnsToInclude = []string{}
+	assert.NoError(t, tc.Validate(), tc.String())
 }
 
 func TestTopicConfig_Load_ShouldSkip(t *testing.T) {
 	{
-		tc := TopicConfig{
-			SkippedOperations: "c, r, u",
-		}
+		tc := TopicConfig{SkippedOperations: "c, r, u"}
 		tc.Load()
 		for _, op := range []string{"c", "r", "u"} {
 			assert.True(t, tc.ShouldSkip(op), tc.String())
@@ -125,16 +130,12 @@ func TestTopicConfig_Load_ShouldSkip(t *testing.T) {
 		assert.False(t, tc.ShouldSkip("d"), tc.String())
 	}
 	{
-		tc := TopicConfig{
-			SkippedOperations: "c",
-		}
+		tc := TopicConfig{SkippedOperations: "c"}
 		tc.Load()
 		assert.True(t, tc.ShouldSkip("c"), tc.String())
 	}
 	{
-		tc := TopicConfig{
-			SkippedOperations: "d",
-		}
+		tc := TopicConfig{SkippedOperations: "d"}
 		tc.Load()
 		assert.True(t, tc.ShouldSkip("d"), tc.String())
 	}
