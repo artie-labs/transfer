@@ -50,6 +50,18 @@ func transformData(data map[string]any, tc kafkalib.TopicConfig) map[string]any 
 		delete(data, col)
 	}
 
+	// If column inclusion is specified, then we need to include only the specified columns
+	if len(tc.ColumnsToInclude) > 0 {
+		filteredData := make(map[string]any)
+		for _, col := range tc.ColumnsToInclude {
+			if value, ok := data[col]; ok {
+				filteredData[col] = value
+			}
+		}
+
+		return filteredData
+	}
+
 	return data
 }
 
