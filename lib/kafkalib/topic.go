@@ -58,6 +58,9 @@ type TopicConfig struct {
 	BigQueryPartitionSettings *partition.BigQuerySettings `yaml:"bigQueryPartitionSettings,omitempty"`
 	AdditionalMergePredicates []partition.MergePredicates `yaml:"additionalMergePredicates,omitempty"`
 	ColumnsToHash             []string                    `yaml:"columnsToHash,omitempty"`
+
+	// [ColumnsToInclude] can be used to specify the exact columns that should be written to the destination.
+	ColumnsToInclude []string `yaml:"columnsToInclude,omitempty"`
 	// [ColumnsToExclude] can be used to exclude columns from being written to the destination.
 	ColumnsToExclude       []string                `yaml:"columnsToExclude,omitempty"`
 	PrimaryKeysOverride    []string                `yaml:"primaryKeysOverride,omitempty"`
@@ -129,6 +132,11 @@ func (t TopicConfig) Validate() error {
 		if err := t.MultiStepMergeSettings.Validate(); err != nil {
 			return fmt.Errorf("invalid multi-step merge settings: %w", err)
 		}
+	}
+
+	// You can't specify both [ColumnsToInclude] and [ColumnsToExclude]
+	if len(t.ColumnsToInclude) > 0 && len(t.ColumnsToExclude) > 0 {
+		return fmt.Errorf("cannot specify both columnsToInclude and columnsToExclude")
 	}
 
 	return nil
