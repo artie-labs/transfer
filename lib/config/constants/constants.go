@@ -51,7 +51,6 @@ var ArtieColumns = []string{
 	UpdateColumnMarker,
 	DatabaseUpdatedColumnMarker,
 	OperationColumnMarker,
-	ExceededValueMarker,
 }
 
 // ExporterKind is used for the Telemetry package
