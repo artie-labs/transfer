@@ -1,12 +1,16 @@
 package event
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/mocks"
+	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 var idMap = map[string]any{
@@ -108,6 +112,49 @@ func (e *EventsTestSuite) TestTransformData() {
 			data := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToInclude: []string{"foo"}})
 			assert.Equal(e.T(), map[string]any{"foo": "bar"}, data)
 		}
+	}
+}
+
+func testBuildFilteredColumns(t *testing.T, fakeEvent *mocks.FakeEvent, topicConfig kafkalib.TopicConfig, fakeColumns []columns.Column, expectedCols *columns.Columns) {
+	fakeEvent.GetColumnsReturns(columns.NewColumns(fakeColumns), nil)
+
+	cols, err := buildFilteredColumns(fakeEvent, topicConfig)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedCols.GetColumns(), cols.GetColumns())
+}
+
+func (e *EventsTestSuite) TestBuildFilteredColumns() {
+	{
+		// Not excluding or including anything
+		fakeCols := []columns.Column{
+			columns.NewColumn("foo", typing.String),
+			columns.NewColumn("bar", typing.String),
+			columns.NewColumn("baz", typing.String),
+		}
+		testBuildFilteredColumns(e.T(), e.fakeEvent, kafkalib.TopicConfig{}, fakeCols, columns.NewColumns(fakeCols))
+	}
+	{
+		// Exclude foo
+		fakeCols := []columns.Column{
+			columns.NewColumn("foo", typing.String),
+			columns.NewColumn("bar", typing.String),
+			columns.NewColumn("baz", typing.String),
+		}
+		testBuildFilteredColumns(e.T(), e.fakeEvent, kafkalib.TopicConfig{ColumnsToExclude: []string{"foo"}}, fakeCols, columns.NewColumns([]columns.Column{
+			columns.NewColumn("bar", typing.String),
+			columns.NewColumn("baz", typing.String),
+		}))
+	}
+	{
+		// Include foo
+		fakeCols := []columns.Column{
+			columns.NewColumn("foo", typing.String),
+			columns.NewColumn("bar", typing.String),
+			columns.NewColumn("baz", typing.String),
+		}
+		testBuildFilteredColumns(e.T(), e.fakeEvent, kafkalib.TopicConfig{ColumnsToInclude: []string{"foo"}}, fakeCols, columns.NewColumns([]columns.Column{
+			columns.NewColumn("foo", typing.String),
+		}))
 	}
 }
 

@@ -78,8 +78,8 @@ func buildFilteredColumns(event cdc.Event, tc kafkalib.TopicConfig) (*columns.Co
 	if len(tc.ColumnsToInclude) > 0 {
 		var filteredColumns columns.Columns
 		for _, col := range tc.ColumnsToInclude {
-			if _, ok := cols.GetColumn(col); !ok {
-				filteredColumns.AddColumn(columns.NewColumn(col, typing.Invalid))
+			if existingColumn, ok := cols.GetColumn(col); ok {
+				filteredColumns.AddColumn(existingColumn)
 			}
 		}
 
