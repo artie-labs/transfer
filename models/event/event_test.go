@@ -96,6 +96,19 @@ func (e *EventsTestSuite) TestTransformData() {
 			assert.Equal(e.T(), map[string]any{"abc": "def"}, data)
 		}
 	}
+	{
+		// Include columns
+		{
+			// No columns to include
+			data := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToInclude: []string{}})
+			assert.Equal(e.T(), map[string]any{"foo": "bar", "abc": "def"}, data)
+		}
+		{
+			// Include the column foo
+			data := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToInclude: []string{"foo"}})
+			assert.Equal(e.T(), map[string]any{"foo": "bar"}, data)
+		}
+	}
 }
 
 func (e *EventsTestSuite) TestEvent_TableName() {
