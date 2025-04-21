@@ -65,8 +65,32 @@ func transformData(data map[string]any, tc kafkalib.TopicConfig) map[string]any 
 	return data
 }
 
-func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfig, cfgMode config.Mode) (Event, error) {
+func buildFilteredColumns(event cdc.Event, tc kafkalib.TopicConfig) (*columns.Columns, error) {
 	cols, err := event.GetColumns()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, col := range tc.ColumnsToExclude {
+		cols.DeleteColumn(col)
+	}
+
+	if len(tc.ColumnsToInclude) > 0 {
+		var filteredColumns columns.Columns
+		for _, col := range tc.ColumnsToInclude {
+			if _, ok := cols.GetColumn(col); !ok {
+				filteredColumns.AddColumn(columns.NewColumn(col, typing.Invalid))
+			}
+		}
+
+		return &filteredColumns, nil
+	}
+
+	return cols, nil
+}
+
+func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfig, cfgMode config.Mode) (Event, error) {
+	cols, err := buildFilteredColumns(event, tc)
 	if err != nil {
 		return Event{}, err
 	}
