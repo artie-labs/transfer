@@ -91,15 +91,13 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	} else {
 		// Upload the CSV file to Snowflake internal stage
 		tableStageName := addPrefixToTableName(tempTableID, "%")
-		putQuery := fmt.Sprintf("PUT 'file://%s' @%s AUTO_COMPRESS=TRUE", file.FilePath, tableStageName)
+		putQuery := fmt.Sprintf("PUT 'file://%s' @%s", file.FilePath, tableStageName)
 		if _, err = s.ExecContext(ctx, putQuery); err != nil {
 			return fmt.Errorf("failed to run PUT for temporary table: %w", err)
 		}
 	}
 
 	tableStageName := addPrefixToTableName(tempTableID, "%")
-	// We are appending gz to the file name since it was compressed by the PUT command.
-	fileName := fmt.Sprintf("%s.gz", file.FileName)
 	if s.useExternalStage() {
 		castedTableID, ok := tempTableID.(dialect.TableIdentifier)
 		if !ok {
@@ -108,11 +106,9 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 
 		// Fix the S3 path by ensuring there's a slash between the stage name and the file name
 		tableStageName = fmt.Sprintf("%s.%s.%s/", castedTableID.Database(), castedTableID.Schema(), filepath.Join(s.config.Snowflake.ExternalStage.Name, s.config.Snowflake.ExternalStage.Prefix))
-		// We don't need to append .gz to the file name since it was already compressed by [s.writeTemporaryTableFileGZIP]
-		fileName = file.FileName
 	}
 
-	copyCommand := s.dialect().BuildCopyIntoTableQuery(tempTableID, tableData.ReadOnlyInMemoryCols().ValidColumns(), tableStageName, fileName)
+	copyCommand := s.dialect().BuildCopyIntoTableQuery(tempTableID, tableData.ReadOnlyInMemoryCols().ValidColumns(), tableStageName, file.FileName)
 	if additionalSettings.AdditionalCopyClause != "" {
 		copyCommand += " " + additionalSettings.AdditionalCopyClause
 	}
