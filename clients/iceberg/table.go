@@ -111,3 +111,12 @@ func (s Store) DeleteTable(ctx context.Context, tableID sql.TableIdentifier) err
 
 	return nil
 }
+
+func (s Store) TruncateTable(ctx context.Context, tableID sql.TableIdentifier) error {
+	query := fmt.Sprintf("TRUNCATE TABLE %s", tableID.FullyQualifiedName())
+	if err := s.apacheLivyClient.ExecContext(ctx, query); err != nil {
+		return fmt.Errorf("failed to truncate table: %w", err)
+	}
+
+	return nil
+}
