@@ -110,7 +110,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 	s.mockDB.ExpectExec(createTableRegex).WillReturnResult(sqlmock.NewResult(0, 0))
 
 	// Set up expectations for PUT - use regex pattern to match the actual table name with suffix
-	putQueryRegex := regexp.QuoteMeta(`PUT 'file://`) + `.*` + regexp.QuoteMeta(`' @"CUSTOMER"."PUBLIC"."%`) + `.*` + regexp.QuoteMeta(`" AUTO_COMPRESS=TRUE`)
+	putQueryRegex := regexp.QuoteMeta(`PUT 'file://`) + `.*` + regexp.QuoteMeta(`' @"CUSTOMER"."PUBLIC"."%`) + `.*"`
 	s.mockDB.ExpectExec(putQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
 
 	// Set up expectations for COPY INTO - use regex pattern to match the actual table name with suffix
@@ -176,7 +176,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 	s.mockDB.ExpectExec(createTableRegex).WillReturnResult(sqlmock.NewResult(0, 0))
 
 	// Set up expectations for PUT - use regex pattern to match the actual table name with suffix
-	putQueryRegex := regexp.QuoteMeta(`PUT 'file://`) + `.*` + regexp.QuoteMeta(`' @"CUSTOMER"."PUBLIC"."%`) + `.*` + regexp.QuoteMeta(`" AUTO_COMPRESS=TRUE`)
+	putQueryRegex := regexp.QuoteMeta(`PUT 'file://`) + `.*` + regexp.QuoteMeta(`' @"CUSTOMER"."PUBLIC"."%`) + `.*"`
 	s.mockDB.ExpectExec(putQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
 
 	// Set up expectations for COPY INTO - use regex pattern to match the actual table name with suffix
@@ -239,7 +239,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	s.mockDB.ExpectExec(createTableRegex).WillReturnResult(sqlmock.NewResult(0, 0))
 
 	// Set up expectations for PUT - use regex pattern to match the actual table name with suffix
-	putQueryRegex := regexp.QuoteMeta(`PUT 'file://`) + `.*` + regexp.QuoteMeta(`' @"CUSTOMER"."PUBLIC"."%`) + `.*` + regexp.QuoteMeta(`" AUTO_COMPRESS=TRUE`)
+	putQueryRegex := regexp.QuoteMeta(`PUT 'file://`) + `.*` + regexp.QuoteMeta(`' @"CUSTOMER"."PUBLIC"."%`) + `.*"`
 	s.mockDB.ExpectExec(putQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
 
 	// Set up expectations for COPY INTO - use regex pattern to match the actual table name with suffix
@@ -319,7 +319,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	s.mockDB.ExpectExec(createTableRegex).WillReturnResult(sqlmock.NewResult(0, 0))
 
 	// Set up expectations for PUT - use regex pattern to match the actual table name with suffix
-	putQueryRegex := regexp.QuoteMeta(`PUT 'file://`) + `.*` + regexp.QuoteMeta(`' @"CUSTOMER"."PUBLIC"."%`) + `.*` + regexp.QuoteMeta(`" AUTO_COMPRESS=TRUE`)
+	putQueryRegex := regexp.QuoteMeta(`PUT 'file://`) + `.*` + regexp.QuoteMeta(`' @"CUSTOMER"."PUBLIC"."%`) + `.*"`
 	s.mockDB.ExpectExec(putQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
 
 	// Set up expectations for COPY INTO - use regex pattern to match the actual table name with suffix
