@@ -59,6 +59,13 @@ func transformData(data map[string]any, tc kafkalib.TopicConfig) map[string]any 
 			}
 		}
 
+		// Include Artie columns
+		for _, col := range constants.ArtieColumns {
+			if value, ok := data[col]; ok {
+				filteredData[col] = value
+			}
+		}
+
 		return filteredData
 	}
 
@@ -78,6 +85,12 @@ func buildFilteredColumns(event cdc.Event, tc kafkalib.TopicConfig) (*columns.Co
 	if len(tc.ColumnsToInclude) > 0 {
 		var filteredColumns columns.Columns
 		for _, col := range tc.ColumnsToInclude {
+			if existingColumn, ok := cols.GetColumn(col); ok {
+				filteredColumns.AddColumn(existingColumn)
+			}
+		}
+
+		for _, col := range constants.ArtieColumns {
 			if existingColumn, ok := cols.GetColumn(col); ok {
 				filteredColumns.AddColumn(existingColumn)
 			}

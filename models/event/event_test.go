@@ -112,6 +112,11 @@ func (e *EventsTestSuite) TestTransformData() {
 			data := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToInclude: []string{"foo"}})
 			assert.Equal(e.T(), map[string]any{"foo": "bar"}, data)
 		}
+		{
+			// include foo, but also artie columns
+			data := transformData(map[string]any{"foo": "bar", "abc": "def", constants.DeleteColumnMarker: true}, kafkalib.TopicConfig{ColumnsToInclude: []string{"foo"}})
+			assert.Equal(e.T(), map[string]any{"foo": "bar", constants.DeleteColumnMarker: true}, data)
+		}
 	}
 }
 
@@ -154,6 +159,19 @@ func (e *EventsTestSuite) TestBuildFilteredColumns() {
 		}
 		testBuildFilteredColumns(e.T(), e.fakeEvent, kafkalib.TopicConfig{ColumnsToInclude: []string{"foo"}}, fakeCols, columns.NewColumns([]columns.Column{
 			columns.NewColumn("foo", typing.String),
+		}))
+	}
+	{
+		// Include foo, but also artie columns
+		fakeCols := []columns.Column{
+			columns.NewColumn("foo", typing.String),
+			columns.NewColumn("bar", typing.String),
+			columns.NewColumn("baz", typing.String),
+			columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean),
+		}
+		testBuildFilteredColumns(e.T(), e.fakeEvent, kafkalib.TopicConfig{ColumnsToInclude: []string{"foo"}}, fakeCols, columns.NewColumns([]columns.Column{
+			columns.NewColumn("foo", typing.String),
+			columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean),
 		}))
 	}
 }
