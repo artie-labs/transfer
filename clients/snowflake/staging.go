@@ -2,7 +2,6 @@ package snowflake
 
 import (
 	"context"
-	"encoding/csv"
 	"fmt"
 	"log/slog"
 	"os"
@@ -167,7 +166,7 @@ type File struct {
 	FileName string
 }
 
-func (s *Store) writeTemporaryTableFileGZIP(tableData *optimization.TableData, newTableID sql.TableIdentifier) (File, error) {
+func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID sql.TableIdentifier) (File, error) {
 	fp := filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv.gz", strings.ReplaceAll(newTableID.FullyQualifiedName(), `"`, "")))
 	gzipWriter, err := csvwriter.NewGzipWriter(fp)
 	if err != nil {
@@ -198,42 +197,4 @@ func (s *Store) writeTemporaryTableFileGZIP(tableData *optimization.TableData, n
 	}
 
 	return File{FilePath: fp, FileName: gzipWriter.FileName()}, nil
-}
-
-// TODO: Deprecate this in favor of writing GZIP delta files directly without relying on Snowflake's auto compression
-func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID sql.TableIdentifier) (File, error) {
-	if s.useExternalStage() {
-		return s.writeTemporaryTableFileGZIP(tableData, newTableID)
-	}
-
-	fileName := fmt.Sprintf("%s.csv", strings.ReplaceAll(newTableID.FullyQualifiedName(), `"`, ""))
-	fp := filepath.Join(os.TempDir(), fileName)
-	file, err := os.Create(fp)
-	if err != nil {
-		return File{}, err
-	}
-
-	defer file.Close()
-	writer := csv.NewWriter(file)
-	writer.Comma = '\t'
-
-	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
-	for _, row := range tableData.Rows() {
-		var csvRow []string
-		for _, col := range columns {
-			castedValue, castErr := castColValStaging(row[col.Name()], col.KindDetails)
-			if castErr != nil {
-				return File{}, fmt.Errorf("failed to cast value '%v': %w", row[col.Name()], castErr)
-			}
-
-			csvRow = append(csvRow, castedValue)
-		}
-
-		if err = writer.Write(csvRow); err != nil {
-			return File{}, fmt.Errorf("failed to write to csv: %w", err)
-		}
-	}
-
-	writer.Flush()
-	return File{FilePath: fp, FileName: fileName}, writer.Error()
 }
