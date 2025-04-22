@@ -169,7 +169,7 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 		s.mockDB.ExpectExec(createTableRegex).WillReturnResult(sqlmock.NewResult(0, 0))
 
 		stagingTableID := tempTableID.WithTable("%" + tempTableID.Table())
-		putQueryRegex := regexp.QuoteMeta(fmt.Sprintf(`PUT 'file://%s' @"DATABASE"."SCHEMA".%s AUTO_COMPRESS=TRUE`,
+		putQueryRegex := regexp.QuoteMeta(fmt.Sprintf(`PUT 'file://%s' @"DATABASE"."SCHEMA".%s`,
 			filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv", strings.ReplaceAll(tempTableName, `"`, ""))),
 			stagingTableID.EscapedTable()))
 		s.mockDB.ExpectExec(putQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
@@ -185,7 +185,7 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 	{
 		// Set up expectations for the second test case (don't create temporary table)
 		stagingTableID := tempTableID.WithTable("%" + tempTableID.Table())
-		putQueryRegex := regexp.QuoteMeta(fmt.Sprintf(`PUT 'file://%s' @"DATABASE"."SCHEMA".%s AUTO_COMPRESS=TRUE`,
+		putQueryRegex := regexp.QuoteMeta(fmt.Sprintf(`PUT 'file://%s' @"DATABASE"."SCHEMA".%s`,
 			filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv", strings.ReplaceAll(tempTableName, `"`, ""))),
 			stagingTableID.EscapedTable()))
 		s.mockDB.ExpectExec(putQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
@@ -203,7 +203,7 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 func (s *SnowflakeTestSuite) TestLoadTemporaryTable() {
 	tempTableID, tableData := generateTableData(100)
 	file, err := s.stageStore.writeTemporaryTableFile(tableData, tempTableID)
-	assert.Equal(s.T(), fmt.Sprintf("%s.csv", strings.ReplaceAll(tempTableID.FullyQualifiedName(), `"`, "")), file.FileName)
+	assert.Equal(s.T(), fmt.Sprintf("%s.csv.gz", strings.ReplaceAll(tempTableID.FullyQualifiedName(), `"`, "")), file.FileName)
 	assert.NoError(s.T(), err)
 	// Read the CSV and confirm.
 	csvfile, err := os.Open(file.FilePath)
