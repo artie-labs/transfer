@@ -204,8 +204,9 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 func (s *SnowflakeTestSuite) TestLoadTemporaryTable() {
 	tempTableID, tableData := generateTableData(100)
 	file, err := s.stageStore.writeTemporaryTableFile(tableData, tempTableID)
-	assert.Equal(s.T(), fmt.Sprintf("%s.csv.gz", strings.ReplaceAll(tempTableID.FullyQualifiedName(), `"`, "")), file.FileName)
 	assert.NoError(s.T(), err)
+	assert.True(s.T(), strings.HasPrefix(file.FileName, fmt.Sprintf("%s_", strings.ReplaceAll(tempTableID.FullyQualifiedName(), `"`, ""))))
+	assert.True(s.T(), strings.HasSuffix(file.FileName, ".csv.gz"))
 
 	// Read the CSV and confirm.
 	csvfile, err := os.Open(file.FilePath)
