@@ -51,6 +51,7 @@ func InterfaceToArrayString(val any, recastAsArray bool) ([]string, error) {
 
 			vals = append(vals, string(bytes))
 		} else {
+			// TODO: Do we need to escape backslashes?
 			vals = append(vals, stringutil.EscapeBackslashes(fmt.Sprint(value)))
 		}
 	}
