@@ -18,9 +18,6 @@ const (
 	sleepBaseMs                     = 1_000
 	sleepMaxMs                      = 3_000
 	defaultHeartbeatTimeoutInSecond = 300
-
-	defaultDriverMemory = "512M"
-	defaultCores        = 0.5
 )
 
 type Client struct {
@@ -30,10 +27,6 @@ type Client struct {
 	sessionConf                     map[string]any
 	sessionJars                     []string
 	sessionHeartbeatTimeoutInSecond int
-	driverMemory                    string
-	driverCores                     int
-	executorMemory                  string
-	executorCores                   int
 
 	lastChecked time.Time
 }
