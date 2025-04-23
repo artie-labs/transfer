@@ -6,6 +6,8 @@ import (
 	"strings"
 )
 
+const ErrTooManySessionsCreated = "Rejected, too many sessions are being created!"
+
 // SessionKind - https://livy.incubator.apache.org/docs/latest/rest-api.html#session-kind
 type SessionKind string
 
@@ -135,4 +137,8 @@ type GetSchemaFieldResponse struct {
 	Type     string         `json:"type"`
 	Nullable bool           `json:"nullable"`
 	Metadata map[string]any `json:"metadata"`
+}
+
+type ErrorResponse struct {
+	Message string `json:"msg"`
 }

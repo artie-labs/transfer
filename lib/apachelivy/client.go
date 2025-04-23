@@ -184,6 +184,18 @@ func (c *Client) newSession(ctx context.Context, kind SessionKind, blockUntilRea
 
 	resp, err := c.doRequest(ctx, "POST", "/sessions", body)
 	if err != nil {
+		var errorResponse ErrorResponse
+		if err = json.Unmarshal(resp.body, &errorResponse); err != nil {
+			return fmt.Errorf("failed to unmarshal error response: %w", err)
+		}
+
+		if errorResponse.Message == ErrTooManySessionsCreated {
+			sleepTime := jitter.Jitter(sleepBaseMs, sleepMaxMs, 0)
+			slog.Info("Too many sessions created, throttling", slog.String("message", errorResponse.Message), slog.Duration("sleepTime", sleepTime))
+			time.Sleep(sleepTime)
+			return c.newSession(ctx, kind, blockUntilReady)
+		}
+
 		slog.Warn("Failed to create session", slog.Any("err", err), slog.String("response", string(resp.body)))
 		return err
 	}
