@@ -18,6 +18,7 @@ import (
 	"github.com/artie-labs/transfer/lib/maputil"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/values"
 )
@@ -163,7 +164,7 @@ type File struct {
 }
 
 func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID sql.TableIdentifier) (File, error) {
-	fp := filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv.gz", strings.ReplaceAll(newTableID.FullyQualifiedName(), `"`, "")))
+	fp := filepath.Join(os.TempDir(), fmt.Sprintf("%s_%s.csv.gz", strings.ReplaceAll(newTableID.FullyQualifiedName(), `"`, ""), stringutil.Random(5)))
 	gzipWriter, err := csvwriter.NewGzipWriter(fp)
 	if err != nil {
 		return File{}, fmt.Errorf("failed to create gzip writer: %w", err)
