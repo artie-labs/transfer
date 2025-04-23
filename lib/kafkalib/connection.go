@@ -1,6 +1,7 @@
 package kafkalib
 
 import (
+	"cmp"
 	"context"
 	"crypto/tls"
 	"fmt"
@@ -11,6 +12,8 @@ import (
 	"github.com/segmentio/kafka-go/sasl/aws_msk_iam_v2"
 	"github.com/segmentio/kafka-go/sasl/scram"
 )
+
+const DefaultTimeout = 10 * time.Second
 
 type Mechanism string
 
@@ -25,14 +28,17 @@ type Connection struct {
 	disableTLS      bool
 	username        string
 	password        string
+
+	timeout time.Duration
 }
 
-func NewConnection(enableAWSMSKIAM bool, disableTLS bool, username, password string) Connection {
+func NewConnection(enableAWSMSKIAM bool, disableTLS bool, username, password string, timeout time.Duration) Connection {
 	return Connection{
 		enableAWSMSKIAM: enableAWSMSKIAM,
 		disableTLS:      disableTLS,
 		username:        username,
 		password:        password,
+		timeout:         cmp.Or(timeout, DefaultTimeout),
 	}
 }
 
@@ -50,7 +56,7 @@ func (c Connection) Mechanism() Mechanism {
 
 func (c Connection) Dialer(ctx context.Context, awsOptFns ...func(options *awsCfg.LoadOptions) error) (*kafka.Dialer, error) {
 	dialer := &kafka.Dialer{
-		Timeout:   10 * time.Second,
+		Timeout:   c.timeout,
 		DualStack: true,
 	}
 
@@ -85,7 +91,7 @@ func (c Connection) Dialer(ctx context.Context, awsOptFns ...func(options *awsCf
 
 func (c Connection) Transport(ctx context.Context, awsOptFns ...func(options *awsCfg.LoadOptions) error) (*kafka.Transport, error) {
 	transport := &kafka.Transport{
-		DialTimeout: 10 * time.Second,
+		DialTimeout: c.timeout,
 	}
 
 	switch c.Mechanism() {
