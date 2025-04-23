@@ -28,12 +28,13 @@ func InterfaceToArrayString(val any, recastAsArray bool) ([]string, error) {
 	for i := 0; i < list.Len(); i++ {
 		kind := list.Index(i).Kind()
 		value := list.Index(i).Interface()
-		var shouldParse bool
+
 		if stringValue, ok := value.(string); ok {
 			vals = append(vals, stringValue)
 			continue
 		}
 
+		var shouldParse bool
 		if kind == reflect.Interface {
 			valMap, isOk := value.(map[string]any)
 			if isOk {
