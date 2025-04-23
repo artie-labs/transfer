@@ -57,6 +57,11 @@ func TestToArrayString(t *testing.T) {
 		assert.Equal(t, []string{"[foo bar]", "[abc def]"}, value)
 	}
 	{
+		value, err := InterfaceToArrayString([]any{`{"foo":"bar"}`}, true)
+		assert.NoError(t, err)
+		assert.Equal(t, []string{`{"foo":"bar"}`}, value)
+	}
+	{
 		// Test boolean recast as array
 		value, err := InterfaceToArrayString(true, true)
 		assert.NoError(t, err)
