@@ -127,7 +127,7 @@ func TestArray_Convert(t *testing.T) {
 			value, err := NewArray(JSON{}.Convert).Convert([]any{`{"body": "they are on to us", "sender": "pablo"}`})
 			assert.NoError(t, err)
 			assert.Len(t, value.([]any), 1)
-			assert.ElementsMatch(t, []any{`{"body":"they are on to us","sender":"pablo"}`}, value.([]any))
+			assert.ElementsMatch(t, []any{map[string]any{"body": "they are on to us", "sender": "pablo"}}, value.([]any))
 		}
 	}
 }
