@@ -36,7 +36,11 @@ func castColValStaging(colVal any, colKind typing.KindDetails) (string, error) {
 func (s Store) buildColumnParts(columns []columns.Column) []string {
 	var colParts []string
 	for _, col := range columns {
-		colPart := fmt.Sprintf("%s %s", col.Name(), s.Dialect().DataTypeForKind(col.KindDetails, col.PrimaryKey(), config.SharedDestinationColumnSettings{}))
+		colPart := fmt.Sprintf("%s %s",
+			s.Dialect().BuildIdentifier(col.Name()),
+			s.Dialect().DataTypeForKind(col.KindDetails, col.PrimaryKey(), config.SharedDestinationColumnSettings{}),
+		)
+
 		colParts = append(colParts, colPart)
 	}
 
