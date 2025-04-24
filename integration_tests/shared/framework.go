@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/artie-labs/transfer/clients/bigquery/dialect"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
@@ -116,7 +117,13 @@ func (tf *TestFramework) VerifyRowCount(expected int) error {
 }
 
 func (tf *TestFramework) VerifyDataContent(rowCount int) error {
-	rows, err := tf.dest.Query(fmt.Sprintf("SELECT id, name, value, json_data, json_array FROM %s ORDER BY id", tf.tableID.FullyQualifiedName()))
+	baseQuery := fmt.Sprintf("SELECT id, name, value, json_data, json_array FROM %s ORDER BY id", tf.tableID.FullyQualifiedName())
+
+	if _, ok := tf.dest.Dialect().(dialect.BigQueryDialect); ok {
+		baseQuery = fmt.Sprintf("SELECT id, name, value, TO_JSON_STRING(json_data), TO_JSON_STRING(json_array) FROM %s ORDER BY id", tf.tableID.FullyQualifiedName())
+	}
+
+	rows, err := tf.dest.Query(baseQuery)
 	if err != nil {
 		return fmt.Errorf("failed to query table data: %w", err)
 	}
@@ -178,7 +185,9 @@ func (tf *TestFramework) VerifyDataContent(rowCount int) error {
 				"array_field2": i + 2,
 			},
 		}
+
 		var actualJSONArray []interface{}
+		fmt.Println("actualJSONArray", string(jsonArrayStr))
 		if err := json.Unmarshal([]byte(jsonArrayStr), &actualJSONArray); err != nil {
 			return fmt.Errorf("failed to unmarshal json_array for row %d: %w", i, err)
 		}
