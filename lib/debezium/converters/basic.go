@@ -124,8 +124,6 @@ func (a Array) Convert(value any) (any, error) {
 			return nil, err
 		}
 
-		fmt.Println("element", element, "convertedElement", convertedElement)
-
 		convertedElements[i] = convertedElement
 	}
 
