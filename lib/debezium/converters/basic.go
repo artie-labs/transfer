@@ -21,7 +21,7 @@ func (JSON) Convert(value any) (any, error) {
 		return value, nil
 	}
 
-	return jsonutil.SanitizePayload(valueString)
+	return jsonutil.UnmarshalPayload(valueString)
 }
 
 func (JSON) ToKindDetails() typing.KindDetails {

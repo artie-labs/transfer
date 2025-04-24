@@ -19,7 +19,7 @@ func TestJSON_Convert(t *testing.T) {
 		// JSON with duplicate values
 		value, err := JSON{}.Convert(`{"a": 1, "a": 2}`)
 		assert.Nil(t, err)
-		assert.Equal(t, `{"a":2}`, value)
+		assert.Equal(t, map[string]any{"a": float64(2)}, value)
 	}
 }
 
@@ -127,7 +127,7 @@ func TestArray_Convert(t *testing.T) {
 			value, err := NewArray(JSON{}.Convert).Convert([]any{`{"body": "they are on to us", "sender": "pablo"}`})
 			assert.NoError(t, err)
 			assert.Len(t, value.([]any), 1)
-			assert.ElementsMatch(t, []any{`{"body":"they are on to us","sender":"pablo"}`}, value.([]any))
+			assert.ElementsMatch(t, []any{map[string]any{"body": "they are on to us", "sender": "pablo"}}, value.([]any))
 		}
 	}
 }

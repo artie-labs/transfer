@@ -146,7 +146,7 @@ func TestField_ParseValue(t *testing.T) {
 			// Valid
 			value, err := field.ParseValue(`{"foo": "bar", "foo": "bar"}`)
 			assert.NoError(t, err)
-			assert.Equal(t, `{"foo":"bar"}`, value)
+			assert.Equal(t, map[string]any{"foo": "bar"}, value)
 		}
 		{
 			// Malformed
@@ -163,13 +163,13 @@ func TestField_ParseValue(t *testing.T) {
 			// Array
 			val, err := field.ParseValue(`[{"foo":"bar", "foo": "bar"}, {"hello":"world"}, {"dusty":"the mini aussie"}]`)
 			assert.NoError(t, err)
-			assert.Equal(t, `[{"foo":"bar"},{"hello":"world"},{"dusty":"the mini aussie"}]`, val)
+			assert.Equal(t, []any{map[string]any{"foo": "bar"}, map[string]any{"hello": "world"}, map[string]any{"dusty": "the mini aussie"}}, val)
 		}
 		{
 			// Array of objects
 			val, err := field.ParseValue(`[[{"foo":"bar", "foo": "bar"}], [{"hello":"world"}, {"dusty":"the mini aussie"}]]`)
 			assert.NoError(t, err)
-			assert.Equal(t, `[[{"foo":"bar"}],[{"hello":"world"},{"dusty":"the mini aussie"}]]`, val)
+			assert.Equal(t, []any{[]any{map[string]any{"foo": "bar"}}, []any{map[string]any{"hello": "world"}, map[string]any{"dusty": "the mini aussie"}}}, val)
 		}
 	}
 	{
@@ -178,7 +178,7 @@ func TestField_ParseValue(t *testing.T) {
 		value, err := field.ParseValue([]any{`{"foo": "bar", "foo": "bar"}`, `{"hello": "world"}`})
 		assert.NoError(t, err)
 		assert.Len(t, value.([]any), 2)
-		assert.ElementsMatch(t, []string{`{"foo":"bar"}`, `{"hello":"world"}`}, value)
+		assert.ElementsMatch(t, []any{map[string]any{"foo": "bar"}, map[string]any{"hello": "world"}}, value)
 	}
 	{
 		// Int32
