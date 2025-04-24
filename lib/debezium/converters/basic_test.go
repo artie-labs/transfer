@@ -1,7 +1,6 @@
 package converters
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -128,7 +127,6 @@ func TestArray_Convert(t *testing.T) {
 			value, err := NewArray(JSON{}.Convert).Convert([]any{`{"body": "they are on to us", "sender": "pablo"}`})
 			assert.NoError(t, err)
 			assert.Len(t, value.([]any), 1)
-			fmt.Println("value", value)
 			assert.ElementsMatch(t, []any{`{"body":"they are on to us","sender":"pablo"}`}, value.([]any))
 		}
 	}

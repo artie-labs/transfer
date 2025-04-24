@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/artie-labs/transfer/clients/bigquery/dialect"
+	databricksdialect "github.com/artie-labs/transfer/clients/databricks/dialect"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
@@ -186,8 +187,14 @@ func (tf *TestFramework) VerifyDataContent(rowCount int) error {
 			},
 		}
 
+		if arrayAsListOfString(tf.dest) {
+			expectedJSONArray = []any{
+				fmt.Sprintf(`{"array_field1":"array_value_%d_1","array_field2":%d}`, i, i+1),
+				fmt.Sprintf(`{"array_field1":"array_value_%d_2","array_field2":%d}`, i, i+2),
+			}
+		}
+
 		var actualJSONArray []interface{}
-		fmt.Println("actualJSONArray", string(jsonArrayStr))
 		if err := json.Unmarshal([]byte(jsonArrayStr), &actualJSONArray); err != nil {
 			return fmt.Errorf("failed to unmarshal json_array for row %d: %w", i, err)
 		}
@@ -236,4 +243,14 @@ func (tf *TestFramework) GetDestination() destination.Destination {
 
 func (tf *TestFramework) GetContext() context.Context {
 	return tf.ctx
+}
+
+// These destinations return array as array<string>.
+func arrayAsListOfString(dest destination.Destination) bool {
+	switch dest.Dialect().(type) {
+	case dialect.BigQueryDialect, databricksdialect.DatabricksDialect:
+		return true
+	default:
+		return false
+	}
 }
