@@ -2,7 +2,9 @@ package shared
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config"
@@ -39,6 +41,8 @@ func (tf *TestFramework) SetupColumns(additionalColumns map[string]typing.KindDe
 		"name":       typing.String,
 		"created_at": typing.TimestampTZ,
 		"value":      typing.Float,
+		"json_data":  typing.Struct,
+		"json_array": typing.Array,
 	}
 
 	for colName, colType := range colTypes {
@@ -60,11 +64,30 @@ func (tf *TestFramework) GenerateRowDataForMerge(pkValue int, delete bool) map[s
 }
 
 func (tf *TestFramework) GenerateRowData(pkValue int) map[string]any {
+	jsonData := map[string]interface{}{
+		"field1": fmt.Sprintf("value_%d", pkValue),
+		"field2": pkValue,
+		"field3": pkValue%2 == 0,
+	}
+
+	jsonArray := []interface{}{
+		map[string]interface{}{
+			"array_field1": fmt.Sprintf("array_value_%d_1", pkValue),
+			"array_field2": pkValue + 1,
+		},
+		map[string]interface{}{
+			"array_field1": fmt.Sprintf("array_value_%d_2", pkValue),
+			"array_field2": pkValue + 2,
+		},
+	}
+
 	return map[string]any{
 		"id":         pkValue,
 		"name":       fmt.Sprintf("test_name_%d", pkValue),
 		"created_at": time.Now().Format(time.RFC3339Nano),
 		"value":      float64(pkValue) * 1.5,
+		"json_data":  jsonData,
+		"json_array": jsonArray,
 	}
 }
 
@@ -93,7 +116,7 @@ func (tf *TestFramework) VerifyRowCount(expected int) error {
 }
 
 func (tf *TestFramework) VerifyDataContent(rowCount int) error {
-	rows, err := tf.dest.Query(fmt.Sprintf("SELECT id, name, value FROM %s ORDER BY id", tf.tableID.FullyQualifiedName()))
+	rows, err := tf.dest.Query(fmt.Sprintf("SELECT id, name, value, json_data, json_array FROM %s ORDER BY id", tf.tableID.FullyQualifiedName()))
 	if err != nil {
 		return fmt.Errorf("failed to query table data: %w", err)
 	}
@@ -106,7 +129,9 @@ func (tf *TestFramework) VerifyDataContent(rowCount int) error {
 		var id int
 		var name string
 		var value float64
-		if err := rows.Scan(&id, &name, &value); err != nil {
+		var jsonDataStr string
+		var jsonArrayStr string
+		if err := rows.Scan(&id, &name, &value, &jsonDataStr, &jsonArrayStr); err != nil {
 			return fmt.Errorf("failed to scan row %d: %w", i, err)
 		}
 
@@ -120,6 +145,55 @@ func (tf *TestFramework) VerifyDataContent(rowCount int) error {
 		}
 		if value != expectedValue {
 			return fmt.Errorf("unexpected value: expected %f, got %f", expectedValue, value)
+		}
+
+		// Verify JSON data
+		expectedJSONData := map[string]interface{}{
+			"field1": fmt.Sprintf("value_%d", i),
+			"field2": i,
+			"field3": i%2 == 0,
+		}
+		var actualJSONData map[string]interface{}
+		if err := json.Unmarshal([]byte(jsonDataStr), &actualJSONData); err != nil {
+			return fmt.Errorf("failed to unmarshal json_data for row %d: %w", i, err)
+		}
+
+		// Normalize numeric types in actual JSON data
+		if field2, ok := actualJSONData["field2"].(float64); ok {
+			actualJSONData["field2"] = int(field2)
+		}
+
+		if !reflect.DeepEqual(expectedJSONData, actualJSONData) {
+			return fmt.Errorf("unexpected json_data for row %d: expected %v, got %v", i, expectedJSONData, actualJSONData)
+		}
+
+		// Verify JSON array
+		expectedJSONArray := []interface{}{
+			map[string]interface{}{
+				"array_field1": fmt.Sprintf("array_value_%d_1", i),
+				"array_field2": i + 1,
+			},
+			map[string]interface{}{
+				"array_field1": fmt.Sprintf("array_value_%d_2", i),
+				"array_field2": i + 2,
+			},
+		}
+		var actualJSONArray []interface{}
+		if err := json.Unmarshal([]byte(jsonArrayStr), &actualJSONArray); err != nil {
+			return fmt.Errorf("failed to unmarshal json_array for row %d: %w", i, err)
+		}
+
+		// Normalize numeric types in actual JSON array
+		for _, item := range actualJSONArray {
+			if obj, ok := item.(map[string]interface{}); ok {
+				if field2, ok := obj["array_field2"].(float64); ok {
+					obj["array_field2"] = int(field2)
+				}
+			}
+		}
+
+		if !reflect.DeepEqual(expectedJSONArray, actualJSONArray) {
+			return fmt.Errorf("unexpected json_array for row %d: expected %v, got %v", i, expectedJSONArray, actualJSONArray)
 		}
 	}
 
