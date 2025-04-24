@@ -7,13 +7,11 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/awslib"
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/csvwriter"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/maputil"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -157,40 +155,6 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	return nil
 }
 
-type File struct {
-	FilePath string
-	FileName string
-}
-
-func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID sql.TableIdentifier) (File, error) {
-	fp := filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv.gz", strings.ReplaceAll(newTableID.FullyQualifiedName(), `"`, "")))
-	gzipWriter, err := csvwriter.NewGzipWriter(fp)
-	if err != nil {
-		return File{}, fmt.Errorf("failed to create gzip writer: %w", err)
-	}
-
-	defer gzipWriter.Close()
-
-	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
-	for _, value := range tableData.Rows() {
-		var row []string
-		for _, col := range columns {
-			castedValue, castErr := castColValStaging(value[col.Name()], col.KindDetails)
-			if castErr != nil {
-				return File{}, castErr
-			}
-
-			row = append(row, castedValue)
-		}
-
-		if err = gzipWriter.Write(row); err != nil {
-			return File{}, fmt.Errorf("failed to write to csv: %w", err)
-		}
-	}
-
-	if err = gzipWriter.Flush(); err != nil {
-		return File{}, fmt.Errorf("failed to flush gzip writer: %w", err)
-	}
-
-	return File{FilePath: fp, FileName: gzipWriter.FileName()}, nil
+func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID sql.TableIdentifier) (shared.File, error) {
+	return shared.WriteTemporaryTableFile(tableData, newTableID, castColValStaging)
 }
