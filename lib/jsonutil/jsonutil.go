@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 )
 
-// SanitizePayload will take in a JSON string, and return a JSON string that has been sanitized (removed duplicate keys)
-func SanitizePayload(val string) (any, error) {
+// ParsePayload will take in a JSON string, and return a JSON string that has been sanitized (removed duplicate keys)
+func ParsePayload(val string) (any, error) {
 	// There are edge cases for when this may happen
 	// Example: JSONB column in a table in Postgres where the table replica identity is set to `default` and it was a delete event.
 	if val == "" {
