@@ -14,7 +14,7 @@ import (
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
-	transfersql "github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
@@ -22,7 +22,7 @@ import (
 type TestFramework struct {
 	ctx         context.Context
 	dest        destination.Destination
-	tableID     transfersql.TableIdentifier
+	tableID     sql.TableIdentifier
 	tableData   *optimization.TableData
 	topicConfig kafkalib.TopicConfig
 }
@@ -301,7 +301,7 @@ func (tf *TestFramework) VerifyDataContentWithRows(ctx context.Context, tableNam
 	return rows.Err()
 }
 
-func (tf *TestFramework) Cleanup(tableID transfersql.TableIdentifier) error {
+func (tf *TestFramework) Cleanup(tableID sql.TableIdentifier) error {
 	dropTableID := tableID.WithDisableDropProtection(true)
 	return tf.dest.DropTable(tf.ctx, dropTableID)
 }
@@ -310,7 +310,7 @@ func (tf *TestFramework) GetTableData() *optimization.TableData {
 	return tf.tableData
 }
 
-func (tf *TestFramework) GetTableID() transfersql.TableIdentifier {
+func (tf *TestFramework) GetTableID() sql.TableIdentifier {
 	return tf.tableID
 }
 
