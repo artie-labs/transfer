@@ -14,7 +14,7 @@ import (
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
-	"github.com/artie-labs/transfer/lib/sql"
+	transfersql "github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
@@ -22,17 +22,26 @@ import (
 type TestFramework struct {
 	ctx         context.Context
 	dest        destination.Destination
-	tableID     sql.TableIdentifier
+	tableID     transfersql.TableIdentifier
 	tableData   *optimization.TableData
 	topicConfig kafkalib.TopicConfig
 }
 
 func NewTestFramework(ctx context.Context, dest destination.Destination, topicConfig kafkalib.TopicConfig) *TestFramework {
+	cols := columns.NewColumns([]columns.Column{
+		columns.NewColumn("id", typing.Integer),
+		columns.NewColumn("name", typing.String),
+		columns.NewColumn("value", typing.Float),
+		columns.NewColumn("json_data", typing.Struct),
+		columns.NewColumn("array_data", typing.Array),
+	})
+
 	return &TestFramework{
 		ctx:         ctx,
 		dest:        dest,
 		tableID:     dest.IdentifierFor(topicConfig.BuildDatabaseAndSchemaPair(), topicConfig.TableName),
 		topicConfig: topicConfig,
+		tableData:   optimization.NewTableData(cols, config.Replication, []string{"id"}, topicConfig, dest.IdentifierFor(topicConfig.BuildDatabaseAndSchemaPair(), topicConfig.TableName).Table()),
 	}
 }
 
@@ -224,7 +233,75 @@ func (tf *TestFramework) VerifyDataContent(rowCount int) error {
 	return nil
 }
 
-func (tf *TestFramework) Cleanup(tableID sql.TableIdentifier) error {
+func (tf *TestFramework) VerifyDataContentWithRows(ctx context.Context, tableName string, rowCount int) error {
+	rows, err := tf.dest.Query(fmt.Sprintf("SELECT * FROM %s ORDER BY id", tableName))
+	if err != nil {
+		return fmt.Errorf("failed to query table: %v", err)
+	}
+	defer rows.Close()
+
+	for i := 0; i < rowCount; i++ {
+		if !rows.Next() {
+			return fmt.Errorf("expected %d rows but got %d", rowCount, i)
+		}
+
+		var id int
+		var name string
+		var value float64
+		var jsonData []byte
+		var arrayData []byte
+
+		if err := rows.Scan(&id, &name, &value, &jsonData, &arrayData); err != nil {
+			return fmt.Errorf("failed to scan row %d: %v", i, err)
+		}
+
+		// Verify id
+		if id != i+1 {
+			return fmt.Errorf("unexpected id value: got %d, want %d", id, i+1)
+		}
+
+		// Verify name
+		expectedName := fmt.Sprintf("name_%d", i+1)
+		if name != expectedName {
+			return fmt.Errorf("unexpected name value: got %s, want %s", name, expectedName)
+		}
+
+		// Verify value
+		expectedValue := float64(i+1) * 1.5
+		if value != expectedValue {
+			return fmt.Errorf("unexpected value: got %f, want %f", value, expectedValue)
+		}
+
+		// Verify JSON data
+		var jsonMap map[string]interface{}
+		if err := json.Unmarshal(jsonData, &jsonMap); err != nil {
+			return fmt.Errorf("failed to unmarshal JSON data: %v", err)
+		}
+
+		if jsonMap["key"] != fmt.Sprintf("value_%d", i+1) {
+			return fmt.Errorf("unexpected JSON value: got %v, want value_%d", jsonMap["key"], i+1)
+		}
+
+		// Verify array data
+		var array []int
+		if err := json.Unmarshal(arrayData, &array); err != nil {
+			return fmt.Errorf("failed to unmarshal array data: %v", err)
+		}
+
+		expectedArray := []int{i + 1, i + 2, i + 3}
+		if !reflect.DeepEqual(array, expectedArray) {
+			return fmt.Errorf("unexpected array value: got %v, want %v", array, expectedArray)
+		}
+	}
+
+	if rows.Next() {
+		return fmt.Errorf("found extra rows beyond expected count of %d", rowCount)
+	}
+
+	return rows.Err()
+}
+
+func (tf *TestFramework) Cleanup(tableID transfersql.TableIdentifier) error {
 	dropTableID := tableID.WithDisableDropProtection(true)
 	return tf.dest.DropTable(tf.ctx, dropTableID)
 }
@@ -233,7 +310,7 @@ func (tf *TestFramework) GetTableData() *optimization.TableData {
 	return tf.tableData
 }
 
-func (tf *TestFramework) GetTableID() sql.TableIdentifier {
+func (tf *TestFramework) GetTableID() transfersql.TableIdentifier {
 	return tf.tableID
 }
 

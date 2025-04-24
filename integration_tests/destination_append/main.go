@@ -49,7 +49,6 @@ func (at *AppendTest) Run() error {
 	}
 
 	at.framework.SetupColumns(nil)
-
 	appendRows := 200
 	appendEvery := 50
 	if err := at.generateTestData(appendRows, appendEvery); err != nil {
@@ -60,7 +59,7 @@ func (at *AppendTest) Run() error {
 		return fmt.Errorf("failed to verify row count: %w", err)
 	}
 
-	if err := at.framework.VerifyDataContent(appendRows * appendEvery); err != nil {
+	if err := at.framework.VerifyDataContentWithRows(at.framework.GetContext(), at.framework.GetTableID().FullyQualifiedName(), appendRows*appendEvery); err != nil {
 		return fmt.Errorf("failed to verify data content: %w", err)
 	}
 
