@@ -17,10 +17,5 @@ func SanitizePayload(val string) (any, error) {
 		return nil, err
 	}
 
-	valBytes, err := json.Marshal(obj)
-	if err != nil {
-		return nil, err
-	}
-
-	return string(valBytes), nil
+	return obj, nil
 }
