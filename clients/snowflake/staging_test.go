@@ -172,14 +172,11 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 		s.mockDB.ExpectExec(createTableRegex).WillReturnResult(sqlmock.NewResult(0, 0))
 
 		stagingTableID := tempTableID.WithTable("%" + tempTableID.Table())
-		putQueryRegex := regexp.QuoteMeta(fmt.Sprintf(`PUT 'file://%s' @"DATABASE"."SCHEMA".%s`,
-			filepath.Join(os.TempDir(), randomFileName),
-			stagingTableID.EscapedTable()))
+		putQueryRegex := regexp.QuoteMeta(fmt.Sprintf(`PUT 'file://%s' @"DATABASE"."SCHEMA".%s`, filepath.Join(os.TempDir(), randomFileName), stagingTableID.EscapedTable()))
 		s.mockDB.ExpectExec(putQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
 
 		resourceName := addPrefixToTableName(tempTableID, "%")
-		copyQueryRegex := regexp.QuoteMeta(fmt.Sprintf(`COPY INTO %s ("USER_ID","FIRST_NAME","LAST_NAME","DUSTY") FROM (SELECT $1,$2,$3,$4 FROM @%s) FILES = ('%s')`,
-			tempTableName, resourceName, randomFileName))
+		copyQueryRegex := regexp.QuoteMeta(fmt.Sprintf(`COPY INTO %s ("USER_ID","FIRST_NAME","LAST_NAME","DUSTY") FROM (SELECT $1,$2,$3,$4 FROM @%s) FILES = ('%s')`, tempTableName, resourceName, randomFileName))
 		s.mockDB.ExpectQuery(copyQueryRegex).WillReturnRows(sqlmock.NewRows([]string{"rows_loaded"}).AddRow(fmt.Sprintf("%d", tableData.NumberOfRows())))
 
 		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(s.T().Context(), tableData, sflkTc, tempTableID, tempTableID, types.AdditionalSettings{}, true))
@@ -188,14 +185,11 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 	{
 		// Set up expectations for the second test case (don't create temporary table)
 		stagingTableID := tempTableID.WithTable("%" + tempTableID.Table())
-		putQueryRegex := regexp.QuoteMeta(fmt.Sprintf(`PUT 'file://%s' @"DATABASE"."SCHEMA".%s`,
-			filepath.Join(os.TempDir(), randomFileName),
-			stagingTableID.EscapedTable()))
+		putQueryRegex := regexp.QuoteMeta(fmt.Sprintf(`PUT 'file://%s' @"DATABASE"."SCHEMA".%s`, filepath.Join(os.TempDir(), randomFileName), stagingTableID.EscapedTable()))
 		s.mockDB.ExpectExec(putQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
 
 		resourceName := addPrefixToTableName(tempTableID, "%")
-		copyQueryRegex := regexp.QuoteMeta(fmt.Sprintf(`COPY INTO %s ("USER_ID","FIRST_NAME","LAST_NAME","DUSTY") FROM (SELECT $1,$2,$3,$4 FROM @%s) FILES = ('%s')`,
-			tempTableName, resourceName, randomFileName))
+		copyQueryRegex := regexp.QuoteMeta(fmt.Sprintf(`COPY INTO %s ("USER_ID","FIRST_NAME","LAST_NAME","DUSTY") FROM (SELECT $1,$2,$3,$4 FROM @%s) FILES = ('%s')`, tempTableName, resourceName, randomFileName))
 		s.mockDB.ExpectQuery(copyQueryRegex).WillReturnRows(sqlmock.NewRows([]string{"rows_loaded"}).AddRow(fmt.Sprintf("%d", tableData.NumberOfRows())))
 
 		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(s.T().Context(), tableData, sflkTc, tempTableID, tempTableID, types.AdditionalSettings{}, false))
