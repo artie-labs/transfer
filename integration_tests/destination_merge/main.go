@@ -8,6 +8,7 @@ import (
 	"os"
 	"reflect"
 
+	bigquerydialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
 	"github.com/artie-labs/transfer/clients/mssql/dialect"
 	"github.com/artie-labs/transfer/integration_tests/shared"
 	"github.com/artie-labs/transfer/lib/config"
@@ -82,6 +83,10 @@ func (mt *MergeTest) verifyUpdatedData(numRows int) error {
 		query = fmt.Sprintf("SELECT TOP %d id, name, value, json_data, json_array FROM %s ORDER BY id ASC", numRows, mt.framework.GetTableID().FullyQualifiedName())
 	}
 
+	if _, ok := mt.framework.GetDestination().Dialect().(bigquerydialect.BigQueryDialect); ok {
+		query = fmt.Sprintf("SELECT id, name, value, TO_JSON_STRING(json_data), TO_JSON_STRING(json_array) FROM %s ORDER BY id ASC LIMIT %d", mt.framework.GetTableID().FullyQualifiedName(), numRows)
+	}
+
 	rows, err := mt.framework.GetDestination().Query(query)
 	if err != nil {
 		return fmt.Errorf("failed to query table data: %w", err)
@@ -144,6 +149,14 @@ func (mt *MergeTest) verifyUpdatedData(numRows int) error {
 				"array_field2": i + 2,
 			},
 		}
+
+		if shared.ArrayAsListOfString(mt.framework.GetDestination()) {
+			expectedJSONArray = []any{
+				fmt.Sprintf(`{"array_field1":"array_value_%d_1","array_field2":%d}`, i, i+1),
+				fmt.Sprintf(`{"array_field1":"array_value_%d_2","array_field2":%d}`, i, i+2),
+			}
+		}
+
 		var actualJSONArray []interface{}
 		if err := json.Unmarshal([]byte(jsonArrayStr), &actualJSONArray); err != nil {
 			return fmt.Errorf("failed to unmarshal json_array for row %d: %w", i, err)

@@ -187,7 +187,7 @@ func (tf *TestFramework) VerifyDataContent(rowCount int) error {
 			},
 		}
 
-		if arrayAsListOfString(tf.dest) {
+		if ArrayAsListOfString(tf.dest) {
 			expectedJSONArray = []any{
 				fmt.Sprintf(`{"array_field1":"array_value_%d_1","array_field2":%d}`, i, i+1),
 				fmt.Sprintf(`{"array_field1":"array_value_%d_2","array_field2":%d}`, i, i+2),
@@ -246,7 +246,7 @@ func (tf *TestFramework) GetContext() context.Context {
 }
 
 // These destinations return array as array<string>.
-func arrayAsListOfString(dest destination.Destination) bool {
+func ArrayAsListOfString(dest destination.Destination) bool {
 	switch dest.Dialect().(type) {
 	case dialect.BigQueryDialect, databricksdialect.DatabricksDialect:
 		return true
