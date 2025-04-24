@@ -234,7 +234,7 @@ func (tf *TestFramework) VerifyDataContent(rowCount int) error {
 }
 
 func (tf *TestFramework) VerifyDataContentWithRows(ctx context.Context, tableName string, rowCount int) error {
-	rows, err := tf.dest.Query(fmt.Sprintf("SELECT * FROM %s ORDER BY id", tableName))
+	rows, err := tf.dest.Query(fmt.Sprintf("SELECT id, name, value, json_data, json_array FROM %s ORDER BY id", tableName))
 	if err != nil {
 		return fmt.Errorf("failed to query table: %v", err)
 	}
