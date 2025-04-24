@@ -2,8 +2,10 @@ package dialect
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
 var _dialect = SnowflakeDialect{}
@@ -12,15 +14,27 @@ type TableIdentifier struct {
 	database              string
 	schema                string
 	table                 string
+	randomFileName        string
 	disableDropProtection bool
 }
 
 func NewTableIdentifier(database, schema, table string) TableIdentifier {
-	return TableIdentifier{
+	ti := TableIdentifier{
 		database: database,
 		schema:   schema,
 		table:    table,
 	}
+
+	ti.randomFileName = fmt.Sprintf("%s_%s.csv.gz", strings.ReplaceAll(ti.FullyQualifiedName(), `"`, ""), stringutil.Random(5))
+	return ti
+}
+
+func (ti TableIdentifier) RandomFileName() (string, error) {
+	if ti.randomFileName == "" {
+		return "", fmt.Errorf("random file name is not set")
+	}
+
+	return ti.randomFileName, nil
 }
 
 func (ti TableIdentifier) Database() string {

@@ -159,6 +159,8 @@ func generateTableData(rows int) (dialect.TableIdentifier, *optimization.TableDa
 func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 	tempTableID, tableData := generateTableData(10)
 	tempTableName := tempTableID.FullyQualifiedName()
+	randomFileName, err := tempTableID.RandomFileName()
+	assert.NoError(s.T(), err)
 	s.stageStore.GetConfigMap().AddTable(tempTableID, types.NewDestinationTableConfig(nil, true))
 	sflkTc := s.stageStore.GetConfigMap().GetTableConfig(tempTableID)
 
@@ -171,13 +173,13 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 
 		stagingTableID := tempTableID.WithTable("%" + tempTableID.Table())
 		putQueryRegex := regexp.QuoteMeta(fmt.Sprintf(`PUT 'file://%s' @"DATABASE"."SCHEMA".%s`,
-			filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv.gz", strings.ReplaceAll(tempTableName, `"`, ""))),
+			filepath.Join(os.TempDir(), randomFileName),
 			stagingTableID.EscapedTable()))
 		s.mockDB.ExpectExec(putQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
 
 		resourceName := addPrefixToTableName(tempTableID, "%")
-		copyQueryRegex := regexp.QuoteMeta(fmt.Sprintf(`COPY INTO %s ("USER_ID","FIRST_NAME","LAST_NAME","DUSTY") FROM (SELECT $1,$2,$3,$4 FROM @%s) FILES = ('%s.csv.gz')`,
-			tempTableName, resourceName, strings.ReplaceAll(tempTableName, `"`, "")))
+		copyQueryRegex := regexp.QuoteMeta(fmt.Sprintf(`COPY INTO %s ("USER_ID","FIRST_NAME","LAST_NAME","DUSTY") FROM (SELECT $1,$2,$3,$4 FROM @%s) FILES = ('%s')`,
+			tempTableName, resourceName, randomFileName))
 		s.mockDB.ExpectQuery(copyQueryRegex).WillReturnRows(sqlmock.NewRows([]string{"rows_loaded"}).AddRow(fmt.Sprintf("%d", tableData.NumberOfRows())))
 
 		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(s.T().Context(), tableData, sflkTc, tempTableID, tempTableID, types.AdditionalSettings{}, true))
@@ -187,13 +189,13 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 		// Set up expectations for the second test case (don't create temporary table)
 		stagingTableID := tempTableID.WithTable("%" + tempTableID.Table())
 		putQueryRegex := regexp.QuoteMeta(fmt.Sprintf(`PUT 'file://%s' @"DATABASE"."SCHEMA".%s`,
-			filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv.gz", strings.ReplaceAll(tempTableName, `"`, ""))),
+			filepath.Join(os.TempDir(), randomFileName),
 			stagingTableID.EscapedTable()))
 		s.mockDB.ExpectExec(putQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
 
 		resourceName := addPrefixToTableName(tempTableID, "%")
-		copyQueryRegex := regexp.QuoteMeta(fmt.Sprintf(`COPY INTO %s ("USER_ID","FIRST_NAME","LAST_NAME","DUSTY") FROM (SELECT $1,$2,$3,$4 FROM @%s) FILES = ('%s.csv.gz')`,
-			tempTableName, resourceName, strings.ReplaceAll(tempTableName, `"`, "")))
+		copyQueryRegex := regexp.QuoteMeta(fmt.Sprintf(`COPY INTO %s ("USER_ID","FIRST_NAME","LAST_NAME","DUSTY") FROM (SELECT $1,$2,$3,$4 FROM @%s) FILES = ('%s')`,
+			tempTableName, resourceName, randomFileName))
 		s.mockDB.ExpectQuery(copyQueryRegex).WillReturnRows(sqlmock.NewRows([]string{"rows_loaded"}).AddRow(fmt.Sprintf("%d", tableData.NumberOfRows())))
 
 		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(s.T().Context(), tableData, sflkTc, tempTableID, tempTableID, types.AdditionalSettings{}, false))

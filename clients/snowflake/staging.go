@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/clients/snowflake/dialect"
@@ -18,7 +17,6 @@ import (
 	"github.com/artie-labs/transfer/lib/maputil"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
-	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/values"
 )
@@ -65,8 +63,13 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		}
 	}
 
+	castedTempTableID, ok := tempTableID.(dialect.TableIdentifier)
+	if !ok {
+		return fmt.Errorf("failed to cast table identifer into dialect.TableIdentifier, type: %T", tempTableID)
+	}
+
 	// Write data into CSV
-	file, err := s.writeTemporaryTableFile(tableData, tempTableID)
+	file, err := s.writeTemporaryTableFile(tableData, castedTempTableID)
 	if err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
 	}
@@ -163,8 +166,13 @@ type File struct {
 	FileName string
 }
 
-func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID sql.TableIdentifier) (File, error) {
-	fp := filepath.Join(os.TempDir(), fmt.Sprintf("%s_%s.csv.gz", strings.ReplaceAll(newTableID.FullyQualifiedName(), `"`, ""), stringutil.Random(5)))
+func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID dialect.TableIdentifier) (File, error) {
+	randomFileName, err := newTableID.RandomFileName()
+	if err != nil {
+		return File{}, fmt.Errorf("failed to get random file name: %w", err)
+	}
+
+	fp := filepath.Join(os.TempDir(), randomFileName)
 	gzipWriter, err := csvwriter.NewGzipWriter(fp)
 	if err != nil {
 		return File{}, fmt.Errorf("failed to create gzip writer: %w", err)
