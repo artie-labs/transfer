@@ -8,7 +8,6 @@ import (
 
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/awslib"
-	"github.com/artie-labs/transfer/lib/csvwriter"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -99,54 +98,17 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 }
 
 func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID sql.TableIdentifier) (string, map[string]int32, error) {
-	filePath := fmt.Sprintf("/tmp/%s.csv.gz", newTableID.FullyQualifiedName())
-	gzipWriter, err := csvwriter.NewGzipWriter(filePath)
+	file, additionalOutput, err := shared.WriteTemporaryTableFile(tableData, newTableID, castColValStaging, s.config.SharedDestinationSettings)
 	if err != nil {
-		return "", nil, err
-	}
-
-	defer gzipWriter.Close()
-
-	_columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
-	columnToNewLengthMap := make(map[string]int32)
-	for _, value := range tableData.Rows() {
-		var row []string
-		for _, col := range _columns {
-			result, err := castColValStaging(
-				value[col.Name()],
-				col.KindDetails,
-				s.config.SharedDestinationSettings,
-			)
-
-			if err != nil {
-				return "", nil, err
-			}
-
-			if result.NewLength > 0 {
-				_newLength, isOk := columnToNewLengthMap[col.Name()]
-				if !isOk || result.NewLength > _newLength {
-					// Update the new length if it's greater than the current one.
-					columnToNewLengthMap[col.Name()] = result.NewLength
-				}
-			}
-			row = append(row, result.Value)
-		}
-
-		if err = gzipWriter.Write(row); err != nil {
-			return "", nil, fmt.Errorf("failed to write to csv: %w", err)
-		}
-	}
-
-	if err = gzipWriter.Flush(); err != nil {
-		return "", nil, fmt.Errorf("failed to flush and close the gzip writer: %w", err)
+		return "", nil, fmt.Errorf("failed to write temporary table file: %w", err)
 	}
 
 	// This will update the staging columns with the new string precision.
-	for colName, newLength := range columnToNewLengthMap {
+	for colName, newLength := range additionalOutput.ColumnToNewLengthMap {
 		tableData.InMemoryColumns().UpsertColumn(colName, columns.UpsertColumnArg{
 			StringPrecision: typing.ToPtr(newLength),
 		})
 	}
 
-	return filePath, columnToNewLengthMap, nil
+	return file.FilePath, additionalOutput.ColumnToNewLengthMap, nil
 }
