@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"path/filepath"
 
 	_ "github.com/databricks/databricks-sql-go"
 	"github.com/databricks/databricks-sql-go/driverctx"
@@ -14,7 +13,6 @@ import (
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/csvwriter"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -111,21 +109,22 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 		return fmt.Errorf("failed to cast temp table ID to TableIdentifier")
 	}
 
-	file := NewFileFromTableID(castedTempTableID, s.volume)
-	fp, err := s.writeTemporaryTableFile(tableData, file.Name())
+	output, err := s.writeTemporaryTableFile(tableData)
 	if err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
 	}
 
+	file := NewFileFromTableID(castedTempTableID, s.volume, output.FileName)
+
 	defer func() {
 		// In the case where PUT or COPY fails, we'll at least delete the temporary file.
-		if deleteErr := os.RemoveAll(fp); deleteErr != nil {
-			slog.Warn("Failed to delete temp file", slog.Any("err", deleteErr), slog.String("filePath", fp))
+		if deleteErr := os.RemoveAll(output.FilePath); deleteErr != nil {
+			slog.Warn("Failed to delete temp file", slog.Any("err", deleteErr), slog.String("filePath", output.FilePath))
 		}
 	}()
 
 	ctx = driverctx.NewContextWithStagingInfo(ctx, []string{"/var", "tmp"})
-	putCommand := fmt.Sprintf("PUT '%s' INTO '%s' OVERWRITE", fp, file.DBFSFilePath())
+	putCommand := fmt.Sprintf("PUT '%s' INTO '%s' OVERWRITE", output.FilePath, file.DBFSFilePath())
 	if _, err = s.ExecContext(ctx, putCommand); err != nil {
 		return fmt.Errorf("failed to run PUT INTO for temporary table: %w", err)
 	}
@@ -181,37 +180,28 @@ func castColValStaging(colVal any, colKind typing.KindDetails) (string, error) {
 	return value, nil
 }
 
-func (s Store) writeTemporaryTableFile(tableData *optimization.TableData, fileName string) (string, error) {
-	fp := filepath.Join(os.TempDir(), fileName)
-	gzipWriter, err := csvwriter.NewGzipWriter(fp)
+func (s Store) writeTemporaryTableFile(tableData *optimization.TableData) (shared.File, error) {
+	valueConverter := func(colValue any, colKind typing.KindDetails, _ config.SharedDestinationSettings) (shared.ValueConvertResponse, error) {
+		value, err := castColValStaging(colValue, colKind)
+		if err != nil {
+			return shared.ValueConvertResponse{}, fmt.Errorf("failed to cast column value: %w", err)
+		}
+
+		return shared.ValueConvertResponse{Value: value}, nil
+	}
+
+	out, _, err := shared.WriteTemporaryTableFile(
+		tableData,
+		s.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name()),
+		valueConverter,
+		config.SharedDestinationSettings{},
+	)
+
 	if err != nil {
-		return "", fmt.Errorf("failed to create gzip writer: %w", err)
+		return shared.File{}, fmt.Errorf("failed to write temporary table file: %w", err)
 	}
 
-	defer gzipWriter.Close()
-
-	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
-	for _, value := range tableData.Rows() {
-		var row []string
-		for _, col := range columns {
-			castedValue, castErr := castColValStaging(value[col.Name()], col.KindDetails)
-			if castErr != nil {
-				return "", castErr
-			}
-
-			row = append(row, castedValue)
-		}
-
-		if err = gzipWriter.Write(row); err != nil {
-			return "", fmt.Errorf("failed to write to csv: %w", err)
-		}
-	}
-
-	if err = gzipWriter.Flush(); err != nil {
-		return "", fmt.Errorf("failed to flush gzip writer: %w", err)
-	}
-
-	return fp, nil
+	return out, nil
 }
 
 func (s Store) SweepTemporaryTables(ctx context.Context) error {
