@@ -131,7 +131,7 @@ func (f Field) ParseValue(value any) (any, error) {
 
 	// Preprocess [value] to reverse the effects of being JSON marshalled and unmarshalled when passing through Kafka.
 	switch f.Type {
-	case Int16, Int32, Int64:
+	case Int8, Int16, Int32, Int64:
 		var err error
 		value, err = toInt64(value)
 		if err != nil {

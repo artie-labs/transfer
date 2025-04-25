@@ -181,10 +181,19 @@ func TestField_ParseValue(t *testing.T) {
 		assert.ElementsMatch(t, []any{map[string]any{"foo": "bar"}, map[string]any{"hello": "world"}}, value)
 	}
 	{
-		// Int32
-		value, err := Field{Type: Int32}.ParseValue(float64(3))
-		assert.NoError(t, err)
-		assert.Equal(t, int64(3), value)
+		// Integers
+		{
+			// Int8
+			value, err := Field{Type: Int8}.ParseValue(float64(3))
+			assert.NoError(t, err)
+			assert.Equal(t, int64(3), value)
+		}
+		{
+			// Int32
+			value, err := Field{Type: Int32}.ParseValue(float64(3))
+			assert.NoError(t, err)
+			assert.Equal(t, int64(3), value)
+		}
 	}
 	{
 		// Decimal
