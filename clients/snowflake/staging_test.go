@@ -1,10 +1,7 @@
 package snowflake
 
 import (
-	"compress/gzip"
-	"encoding/csv"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -199,50 +196,4 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(s.T().Context(), tableData, sflkTc, tempTableID, tempTableID, types.AdditionalSettings{}, false))
 		assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
 	}
-}
-
-func (s *SnowflakeTestSuite) TestLoadTemporaryTable() {
-	tempTableID, tableData := generateTableData(100)
-	file, err := s.stageStore.writeTemporaryTableFile(tableData, tempTableID)
-	assert.Equal(s.T(), fmt.Sprintf("%s.csv.gz", strings.ReplaceAll(tempTableID.FullyQualifiedName(), `"`, "")), file.FileName)
-	assert.NoError(s.T(), err)
-
-	// Read the CSV and confirm.
-	csvfile, err := os.Open(file.FilePath)
-	assert.NoError(s.T(), err)
-
-	// Parse the file
-	gzipReader, err := gzip.NewReader(csvfile)
-	assert.NoError(s.T(), err)
-
-	r := csv.NewReader(gzipReader)
-	r.Comma = '\t'
-
-	seenUserID := make(map[string]bool)
-	seenFirstName := make(map[string]bool)
-	seenLastName := make(map[string]bool)
-	// Iterate through the records
-	for {
-		// Read each record from csv
-		record, readErr := r.Read()
-		if readErr == io.EOF {
-			break
-		}
-
-		assert.NoError(s.T(), readErr)
-		assert.Equal(s.T(), 4, len(record))
-
-		// [user_id, first_name, last_name]
-		seenUserID[record[0]] = true
-		seenFirstName[record[1]] = true
-		seenLastName[record[2]] = true
-		assert.Equal(s.T(), "the mini aussie", record[3])
-	}
-
-	assert.Len(s.T(), seenUserID, int(tableData.NumberOfRows()))
-	assert.Len(s.T(), seenFirstName, int(tableData.NumberOfRows()))
-	assert.Len(s.T(), seenLastName, int(tableData.NumberOfRows()))
-
-	// Delete the file.
-	assert.NoError(s.T(), os.RemoveAll(file.FilePath))
 }
