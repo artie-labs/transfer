@@ -47,30 +47,31 @@ func (s *SnowflakeTestSuite) TestReplaceExceededValues() {
 }
 
 func (s *SnowflakeTestSuite) TestCastColValStaging() {
+	settings := config.SharedDestinationSettings{}
 	{
 		// Null
-		value, err := castColValStaging(nil, typing.String)
+		result, err := castColValStaging(nil, typing.String, settings)
 		assert.NoError(s.T(), err)
-		assert.Equal(s.T(), constants.NullValuePlaceholder, value)
+		assert.Equal(s.T(), constants.NullValuePlaceholder, result.Value)
 	}
 	{
 		// Struct field
 
 		// Did not exceed lob size
-		value, err := castColValStaging(map[string]any{"key": "value"}, typing.Struct)
+		result, err := castColValStaging(map[string]any{"key": "value"}, typing.Struct, settings)
 		assert.NoError(s.T(), err)
-		assert.Equal(s.T(), `{"key":"value"}`, value)
+		assert.Equal(s.T(), `{"key":"value"}`, result.Value)
 
 		// Did exceed lob size
-		value, err = castColValStaging(map[string]any{"key": strings.Repeat("a", 16777216)}, typing.Struct)
+		result, err = castColValStaging(map[string]any{"key": strings.Repeat("a", 16777216)}, typing.Struct, settings)
 		assert.NoError(s.T(), err)
-		assert.Equal(s.T(), `{"key":"__artie_exceeded_value"}`, value)
+		assert.Equal(s.T(), `{"key":"__artie_exceeded_value"}`, result.Value)
 	}
 	{
 		// String field
-		value, err := castColValStaging("foo", typing.String)
+		result, err := castColValStaging("foo", typing.String, settings)
 		assert.NoError(s.T(), err)
-		assert.Equal(s.T(), "foo", value)
+		assert.Equal(s.T(), "foo", result.Value)
 	}
 }
 

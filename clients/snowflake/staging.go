@@ -11,6 +11,7 @@ import (
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/awslib"
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/maputil"
@@ -38,17 +39,17 @@ func replaceExceededValues(colVal string, kindDetails typing.KindDetails) string
 	return colVal
 }
 
-func castColValStaging(colVal any, colKind typing.KindDetails) (string, error) {
+func castColValStaging(colVal any, colKind typing.KindDetails, _ config.SharedDestinationSettings) (shared.ValueConvertResponse, error) {
 	if colVal == nil {
-		return constants.NullValuePlaceholder, nil
+		return shared.ValueConvertResponse{Value: constants.NullValuePlaceholder}, nil
 	}
 
 	value, err := values.ToString(colVal, colKind)
 	if err != nil {
-		return "", err
+		return shared.ValueConvertResponse{}, err
 	}
 
-	return replaceExceededValues(value, colKind), nil
+	return shared.ValueConvertResponse{Value: replaceExceededValues(value, colKind)}, nil
 }
 
 func (s Store) useExternalStage() bool {
@@ -63,7 +64,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	}
 
 	// Write data into CSV
-	file, err := shared.WriteTemporaryTableFile(tableData, tempTableID, castColValStaging)
+	file, _, err := shared.WriteTemporaryTableFile(tableData, tempTableID, castColValStaging, s.config.SharedDestinationSettings)
 	if err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
 	}

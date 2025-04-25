@@ -3,6 +3,7 @@ package redshift
 import (
 	"fmt"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -194,17 +195,19 @@ func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 }
 
 func (r *RedshiftTestSuite) TestCastColValStaging() {
+	settings := config.SharedDestinationSettings{}
 	{
 		// nil
 		{
 			// Struct
-			result, err := castColValStaging(nil, typing.Struct, false, false)
+
+			result, err := castColValStaging(nil, typing.Struct, settings)
 			assert.NoError(r.T(), err)
 			assert.Empty(r.T(), result.Value)
 		}
 		{
 			// Not struct
-			result, err := castColValStaging(nil, typing.String, false, false)
+			result, err := castColValStaging(nil, typing.String, settings)
 			assert.NoError(r.T(), err)
 			assert.Equal(r.T(), constants.NullValuePlaceholder, result.Value)
 		}

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/csvwriter"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -35,37 +36,57 @@ type File struct {
 	FileName string
 }
 
-type ValueConverterFunc func(colValue any, colKind typing.KindDetails) (string, error)
+type AdditionalOutput struct {
+	ColumnToNewLengthMap map[string]int32
+}
 
-func WriteTemporaryTableFile(tableData *optimization.TableData, newTableID sql.TableIdentifier, valueConverter ValueConverterFunc) (File, error) {
+type ValueConvertResponse struct {
+	Value string
+	// NewLength - If the value exceeded the maximum length, this will be the new length of the value.
+	// This is only applicable if [expandStringPrecision] is enabled.
+	NewLength int32
+	Exceeded  bool
+}
+
+type ValueConverterFunc func(colValue any, colKind typing.KindDetails, sharedDestinationSettings config.SharedDestinationSettings) (ValueConvertResponse, error)
+
+func WriteTemporaryTableFile(tableData *optimization.TableData, newTableID sql.TableIdentifier, valueConverter ValueConverterFunc, sharedDestinationSettings config.SharedDestinationSettings) (File, AdditionalOutput, error) {
 	fp := filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv.gz", strings.ReplaceAll(newTableID.FullyQualifiedName(), `"`, "")))
 	gzipWriter, err := csvwriter.NewGzipWriter(fp)
 	if err != nil {
-		return File{}, fmt.Errorf("failed to create gzip writer: %w", err)
+		return File{}, AdditionalOutput{}, fmt.Errorf("failed to create gzip writer: %w", err)
 	}
 
 	defer gzipWriter.Close()
 
+	columnToNewLengthMap := make(map[string]int32)
 	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
 	for _, value := range tableData.Rows() {
 		var row []string
 		for _, col := range columns {
-			castedValue, castErr := valueConverter(value[col.Name()], col.KindDetails)
+			result, castErr := valueConverter(value[col.Name()], col.KindDetails, sharedDestinationSettings)
 			if castErr != nil {
-				return File{}, castErr
+				return File{}, AdditionalOutput{}, castErr
 			}
 
-			row = append(row, castedValue)
+			if result.NewLength > 0 {
+				_newLength, ok := columnToNewLengthMap[col.Name()]
+				if result.NewLength > _newLength || !ok {
+					columnToNewLengthMap[col.Name()] = result.NewLength
+				}
+			}
+
+			row = append(row, result.Value)
 		}
 
 		if err = gzipWriter.Write(row); err != nil {
-			return File{}, fmt.Errorf("failed to write to csv: %w", err)
+			return File{}, AdditionalOutput{}, fmt.Errorf("failed to write to csv: %w", err)
 		}
 	}
 
 	if err = gzipWriter.Flush(); err != nil {
-		return File{}, fmt.Errorf("failed to flush gzip writer: %w", err)
+		return File{}, AdditionalOutput{}, fmt.Errorf("failed to flush gzip writer: %w", err)
 	}
 
-	return File{FilePath: fp, FileName: gzipWriter.FileName()}, nil
+	return File{FilePath: fp, FileName: gzipWriter.FileName()}, AdditionalOutput{ColumnToNewLengthMap: columnToNewLengthMap}, nil
 }
