@@ -43,6 +43,7 @@ const (
 	String  FieldType = "string"
 	Bytes   FieldType = "bytes"
 	Boolean FieldType = "boolean"
+	Int8    FieldType = "int8"
 	Int16   FieldType = "int16"
 	Int32   FieldType = "int32"
 	Int64   FieldType = "int64"
@@ -167,7 +168,7 @@ func (f Field) ToKindDetails() (typing.KindDetails, error) {
 	switch f.Type {
 	case Map:
 		return typing.Struct, nil
-	case Int16, Int32, Int64:
+	case Int8, Int16, Int32, Int64:
 		return typing.Integer, nil
 	case String, Bytes:
 		return typing.String, nil
