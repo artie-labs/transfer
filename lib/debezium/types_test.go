@@ -69,6 +69,12 @@ func TestToInt64(t *testing.T) {
 		assert.Equal(t, int64(12321), actual)
 	}
 	{
+		// int8
+		actual, err := toInt64(int8(12))
+		assert.NoError(t, err)
+		assert.Equal(t, int64(12), actual)
+	}
+	{
 		// int16
 		actual, err := toInt64(int16(12321))
 		assert.NoError(t, err)

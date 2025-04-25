@@ -77,6 +77,8 @@ func toInt64(value any) (int64, error) {
 	switch typedValue := value.(type) {
 	case int:
 		return int64(typedValue), nil
+	case int8:
+		return int64(typedValue), nil
 	case int16:
 		return int64(typedValue), nil
 	case int32:
