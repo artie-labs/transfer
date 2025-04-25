@@ -15,6 +15,8 @@ func (Int64Converter) Convert(value any) (int64, error) {
 			return 0, fmt.Errorf("failed to parse string to int64: %w", err)
 		}
 		return parsed, nil
+	case int8:
+		return int64(castValue), nil
 	case int16:
 		return int64(castValue), nil
 	case int32:
@@ -24,5 +26,5 @@ func (Int64Converter) Convert(value any) (int64, error) {
 	case int64:
 		return castValue, nil
 	}
-	return 0, fmt.Errorf("expected string/int/int16/int32/int64 got %T with value: %v", value, value)
+	return 0, fmt.Errorf("expected string/int/int8/int16/int32/int64 got %T with value: %v", value, value)
 }
