@@ -64,7 +64,7 @@ func TestParseValue(t *testing.T) {
 		// Date
 		value, err := ParseValue("2022-12-25", typing.Date)
 		assert.NoError(t, err)
-		assert.Equal(t, "2022-12-25", value)
+		assert.Equal(t, int32(19351), value)
 	}
 	{
 		// Timestamp TZ
