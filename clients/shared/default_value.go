@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
+	"strconv"
 	"time"
 
 	bigQueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
@@ -74,6 +76,17 @@ func DefaultValue(column columns.Column, dialect sql.Dialect) (any, error) {
 }
 
 func BackfillColumn(ctx context.Context, dest destination.Destination, column columns.Column, tableID sql.TableIdentifier) error {
+	if envVar := os.Getenv("DISABLE_BACKFILL"); envVar != "" {
+		disable, err := strconv.ParseBool(envVar)
+		if err != nil {
+			return fmt.Errorf("failed to parse DISABLE_BACKFILL: %w", err)
+		}
+
+		if disable {
+			return nil
+		}
+	}
+
 	dialect := dest.Dialect()
 	switch dialect.GetDefaultValueStrategy() {
 	case sql.Backfill:
