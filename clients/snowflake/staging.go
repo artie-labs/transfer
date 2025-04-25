@@ -11,6 +11,7 @@ import (
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/awslib"
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/maputil"
@@ -38,7 +39,7 @@ func replaceExceededValues(colVal string, kindDetails typing.KindDetails) string
 	return colVal
 }
 
-func castColValStaging(colVal any, colKind typing.KindDetails) (string, error) {
+func castColValStaging(colVal any, colKind typing.KindDetails, _ config.SharedDestinationSettings) (string, error) {
 	if colVal == nil {
 		return constants.NullValuePlaceholder, nil
 	}
@@ -63,7 +64,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	}
 
 	// Write data into CSV
-	file, err := shared.WriteTemporaryTableFile(tableData, tempTableID, castColValStaging)
+	file, err := shared.WriteTemporaryTableFile(tableData, tempTableID, s.config.SharedDestinationSettings, castColValStaging)
 	if err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
 	}

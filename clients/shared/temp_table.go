@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/csvwriter"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -35,9 +36,9 @@ type File struct {
 	FileName string
 }
 
-type ValueConverterFunc func(colValue any, colKind typing.KindDetails) (string, error)
+type ValueConverterFunc func(colValue any, colKind typing.KindDetails, sharedDestinationSettings config.SharedDestinationSettings) (string, error)
 
-func WriteTemporaryTableFile(tableData *optimization.TableData, newTableID sql.TableIdentifier, valueConverter ValueConverterFunc) (File, error) {
+func WriteTemporaryTableFile(tableData *optimization.TableData, newTableID sql.TableIdentifier, sharedDestinationSettings config.SharedDestinationSettings, valueConverter ValueConverterFunc) (File, error) {
 	fp := filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv.gz", strings.ReplaceAll(newTableID.FullyQualifiedName(), `"`, "")))
 	gzipWriter, err := csvwriter.NewGzipWriter(fp)
 	if err != nil {
@@ -50,7 +51,7 @@ func WriteTemporaryTableFile(tableData *optimization.TableData, newTableID sql.T
 	for _, value := range tableData.Rows() {
 		var row []string
 		for _, col := range columns {
-			castedValue, castErr := valueConverter(value[col.Name()], col.KindDetails)
+			castedValue, castErr := valueConverter(value[col.Name()], col.KindDetails, sharedDestinationSettings)
 			if castErr != nil {
 				return File{}, castErr
 			}
