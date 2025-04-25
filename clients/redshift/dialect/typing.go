@@ -83,6 +83,8 @@ func (RedshiftDialect) KindForDataType(rawType string, stringPrecision string) (
 	}
 
 	switch rawType {
+	case "character":
+		return typing.KindDetails{Kind: typing.String.Kind}, nil
 	case "super":
 		return typing.Struct, nil
 	case "smallint":
