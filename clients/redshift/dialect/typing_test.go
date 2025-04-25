@@ -131,6 +131,12 @@ func TestRedshiftDialect_KindForDataType(t *testing.T) {
 		assert.Equal(t, typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: typing.ToPtr(int32(65535))}, kd)
 	}
 	{
+		// Character
+		kd, err := dialect.KindForDataType("character", "")
+		assert.NoError(t, err)
+		assert.Equal(t, typing.KindDetails{Kind: typing.String.Kind}, kd)
+	}
+	{
 		// Times
 		{
 			// TimestampTZ
