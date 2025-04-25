@@ -2,7 +2,9 @@ package parquetutil
 
 import (
 	"testing"
+	"time"
 
+	"github.com/artie-labs/transfer/lib/debezium/converters"
 	"github.com/artie-labs/transfer/lib/numbers"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
@@ -58,13 +60,17 @@ func TestParseValue(t *testing.T) {
 		// Time
 		value, err := ParseValue("03:15:00", typing.Time)
 		assert.NoError(t, err)
-		assert.Equal(t, "03:15:00Z", value)
+		assert.Equal(t, int32(11700000), value)
+
+		converted, err := converters.Time{}.Convert(int64(value.(int32)))
+		assert.NoError(t, err)
+		assert.Equal(t, "03:15:00", converted.(time.Time).Format(time.TimeOnly))
 	}
 	{
 		// Date
 		value, err := ParseValue("2022-12-25", typing.Date)
 		assert.NoError(t, err)
-		assert.Equal(t, "2022-12-25", value)
+		assert.Equal(t, int32(19351), value)
 	}
 	{
 		// Timestamp TZ
