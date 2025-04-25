@@ -54,6 +54,11 @@ func TestField_ShouldSetDefaultValue(t *testing.T) {
 		assert.False(t, field.ShouldSetDefaultValue(time.Time{}))
 		assert.False(t, field.ShouldSetDefaultValue(time.Unix(0, 0)))
 	}
+	{
+		// Empty map
+		field := Field{}
+		assert.True(t, field.ShouldSetDefaultValue(map[string]any{}))
+	}
 }
 
 func TestToInt64(t *testing.T) {
