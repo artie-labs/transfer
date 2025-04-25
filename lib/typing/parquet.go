@@ -69,22 +69,30 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 		return &Field{
 			Tag: FieldTag{
 				Name:          colName,
-				Type:          ToPtr("BYTE_ARRAY"),
-				ConvertedType: ToPtr("UTF8"),
+				Type:          ToPtr(parquet.Type_BYTE_ARRAY.String()),
+				ConvertedType: ToPtr(parquet.ConvertedType_UTF8.String()),
 			}.String(),
 		}, nil
 	case Float.Kind:
 		return &Field{
 			Tag: FieldTag{
 				Name: colName,
-				Type: ToPtr("FLOAT"),
+				Type: ToPtr(parquet.Type_FLOAT.String()),
 			}.String(),
 		}, nil
-	case Integer.Kind, TimestampNTZ.Kind, TimestampTZ.Kind:
+	case TimestampNTZ.Kind, TimestampTZ.Kind:
+		return &Field{
+			Tag: FieldTag{
+				Name:          colName,
+				Type:          ToPtr(parquet.Type_INT64.String()),
+				ConvertedType: ToPtr(parquet.ConvertedType_TIMESTAMP_MILLIS.String()),
+			}.String(),
+		}, nil
+	case Integer.Kind:
 		return &Field{
 			Tag: FieldTag{
 				Name: colName,
-				Type: ToPtr("INT64"),
+				Type: ToPtr(parquet.Type_INT64.String()),
 			}.String(),
 		}, nil
 	case EDecimal.Kind:
@@ -94,8 +102,8 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 			return &Field{
 				Tag: FieldTag{
 					Name:          colName,
-					Type:          ToPtr("BYTE_ARRAY"),
-					ConvertedType: ToPtr("UTF8"),
+					Type:          ToPtr(parquet.Type_BYTE_ARRAY.String()),
+					ConvertedType: ToPtr(parquet.ConvertedType_UTF8.String()),
 				}.String(),
 			}, nil
 		}
@@ -119,7 +127,7 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 		return &Field{
 			Tag: FieldTag{
 				Name: colName,
-				Type: ToPtr("BOOLEAN"),
+				Type: ToPtr(parquet.Type_BOOLEAN.String()),
 			}.String(),
 		}, nil
 	case Array.Kind:
@@ -133,8 +141,8 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 				{
 					Tag: FieldTag{
 						Name:           "element",
-						Type:           ToPtr("BYTE_ARRAY"),
-						ConvertedType:  ToPtr("UTF8"),
+						Type:           ToPtr(parquet.Type_BYTE_ARRAY.String()),
+						ConvertedType:  ToPtr(parquet.ConvertedType_UTF8.String()),
 						RepetitionType: ToPtr("REQUIRED"),
 					}.String(),
 				},
