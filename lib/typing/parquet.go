@@ -65,7 +65,7 @@ type Field struct {
 
 func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 	switch k.Kind {
-	case String.Kind, Struct.Kind, Time.Kind:
+	case String.Kind, Struct.Kind:
 		return &Field{
 			Tag: FieldTag{
 				Name:          colName,
@@ -86,6 +86,14 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 				Name:          colName,
 				Type:          ToPtr(parquet.Type_INT32.String()),
 				ConvertedType: ToPtr(parquet.ConvertedType_DATE.String()),
+			}.String(),
+		}, nil
+	case Time.Kind:
+		return &Field{
+			Tag: FieldTag{
+				Name:          colName,
+				Type:          ToPtr(parquet.Type_INT32.String()),
+				ConvertedType: ToPtr(parquet.ConvertedType_TIME_MILLIS.String()),
 			}.String(),
 		}, nil
 	case TimestampNTZ.Kind, TimestampTZ.Kind:

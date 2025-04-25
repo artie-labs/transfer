@@ -16,6 +16,12 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
+func millisecondsAfterMidnight(t time.Time) int32 {
+	year, month, day := t.Date()
+	midnight := time.Date(year, month, day, 0, 0, 0, 0, t.Location())
+	return int32(t.Sub(midnight).Milliseconds())
+}
+
 func ParseValue(colVal any, colKind typing.KindDetails) (any, error) {
 	if colVal == nil {
 		return nil, nil
@@ -36,7 +42,9 @@ func ParseValue(colVal any, colKind typing.KindDetails) (any, error) {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
 		}
 
-		return _time.Format(ext.PostgresTimeFormat), nil
+		// TIME with unit MILLIS is used for millisecond precision. It must annotate an int32 that stores the number of milliseconds after midnight.
+		// https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#time-millis
+		return millisecondsAfterMidnight(_time), nil
 	case typing.TimestampNTZ.Kind:
 		_time, err := ext.ParseTimestampNTZFromAny(colVal)
 		if err != nil {

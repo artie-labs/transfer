@@ -10,7 +10,7 @@ import (
 func TestKindDetails_ParquetAnnotation(t *testing.T) {
 	{
 		// String field
-		for _, kd := range []KindDetails{String, Struct, Time} {
+		for _, kd := range []KindDetails{String, Struct} {
 			field, err := kd.ParquetAnnotation("foo")
 			assert.NoError(t, err)
 			assert.Equal(t,
@@ -40,6 +40,21 @@ func TestKindDetails_ParquetAnnotation(t *testing.T) {
 				*field,
 			)
 		}
+	}
+	{
+		// Time
+		field, err := Time.ParquetAnnotation("foo")
+		assert.NoError(t, err)
+		assert.Equal(t,
+			Field{
+				Tag: FieldTag{
+					Name:          "foo",
+					Type:          ToPtr(parquet.Type_INT32.String()),
+					ConvertedType: ToPtr(parquet.ConvertedType_TIME_MILLIS.String()),
+				}.String(),
+			},
+			*field,
+		)
 	}
 	{
 		// Date
