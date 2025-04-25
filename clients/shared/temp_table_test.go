@@ -42,12 +42,12 @@ func TestWriteTemporaryTableFile(t *testing.T) {
 	tableID := dialect.NewTableIdentifier("test_db", "test_schema", "test_table")
 
 	// Define a simple value converter
-	valueConverter := func(colValue any, colKind typing.KindDetails) (string, error) {
+	valueConverter := func(colValue any, colKind typing.KindDetails, _ config.SharedDestinationSettings) (string, error) {
 		return fmt.Sprintf("%v", colValue), nil
 	}
 
 	// Write the temporary table file
-	file, err := WriteTemporaryTableFile(tableData, tableID, valueConverter)
+	file, err := WriteTemporaryTableFile(tableData, tableID, config.SharedDestinationSettings{}, valueConverter)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, file.FilePath)
 	assert.NotEmpty(t, file.FileName)
