@@ -25,6 +25,8 @@ func (Int64Converter) Convert(value any) (int64, error) {
 		return int64(castValue), nil
 	case int64:
 		return castValue, nil
+	case float64:
+		return int64(castValue), nil
 	}
 	return 0, fmt.Errorf("expected string/int/int8/int16/int32/int64 got %T with value: %v", value, value)
 }
