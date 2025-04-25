@@ -28,7 +28,8 @@ func ParseValue(colVal any, colKind typing.KindDetails) (any, error) {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
 		}
 
-		return _time.Format(time.DateOnly), nil
+		// Days since EPOCH
+		return _time.UnixMilli() / (24 * time.Hour.Milliseconds()), nil
 	case typing.Time.Kind:
 		_time, err := ext.ParseTimeFromAny(colVal)
 		if err != nil {
