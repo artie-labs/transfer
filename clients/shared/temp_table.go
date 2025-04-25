@@ -36,9 +36,17 @@ type File struct {
 	FileName string
 }
 
-type ValueConverterFunc func(colValue any, colKind typing.KindDetails, sharedDestinationSettings config.SharedDestinationSettings) (string, error)
+type ValueConvertResponse struct {
+	Value string
+	// NewLength - If the value exceeded the maximum length, this will be the new length of the value.
+	// This is only applicable if [expandStringPrecision] is enabled.
+	NewLength int32
+	Exceeded  bool
+}
 
-func WriteTemporaryTableFile(tableData *optimization.TableData, newTableID sql.TableIdentifier, sharedDestinationSettings config.SharedDestinationSettings, valueConverter ValueConverterFunc) (File, error) {
+type ValueConverterFunc func(colValue any, colKind typing.KindDetails, sharedDestinationSettings config.SharedDestinationSettings) (ValueConvertResponse, error)
+
+func WriteTemporaryTableFile(tableData *optimization.TableData, newTableID sql.TableIdentifier, valueConverter ValueConverterFunc, sharedDestinationSettings config.SharedDestinationSettings) (File, error) {
 	fp := filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv.gz", strings.ReplaceAll(newTableID.FullyQualifiedName(), `"`, "")))
 	gzipWriter, err := csvwriter.NewGzipWriter(fp)
 	if err != nil {
@@ -51,12 +59,12 @@ func WriteTemporaryTableFile(tableData *optimization.TableData, newTableID sql.T
 	for _, value := range tableData.Rows() {
 		var row []string
 		for _, col := range columns {
-			castedValue, castErr := valueConverter(value[col.Name()], col.KindDetails, sharedDestinationSettings)
+			result, castErr := valueConverter(value[col.Name()], col.KindDetails, sharedDestinationSettings)
 			if castErr != nil {
 				return File{}, castErr
 			}
 
-			row = append(row, castedValue)
+			row = append(row, result.Value)
 		}
 
 		if err = gzipWriter.Write(row); err != nil {

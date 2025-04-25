@@ -115,8 +115,7 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID
 			result, err := castColValStaging(
 				value[col.Name()],
 				col.KindDetails,
-				s.config.SharedDestinationSettings.TruncateExceededValues,
-				s.config.SharedDestinationSettings.ExpandStringPrecision,
+				s.config.SharedDestinationSettings,
 			)
 
 			if err != nil {
