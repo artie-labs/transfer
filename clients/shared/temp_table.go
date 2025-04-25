@@ -51,7 +51,7 @@ type ValueConvertResponse struct {
 type ValueConverterFunc func(colValue any, colKind typing.KindDetails, sharedDestinationSettings config.SharedDestinationSettings) (ValueConvertResponse, error)
 
 func WriteTemporaryTableFile(tableData *optimization.TableData, newTableID sql.TableIdentifier, valueConverter ValueConverterFunc, sharedDestinationSettings config.SharedDestinationSettings) (File, AdditionalOutput, error) {
-	fp := filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv.gz", strings.ReplaceAll(newTableID.FullyQualifiedName(), `"`, "")))
+	fp := filepath.Join(os.TempDir(), fmt.Sprintf("%s_%s.csv.gz", strings.ReplaceAll(newTableID.FullyQualifiedName(), `"`, ""), stringutil.Random(10)))
 	gzipWriter, err := csvwriter.NewGzipWriter(fp)
 	if err != nil {
 		return File{}, AdditionalOutput{}, fmt.Errorf("failed to create gzip writer: %w", err)
