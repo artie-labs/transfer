@@ -56,6 +56,15 @@ func (c *Client) ensureSession(ctx context.Context) error {
 	return nil
 }
 
+func (c *Client) buildRetryConfig() (retry.RetryConfig, error) {
+	cfg, err := retry.NewJitterRetryConfig(sleepBaseMs, sleepMaxMs, maxSessionRetries, retry.AlwaysRetry)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create retry config: %w", err)
+	}
+
+	return cfg, nil
+}
+
 func (c *Client) queryContext(ctx context.Context, query string) (GetStatementResponse, error) {
 	if err := c.ensureSession(ctx); err != nil {
 		return GetStatementResponse{}, err
@@ -75,9 +84,8 @@ func (c *Client) queryContext(ctx context.Context, query string) (GetStatementRe
 }
 
 func (c *Client) QueryContext(ctx context.Context, query string) (GetStatementResponse, error) {
-	retryCfg, err := retry.NewJitterRetryConfig(sleepBaseMs, sleepMaxMs, maxSessionRetries, retry.AlwaysRetry)
+	retryCfg, err := c.buildRetryConfig()
 	if err != nil {
-		slog.Error("Failed to create retry config", slog.Any("err", err))
 		return GetStatementResponse{}, err
 	}
 
@@ -105,9 +113,8 @@ func (c *Client) execContext(ctx context.Context, query string) error {
 }
 
 func (c *Client) ExecContext(ctx context.Context, query string) error {
-	retryCfg, err := retry.NewJitterRetryConfig(sleepBaseMs, sleepMaxMs, maxSessionRetries, retry.AlwaysRetry)
+	retryCfg, err := c.buildRetryConfig()
 	if err != nil {
-		slog.Error("Failed to create retry config", slog.Any("err", err))
 		return err
 	}
 
