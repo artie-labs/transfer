@@ -37,7 +37,6 @@ type Client struct {
 const sessionBufferSeconds = 30
 
 func shouldCreateNewSession(resp GetSessionResponse, statusCode int, err error) (bool, error) {
-	// Now, if the session is dead, then we should also create a new one.
 	if statusCode == http.StatusNotFound {
 		return true, nil
 	}
