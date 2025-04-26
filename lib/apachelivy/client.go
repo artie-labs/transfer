@@ -72,7 +72,7 @@ func (c *Client) ensureSession(ctx context.Context) error {
 }
 
 func (c *Client) buildRetryConfig() (retry.RetryConfig, error) {
-	// TODO: Move this from `[retry.AlwaysRetry]` to be more targeted
+	// TODO: Move this from [retry.AlwaysRetry] to be more targeted
 	cfg, err := retry.NewJitterRetryConfig(sleepBaseMs, sleepMaxMs, maxSessionRetries, retry.AlwaysRetry)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create retry config: %w", err)
