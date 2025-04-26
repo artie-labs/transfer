@@ -9,6 +9,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/jitter"
@@ -35,6 +36,20 @@ type Client struct {
 
 const sessionBufferSeconds = 30
 
+func shouldCreateNewSession(resp GetSessionResponse, statusCode int, err error) (bool, error) {
+	// Now, if the session is dead, then we should also create a new one.
+	if statusCode == http.StatusNotFound {
+		return true, nil
+	}
+
+	if err != nil {
+		return false, err
+	}
+
+	// If the session is in a terminal state, then we should create a new one.
+	return slices.Contains(TerminalSessionStates, resp.State), nil
+}
+
 func (c *Client) ensureSession(ctx context.Context) error {
 	if c.sessionID == 0 {
 		c.lastChecked = time.Now()
@@ -43,13 +58,13 @@ func (c *Client) ensureSession(ctx context.Context) error {
 
 	if time.Since(c.lastChecked).Seconds() > (float64(c.sessionHeartbeatTimeoutInSecond) - sessionBufferSeconds) {
 		c.lastChecked = time.Now()
-		out, err := c.doRequest(ctx, "GET", fmt.Sprintf("/sessions/%d", c.sessionID), nil)
-		if out.httpStatus == http.StatusNotFound {
-			return c.newSession(ctx, SessionKindSql, true)
-		}
-
+		shouldCreateNewSession, err := shouldCreateNewSession(c.getSession(ctx))
 		if err != nil {
 			return err
+		}
+
+		if shouldCreateNewSession {
+			return c.newSession(ctx, SessionKindSql, true)
 		}
 	}
 
@@ -57,6 +72,7 @@ func (c *Client) ensureSession(ctx context.Context) error {
 }
 
 func (c *Client) buildRetryConfig() (retry.RetryConfig, error) {
+	// TODO: Move this from `[retry.AlwaysRetry]` to be more targeted
 	cfg, err := retry.NewJitterRetryConfig(sleepBaseMs, sleepMaxMs, maxSessionRetries, retry.AlwaysRetry)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create retry config: %w", err)
@@ -248,16 +264,25 @@ func (c *Client) newSession(ctx context.Context, kind SessionKind, blockUntilRea
 	return nil
 }
 
+func (c *Client) getSession(ctx context.Context) (GetSessionResponse, int, error) {
+	out, err := c.doRequest(ctx, "GET", fmt.Sprintf("/sessions/%d", c.sessionID), nil)
+	if err != nil {
+		return GetSessionResponse{}, out.httpStatus, err
+	}
+
+	var resp GetSessionResponse
+	if err := json.Unmarshal(out.body, &resp); err != nil {
+		return GetSessionResponse{}, out.httpStatus, err
+	}
+
+	return resp, out.httpStatus, nil
+}
+
 func (c *Client) waitForSessionToBeReady(ctx context.Context) error {
 	var count int
 	for {
-		out, err := c.doRequest(ctx, "GET", fmt.Sprintf("/sessions/%d", c.sessionID), nil)
+		resp, _, err := c.getSession(ctx)
 		if err != nil {
-			return err
-		}
-
-		var resp GetSessionResponse
-		if err := json.Unmarshal(out.body, &resp); err != nil {
 			return err
 		}
 

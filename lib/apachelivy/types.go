@@ -33,6 +33,13 @@ const (
 	StateError        SessionState = "error"
 )
 
+var TerminalSessionStates = []SessionState{
+	StateError,
+	StateKilled,
+	StateShuttingDown,
+	StateDead,
+}
+
 func (s SessionState) IsReady() bool {
 	return s == StateIdle
 }
