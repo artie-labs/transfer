@@ -12,12 +12,14 @@ import (
 	"time"
 
 	"github.com/artie-labs/transfer/lib/jitter"
+	"github.com/artie-labs/transfer/lib/retry"
 )
 
 const (
 	sleepBaseMs                     = 1_000
 	sleepMaxMs                      = 3_000
 	defaultHeartbeatTimeoutInSecond = 300
+	maxSessionRetries               = 5
 )
 
 type Client struct {
@@ -54,7 +56,7 @@ func (c *Client) ensureSession(ctx context.Context) error {
 	return nil
 }
 
-func (c *Client) QueryContext(ctx context.Context, query string) (GetStatementResponse, error) {
+func (c *Client) queryContext(ctx context.Context, query string) (GetStatementResponse, error) {
 	if err := c.ensureSession(ctx); err != nil {
 		return GetStatementResponse{}, err
 	}
@@ -72,7 +74,19 @@ func (c *Client) QueryContext(ctx context.Context, query string) (GetStatementRe
 	return response, nil
 }
 
-func (c *Client) ExecContext(ctx context.Context, query string) error {
+func (c *Client) QueryContext(ctx context.Context, query string) (GetStatementResponse, error) {
+	retryCfg, err := retry.NewJitterRetryConfig(sleepBaseMs, sleepMaxMs, maxSessionRetries, retry.AlwaysRetry)
+	if err != nil {
+		slog.Error("Failed to create retry config", slog.Any("err", err))
+		return GetStatementResponse{}, err
+	}
+
+	return retry.WithRetriesAndResult(retryCfg, func(_ int, _ error) (GetStatementResponse, error) {
+		return c.queryContext(ctx, query)
+	})
+}
+
+func (c *Client) execContext(ctx context.Context, query string) error {
 	if err := c.ensureSession(ctx); err != nil {
 		return err
 	}
@@ -88,6 +102,18 @@ func (c *Client) ExecContext(ctx context.Context, query string) error {
 	}
 
 	return resp.Error(c.sessionID)
+}
+
+func (c *Client) ExecContext(ctx context.Context, query string) error {
+	retryCfg, err := retry.NewJitterRetryConfig(sleepBaseMs, sleepMaxMs, maxSessionRetries, retry.AlwaysRetry)
+	if err != nil {
+		slog.Error("Failed to create retry config", slog.Any("err", err))
+		return err
+	}
+
+	return retry.WithRetries(retryCfg, func(_ int, _ error) error {
+		return c.execContext(ctx, query)
+	})
 }
 
 func (c *Client) waitForStatement(ctx context.Context, statementID int) (GetStatementResponse, error) {
