@@ -59,6 +59,11 @@ func TestField_ShouldSetDefaultValue(t *testing.T) {
 		field := Field{}
 		assert.True(t, field.ShouldSetDefaultValue(map[string]any{}))
 	}
+	{
+		// Array
+		field := Field{}
+		assert.True(t, field.ShouldSetDefaultValue([]any{}))
+	}
 }
 
 func TestToInt64(t *testing.T) {
