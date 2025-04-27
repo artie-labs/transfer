@@ -30,7 +30,7 @@ func replaceExceededValues(colVal string, kindDetails typing.KindDetails) string
 			return fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker)
 		}
 	case typing.String.Kind:
-		maxLength := typing.DefaultValueFromPtr[int32](kindDetails.OptionalStringPrecision, maxLobLength)
+		maxLength := typing.DefaultValueFromPtr(kindDetails.OptionalStringPrecision, maxLobLength)
 		if int32(len(colVal)) > maxLength {
 			return constants.ExceededValueMarker
 		}

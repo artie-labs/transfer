@@ -69,6 +69,7 @@ func WriteTemporaryTableFile(tableData *optimization.TableData, newTableID sql.T
 				return File{}, AdditionalOutput{}, castErr
 			}
 
+			fmt.Println("colName", col.Name(), "result", result, "value", value[col.Name()])
 			if result.NewLength > 0 {
 				_newLength, ok := columnToNewLengthMap[col.Name()]
 				if result.NewLength > _newLength || !ok {
