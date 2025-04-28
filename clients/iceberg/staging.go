@@ -5,13 +5,12 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"path/filepath"
 	"strings"
 
+	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/awslib"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/csvwriter"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -20,17 +19,17 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/values"
 )
 
-func castColValStaging(colVal any, colKind typing.KindDetails) (string, error) {
+func castColValStaging(colVal any, colKind typing.KindDetails, _ config.SharedDestinationSettings) (shared.ValueConvertResponse, error) {
 	if colVal == nil {
-		return constants.NullValuePlaceholder, nil
+		return shared.ValueConvertResponse{Value: constants.NullValuePlaceholder}, nil
 	}
 
 	value, err := values.ToString(colVal, colKind)
 	if err != nil {
-		return "", err
+		return shared.ValueConvertResponse{}, err
 	}
 
-	return value, nil
+	return shared.ValueConvertResponse{Value: value}, nil
 }
 
 func (s Store) buildColumnParts(columns []columns.Column) []string {
@@ -67,45 +66,13 @@ func (s Store) uploadToS3(ctx context.Context, fp string) (string, error) {
 }
 
 func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID sql.TableIdentifier) (string, error) {
-	fp := filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv.gz", strings.ReplaceAll(newTableID.FullyQualifiedName(), "`", "")))
-	gzipWriter, err := csvwriter.NewGzipWriter(fp)
+	tempTableDataFile := shared.NewTemporaryDataFile(newTableID)
+	file, _, err := tempTableDataFile.WriteTemporaryTableFile(tableData, castColValStaging, s.config.SharedDestinationSettings)
 	if err != nil {
-		return "", fmt.Errorf("failed to create gzip writer: %w", err)
+		return "", fmt.Errorf("failed to write temporary table file: %w", err)
 	}
 
-	defer gzipWriter.Close()
-
-	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
-	headers := make([]string, len(columns))
-	for i, col := range columns {
-		headers[i] = col.Name()
-	}
-
-	if err = gzipWriter.Write(headers); err != nil {
-		return "", fmt.Errorf("failed to write headers: %w", err)
-	}
-
-	for _, row := range tableData.Rows() {
-		var csvRow []string
-		for _, col := range columns {
-			castedValue, castErr := castColValStaging(row[col.Name()], col.KindDetails)
-			if castErr != nil {
-				return "", fmt.Errorf("failed to cast value '%v': %w", row[col.Name()], castErr)
-			}
-
-			csvRow = append(csvRow, castedValue)
-		}
-
-		if err = gzipWriter.Write(csvRow); err != nil {
-			return "", fmt.Errorf("failed to write to csv: %w", err)
-		}
-	}
-
-	if err = gzipWriter.Flush(); err != nil {
-		return "", fmt.Errorf("failed to flush gzip writer: %w", err)
-	}
-
-	return fp, nil
+	return file.FilePath, nil
 }
 
 func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tempTableID sql.TableIdentifier) error {
