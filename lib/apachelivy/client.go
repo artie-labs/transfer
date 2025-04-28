@@ -9,7 +9,6 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
-	"slices"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/jitter"
@@ -32,21 +31,6 @@ type Client struct {
 	sessionHeartbeatTimeoutInSecond int
 
 	lastChecked time.Time
-}
-
-const sessionBufferSeconds = 30
-
-func shouldCreateNewSession(resp GetSessionResponse, statusCode int, err error) (bool, error) {
-	if statusCode == http.StatusNotFound {
-		return true, nil
-	}
-
-	if err != nil {
-		return false, err
-	}
-
-	// If the session is in a terminal state, then we should create a new one.
-	return slices.Contains(TerminalSessionStates, resp.State), nil
 }
 
 func (c *Client) ensureSession(ctx context.Context) error {
@@ -72,7 +56,7 @@ func (c *Client) ensureSession(ctx context.Context) error {
 
 func (c *Client) buildRetryConfig() (retry.RetryConfig, error) {
 	// TODO: Move this from [retry.AlwaysRetry] to be more targeted
-	cfg, err := retry.NewJitterRetryConfig(sleepBaseMs, sleepMaxMs, maxSessionRetries, retry.AlwaysRetry)
+	cfg, err := retry.NewJitterRetryConfig(sleepBaseMs, sleepMaxMs, maxSessionRetries, shouldRetryError)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create retry config: %w", err)
 	}
