@@ -2,6 +2,8 @@ package snowflake
 
 import (
 	"fmt"
+	"os"
+	"regexp"
 	"strings"
 
 	"github.com/stretchr/testify/assert"
@@ -156,14 +158,17 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 	s.stageStore.GetConfigMap().AddTable(tempTableID, types.NewDestinationTableConfig(nil, true))
 	sflkTc := s.stageStore.GetConfigMap().GetTableConfig(tempTableID)
 
+	// Escape the temp directory path for use in regex
+	tempDir := regexp.QuoteMeta(os.TempDir())
+
 	{
 		// Set up expectations for the first test case
 		// Use a more flexible pattern for the CREATE TABLE query
 		s.mockDB.ExpectExec(`CREATE TABLE IF NOT EXISTS "DATABASE"\."SCHEMA"\."TEMP___ARTIE_.*" \("USER_ID" string,"FIRST_NAME" string,"LAST_NAME" string,"DUSTY" string\) DATA_RETENTION_TIME_IN_DAYS = 0 STAGE_COPY_OPTIONS = \( PURGE = TRUE \) STAGE_FILE_FORMAT = \( TYPE = 'csv' FIELD_DELIMITER= '\\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='__artie_null_value' EMPTY_FIELD_AS_NULL=FALSE\)`).
 			WillReturnResult(sqlmock.NewResult(0, 0))
 
-		// Use a more flexible pattern for the PUT query that matches the random file name
-		s.mockDB.ExpectExec(`PUT 'file:///var/folders/.*/T/DATABASE\.SCHEMA\.TEMP___ARTIE_.*\.csv\.gz' @"DATABASE"\."SCHEMA"\."%TEMP___ARTIE_.*"`).
+		// Use os.TempDir() to get the correct temp directory path
+		s.mockDB.ExpectExec(fmt.Sprintf(`PUT 'file://%sDATABASE\.SCHEMA\.TEMP___ARTIE_.*\.csv\.gz' @"DATABASE"\."SCHEMA"\."%%TEMP___ARTIE_.*"`, tempDir)).
 			WillReturnResult(sqlmock.NewResult(0, 0))
 
 		// Use a more flexible pattern for the COPY query that matches the random file name
@@ -175,8 +180,8 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 	}
 	{
 		// Set up expectations for the second test case (don't create temporary table)
-		// Use a more flexible pattern for the PUT query that matches the random file name
-		s.mockDB.ExpectExec(`PUT 'file:///var/folders/.*/T/DATABASE\.SCHEMA\.TEMP___ARTIE_.*\.csv\.gz' @"DATABASE"\."SCHEMA"\."%TEMP___ARTIE_.*"`).
+		// Use os.TempDir() to get the correct temp directory path
+		s.mockDB.ExpectExec(fmt.Sprintf(`PUT 'file://%sDATABASE\.SCHEMA\.TEMP___ARTIE_.*\.csv\.gz' @"DATABASE"\."SCHEMA"\."%%TEMP___ARTIE_.*"`, tempDir)).
 			WillReturnResult(sqlmock.NewResult(0, 0))
 
 		// Use a more flexible pattern for the COPY query that matches the random file name
