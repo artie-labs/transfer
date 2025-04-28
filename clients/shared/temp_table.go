@@ -56,7 +56,7 @@ type TemporaryDataFile struct {
 
 func NewTemporaryDataFile(newTableID sql.TableIdentifier) TemporaryDataFile {
 	return TemporaryDataFile{
-		fileName: fmt.Sprintf("%s.csv.gz", strings.ReplaceAll(newTableID.FullyQualifiedName(), `"`, "")),
+		fileName: fmt.Sprintf("%s_%s.csv.gz", strings.ReplaceAll(newTableID.FullyQualifiedName(), `"`, ""), stringutil.Random(10)),
 	}
 }
 
