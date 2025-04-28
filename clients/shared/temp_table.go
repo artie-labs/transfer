@@ -60,6 +60,12 @@ func NewTemporaryDataFile(newTableID sql.TableIdentifier) TemporaryDataFile {
 	}
 }
 
+func NewTemporaryDataFileWithFileName(fileName string) TemporaryDataFile {
+	return TemporaryDataFile{
+		fileName: fileName,
+	}
+}
+
 func (t TemporaryDataFile) WriteTemporaryTableFile(tableData *optimization.TableData, valueConverter ValueConverterFunc, sharedDestinationSettings config.SharedDestinationSettings) (File, AdditionalOutput, error) {
 	fp := filepath.Join(os.TempDir(), t.fileName)
 	gzipWriter, err := csvwriter.NewGzipWriter(fp)
