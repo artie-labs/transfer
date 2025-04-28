@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"path/filepath"
 
 	_ "github.com/databricks/databricks-sql-go"
 	"github.com/databricks/databricks-sql-go/driverctx"
@@ -14,7 +13,6 @@ import (
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/csvwriter"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -168,50 +166,27 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 	return nil
 }
 
-func castColValStaging(colVal any, colKind typing.KindDetails) (string, error) {
+func castColValStaging(colVal any, colKind typing.KindDetails, _ config.SharedDestinationSettings) (shared.ValueConvertResponse, error) {
 	if colVal == nil {
-		return constants.NullValuePlaceholder, nil
+		return shared.ValueConvertResponse{Value: constants.NullValuePlaceholder}, nil
 	}
 
 	value, err := values.ToString(colVal, colKind)
 	if err != nil {
-		return "", err
+		return shared.ValueConvertResponse{}, err
 	}
 
-	return value, nil
+	return shared.ValueConvertResponse{Value: value}, nil
 }
 
 func (s Store) writeTemporaryTableFile(tableData *optimization.TableData, fileName string) (string, error) {
-	fp := filepath.Join(os.TempDir(), fileName)
-	gzipWriter, err := csvwriter.NewGzipWriter(fp)
+	tempTableDataFile := shared.NewTemporaryDataFileWithFileName(fileName)
+	file, _, err := tempTableDataFile.WriteTemporaryTableFile(tableData, castColValStaging, s.cfg.SharedDestinationSettings)
 	if err != nil {
-		return "", fmt.Errorf("failed to create gzip writer: %w", err)
+		return "", fmt.Errorf("failed to write temporary table file: %w", err)
 	}
 
-	defer gzipWriter.Close()
-
-	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
-	for _, value := range tableData.Rows() {
-		var row []string
-		for _, col := range columns {
-			castedValue, castErr := castColValStaging(value[col.Name()], col.KindDetails)
-			if castErr != nil {
-				return "", castErr
-			}
-
-			row = append(row, castedValue)
-		}
-
-		if err = gzipWriter.Write(row); err != nil {
-			return "", fmt.Errorf("failed to write to csv: %w", err)
-		}
-	}
-
-	if err = gzipWriter.Flush(); err != nil {
-		return "", fmt.Errorf("failed to flush gzip writer: %w", err)
-	}
-
-	return fp, nil
+	return file.FilePath, nil
 }
 
 func (s Store) SweepTemporaryTables(ctx context.Context) error {

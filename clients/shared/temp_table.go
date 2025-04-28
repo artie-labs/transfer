@@ -50,8 +50,24 @@ type ValueConvertResponse struct {
 
 type ValueConverterFunc func(colValue any, colKind typing.KindDetails, sharedDestinationSettings config.SharedDestinationSettings) (ValueConvertResponse, error)
 
-func WriteTemporaryTableFile(tableData *optimization.TableData, newTableID sql.TableIdentifier, valueConverter ValueConverterFunc, sharedDestinationSettings config.SharedDestinationSettings) (File, AdditionalOutput, error) {
-	fp := filepath.Join(os.TempDir(), fmt.Sprintf("%s.csv.gz", strings.ReplaceAll(newTableID.FullyQualifiedName(), `"`, "")))
+type TemporaryDataFile struct {
+	fileName string
+}
+
+func NewTemporaryDataFile(newTableID sql.TableIdentifier) TemporaryDataFile {
+	return TemporaryDataFile{
+		fileName: fmt.Sprintf("%s.csv.gz", strings.ReplaceAll(newTableID.FullyQualifiedName(), `"`, "")),
+	}
+}
+
+func NewTemporaryDataFileWithFileName(fileName string) TemporaryDataFile {
+	return TemporaryDataFile{
+		fileName: fileName,
+	}
+}
+
+func (t TemporaryDataFile) WriteTemporaryTableFile(tableData *optimization.TableData, valueConverter ValueConverterFunc, sharedDestinationSettings config.SharedDestinationSettings) (File, AdditionalOutput, error) {
+	fp := filepath.Join(os.TempDir(), t.fileName)
 	gzipWriter, err := csvwriter.NewGzipWriter(fp)
 	if err != nil {
 		return File{}, AdditionalOutput{}, fmt.Errorf("failed to create gzip writer: %w", err)
