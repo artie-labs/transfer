@@ -3,6 +3,7 @@ package snowflake
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -156,39 +157,34 @@ func generateTableData(rows int) (dialect.TableIdentifier, *optimization.TableDa
 func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 	tempTableID, tableData := generateTableData(10)
 	s.stageStore.GetConfigMap().AddTable(tempTableID, types.NewDestinationTableConfig(nil, true))
-	sflkTc := s.stageStore.GetConfigMap().GetTableConfig(tempTableID)
+	snowflakeTableConfig := s.stageStore.GetConfigMap().GetTableConfig(tempTableID)
 
-	// Escape the temp directory path for use in regex
 	tempDir := regexp.QuoteMeta(os.TempDir())
-
+	expectedFileName := "DATABASE.SCHEMA.TEMP___ARTIE_.*.csv.gz"
+	expectedPath := filepath.Join(tempDir, expectedFileName)
 	{
-		// Set up expectations for the first test case
-		// Use a more flexible pattern for the CREATE TABLE query
+		// Set up expectations for the first test case (creates temp table)
 		s.mockDB.ExpectExec(`CREATE TABLE IF NOT EXISTS "DATABASE"\."SCHEMA"\."TEMP___ARTIE_.*" \("USER_ID" string,"FIRST_NAME" string,"LAST_NAME" string,"DUSTY" string\) DATA_RETENTION_TIME_IN_DAYS = 0 STAGE_COPY_OPTIONS = \( PURGE = TRUE \) STAGE_FILE_FORMAT = \( TYPE = 'csv' FIELD_DELIMITER= '\\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='__artie_null_value' EMPTY_FIELD_AS_NULL=FALSE\)`).
 			WillReturnResult(sqlmock.NewResult(0, 0))
 
-		// Use os.TempDir() to get the correct temp directory path
-		s.mockDB.ExpectExec(fmt.Sprintf(`PUT 'file://%sDATABASE\.SCHEMA\.TEMP___ARTIE_.*\.csv\.gz' @"DATABASE"\."SCHEMA"\."%%TEMP___ARTIE_.*"`, tempDir)).
+		s.mockDB.ExpectExec(fmt.Sprintf(`PUT 'file://%s' @"DATABASE"\."SCHEMA"\."%%TEMP___ARTIE_.*"`, expectedPath)).
 			WillReturnResult(sqlmock.NewResult(0, 0))
 
-		// Use a more flexible pattern for the COPY query that matches the random file name
-		s.mockDB.ExpectQuery(`COPY INTO "DATABASE"\."SCHEMA"\."TEMP___ARTIE_.*" \("USER_ID","FIRST_NAME","LAST_NAME","DUSTY"\) FROM \(SELECT \$1,\$2,\$3,\$4 FROM @"DATABASE"\."SCHEMA"\."%TEMP___ARTIE_.*"\) FILES = \('.*\.csv\.gz'\)`).
+		s.mockDB.ExpectQuery(fmt.Sprintf(`COPY INTO "DATABASE"\."SCHEMA"\."TEMP___ARTIE_.*" \("USER_ID","FIRST_NAME","LAST_NAME","DUSTY"\) FROM \(SELECT \$1,\$2,\$3,\$4 FROM @"DATABASE"\."SCHEMA"\."%%TEMP___ARTIE_.*"\) FILES = \('%s'\)`, expectedFileName)).
 			WillReturnRows(sqlmock.NewRows([]string{"rows_loaded"}).AddRow(fmt.Sprintf("%d", tableData.NumberOfRows())))
 
-		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(s.T().Context(), tableData, sflkTc, tempTableID, tempTableID, types.AdditionalSettings{}, true))
+		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(s.T().Context(), tableData, snowflakeTableConfig, tempTableID, tempTableID, types.AdditionalSettings{}, true))
 		assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
 	}
 	{
 		// Set up expectations for the second test case (don't create temporary table)
-		// Use os.TempDir() to get the correct temp directory path
-		s.mockDB.ExpectExec(fmt.Sprintf(`PUT 'file://%sDATABASE\.SCHEMA\.TEMP___ARTIE_.*\.csv\.gz' @"DATABASE"\."SCHEMA"\."%%TEMP___ARTIE_.*"`, tempDir)).
+		s.mockDB.ExpectExec(fmt.Sprintf(`PUT 'file://%s' @"DATABASE"\."SCHEMA"\."%%TEMP___ARTIE_.*"`, expectedPath)).
 			WillReturnResult(sqlmock.NewResult(0, 0))
 
-		// Use a more flexible pattern for the COPY query that matches the random file name
-		s.mockDB.ExpectQuery(`COPY INTO "DATABASE"\."SCHEMA"\."TEMP___ARTIE_.*" \("USER_ID","FIRST_NAME","LAST_NAME","DUSTY"\) FROM \(SELECT \$1,\$2,\$3,\$4 FROM @"DATABASE"\."SCHEMA"\."%TEMP___ARTIE_.*"\) FILES = \('.*\.csv\.gz'\)`).
+		s.mockDB.ExpectQuery(fmt.Sprintf(`COPY INTO "DATABASE"\."SCHEMA"\."TEMP___ARTIE_.*" \("USER_ID","FIRST_NAME","LAST_NAME","DUSTY"\) FROM \(SELECT \$1,\$2,\$3,\$4 FROM @"DATABASE"\."SCHEMA"\."%%TEMP___ARTIE_.*"\) FILES = \('%s'\)`, expectedFileName)).
 			WillReturnRows(sqlmock.NewRows([]string{"rows_loaded"}).AddRow(fmt.Sprintf("%d", tableData.NumberOfRows())))
 
-		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(s.T().Context(), tableData, sflkTc, tempTableID, tempTableID, types.AdditionalSettings{}, false))
+		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(s.T().Context(), tableData, snowflakeTableConfig, tempTableID, tempTableID, types.AdditionalSettings{}, false))
 		assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
 	}
 }
