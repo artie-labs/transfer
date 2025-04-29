@@ -24,7 +24,7 @@ type MergeTest struct {
 	framework *shared.TestFramework
 }
 
-func NewMergeTest(ctx context.Context, dest destination.Destination, topicConfig kafkalib.TopicConfig) *MergeTest {
+func NewMergeTest(ctx context.Context, dest destination.Baseline, topicConfig kafkalib.TopicConfig) *MergeTest {
 	return &MergeTest{
 		framework: shared.NewTestFramework(ctx, dest, topicConfig),
 	}
@@ -240,9 +240,17 @@ func main() {
 		logger.Fatal("Failed to load settings", slog.Any("err", err))
 	}
 
-	dest, err := utils.LoadDestination(ctx, settings.Config, nil)
-	if err != nil {
-		logger.Fatal("Failed to load destination", slog.Any("err", err))
+	var dest destination.Baseline
+	if utils.IsOutputBaseline(settings.Config) {
+		dest, err = utils.LoadBaseline(ctx, settings.Config)
+		if err != nil {
+			logger.Fatal("Failed to load baseline", slog.Any("err", err))
+		}
+	} else {
+		dest, err = utils.LoadDestination(ctx, settings.Config, nil)
+		if err != nil {
+			logger.Fatal("Failed to load destination", slog.Any("err", err))
+		}
 	}
 
 	tc, err := settings.Config.TopicConfigs()

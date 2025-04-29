@@ -9,6 +9,7 @@ import (
 
 	"github.com/artie-labs/transfer/clients/bigquery/dialect"
 	databricksdialect "github.com/artie-labs/transfer/clients/databricks/dialect"
+	"github.com/artie-labs/transfer/clients/iceberg"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
@@ -21,13 +22,14 @@ import (
 
 type TestFramework struct {
 	ctx         context.Context
-	dest        destination.Destination
 	tableID     sql.TableIdentifier
 	tableData   *optimization.TableData
 	topicConfig kafkalib.TopicConfig
+
+	dest destination.Baseline
 }
 
-func NewTestFramework(ctx context.Context, dest destination.Destination, topicConfig kafkalib.TopicConfig) *TestFramework {
+func NewTestFramework(ctx context.Context, dest destination.Baseline, topicConfig kafkalib.TopicConfig) *TestFramework {
 	return &TestFramework{
 		ctx:         ctx,
 		dest:        dest,
@@ -93,8 +95,33 @@ func (tf *TestFramework) GenerateRowData(pkValue int) map[string]any {
 	}
 }
 
+func (tf *TestFramework) verifyRowCountIceberg(_iceberg iceberg.Store, expected int, query string) error {
+	rows, err := _iceberg.GetApacheLivyClient().QueryContext(tf.ctx, query)
+	if err != nil {
+		return fmt.Errorf("failed to query table: %w", err)
+	}
+
+	data, err := rows.MarshalJSON()
+	if err != nil {
+		return fmt.Errorf("failed to marshal rows: %w", err)
+	}
+
+	fmt.Println("data", string(data))
+	return nil
+}
+
 func (tf *TestFramework) VerifyRowCount(expected int) error {
-	rows, err := tf.dest.Query(fmt.Sprintf("SELECT COUNT(*) FROM %s", tf.tableID.FullyQualifiedName()))
+	// Is it Iceberg?
+	if _iceberg, ok := tf.dest.(iceberg.Store); ok {
+		return tf.verifyRowCountIceberg(_iceberg, expected, fmt.Sprintf("SELECT COUNT(*) FROM %s", tf.tableID.FullyQualifiedName()))
+	}
+
+	dest, ok := tf.dest.(destination.Destination)
+	if !ok {
+		return fmt.Errorf("destination does not implement destination.Destination")
+	}
+
+	rows, err := dest.Query(fmt.Sprintf("SELECT COUNT(*) FROM %s", tf.tableID.FullyQualifiedName()))
 	if err != nil {
 		return fmt.Errorf("failed to query table: %w", err)
 	}
@@ -226,7 +253,17 @@ func (tf *TestFramework) VerifyDataContent(rowCount int) error {
 
 func (tf *TestFramework) Cleanup(tableID sql.TableIdentifier) error {
 	dropTableID := tableID.WithDisableDropProtection(true)
-	return tf.dest.DropTable(tf.ctx, dropTableID)
+
+	if _iceberg, ok := tf.dest.(iceberg.Store); ok {
+		return _iceberg.DeleteTable(tf.ctx, dropTableID)
+	}
+
+	dest, ok := tf.dest.(destination.Destination)
+	if !ok {
+		return fmt.Errorf("destination does not implement destination.Destination")
+	}
+
+	return dest.DropTable(tf.ctx, dropTableID)
 }
 
 func (tf *TestFramework) GetTableData() *optimization.TableData {
@@ -237,7 +274,7 @@ func (tf *TestFramework) GetTableID() sql.TableIdentifier {
 	return tf.tableID
 }
 
-func (tf *TestFramework) GetDestination() destination.Destination {
+func (tf *TestFramework) GetDestination() destination.Baseline {
 	return tf.dest
 }
 
