@@ -44,6 +44,10 @@ func (s SessionState) IsReady() bool {
 	return s == StateIdle
 }
 
+type ListSessonResponse struct {
+	Sessions []GetSessionResponse `json:"sessions"`
+}
+
 type GetSessionResponse struct {
 	ID    int          `json:"id"`
 	State SessionState `json:"state"`
