@@ -22,6 +22,8 @@ type Converter interface {
 type GetStringConverterOpts struct {
 	TimestampTZLayoutOverride  string
 	TimestampNTZLayoutOverride string
+	// Redshift - This is to communicate with the typing.StructConverter so that we can handle double quoting literal string values
+	Redshift bool
 }
 
 func GetStringConverter(kd typing.KindDetails, opts GetStringConverterOpts) (Converter, error) {
@@ -231,15 +233,21 @@ func (DecimalConverter) Convert(value any) (string, error) {
 	}
 }
 
-type StructConverter struct{}
+type StructConverter struct {
+	redshift bool
+}
 
-func (StructConverter) Convert(value any) (string, error) {
+func (s StructConverter) Convert(value any) (string, error) {
 	if strings.Contains(fmt.Sprint(value), constants.ToastUnavailableValuePlaceholder) {
 		return fmt.Sprintf(`{"key":"%s"}`, constants.ToastUnavailableValuePlaceholder), nil
 	}
 
 	switch castedValue := (value).(type) {
 	case string:
+		if s.redshift {
+			return fmt.Sprintf("%q", castedValue), nil
+		}
+
 		return castedValue, nil
 	default:
 		colValBytes, err := json.Marshal(value)
