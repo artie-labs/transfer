@@ -85,8 +85,6 @@ func (t TemporaryDataFile) WriteTemporaryTableFile(tableData *optimization.Table
 				return File{}, AdditionalOutput{}, castErr
 			}
 
-			fmt.Println("colName", col.Name(), "value", result.Value, fmt.Sprintf("type: %T", value[col.Name()]))
-
 			if result.NewLength > 0 {
 				_newLength, ok := columnToNewLengthMap[col.Name()]
 				if result.NewLength > _newLength || !ok {
