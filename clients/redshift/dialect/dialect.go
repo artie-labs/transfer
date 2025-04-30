@@ -26,7 +26,16 @@ func (RedshiftDialect) IsColumnAlreadyExistsErr(err error) bool {
 	return strings.Contains(err.Error(), "already exists")
 }
 
-func (RedshiftDialect) IsTableDoesNotExistErr(_ error) bool {
+func (RedshiftDialect) IsTableDoesNotExistErr(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	// 42P01 is the SQLSTATE code for table does not exist.
+	if strings.Contains(err.Error(), "does not exist (SQLSTATE 42P01)") {
+		return true
+	}
+
 	return false
 }
 
