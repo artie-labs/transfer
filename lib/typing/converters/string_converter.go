@@ -46,7 +46,7 @@ func GetStringConverter(kd typing.KindDetails, opts GetStringConverterOpts) (Con
 	case typing.Array.Kind:
 		return ArrayConverter{}, nil
 	case typing.Struct.Kind:
-		return NewStructConverter(opts.Redshift), nil
+		return NewStructConverter(), nil
 	// Numbers types
 	case typing.EDecimal.Kind:
 		return DecimalConverter{}, nil
@@ -233,13 +233,11 @@ func (DecimalConverter) Convert(value any) (string, error) {
 	}
 }
 
-func NewStructConverter(redshift bool) StructConverter {
-	return StructConverter{redshift: redshift}
+func NewStructConverter() StructConverter {
+	return StructConverter{}
 }
 
-type StructConverter struct {
-	redshift bool
-}
+type StructConverter struct{}
 
 func (s StructConverter) Convert(value any) (string, error) {
 	if strings.Contains(fmt.Sprint(value), constants.ToastUnavailableValuePlaceholder) {
@@ -248,11 +246,7 @@ func (s StructConverter) Convert(value any) (string, error) {
 
 	switch castedValue := (value).(type) {
 	case string:
-		if s.redshift {
-			return fmt.Sprintf("%q", castedValue), nil
-		}
-
-		return castedValue, nil
+		return fmt.Sprintf("%q", castedValue), nil
 	default:
 		colValBytes, err := json.Marshal(value)
 		if err != nil {
