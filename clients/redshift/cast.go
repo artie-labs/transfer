@@ -80,6 +80,7 @@ func castColValStaging(colVal any, colKind typing.KindDetails, sharedDestination
 	colValString, err := values.ToStringOpts(colVal, colKind, converters.GetStringConverterOpts{
 		TimestampTZLayoutOverride:  ext.RFC3339MicroTZ,
 		TimestampNTZLayoutOverride: ext.RFC3339MicroTZNoTZ,
+		Redshift:                   true,
 	})
 
 	if err != nil {
