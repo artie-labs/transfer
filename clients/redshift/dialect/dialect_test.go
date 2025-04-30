@@ -422,3 +422,14 @@ func TestRedshiftDialect_BuildCopyStatement(t *testing.T) {
 		RedshiftDialect{}.BuildCopyStatement(fakeTableID, cols, s3URI, credentialsClause),
 	)
 }
+
+func TestRedshiftDialect_IsTableDoesNotExistErr(t *testing.T) {
+	// nil
+	assert.False(t, RedshiftDialect{}.IsTableDoesNotExistErr(nil))
+
+	// Random error
+	assert.False(t, RedshiftDialect{}.IsTableDoesNotExistErr(fmt.Errorf("random error")))
+
+	// Table does not exist error
+	assert.True(t, RedshiftDialect{}.IsTableDoesNotExistErr(fmt.Errorf(`ERROR: relation "artie.alloy_journeyactionversions_v1" does not exist (SQLSTATE 42P01)`)))
+}
