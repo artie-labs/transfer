@@ -46,7 +46,7 @@ func GetStringConverter(kd typing.KindDetails, opts GetStringConverterOpts) (Con
 	case typing.Array.Kind:
 		return ArrayConverter{}, nil
 	case typing.Struct.Kind:
-		return StructConverter{}, nil
+		return NewStructConverter(opts.Redshift), nil
 	// Numbers types
 	case typing.EDecimal.Kind:
 		return DecimalConverter{}, nil
@@ -231,6 +231,10 @@ func (DecimalConverter) Convert(value any) (string, error) {
 	default:
 		return "", fmt.Errorf("unexpected value: '%v' type: %T", value, value)
 	}
+}
+
+func NewStructConverter(redshift bool) StructConverter {
+	return StructConverter{redshift: redshift}
 }
 
 type StructConverter struct {
