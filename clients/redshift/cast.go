@@ -41,7 +41,7 @@ func replaceExceededValues(colVal string, colKind typing.KindDetails, truncateEx
 		// Try again, but use [typing.String] instead.
 		result := replaceExceededValues(colVal, typing.String, truncateExceededValue, expandStringPrecision)
 		if result.Exceeded {
-			result.Value = fmt.Sprintf(`"%s"`, result.Value)
+			result.Value = fmt.Sprintf("%q", result.Value)
 		}
 
 		return result
@@ -80,6 +80,7 @@ func castColValStaging(colVal any, colKind typing.KindDetails, sharedDestination
 	colValString, err := values.ToStringOpts(colVal, colKind, converters.GetStringConverterOpts{
 		TimestampTZLayoutOverride:  ext.RFC3339MicroTZ,
 		TimestampNTZLayoutOverride: ext.RFC3339MicroTZNoTZ,
+		Redshift:                   true,
 	})
 
 	if err != nil {
