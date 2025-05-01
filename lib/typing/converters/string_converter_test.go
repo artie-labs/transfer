@@ -221,57 +221,38 @@ func TestDecimalConverter_Convert(t *testing.T) {
 func TestStructConverter_Convert(t *testing.T) {
 	{
 		// Toast
-		for _, rs := range []bool{true, false} {
-			val, err := NewStructConverter(rs).Convert(constants.ToastUnavailableValuePlaceholder)
-			assert.NoError(t, err)
-			assert.Equal(t, `{"key":"__debezium_unavailable_value"}`, val)
-		}
+		val, err := StructConverter{}.Convert(constants.ToastUnavailableValuePlaceholder)
+		assert.NoError(t, err)
+		assert.Equal(t, `{"key":"__debezium_unavailable_value"}`, val)
 	}
 	{
 		// Toast object
-		for _, rs := range []bool{true, false} {
-			val, err := NewStructConverter(rs).Convert(`{"__debezium_unavailable_value":"__debezium_unavailable_value"}`)
-			assert.NoError(t, err)
-			assert.Equal(t, `{"key":"__debezium_unavailable_value"}`, val)
-		}
+		val, err := StructConverter{}.Convert(`{"__debezium_unavailable_value":"__debezium_unavailable_value"}`)
+		assert.NoError(t, err)
+		assert.Equal(t, `{"key":"__debezium_unavailable_value"}`, val)
 	}
 	{
-		value := `{"foo":"bar"}`
-		{
-			// Redsshift = false
-			val, err := NewStructConverter(false).Convert(value)
-			assert.NoError(t, err)
-			assert.Equal(t, value, val)
-		}
-		{
-			// Redshift = true
-			val, err := NewStructConverter(true).Convert(value)
-			assert.NoError(t, err)
-			assert.Equal(t, `"{\"foo\":\"bar\"}"`, val)
-		}
+		// Struct
+		val, err := StructConverter{}.Convert(`{"foo":"bar"}`)
+		assert.NoError(t, err)
+		assert.Equal(t, `"{\"foo\":\"bar\"}"`, val)
 	}
 	{
 		// Boolean
-		for _, rs := range []bool{true, false} {
-			val, err := NewStructConverter(rs).Convert(true)
-			assert.NoError(t, err)
-			assert.Equal(t, "true", val)
-		}
+		val, err := StructConverter{}.Convert(true)
+		assert.NoError(t, err)
+		assert.Equal(t, "true", val)
 	}
 	{
 		// Map
-		for _, rs := range []bool{true, false} {
-			val, err := NewStructConverter(rs).Convert(map[string]any{"foo": "bar"})
-			assert.NoError(t, err)
-			assert.Equal(t, `{"foo":"bar"}`, val)
-		}
+		val, err := StructConverter{}.Convert(map[string]any{"foo": "bar"})
+		assert.NoError(t, err)
+		assert.Equal(t, `{"foo":"bar"}`, val)
 	}
 	{
 		// Number
-		for _, rs := range []bool{true, false} {
-			val, err := NewStructConverter(rs).Convert(123)
-			assert.NoError(t, err)
-			assert.Equal(t, "123", val)
-		}
+		val, err := StructConverter{}.Convert(123)
+		assert.NoError(t, err)
+		assert.Equal(t, "123", val)
 	}
 }
