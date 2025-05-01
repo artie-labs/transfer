@@ -176,7 +176,7 @@ func (c *Client) submitLivyStatement(ctx context.Context, code string) (int, err
 
 	out, err := c.doRequest(ctx, "POST", fmt.Sprintf("/sessions/%d/statements", c.sessionID), reqBody)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to submit statement: %w, response: %q", err, string(out.body))
 	}
 
 	var resp CreateStatementResponse
