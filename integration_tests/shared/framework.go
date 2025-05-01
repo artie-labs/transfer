@@ -7,6 +7,7 @@ import (
 
 	"github.com/artie-labs/transfer/clients/bigquery/dialect"
 	databricksdialect "github.com/artie-labs/transfer/clients/databricks/dialect"
+	mssqlDialect "github.com/artie-labs/transfer/clients/mssql/dialect"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
@@ -27,6 +28,11 @@ type TestFramework struct {
 
 func (t TestFramework) BigQuery() bool {
 	_, ok := t.dest.Dialect().(dialect.BigQueryDialect)
+	return ok
+}
+
+func (t TestFramework) MSSQL() bool {
+	_, ok := t.dest.Dialect().(mssqlDialect.MSSQLDialect)
 	return ok
 }
 

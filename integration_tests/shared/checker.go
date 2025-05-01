@@ -5,9 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-
-	"github.com/artie-labs/transfer/lib/config"
-	"github.com/artie-labs/transfer/lib/typing"
 )
 
 func (tf *TestFramework) scanAndCheckRow(rows *sql.Rows, i int) error {
@@ -105,13 +102,6 @@ func (tf *TestFramework) scanAndCheckRow(rows *sql.Rows, i int) error {
 		return nil
 	}
 
-	// Validate JSON string
-	_dialect := tf.dest.Dialect()
-	kd, err := _dialect.KindForDataType(_dialect.DataTypeForKind(typing.Struct, false, config.SharedDestinationColumnSettings{}), "")
-	if err != nil {
-		return fmt.Errorf("failed to get kind for data type: %w", err)
-	}
-
 	// Validate JSON boolean
 	if jsonBooleanStr != (i%2 == 0) {
 		return fmt.Errorf("unexpected json_boolean for row %d: expected %t, got %t", i, i%2 == 0, jsonBooleanStr)
@@ -122,17 +112,15 @@ func (tf *TestFramework) scanAndCheckRow(rows *sql.Rows, i int) error {
 		return fmt.Errorf("unexpected json_number for row %d: expected %d, got %d", i, i, jsonNumber)
 	}
 
-	switch kd {
-	case typing.String:
-		if jsonStringStr != fmt.Sprintf("hello world %d", i) {
-			return fmt.Errorf("unexpected json_string for row %d: expected %s, got %q", i, fmt.Sprintf("hello world %d", i), jsonStringStr)
-		}
-	case typing.Struct:
-		if jsonStringStr != fmt.Sprintf(`"hello world %d"`, i) {
-			return fmt.Errorf("unexpected json_string for row %d: expected %s, got %q", i, fmt.Sprintf(`"hello world %d"`, i), jsonStringStr)
-		}
-	default:
-		return fmt.Errorf("unexpected data type: %q", kd.Kind)
+	// Validate JSON string
+	expectedJSONString := fmt.Sprintf(`"hello world %d"`, i)
+
+	if tf.MSSQL() {
+		expectedJSONString = fmt.Sprintf("hello world %d", i)
+	}
+
+	if jsonStringStr != expectedJSONString {
+		return fmt.Errorf("unexpected json_string for row %d: expected %s, got %q", i, expectedJSONString, jsonStringStr)
 	}
 
 	return nil
