@@ -8,11 +8,11 @@ import (
 )
 
 func (tf *TestFramework) scanAndCheckRow(rows *sql.Rows, i int) error {
-	return tf.VerifyRowData(rows, i, 1.5, false)
+	return tf.VerifyRowData(rows, i, 1.5)
 }
 
 // VerifyRowData verifies the data in a row matches the expected values
-func (tf *TestFramework) VerifyRowData(rows *sql.Rows, i int, valueMultiplier float64, jsonNumberAsString bool) error {
+func (tf *TestFramework) VerifyRowData(rows *sql.Rows, i int, valueMultiplier float64) error {
 	var id int
 	var name string
 	var value float64
@@ -20,25 +20,17 @@ func (tf *TestFramework) VerifyRowData(rows *sql.Rows, i int, valueMultiplier fl
 	var jsonArrayStr string
 	var jsonStringStr string
 	var jsonBooleanStr bool
-	var jsonNumber interface{}
+	var jsonNumber string
 
 	if tf.BigQuery() {
 		// BigQuery does not support booleans, numbers and strings in a JSON column.
 		if err := rows.Scan(&id, &name, &value, &jsonDataStr, &jsonArrayStr); err != nil {
 			return fmt.Errorf("failed to scan row: %w", err)
 		}
-	} else if jsonNumberAsString {
-		var jsonNumberStr string
-		if err := rows.Scan(&id, &name, &value, &jsonDataStr, &jsonArrayStr, &jsonStringStr, &jsonBooleanStr, &jsonNumberStr); err != nil {
-			return fmt.Errorf("failed to scan row: %w", err)
-		}
-		jsonNumber = jsonNumberStr
 	} else {
-		var jsonNumberInt int
-		if err := rows.Scan(&id, &name, &value, &jsonDataStr, &jsonArrayStr, &jsonStringStr, &jsonBooleanStr, &jsonNumberInt); err != nil {
+		if err := rows.Scan(&id, &name, &value, &jsonDataStr, &jsonArrayStr, &jsonStringStr, &jsonBooleanStr, &jsonNumber); err != nil {
 			return fmt.Errorf("failed to scan row: %w", err)
 		}
-		jsonNumber = jsonNumberInt
 	}
 
 	expectedName := fmt.Sprintf("test_name_%d", i)
@@ -121,14 +113,8 @@ func (tf *TestFramework) VerifyRowData(rows *sql.Rows, i int, valueMultiplier fl
 	}
 
 	// Validate JSON number
-	if jsonNumberAsString {
-		if jsonNumber.(string) != fmt.Sprintf("%d", i) {
-			return fmt.Errorf("unexpected json_number for row %d: expected %s, got %q", i, fmt.Sprintf("%d", i), jsonNumber.(string))
-		}
-	} else {
-		if jsonNumber.(int) != i {
-			return fmt.Errorf("unexpected json_number for row %d: expected %d, got %d", i, i, jsonNumber.(int))
-		}
+	if jsonNumber != fmt.Sprintf("%d", i) {
+		return fmt.Errorf("unexpected json_number for row %d: expected %s, got %q", i, fmt.Sprintf("%d", i), jsonNumber)
 	}
 
 	// Validate JSON string

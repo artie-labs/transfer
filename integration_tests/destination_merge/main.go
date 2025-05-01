@@ -93,7 +93,7 @@ func (mt *MergeTest) verifyUpdatedData(numRows int) error {
 			return fmt.Errorf("expected more rows: expected %d, got %d", numRows, i)
 		}
 
-		if err := mt.framework.VerifyRowData(rows, i, 2.0, true); err != nil {
+		if err := mt.framework.VerifyRowData(rows, i, 2.0); err != nil {
 			return fmt.Errorf("failed to verify row %d: %w", i, err)
 		}
 	}
