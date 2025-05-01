@@ -2,13 +2,12 @@ package shared
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"reflect"
 	"time"
 
 	"github.com/artie-labs/transfer/clients/bigquery/dialect"
 	databricksdialect "github.com/artie-labs/transfer/clients/databricks/dialect"
+	mssqlDialect "github.com/artie-labs/transfer/clients/mssql/dialect"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
@@ -25,6 +24,16 @@ type TestFramework struct {
 	tableID     sql.TableIdentifier
 	tableData   *optimization.TableData
 	topicConfig kafkalib.TopicConfig
+}
+
+func (t TestFramework) BigQuery() bool {
+	_, ok := t.dest.Dialect().(dialect.BigQueryDialect)
+	return ok
+}
+
+func (t TestFramework) MSSQL() bool {
+	_, ok := t.dest.Dialect().(mssqlDialect.MSSQLDialect)
+	return ok
 }
 
 func NewTestFramework(ctx context.Context, dest destination.Destination, topicConfig kafkalib.TopicConfig) *TestFramework {
@@ -45,6 +54,12 @@ func (tf *TestFramework) SetupColumns(additionalColumns map[string]typing.KindDe
 		"value":      typing.Float,
 		"json_data":  typing.Struct,
 		"json_array": typing.Array,
+	}
+
+	if !tf.BigQuery() {
+		colTypes["json_string"] = typing.Struct
+		colTypes["json_boolean"] = typing.Struct
+		colTypes["json_number"] = typing.Struct
 	}
 
 	for colName, colType := range colTypes {
@@ -83,7 +98,7 @@ func (tf *TestFramework) GenerateRowData(pkValue int) map[string]any {
 		},
 	}
 
-	return map[string]any{
+	row := map[string]any{
 		"id":         pkValue,
 		"name":       fmt.Sprintf("test_name_%d", pkValue),
 		"created_at": time.Now().Format(time.RFC3339Nano),
@@ -91,6 +106,14 @@ func (tf *TestFramework) GenerateRowData(pkValue int) map[string]any {
 		"json_data":  jsonData,
 		"json_array": jsonArray,
 	}
+
+	if !tf.BigQuery() {
+		row["json_string"] = fmt.Sprintf("hello world %d", pkValue)
+		row["json_boolean"] = pkValue%2 == 0
+		row["json_number"] = pkValue
+	}
+
+	return row
 }
 
 func (tf *TestFramework) VerifyRowCount(expected int) error {
@@ -118,9 +141,10 @@ func (tf *TestFramework) VerifyRowCount(expected int) error {
 }
 
 func (tf *TestFramework) VerifyDataContent(rowCount int) error {
-	baseQuery := fmt.Sprintf("SELECT id, name, value, json_data, json_array FROM %s ORDER BY id", tf.tableID.FullyQualifiedName())
+	baseQuery := fmt.Sprintf("SELECT id, name, value, json_data, json_array, json_string, json_boolean, json_number FROM %s ORDER BY id", tf.tableID.FullyQualifiedName())
 
-	if _, ok := tf.dest.Dialect().(dialect.BigQueryDialect); ok {
+	if tf.BigQuery() {
+		// BigQuery does not support booleans, numbers and strings in a JSON column.
 		baseQuery = fmt.Sprintf("SELECT id, name, value, TO_JSON_STRING(json_data), TO_JSON_STRING(json_array) FROM %s ORDER BY id", tf.tableID.FullyQualifiedName())
 	}
 
@@ -134,82 +158,8 @@ func (tf *TestFramework) VerifyDataContent(rowCount int) error {
 			return fmt.Errorf("expected more rows: expected %d, got %d", rowCount, i)
 		}
 
-		var id int
-		var name string
-		var value float64
-		var jsonDataStr string
-		var jsonArrayStr string
-		if err := rows.Scan(&id, &name, &value, &jsonDataStr, &jsonArrayStr); err != nil {
-			return fmt.Errorf("failed to scan row %d: %w", i, err)
-		}
-
-		expectedName := fmt.Sprintf("test_name_%d", i)
-		expectedValue := float64(i) * 1.5
-		if id != i {
-			return fmt.Errorf("unexpected id: expected %d, got %d", i, id)
-		}
-		if name != expectedName {
-			return fmt.Errorf("unexpected name: expected %s, got %s", expectedName, name)
-		}
-		if value != expectedValue {
-			return fmt.Errorf("unexpected value: expected %f, got %f", expectedValue, value)
-		}
-
-		// Verify JSON data
-		expectedJSONData := map[string]interface{}{
-			"field1": fmt.Sprintf("value_%d", i),
-			"field2": i,
-			"field3": i%2 == 0,
-		}
-		var actualJSONData map[string]interface{}
-		if err := json.Unmarshal([]byte(jsonDataStr), &actualJSONData); err != nil {
-			return fmt.Errorf("failed to unmarshal json_data for row %d: %w", i, err)
-		}
-
-		// Normalize numeric types in actual JSON data
-		if field2, ok := actualJSONData["field2"].(float64); ok {
-			actualJSONData["field2"] = int(field2)
-		}
-
-		if !reflect.DeepEqual(expectedJSONData, actualJSONData) {
-			return fmt.Errorf("unexpected json_data for row %d: expected %v, got %v", i, expectedJSONData, actualJSONData)
-		}
-
-		// Verify JSON array
-		expectedJSONArray := []interface{}{
-			map[string]interface{}{
-				"array_field1": fmt.Sprintf("array_value_%d_1", i),
-				"array_field2": i + 1,
-			},
-			map[string]interface{}{
-				"array_field1": fmt.Sprintf("array_value_%d_2", i),
-				"array_field2": i + 2,
-			},
-		}
-
-		if ArrayAsListOfString(tf.dest) {
-			expectedJSONArray = []any{
-				fmt.Sprintf(`{"array_field1":"array_value_%d_1","array_field2":%d}`, i, i+1),
-				fmt.Sprintf(`{"array_field1":"array_value_%d_2","array_field2":%d}`, i, i+2),
-			}
-		}
-
-		var actualJSONArray []interface{}
-		if err := json.Unmarshal([]byte(jsonArrayStr), &actualJSONArray); err != nil {
-			return fmt.Errorf("failed to unmarshal json_array for row %d: %w", i, err)
-		}
-
-		// Normalize numeric types in actual JSON array
-		for _, item := range actualJSONArray {
-			if obj, ok := item.(map[string]interface{}); ok {
-				if field2, ok := obj["array_field2"].(float64); ok {
-					obj["array_field2"] = int(field2)
-				}
-			}
-		}
-
-		if !reflect.DeepEqual(expectedJSONArray, actualJSONArray) {
-			return fmt.Errorf("unexpected json_array for row %d: expected %v, got %v", i, expectedJSONArray, actualJSONArray)
+		if err := tf.scanAndCheckRow(rows, i); err != nil {
+			return fmt.Errorf("failed to check row %d: %w", i, err)
 		}
 	}
 
