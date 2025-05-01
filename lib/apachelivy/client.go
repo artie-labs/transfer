@@ -300,6 +300,28 @@ func (c *Client) waitForSessionToBeReady(ctx context.Context) error {
 	}
 }
 
+func (c Client) ListSessions(ctx context.Context) (ListSessonResponse, error) {
+	out, err := c.doRequest(ctx, "GET", "/sessions", nil)
+	if err != nil {
+		return ListSessonResponse{}, err
+	}
+
+	var resp ListSessonResponse
+	if err := json.Unmarshal(out.body, &resp); err != nil {
+		return ListSessonResponse{}, err
+	}
+
+	return resp, nil
+}
+
+func (c Client) DeleteSession(ctx context.Context, sessionID int) error {
+	if _, err := c.doRequest(ctx, http.MethodDelete, fmt.Sprintf("/sessions/%d", sessionID), nil); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func NewClient(ctx context.Context, url string, config map[string]any, jars []string, heartbeatTimeoutInSecond int) (Client, error) {
 	client := Client{
 		url:                             url,

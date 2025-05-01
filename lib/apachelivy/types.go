@@ -3,6 +3,7 @@ package apachelivy
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 )
 
@@ -44,10 +45,18 @@ func (s SessionState) IsReady() bool {
 	return s == StateIdle
 }
 
+type ListSessonResponse struct {
+	Sessions []GetSessionResponse `json:"sessions"`
+}
+
 type GetSessionResponse struct {
 	ID    int          `json:"id"`
 	State SessionState `json:"state"`
 	Kind  string       `json:"kind"`
+}
+
+func (g GetSessionResponse) TerminalState() bool {
+	return slices.Contains(TerminalSessionStates, g.State)
 }
 
 type CreateSessionRequest struct {

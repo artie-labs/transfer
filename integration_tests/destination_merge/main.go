@@ -2,14 +2,10 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
-	"reflect"
 
-	bigquerydialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
-	"github.com/artie-labs/transfer/clients/mssql/dialect"
 	"github.com/artie-labs/transfer/integration_tests/shared"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -78,12 +74,12 @@ func (mt *MergeTest) deleteData(numRows int) error {
 }
 
 func (mt *MergeTest) verifyUpdatedData(numRows int) error {
-	query := fmt.Sprintf("SELECT id, name, value, json_data, json_array FROM %s ORDER BY id ASC LIMIT %d", mt.framework.GetTableID().FullyQualifiedName(), numRows)
-	if _, ok := mt.framework.GetDestination().Dialect().(dialect.MSSQLDialect); ok {
-		query = fmt.Sprintf("SELECT TOP %d id, name, value, json_data, json_array FROM %s ORDER BY id ASC", numRows, mt.framework.GetTableID().FullyQualifiedName())
+	query := fmt.Sprintf("SELECT id, name, value, json_data, json_array, json_string, json_boolean, json_number FROM %s ORDER BY id ASC LIMIT %d", mt.framework.GetTableID().FullyQualifiedName(), numRows)
+	if mt.framework.MSSQL() {
+		query = fmt.Sprintf("SELECT TOP %d id, name, value, json_data, json_array, json_string, json_boolean, json_number FROM %s ORDER BY id ASC", numRows, mt.framework.GetTableID().FullyQualifiedName())
 	}
 
-	if _, ok := mt.framework.GetDestination().Dialect().(bigquerydialect.BigQueryDialect); ok {
+	if mt.framework.BigQuery() {
 		query = fmt.Sprintf("SELECT id, name, value, TO_JSON_STRING(json_data), TO_JSON_STRING(json_array) FROM %s ORDER BY id ASC LIMIT %d", mt.framework.GetTableID().FullyQualifiedName(), numRows)
 	}
 
@@ -97,82 +93,8 @@ func (mt *MergeTest) verifyUpdatedData(numRows int) error {
 			return fmt.Errorf("expected more rows: expected %d, got %d", numRows, i)
 		}
 
-		var id int
-		var name string
-		var value float64
-		var jsonDataStr string
-		var jsonArrayStr string
-		if err := rows.Scan(&id, &name, &value, &jsonDataStr, &jsonArrayStr); err != nil {
-			return fmt.Errorf("failed to scan row %d: %w", i, err)
-		}
-
-		expectedName := fmt.Sprintf("test_name_%d", i)
-		expectedValue := float64(i) * 2.0 // Updated value
-		if id != i {
-			return fmt.Errorf("unexpected id: expected %d, got %d", i, id)
-		}
-		if name != expectedName {
-			return fmt.Errorf("unexpected name: expected %s, got %s", expectedName, name)
-		}
-		if value != expectedValue {
-			return fmt.Errorf("unexpected value: expected %f, got %f", expectedValue, value)
-		}
-
-		// Verify JSON data
-		expectedJSONData := map[string]interface{}{
-			"field1": fmt.Sprintf("value_%d", i),
-			"field2": i,
-			"field3": i%2 == 0,
-		}
-		var actualJSONData map[string]interface{}
-		if err := json.Unmarshal([]byte(jsonDataStr), &actualJSONData); err != nil {
-			return fmt.Errorf("failed to unmarshal json_data for row %d: %w", i, err)
-		}
-
-		// Normalize numeric types in actual JSON data
-		if field2, ok := actualJSONData["field2"].(float64); ok {
-			actualJSONData["field2"] = int(field2)
-		}
-
-		if !reflect.DeepEqual(expectedJSONData, actualJSONData) {
-			return fmt.Errorf("unexpected json_data for row %d: expected %v, got %v", i, expectedJSONData, actualJSONData)
-		}
-
-		// Verify JSON array
-		expectedJSONArray := []interface{}{
-			map[string]interface{}{
-				"array_field1": fmt.Sprintf("array_value_%d_1", i),
-				"array_field2": i + 1,
-			},
-			map[string]interface{}{
-				"array_field1": fmt.Sprintf("array_value_%d_2", i),
-				"array_field2": i + 2,
-			},
-		}
-
-		if shared.ArrayAsListOfString(mt.framework.GetDestination()) {
-			expectedJSONArray = []any{
-				fmt.Sprintf(`{"array_field1":"array_value_%d_1","array_field2":%d}`, i, i+1),
-				fmt.Sprintf(`{"array_field1":"array_value_%d_2","array_field2":%d}`, i, i+2),
-			}
-		}
-
-		var actualJSONArray []interface{}
-		if err := json.Unmarshal([]byte(jsonArrayStr), &actualJSONArray); err != nil {
-			return fmt.Errorf("failed to unmarshal json_array for row %d: %w", i, err)
-		}
-
-		// Normalize numeric types in actual JSON array
-		for _, item := range actualJSONArray {
-			if obj, ok := item.(map[string]interface{}); ok {
-				if field2, ok := obj["array_field2"].(float64); ok {
-					obj["array_field2"] = int(field2)
-				}
-			}
-		}
-
-		if !reflect.DeepEqual(expectedJSONArray, actualJSONArray) {
-			return fmt.Errorf("unexpected json_array for row %d: expected %v, got %v", i, expectedJSONArray, actualJSONArray)
+		if err := mt.framework.VerifyRowData(rows, i, 2.0); err != nil {
+			return fmt.Errorf("failed to verify row %d: %w", i, err)
 		}
 	}
 

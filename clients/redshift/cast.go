@@ -41,7 +41,7 @@ func replaceExceededValues(colVal string, colKind typing.KindDetails, truncateEx
 		// Try again, but use [typing.String] instead.
 		result := replaceExceededValues(colVal, typing.String, truncateExceededValue, expandStringPrecision)
 		if result.Exceeded {
-			result.Value = fmt.Sprintf(`"%s"`, result.Value)
+			result.Value = fmt.Sprintf("%q", result.Value)
 		}
 
 		return result

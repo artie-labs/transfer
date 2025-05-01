@@ -240,7 +240,7 @@ func (StructConverter) Convert(value any) (string, error) {
 
 	switch castedValue := (value).(type) {
 	case string:
-		return castedValue, nil
+		return fmt.Sprintf("%q", castedValue), nil
 	default:
 		colValBytes, err := json.Marshal(value)
 		if err != nil {
