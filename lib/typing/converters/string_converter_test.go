@@ -221,37 +221,37 @@ func TestDecimalConverter_Convert(t *testing.T) {
 func TestStructConverter_Convert(t *testing.T) {
 	{
 		// Toast
-		val, err := NewStructConverter().Convert(constants.ToastUnavailableValuePlaceholder)
+		val, err := StructConverter{}.Convert(constants.ToastUnavailableValuePlaceholder)
 		assert.NoError(t, err)
 		assert.Equal(t, `{"key":"__debezium_unavailable_value"}`, val)
 	}
 	{
 		// Toast object
-		val, err := NewStructConverter().Convert(`{"__debezium_unavailable_value":"__debezium_unavailable_value"}`)
+		val, err := StructConverter{}.Convert(`{"__debezium_unavailable_value":"__debezium_unavailable_value"}`)
 		assert.NoError(t, err)
 		assert.Equal(t, `{"key":"__debezium_unavailable_value"}`, val)
 	}
 	{
 		// Struct
-		val, err := NewStructConverter().Convert(`{"foo":"bar"}`)
+		val, err := StructConverter{}.Convert(`{"foo":"bar"}`)
 		assert.NoError(t, err)
 		assert.Equal(t, `"{\"foo\":\"bar\"}"`, val)
 	}
 	{
 		// Boolean
-		val, err := NewStructConverter().Convert(true)
+		val, err := StructConverter{}.Convert(true)
 		assert.NoError(t, err)
 		assert.Equal(t, "true", val)
 	}
 	{
 		// Map
-		val, err := NewStructConverter().Convert(map[string]any{"foo": "bar"})
+		val, err := StructConverter{}.Convert(map[string]any{"foo": "bar"})
 		assert.NoError(t, err)
 		assert.Equal(t, `{"foo":"bar"}`, val)
 	}
 	{
 		// Number
-		val, err := NewStructConverter().Convert(123)
+		val, err := StructConverter{}.Convert(123)
 		assert.NoError(t, err)
 		assert.Equal(t, "123", val)
 	}
