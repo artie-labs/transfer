@@ -39,12 +39,15 @@ func NewTestFramework(ctx context.Context, dest destination.Destination, topicCo
 func (tf *TestFramework) SetupColumns(additionalColumns map[string]typing.KindDetails) {
 	cols := &columns.Columns{}
 	colTypes := map[string]typing.KindDetails{
-		"id":         typing.Integer,
-		"name":       typing.String,
-		"created_at": typing.TimestampTZ,
-		"value":      typing.Float,
-		"json_data":  typing.Struct,
-		"json_array": typing.Array,
+		"id":           typing.Integer,
+		"name":         typing.String,
+		"created_at":   typing.TimestampTZ,
+		"value":        typing.Float,
+		"json_data":    typing.Struct,
+		"json_array":   typing.Array,
+		"json_string":  typing.Struct,
+		"json_boolean": typing.Struct,
+		"json_number":  typing.Struct,
 	}
 
 	for colName, colType := range colTypes {
@@ -84,12 +87,15 @@ func (tf *TestFramework) GenerateRowData(pkValue int) map[string]any {
 	}
 
 	return map[string]any{
-		"id":         pkValue,
-		"name":       fmt.Sprintf("test_name_%d", pkValue),
-		"created_at": time.Now().Format(time.RFC3339Nano),
-		"value":      float64(pkValue) * 1.5,
-		"json_data":  jsonData,
-		"json_array": jsonArray,
+		"id":           pkValue,
+		"name":         fmt.Sprintf("test_name_%d", pkValue),
+		"created_at":   time.Now().Format(time.RFC3339Nano),
+		"value":        float64(pkValue) * 1.5,
+		"json_data":    jsonData,
+		"json_array":   jsonArray,
+		"json_string":  fmt.Sprintf("hello world %d", pkValue),
+		"json_boolean": pkValue%2 == 0,
+		"json_number":  pkValue,
 	}
 }
 
@@ -118,10 +124,10 @@ func (tf *TestFramework) VerifyRowCount(expected int) error {
 }
 
 func (tf *TestFramework) VerifyDataContent(rowCount int) error {
-	baseQuery := fmt.Sprintf("SELECT id, name, value, json_data, json_array FROM %s ORDER BY id", tf.tableID.FullyQualifiedName())
+	baseQuery := fmt.Sprintf("SELECT id, name, value, json_data, json_array, json_string, json_boolean, json_number FROM %s ORDER BY id", tf.tableID.FullyQualifiedName())
 
 	if _, ok := tf.dest.Dialect().(dialect.BigQueryDialect); ok {
-		baseQuery = fmt.Sprintf("SELECT id, name, value, TO_JSON_STRING(json_data), TO_JSON_STRING(json_array) FROM %s ORDER BY id", tf.tableID.FullyQualifiedName())
+		baseQuery = fmt.Sprintf("SELECT id, name, value, TO_JSON_STRING(json_data), TO_JSON_STRING(json_array), json_string, json_boolean, json_number FROM %s ORDER BY id", tf.tableID.FullyQualifiedName())
 	}
 
 	rows, err := tf.dest.Query(baseQuery)
@@ -139,7 +145,10 @@ func (tf *TestFramework) VerifyDataContent(rowCount int) error {
 		var value float64
 		var jsonDataStr string
 		var jsonArrayStr string
-		if err := rows.Scan(&id, &name, &value, &jsonDataStr, &jsonArrayStr); err != nil {
+		var jsonStringStr string
+		var jsonBooleanStr string
+		var jsonNumberStr string
+		if err := rows.Scan(&id, &name, &value, &jsonDataStr, &jsonArrayStr, &jsonStringStr, &jsonBooleanStr, &jsonNumberStr); err != nil {
 			return fmt.Errorf("failed to scan row %d: %w", i, err)
 		}
 
@@ -210,6 +219,21 @@ func (tf *TestFramework) VerifyDataContent(rowCount int) error {
 
 		if !reflect.DeepEqual(expectedJSONArray, actualJSONArray) {
 			return fmt.Errorf("unexpected json_array for row %d: expected %v, got %v", i, expectedJSONArray, actualJSONArray)
+		}
+
+		// Validate JSON string
+		if jsonStringStr != fmt.Sprintf("hello world %d", i) {
+			return fmt.Errorf("unexpected json_string for row %d: expected %s, got %q", i, fmt.Sprintf("hello world %d", i), jsonStringStr)
+		}
+
+		// Validate JSON boolean
+		if jsonBooleanStr != fmt.Sprintf("%t", i%2 == 0) {
+			return fmt.Errorf("unexpected json_boolean for row %d: expected %s, got %q", i, fmt.Sprintf("%t", i%2 == 0), jsonBooleanStr)
+		}
+
+		// Validate JSON number
+		if jsonNumberStr != fmt.Sprintf("%d", i) {
+			return fmt.Errorf("unexpected json_number for row %d: expected %s, got %q", i, fmt.Sprintf("%d", i), jsonNumberStr)
 		}
 	}
 
