@@ -8,8 +8,6 @@ import (
 	"os"
 	"reflect"
 
-	bigquerydialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
-	"github.com/artie-labs/transfer/clients/mssql/dialect"
 	"github.com/artie-labs/transfer/integration_tests/shared"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -79,11 +77,11 @@ func (mt *MergeTest) deleteData(numRows int) error {
 
 func (mt *MergeTest) verifyUpdatedData(numRows int) error {
 	query := fmt.Sprintf("SELECT id, name, value, json_data, json_array, json_string, json_boolean, json_number FROM %s ORDER BY id ASC LIMIT %d", mt.framework.GetTableID().FullyQualifiedName(), numRows)
-	if _, ok := mt.framework.GetDestination().Dialect().(dialect.MSSQLDialect); ok {
+	if mt.framework.MSSQL() {
 		query = fmt.Sprintf("SELECT TOP %d id, name, value, json_data, json_array, json_string, json_boolean, json_number FROM %s ORDER BY id ASC", numRows, mt.framework.GetTableID().FullyQualifiedName())
 	}
 
-	if _, ok := mt.framework.GetDestination().Dialect().(bigquerydialect.BigQueryDialect); ok {
+	if mt.framework.BigQuery() {
 		query = fmt.Sprintf("SELECT id, name, value, TO_JSON_STRING(json_data), TO_JSON_STRING(json_array), json_string, json_boolean, json_number FROM %s ORDER BY id ASC LIMIT %d", mt.framework.GetTableID().FullyQualifiedName(), numRows)
 	}
 

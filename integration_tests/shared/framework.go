@@ -143,7 +143,7 @@ func (tf *TestFramework) VerifyRowCount(expected int) error {
 func (tf *TestFramework) VerifyDataContent(rowCount int) error {
 	baseQuery := fmt.Sprintf("SELECT id, name, value, json_data, json_array, json_string, json_boolean, json_number FROM %s ORDER BY id", tf.tableID.FullyQualifiedName())
 
-	if _, ok := tf.dest.Dialect().(dialect.BigQueryDialect); ok {
+	if tf.BigQuery() {
 		// BigQuery does not support booleans, numbers and strings in a JSON column.
 		baseQuery = fmt.Sprintf("SELECT id, name, value, TO_JSON_STRING(json_data), TO_JSON_STRING(json_array) FROM %s ORDER BY id", tf.tableID.FullyQualifiedName())
 	}
