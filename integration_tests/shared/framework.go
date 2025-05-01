@@ -147,8 +147,8 @@ func (tf *TestFramework) VerifyDataContent(rowCount int) error {
 		var jsonArrayStr string
 		var jsonStringStr string
 		var jsonBooleanStr bool
-		var jsonNumberStr string
-		if err := rows.Scan(&id, &name, &value, &jsonDataStr, &jsonArrayStr, &jsonStringStr, &jsonBooleanStr, &jsonNumberStr); err != nil {
+		var jsonNumber int
+		if err := rows.Scan(&id, &name, &value, &jsonDataStr, &jsonArrayStr, &jsonStringStr, &jsonBooleanStr, &jsonNumber); err != nil {
 			return fmt.Errorf("failed to scan row %d: %w", i, err)
 		}
 
@@ -222,21 +222,34 @@ func (tf *TestFramework) VerifyDataContent(rowCount int) error {
 		}
 
 		// Validate JSON string
-		if jsonStringStr != fmt.Sprintf("hello world %d", i) {
-			return fmt.Errorf("unexpected json_string for row %d: expected %s, got %q", i, fmt.Sprintf("hello world %d", i), jsonStringStr)
+		_dialect := tf.dest.Dialect()
+		kd, err := _dialect.KindForDataType(_dialect.DataTypeForKind(typing.Struct, false, config.SharedDestinationColumnSettings{}), "")
+		if err != nil {
+			return fmt.Errorf("failed to get kind for data type: %w", err)
 		}
-
 		// Validate JSON boolean
 		if jsonBooleanStr != (i%2 == 0) {
 			return fmt.Errorf("unexpected json_boolean for row %d: expected %t, got %t", i, i%2 == 0, jsonBooleanStr)
 		}
 
 		// Validate JSON number
-		if jsonNumberStr != fmt.Sprintf("%d", i) {
-			return fmt.Errorf("unexpected json_number for row %d: expected %s, got %q", i, fmt.Sprintf("%d", i), jsonNumberStr)
+		if jsonNumber != i {
+			return fmt.Errorf("unexpected json_number for row %d: expected %d, got %d", i, i, jsonNumber)
 		}
 
-		fmt.Println("row", i, "id", id, "name", name, "value", value, "json_data", jsonDataStr, "json_array", jsonArrayStr, "json_string", jsonStringStr, "json_boolean", jsonBooleanStr, "json_number", jsonNumberStr)
+		switch kd {
+		case typing.String:
+			if jsonStringStr != fmt.Sprintf("hello world %d", i) {
+				return fmt.Errorf("unexpected json_string for row %d: expected %s, got %q", i, fmt.Sprintf("hello world %d", i), jsonStringStr)
+			}
+		case typing.Struct:
+			if jsonStringStr != fmt.Sprintf(`"hello world %d"`, i) {
+				return fmt.Errorf("unexpected json_string for row %d: expected %s, got %q", i, fmt.Sprintf(`"hello world %d"`, i), jsonStringStr)
+			}
+		default:
+			return fmt.Errorf("unexpected data type: %q", kd.Kind)
+		}
+
 	}
 
 	if rows.Next() {
