@@ -78,13 +78,13 @@ func (mt *MergeTest) deleteData(numRows int) error {
 }
 
 func (mt *MergeTest) verifyUpdatedData(numRows int) error {
-	query := fmt.Sprintf("SELECT id, name, value, json_data, json_array FROM %s ORDER BY id ASC LIMIT %d", mt.framework.GetTableID().FullyQualifiedName(), numRows)
+	query := fmt.Sprintf("SELECT id, name, value, json_data, json_array, json_string, json_boolean, json_number FROM %s ORDER BY id ASC LIMIT %d", mt.framework.GetTableID().FullyQualifiedName(), numRows)
 	if _, ok := mt.framework.GetDestination().Dialect().(dialect.MSSQLDialect); ok {
-		query = fmt.Sprintf("SELECT TOP %d id, name, value, json_data, json_array FROM %s ORDER BY id ASC", numRows, mt.framework.GetTableID().FullyQualifiedName())
+		query = fmt.Sprintf("SELECT TOP %d id, name, value, json_data, json_array, json_string, json_boolean, json_number FROM %s ORDER BY id ASC", numRows, mt.framework.GetTableID().FullyQualifiedName())
 	}
 
 	if _, ok := mt.framework.GetDestination().Dialect().(bigquerydialect.BigQueryDialect); ok {
-		query = fmt.Sprintf("SELECT id, name, value, TO_JSON_STRING(json_data), TO_JSON_STRING(json_array) FROM %s ORDER BY id ASC LIMIT %d", mt.framework.GetTableID().FullyQualifiedName(), numRows)
+		query = fmt.Sprintf("SELECT id, name, value, TO_JSON_STRING(json_data), TO_JSON_STRING(json_array), json_string, json_boolean, json_number FROM %s ORDER BY id ASC LIMIT %d", mt.framework.GetTableID().FullyQualifiedName(), numRows)
 	}
 
 	rows, err := mt.framework.GetDestination().Query(query)
@@ -102,7 +102,10 @@ func (mt *MergeTest) verifyUpdatedData(numRows int) error {
 		var value float64
 		var jsonDataStr string
 		var jsonArrayStr string
-		if err := rows.Scan(&id, &name, &value, &jsonDataStr, &jsonArrayStr); err != nil {
+		var jsonStringStr string
+		var jsonBooleanStr bool
+		var jsonNumberStr string
+		if err := rows.Scan(&id, &name, &value, &jsonDataStr, &jsonArrayStr, &jsonStringStr, &jsonBooleanStr, &jsonNumberStr); err != nil {
 			return fmt.Errorf("failed to scan row %d: %w", i, err)
 		}
 
@@ -173,6 +176,21 @@ func (mt *MergeTest) verifyUpdatedData(numRows int) error {
 
 		if !reflect.DeepEqual(expectedJSONArray, actualJSONArray) {
 			return fmt.Errorf("unexpected json_array for row %d: expected %v, got %v", i, expectedJSONArray, actualJSONArray)
+		}
+
+		// Validate JSON string
+		if jsonStringStr != fmt.Sprintf("hello world %d", i) {
+			return fmt.Errorf("unexpected json_string for row %d: expected %s, got %q", i, fmt.Sprintf("hello world %d", i), jsonStringStr)
+		}
+
+		// Validate JSON boolean
+		if jsonBooleanStr != (i%2 == 0) {
+			return fmt.Errorf("unexpected json_boolean for row %d: expected %t, got %t", i, i%2 == 0, jsonBooleanStr)
+		}
+
+		// Validate JSON number
+		if jsonNumberStr != fmt.Sprintf("%d", i) {
+			return fmt.Errorf("unexpected json_number for row %d: expected %s, got %q", i, fmt.Sprintf("%d", i), jsonNumberStr)
 		}
 	}
 

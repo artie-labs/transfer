@@ -146,7 +146,7 @@ func (tf *TestFramework) VerifyDataContent(rowCount int) error {
 		var jsonDataStr string
 		var jsonArrayStr string
 		var jsonStringStr string
-		var jsonBooleanStr string
+		var jsonBooleanStr bool
 		var jsonNumberStr string
 		if err := rows.Scan(&id, &name, &value, &jsonDataStr, &jsonArrayStr, &jsonStringStr, &jsonBooleanStr, &jsonNumberStr); err != nil {
 			return fmt.Errorf("failed to scan row %d: %w", i, err)
@@ -227,14 +227,16 @@ func (tf *TestFramework) VerifyDataContent(rowCount int) error {
 		}
 
 		// Validate JSON boolean
-		if jsonBooleanStr != fmt.Sprintf("%t", i%2 == 0) {
-			return fmt.Errorf("unexpected json_boolean for row %d: expected %s, got %q", i, fmt.Sprintf("%t", i%2 == 0), jsonBooleanStr)
+		if jsonBooleanStr != (i%2 == 0) {
+			return fmt.Errorf("unexpected json_boolean for row %d: expected %t, got %t", i, i%2 == 0, jsonBooleanStr)
 		}
 
 		// Validate JSON number
 		if jsonNumberStr != fmt.Sprintf("%d", i) {
 			return fmt.Errorf("unexpected json_number for row %d: expected %s, got %q", i, fmt.Sprintf("%d", i), jsonNumberStr)
 		}
+
+		fmt.Println("row", i, "id", id, "name", name, "value", value, "json_data", jsonDataStr, "json_array", jsonArrayStr, "json_string", jsonStringStr, "json_boolean", jsonBooleanStr, "json_number", jsonNumberStr)
 	}
 
 	if rows.Next() {
