@@ -130,8 +130,14 @@ func TestArrayConverter_Convert(t *testing.T) {
 func TestFloatConverter_Convert(t *testing.T) {
 	{
 		// Unexpected type
-		_, err := FloatConverter{}.Convert("foo")
-		assert.ErrorContains(t, err, `unexpected value: 'foo', type: string`)
+		_, err := FloatConverter{}.Convert(true)
+		assert.ErrorContains(t, err, `unexpected value: 'true', type: bool`)
+	}
+	{
+		// String
+		val, err := FloatConverter{}.Convert("123.45")
+		assert.NoError(t, err)
+		assert.Equal(t, "123.45", val)
 	}
 	{
 		// Float32

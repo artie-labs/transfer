@@ -27,6 +27,12 @@ func TestParseTimeFromAny(t *testing.T) {
 		}
 	}
 	{
+		// String
+		_time, err := ParseTimeFromAny("2025-04-16T17:43:16.120+00:00")
+		assert.NoError(t, err)
+		assert.Equal(t, "2025-04-16T17:43:16.12Z", _time.Format(time.RFC3339Nano))
+	}
+	{
 		// time.Time
 		_time, err := ParseTimeFromAny(now)
 		assert.NoError(t, err)
