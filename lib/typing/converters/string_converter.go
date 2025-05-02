@@ -207,6 +207,8 @@ func (FloatConverter) Convert(value any) (string, error) {
 		return fmt.Sprint(parsedVal), nil
 	case *decimal.Decimal:
 		return parsedVal.String(), nil
+	case string:
+		return parsedVal, nil
 	default:
 		return "", fmt.Errorf("unexpected value: '%v', type: %T", value, value)
 	}
