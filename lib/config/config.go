@@ -25,9 +25,9 @@ const (
 	FlushIntervalSecondsMax = 6 * 60 * 60
 )
 
-func (k *Kafka) BootstrapServers(randomize bool) []string {
+func (k *Kafka) BootstrapServers(shuffle bool) []string {
 	parts := strings.Split(k.BootstrapServer, ",")
-	if randomize {
+	if shuffle {
 		rand.Shuffle(len(parts), func(i, j int) {
 			parts[i], parts[j] = parts[j], parts[i]
 		})
