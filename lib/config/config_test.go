@@ -518,7 +518,7 @@ func TestCfg_KafkaBootstrapServers(t *testing.T) {
 	{
 		// Single broker
 		kafka := Kafka{BootstrapServer: "localhost:9092"}
-		assert.Equal(t, []string{"localhost:9092"}, kafka.BootstrapServers())
+		assert.Equal(t, []string{"localhost:9092"}, kafka.BootstrapServers(false))
 	}
 	{
 		// Multiple brokers
