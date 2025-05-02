@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"io"
+	"math/rand/v2"
 	"os"
 	"strings"
 
@@ -24,8 +25,15 @@ const (
 	FlushIntervalSecondsMax = 6 * 60 * 60
 )
 
-func (k *Kafka) BootstrapServers() []string {
-	return strings.Split(k.BootstrapServer, ",")
+func (k *Kafka) BootstrapServers(randomize bool) []string {
+	parts := strings.Split(k.BootstrapServer, ",")
+	if randomize {
+		rand.Shuffle(len(parts), func(i, j int) {
+			parts[i], parts[j] = parts[j], parts[i]
+		})
+	}
+
+	return parts
 }
 
 func (s *S3Settings) Validate() error {

@@ -78,7 +78,7 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 				GroupID: cfg.Kafka.GroupID,
 				Dialer:  dialer,
 				Topic:   topic,
-				Brokers: cfg.Kafka.BootstrapServers(),
+				Brokers: cfg.Kafka.BootstrapServers(true),
 			}
 
 			kafkaConsumer := kafka.NewReader(kafkaCfg)

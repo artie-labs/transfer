@@ -523,6 +523,11 @@ func TestCfg_KafkaBootstrapServers(t *testing.T) {
 	{
 		// Multiple brokers
 		kafkaWithMultipleBrokers := Kafka{BootstrapServer: "a:9092,b:9093,c:9094"}
-		assert.Equal(t, []string{"a:9092", "b:9093", "c:9094"}, kafkaWithMultipleBrokers.BootstrapServers())
+		assert.Equal(t, []string{"a:9092", "b:9093", "c:9094"}, kafkaWithMultipleBrokers.BootstrapServers(false))
+	}
+	{
+		// Randomize
+		kafkaWithMultipleBrokers := Kafka{BootstrapServer: "a:9092,b:9093,c:9094"}
+		assert.ElementsMatch(t, []string{"a:9092", "b:9093", "c:9094"}, kafkaWithMultipleBrokers.BootstrapServers(true))
 	}
 }
