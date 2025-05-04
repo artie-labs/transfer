@@ -70,7 +70,7 @@ func (c *Client) QueryContext(ctx context.Context, query string) (GetStatementRe
 	return retry.WithRetriesAndResult(retryCfg, func(_ int, _ error) (GetStatementResponse, error) {
 		out, httpStatus, err := c.queryContext(ctx, query, false)
 		if err != nil {
-			// if out was 500, then we should force a recheck
+			// If we received a 500, let's force a recheck.
 			if httpStatus == http.StatusInternalServerError {
 				out, _, err = c.queryContext(ctx, query, true)
 				return out, err
@@ -110,7 +110,7 @@ func (c *Client) ExecContext(ctx context.Context, query string) error {
 	return retry.WithRetries(retryCfg, func(_ int, _ error) error {
 		out, err := c.execContext(ctx, query, false)
 		if err != nil {
-			// if out was 500, then we should force a recheck
+			// If we received a 500, let's force a recheck.
 			if out == http.StatusInternalServerError {
 				_, err = c.execContext(ctx, query, true)
 				return err
