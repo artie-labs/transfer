@@ -9,7 +9,6 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
-	"slices"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/jitter"
@@ -34,42 +33,6 @@ type Client struct {
 	lastChecked time.Time
 }
 
-const sessionBufferSeconds = 30
-
-func shouldCreateNewSession(resp GetSessionResponse, statusCode int, err error) (bool, error) {
-	if statusCode == http.StatusNotFound {
-		return true, nil
-	}
-
-	if err != nil {
-		return false, err
-	}
-
-	// If the session is in a terminal state, then we should create a new one.
-	return slices.Contains(TerminalSessionStates, resp.State), nil
-}
-
-func (c *Client) ensureSession(ctx context.Context) error {
-	if c.sessionID == 0 {
-		c.lastChecked = time.Now()
-		return c.newSession(ctx, SessionKindSql, true)
-	}
-
-	if time.Since(c.lastChecked).Seconds() > (float64(c.sessionHeartbeatTimeoutInSecond) - sessionBufferSeconds) {
-		c.lastChecked = time.Now()
-		shouldCreateNewSession, err := shouldCreateNewSession(c.getSession(ctx))
-		if err != nil {
-			return err
-		}
-
-		if shouldCreateNewSession {
-			return c.newSession(ctx, SessionKindSql, true)
-		}
-	}
-
-	return nil
-}
-
 func (c *Client) buildRetryConfig() (retry.RetryConfig, error) {
 	// TODO: Move this from [retry.AlwaysRetry] to be more targeted
 	cfg, err := retry.NewJitterRetryConfig(sleepBaseMs, sleepMaxMs, maxSessionRetries, retry.AlwaysRetry)
@@ -80,12 +43,12 @@ func (c *Client) buildRetryConfig() (retry.RetryConfig, error) {
 	return cfg, nil
 }
 
-func (c *Client) queryContext(ctx context.Context, query string) (GetStatementResponse, error) {
-	if err := c.ensureSession(ctx); err != nil {
+func (c *Client) queryContext(ctx context.Context, query string, forceCheck bool) (GetStatementResponse, error) {
+	if err := c.ensureSession(ctx, forceCheck); err != nil {
 		return GetStatementResponse{}, err
 	}
 
-	statementID, err := c.submitLivyStatement(ctx, query)
+	statementID, _, err := c.submitLivyStatement(ctx, query)
 	if err != nil {
 		return GetStatementResponse{}, err
 	}
@@ -105,16 +68,21 @@ func (c *Client) QueryContext(ctx context.Context, query string) (GetStatementRe
 	}
 
 	return retry.WithRetriesAndResult(retryCfg, func(_ int, _ error) (GetStatementResponse, error) {
-		return c.queryContext(ctx, query)
+		out, err := c.queryContext(ctx, query, false)
+		if err != nil {
+			return GetStatementResponse{}, err
+		}
+
+		return out, nil
 	})
 }
 
-func (c *Client) execContext(ctx context.Context, query string) error {
-	if err := c.ensureSession(ctx); err != nil {
+func (c *Client) execContext(ctx context.Context, query string, forceCheck bool) error {
+	if err := c.ensureSession(ctx, forceCheck); err != nil {
 		return err
 	}
 
-	statementID, err := c.submitLivyStatement(ctx, query)
+	statementID, _, err := c.submitLivyStatement(ctx, query)
 	if err != nil {
 		return err
 	}
@@ -134,7 +102,7 @@ func (c *Client) ExecContext(ctx context.Context, query string) error {
 	}
 
 	return retry.WithRetries(retryCfg, func(_ int, _ error) error {
-		return c.execContext(ctx, query)
+		return c.execContext(ctx, query, false)
 	})
 }
 
@@ -168,23 +136,23 @@ func (c *Client) waitForStatement(ctx context.Context, statementID int) (GetStat
 	}
 }
 
-func (c *Client) submitLivyStatement(ctx context.Context, code string) (int, error) {
+func (c *Client) submitLivyStatement(ctx context.Context, code string) (int, int, error) {
 	reqBody, err := json.Marshal(CreateStatementRequest{Code: code, Kind: "sql"})
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 
 	out, err := c.doRequest(ctx, "POST", fmt.Sprintf("/sessions/%d/statements", c.sessionID), reqBody)
 	if err != nil {
-		return 0, err
+		return 0, out.httpStatus, err
 	}
 
 	var resp CreateStatementResponse
 	if err := json.Unmarshal(out.body, &resp); err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 
-	return resp.ID, nil
+	return resp.ID, out.httpStatus, nil
 }
 
 type doRequestResponse struct {
