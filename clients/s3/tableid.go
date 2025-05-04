@@ -12,11 +12,12 @@ type TableIdentifier struct {
 	schema                string
 	table                 string
 	nameSeparator         string
+	folderName            string
 	disableDropProtection bool
 }
 
-func NewTableIdentifier(database, schema, table string, nameSeparator string) TableIdentifier {
-	return TableIdentifier{database: database, schema: schema, table: table, nameSeparator: cmp.Or(nameSeparator, ".")}
+func NewTableIdentifier(database, schema, table, folderName string, nameSeparator string) TableIdentifier {
+	return TableIdentifier{database: database, schema: schema, table: table, nameSeparator: cmp.Or(nameSeparator, "."), folderName: folderName}
 }
 
 func (ti TableIdentifier) Database() string {
@@ -37,7 +38,7 @@ func (ti TableIdentifier) Table() string {
 }
 
 func (ti TableIdentifier) WithTable(table string) sql.TableIdentifier {
-	return NewTableIdentifier(ti.database, ti.schema, table, ti.nameSeparator)
+	return NewTableIdentifier(ti.database, ti.schema, table, ti.folderName, ti.nameSeparator)
 }
 
 func (ti TableIdentifier) FullyQualifiedName() string {
@@ -51,4 +52,12 @@ func (ti TableIdentifier) WithDisableDropProtection(disableDropProtection bool) 
 
 func (ti TableIdentifier) AllowToDrop() bool {
 	return ti.disableDropProtection
+}
+
+func (ti TableIdentifier) ObjectPrefixParts() []string {
+	if len(ti.folderName) > 0 {
+		return []string{ti.folderName, ti.FullyQualifiedName()}
+	}
+
+	return []string{ti.FullyQualifiedName()}
 }

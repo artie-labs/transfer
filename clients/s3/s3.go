@@ -38,22 +38,23 @@ func (s *Store) Validate() error {
 }
 
 func (s *Store) IdentifierFor(topicConfig kafkalib.DatabaseAndSchemaPair, table string) sql.TableIdentifier {
-	return NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table, s.config.S3.TableNameSeparator)
+	return NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table, s.config.S3.FolderName, s.config.S3.TableNameSeparator)
 }
 
 // ObjectPrefix - this will generate the exact right prefix that we need to write into S3.
 // It will look like something like this:
 // > folderName/fullyQualifiedTableName/YYYY-MM-DD
-func (s *Store) ObjectPrefix(tableData *optimization.TableData) string {
+func (s *Store) ObjectPrefix(tableData *optimization.TableData) (string, error) {
 	tableID := s.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name())
-	fqTableName := tableID.FullyQualifiedName()
-	// Adding date= prefix so that it adheres to the partitioning format for Hive.
-	yyyyMMDDFormat := fmt.Sprintf("date=%s", time.Now().Format(time.DateOnly))
-	if len(s.config.S3.FolderName) > 0 {
-		return strings.Join([]string{s.config.S3.FolderName, fqTableName, yyyyMMDDFormat}, "/")
+	castedTableID, ok := tableID.(TableIdentifier)
+	if !ok {
+		return "", fmt.Errorf("failed to cast tableID to TableIdentifier")
 	}
 
-	return strings.Join([]string{fqTableName, yyyyMMDDFormat}, "/")
+	parts := castedTableID.ObjectPrefixParts()
+	// Adding date= prefix so that it adheres to the partitioning format for Hive.
+	parts = append(parts, fmt.Sprintf("date=%s", time.Now().Format(time.DateOnly)))
+	return strings.Join(parts, "/"), nil
 }
 
 func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, _ bool) error {
@@ -128,9 +129,14 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (b
 		}
 	}()
 
+	objectPrefix, err := s.ObjectPrefix(tableData)
+	if err != nil {
+		return false, fmt.Errorf("failed to get object prefix: %w", err)
+	}
+
 	if _, err = awslib.UploadLocalFileToS3(ctx, awslib.UploadArgs{
 		Bucket:                     s.config.S3.Bucket,
-		OptionalS3Prefix:           s.ObjectPrefix(tableData),
+		OptionalS3Prefix:           objectPrefix,
 		FilePath:                   fp,
 		OverrideAWSAccessKeyID:     s.config.S3.AwsAccessKeyID,
 		OverrideAWSAccessKeySecret: s.config.S3.AwsSecretAccessKey,
@@ -154,4 +160,15 @@ func LoadStore(cfg config.Config) (*Store, error) {
 	}
 
 	return store, nil
+}
+
+func (s *Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error {
+	// castedTableID, ok := tableID.(TableIdentifier)
+	// if !ok {
+	// 	return fmt.Errorf("failed to cast tableID to TableIdentifier")
+	// }
+
+	// objectPrefix := strings.Join(castedTableID.ObjectPrefix(), "/")
+
+	return nil
 }

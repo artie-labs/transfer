@@ -99,7 +99,7 @@ func (s Store) AlterTableDropColumns(ctx context.Context, tableID sql.TableIdent
 	return nil
 }
 
-func (s Store) DeleteTable(ctx context.Context, tableID sql.TableIdentifier) error {
+func (s Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error {
 	castedTableID, ok := tableID.(dialect.TableIdentifier)
 	if !ok {
 		return fmt.Errorf("failed to cast table ID to dialect.TableIdentifier")

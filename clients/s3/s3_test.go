@@ -71,7 +71,8 @@ func TestObjectPrefix(t *testing.T) {
 			assert.ErrorContains(t, err, tc.expectedErr, tc.name)
 		} else {
 			assert.NoError(t, err, tc.name)
-			actualObjectPrefix := store.ObjectPrefix(tc.tableData)
+			actualObjectPrefix, err := store.ObjectPrefix(tc.tableData)
+			assert.NoError(t, err, tc.name)
 			assert.Equal(t, tc.expectedFormat, actualObjectPrefix, tc.name)
 		}
 	}
