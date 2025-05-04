@@ -43,22 +43,22 @@ func (c *Client) buildRetryConfig() (retry.RetryConfig, error) {
 	return cfg, nil
 }
 
-func (c *Client) queryContext(ctx context.Context, query string, forceCheck bool) (GetStatementResponse, error) {
+func (c *Client) queryContext(ctx context.Context, query string, forceCheck bool) (GetStatementResponse, int, error) {
 	if err := c.ensureSession(ctx, forceCheck); err != nil {
-		return GetStatementResponse{}, err
+		return GetStatementResponse{}, 0, err
 	}
 
-	statementID, _, err := c.submitLivyStatement(ctx, query)
+	statementID, httpStatus, err := c.submitLivyStatement(ctx, query)
 	if err != nil {
-		return GetStatementResponse{}, err
+		return GetStatementResponse{}, httpStatus, err
 	}
 
 	response, err := c.waitForStatement(ctx, statementID)
 	if err != nil {
-		return GetStatementResponse{}, err
+		return GetStatementResponse{}, 0, err
 	}
 
-	return response, nil
+	return response, 0, nil
 }
 
 func (c *Client) QueryContext(ctx context.Context, query string) (GetStatementResponse, error) {
@@ -68,8 +68,14 @@ func (c *Client) QueryContext(ctx context.Context, query string) (GetStatementRe
 	}
 
 	return retry.WithRetriesAndResult(retryCfg, func(_ int, _ error) (GetStatementResponse, error) {
-		out, err := c.queryContext(ctx, query, false)
+		out, httpStatus, err := c.queryContext(ctx, query, false)
 		if err != nil {
+			// if out was 500, then we should force a recheck
+			if httpStatus == http.StatusInternalServerError {
+				out, _, err = c.queryContext(ctx, query, true)
+				return out, err
+			}
+
 			return GetStatementResponse{}, err
 		}
 
@@ -77,22 +83,22 @@ func (c *Client) QueryContext(ctx context.Context, query string) (GetStatementRe
 	})
 }
 
-func (c *Client) execContext(ctx context.Context, query string, forceCheck bool) error {
+func (c *Client) execContext(ctx context.Context, query string, forceCheck bool) (int, error) {
 	if err := c.ensureSession(ctx, forceCheck); err != nil {
-		return err
+		return 0, err
 	}
 
-	statementID, _, err := c.submitLivyStatement(ctx, query)
+	statementID, httpStatus, err := c.submitLivyStatement(ctx, query)
 	if err != nil {
-		return err
+		return httpStatus, err
 	}
 
 	resp, err := c.waitForStatement(ctx, statementID)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	return resp.Error(c.sessionID)
+	return 0, resp.Error(c.sessionID)
 }
 
 func (c *Client) ExecContext(ctx context.Context, query string) error {
@@ -102,7 +108,18 @@ func (c *Client) ExecContext(ctx context.Context, query string) error {
 	}
 
 	return retry.WithRetries(retryCfg, func(_ int, _ error) error {
-		return c.execContext(ctx, query, false)
+		out, err := c.execContext(ctx, query, false)
+		if err != nil {
+			// if out was 500, then we should force a recheck
+			if out == http.StatusInternalServerError {
+				_, err = c.execContext(ctx, query, true)
+				return err
+			}
+
+			return err
+		}
+
+		return nil
 	})
 }
 
