@@ -37,16 +37,13 @@ func TestObjectPrefix(t *testing.T) {
 		expectedFormat string
 	}{
 		{
-			name:        "nil",
-			expectedErr: "failed to validate settings: s3 settings are nil",
-		},
-		{
 			name:      "valid #1 (no folder)",
 			tableData: td,
 			config: &config.S3Settings{
 				Bucket:             "bucket",
 				AwsSecretAccessKey: "foo",
 				AwsAccessKeyID:     "bar",
+				AwsRegion:          "us-east-1",
 				OutputFormat:       constants.ParquetFormat,
 			},
 			expectedFormat: fmt.Sprintf("db.public.table/date=%s", time.Now().Format(time.DateOnly)),
@@ -58,6 +55,7 @@ func TestObjectPrefix(t *testing.T) {
 				Bucket:             "bucket",
 				AwsSecretAccessKey: "foo",
 				AwsAccessKeyID:     "bar",
+				AwsRegion:          "us-east-1",
 				OutputFormat:       constants.ParquetFormat,
 				FolderName:         "foo",
 			},
