@@ -66,6 +66,7 @@ type UploadArgs struct {
 	Region                     string
 }
 
+// TODO: Remove this function
 // UploadLocalFileToS3 - takes a filepath with the file and bucket and optional expiry
 // It will then upload it and then return the S3 URI and any error(s).
 func UploadLocalFileToS3(ctx context.Context, args UploadArgs) (string, error) {
