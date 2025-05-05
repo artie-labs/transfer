@@ -254,6 +254,8 @@ func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {
 		cfg.Iceberg.S3Tables.ApacheLivyConfig(),
 		cfg.Iceberg.S3Tables.SessionJars,
 		cfg.Iceberg.SessionHeartbeatTimeoutInSecond,
+		cfg.Iceberg.SessionDriverMemory,
+		cfg.Iceberg.SessionExecutorMemory,
 	)
 	if err != nil {
 		return Store{}, err
@@ -267,7 +269,7 @@ func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {
 	store := Store{
 		catalogName:      cfg.Iceberg.S3Tables.CatalogName(),
 		config:           cfg,
-		apacheLivyClient: &apacheLivyClient,
+		apacheLivyClient: apacheLivyClient,
 		cm:               &types.DestinationTableConfigMap{},
 		s3TablesAPI:      awslib.NewS3TablesAPI(awsCfg, cfg.Iceberg.S3Tables.BucketARN),
 	}

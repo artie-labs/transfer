@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"net/http"
 	"slices"
+	"sync"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/jitter"
@@ -24,12 +25,15 @@ const (
 )
 
 type Client struct {
+	mu                              sync.Mutex
 	url                             string
 	sessionID                       int
 	httpClient                      *http.Client
 	sessionConf                     map[string]any
 	sessionJars                     []string
 	sessionHeartbeatTimeoutInSecond int
+	sessionDriverMemory             string
+	sessionExecutorMemory           string
 
 	lastChecked time.Time
 }
@@ -50,6 +54,9 @@ func shouldCreateNewSession(resp GetSessionResponse, statusCode int, err error) 
 }
 
 func (c *Client) ensureSession(ctx context.Context) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	if c.sessionID == 0 {
 		c.lastChecked = time.Now()
 		return c.newSession(ctx, SessionKindSql, true)
@@ -223,6 +230,8 @@ func (c *Client) newSession(ctx context.Context, kind SessionKind, blockUntilRea
 		Jars:                     c.sessionJars,
 		Conf:                     c.sessionConf,
 		HeartbeatTimeoutInSecond: c.sessionHeartbeatTimeoutInSecond,
+		DriverMemory:             c.sessionDriverMemory,
+		ExecutorMemory:           c.sessionExecutorMemory,
 	}
 
 	body, err := json.Marshal(request)
@@ -300,7 +309,7 @@ func (c *Client) waitForSessionToBeReady(ctx context.Context) error {
 	}
 }
 
-func (c Client) ListSessions(ctx context.Context) (ListSessonResponse, error) {
+func (c *Client) ListSessions(ctx context.Context) (ListSessonResponse, error) {
 	out, err := c.doRequest(ctx, "GET", "/sessions", nil)
 	if err != nil {
 		return ListSessonResponse{}, err
@@ -314,7 +323,7 @@ func (c Client) ListSessions(ctx context.Context) (ListSessonResponse, error) {
 	return resp, nil
 }
 
-func (c Client) DeleteSession(ctx context.Context, sessionID int) error {
+func (c *Client) DeleteSession(ctx context.Context, sessionID int) error {
 	if _, err := c.doRequest(ctx, http.MethodDelete, fmt.Sprintf("/sessions/%d", sessionID), nil); err != nil {
 		return err
 	}
@@ -322,13 +331,15 @@ func (c Client) DeleteSession(ctx context.Context, sessionID int) error {
 	return nil
 }
 
-func NewClient(ctx context.Context, url string, config map[string]any, jars []string, heartbeatTimeoutInSecond int) (Client, error) {
-	client := Client{
+func NewClient(ctx context.Context, url string, config map[string]any, jars []string, heartbeatTimeoutInSecond int, driverMemory, executorMemory string) (*Client, error) {
+	client := &Client{
 		url:                             url,
 		httpClient:                      &http.Client{},
 		sessionConf:                     config,
 		sessionJars:                     jars,
 		sessionHeartbeatTimeoutInSecond: cmp.Or(heartbeatTimeoutInSecond, defaultHeartbeatTimeoutInSecond),
+		sessionDriverMemory:             driverMemory,
+		sessionExecutorMemory:           executorMemory,
 	}
 
 	return client, nil
