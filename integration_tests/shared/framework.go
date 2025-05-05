@@ -128,27 +128,11 @@ func (tf *TestFramework) GenerateRowData(pkValue int) map[string]any {
 }
 
 func (tf *TestFramework) VerifyRowCount(expected int) error {
-	rows, err := tf.dest.Query(fmt.Sprintf("SELECT COUNT(*) FROM %s", tf.tableID.FullyQualifiedName()))
-	if err != nil {
-		return fmt.Errorf("failed to query table: %w", err)
+	if tf.iceberg != nil {
+		return tf.verifyRowCountIceberg(expected)
 	}
 
-	var count int
-	if rows.Next() {
-		if err := rows.Scan(&count); err != nil {
-			return fmt.Errorf("failed to scan count: %w", err)
-		}
-	}
-
-	if err := rows.Err(); err != nil {
-		return fmt.Errorf("failed to get rows: %w", err)
-	}
-
-	if count != expected {
-		return fmt.Errorf("unexpected row count: expected %d, got %d", expected, count)
-	}
-
-	return nil
+	return tf.verifyRowCountDestination(expected)
 }
 
 func (tf *TestFramework) VerifyDataContent(rowCount int) error {
