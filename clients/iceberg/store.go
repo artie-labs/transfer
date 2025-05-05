@@ -254,6 +254,8 @@ func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {
 		cfg.Iceberg.S3Tables.ApacheLivyConfig(),
 		cfg.Iceberg.S3Tables.SessionJars,
 		cfg.Iceberg.SessionHeartbeatTimeoutInSecond,
+		cfg.Iceberg.SessionDriverMemory,
+		cfg.Iceberg.SessionExecutorMemory,
 	)
 	if err != nil {
 		return Store{}, err

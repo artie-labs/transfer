@@ -32,6 +32,8 @@ type Client struct {
 	sessionConf                     map[string]any
 	sessionJars                     []string
 	sessionHeartbeatTimeoutInSecond int
+	sessionDriverMemory             string
+	sessionExecutorMemory           string
 
 	lastChecked time.Time
 }
@@ -228,6 +230,8 @@ func (c *Client) newSession(ctx context.Context, kind SessionKind, blockUntilRea
 		Jars:                     c.sessionJars,
 		Conf:                     c.sessionConf,
 		HeartbeatTimeoutInSecond: c.sessionHeartbeatTimeoutInSecond,
+		DriverMemory:             c.sessionDriverMemory,
+		ExecutorMemory:           c.sessionExecutorMemory,
 	}
 
 	body, err := json.Marshal(request)
@@ -327,13 +331,15 @@ func (c *Client) DeleteSession(ctx context.Context, sessionID int) error {
 	return nil
 }
 
-func NewClient(ctx context.Context, url string, config map[string]any, jars []string, heartbeatTimeoutInSecond int) (*Client, error) {
+func NewClient(ctx context.Context, url string, config map[string]any, jars []string, heartbeatTimeoutInSecond int, driverMemory, executorMemory string) (*Client, error) {
 	client := &Client{
 		url:                             url,
 		httpClient:                      &http.Client{},
 		sessionConf:                     config,
 		sessionJars:                     jars,
 		sessionHeartbeatTimeoutInSecond: cmp.Or(heartbeatTimeoutInSecond, defaultHeartbeatTimeoutInSecond),
+		sessionDriverMemory:             driverMemory,
+		sessionExecutorMemory:           executorMemory,
 	}
 
 	return client, nil
