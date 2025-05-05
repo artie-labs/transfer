@@ -22,12 +22,7 @@ func TestBuildTemporaryFilePath(t *testing.T) {
 }
 
 func TestObjectPrefix(t *testing.T) {
-	td := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{
-		Database:  "db",
-		TableName: "table",
-		Schema:    "public",
-	}, "table")
-
+	td := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "db", TableName: "table", Schema: "public"}, "table")
 	{
 		// Valid - No Folder
 		store, err := LoadStore(t.Context(), config.Config{S3: &config.S3Settings{
