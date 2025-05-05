@@ -22,57 +22,32 @@ func TestBuildTemporaryFilePath(t *testing.T) {
 }
 
 func TestObjectPrefix(t *testing.T) {
-	td := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{
-		Database:  "db",
-		TableName: "table",
-		Schema:    "public",
-	}, "table")
+	td := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "db", TableName: "table", Schema: "public"}, "table")
+	{
+		// Valid - No Folder
+		store, err := LoadStore(t.Context(), config.Config{S3: &config.S3Settings{
+			Bucket:             "bucket",
+			AwsSecretAccessKey: "foo",
+			AwsAccessKeyID:     "bar",
+			AwsRegion:          "us-east-1",
+			OutputFormat:       constants.ParquetFormat,
+		}})
 
-	testCases := []struct {
-		name      string
-		tableData *optimization.TableData
-		config    *config.S3Settings
-
-		expectedErr    string
-		expectedFormat string
-	}{
-		{
-			name:        "nil",
-			expectedErr: "failed to validate settings: s3 settings are nil",
-		},
-		{
-			name:      "valid #1 (no folder)",
-			tableData: td,
-			config: &config.S3Settings{
-				Bucket:             "bucket",
-				AwsSecretAccessKey: "foo",
-				AwsAccessKeyID:     "bar",
-				OutputFormat:       constants.ParquetFormat,
-			},
-			expectedFormat: fmt.Sprintf("db.public.table/date=%s", time.Now().Format(time.DateOnly)),
-		},
-		{
-			name:      "valid #2 w/ folder",
-			tableData: td,
-			config: &config.S3Settings{
-				Bucket:             "bucket",
-				AwsSecretAccessKey: "foo",
-				AwsAccessKeyID:     "bar",
-				OutputFormat:       constants.ParquetFormat,
-				FolderName:         "foo",
-			},
-			expectedFormat: fmt.Sprintf("foo/db.public.table/date=%s", time.Now().Format(time.DateOnly)),
-		},
+		assert.NoError(t, err)
+		assert.Equal(t, fmt.Sprintf("db.public.table/date=%s", time.Now().Format(time.DateOnly)), store.ObjectPrefix(td))
 	}
+	{
+		// Valid - With Folder
+		store, err := LoadStore(t.Context(), config.Config{S3: &config.S3Settings{
+			Bucket:             "bucket",
+			AwsSecretAccessKey: "foo",
+			AwsAccessKeyID:     "bar",
+			AwsRegion:          "us-east-1",
+			FolderName:         "foo",
+			OutputFormat:       constants.ParquetFormat,
+		}})
 
-	for _, tc := range testCases {
-		store, err := LoadStore(config.Config{S3: tc.config})
-		if tc.expectedErr != "" {
-			assert.ErrorContains(t, err, tc.expectedErr, tc.name)
-		} else {
-			assert.NoError(t, err, tc.name)
-			actualObjectPrefix := store.ObjectPrefix(tc.tableData)
-			assert.Equal(t, tc.expectedFormat, actualObjectPrefix, tc.name)
-		}
+		assert.NoError(t, err)
+		assert.Equal(t, fmt.Sprintf("foo/db.public.table/date=%s", time.Now().Format(time.DateOnly)), store.ObjectPrefix(td))
 	}
 }

@@ -24,7 +24,7 @@ func IsOutputBaseline(cfg config.Config) bool {
 func LoadBaseline(ctx context.Context, cfg config.Config) (destination.Baseline, error) {
 	switch cfg.Output {
 	case constants.S3:
-		store, err := s3.LoadStore(cfg)
+		store, err := s3.LoadStore(ctx, cfg)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load S3: %w", err)
 		}

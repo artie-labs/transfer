@@ -25,6 +25,7 @@ import (
 type Store struct {
 	catalogName      string
 	s3TablesAPI      awslib.S3TablesAPIWrapper
+	s3Client         awslib.S3Client
 	apacheLivyClient *apachelivy.Client
 	config           config.Config
 	cm               *types.DestinationTableConfigMap
@@ -272,6 +273,7 @@ func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {
 		apacheLivyClient: apacheLivyClient,
 		cm:               &types.DestinationTableConfigMap{},
 		s3TablesAPI:      awslib.NewS3TablesAPI(awsCfg, cfg.Iceberg.S3Tables.BucketARN),
+		s3Client:         awslib.NewS3Client(awsCfg),
 	}
 
 	namespaces := make(map[string]bool)
