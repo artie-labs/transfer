@@ -61,11 +61,12 @@ bench_mongo:
 
 .PHONY: dest-itest-append
 dest-itest-append:
-	go run integration_tests/destination_append/main.go --config .personal/integration_tests/snowflake.yaml
-	go run integration_tests/destination_append/main.go --config .personal/integration_tests/bigquery.yaml
-	go run integration_tests/destination_append/main.go --config .personal/integration_tests/databricks.yaml
-	go run integration_tests/destination_append/main.go --config .personal/integration_tests/redshift.yaml
-	go run integration_tests/destination_append/main.go --config .personal/integration_tests/mssql.yaml
+	# go run integration_tests/destination_append/main.go --config .personal/integration_tests/snowflake.yaml
+	# go run integration_tests/destination_append/main.go --config .personal/integration_tests/bigquery.yaml
+	# go run integration_tests/destination_append/main.go --config .personal/integration_tests/databricks.yaml
+	# go run integration_tests/destination_append/main.go --config .personal/integration_tests/redshift.yaml
+	# go run integration_tests/destination_append/main.go --config .personal/integration_tests/mssql.yaml
+	go run integration_tests/destination_append/main.go --config .personal/integration_tests/iceberg.yaml
 
 .PHONY: dest-itest-merge
 dest-itest-merge:

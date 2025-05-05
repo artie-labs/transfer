@@ -30,11 +30,19 @@ type TestFramework struct {
 }
 
 func (t TestFramework) BigQuery() bool {
+	if t.dest == nil {
+		return false
+	}
+
 	_, ok := t.dest.Dialect().(dialect.BigQueryDialect)
 	return ok
 }
 
 func (t TestFramework) MSSQL() bool {
+	if t.dest == nil {
+		return false
+	}
+
 	_, ok := t.dest.Dialect().(mssqlDialect.MSSQLDialect)
 	return ok
 }
@@ -161,6 +169,14 @@ func (tf *TestFramework) GetTableID() sql.TableIdentifier {
 }
 
 func (tf *TestFramework) GetDestination() destination.Destination {
+	return tf.dest
+}
+
+func (tf *TestFramework) GetBaseline() destination.Baseline {
+	if tf.iceberg != nil {
+		return tf.iceberg
+	}
+
 	return tf.dest
 }
 

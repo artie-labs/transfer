@@ -35,7 +35,7 @@ func (at *AppendTest) generateTestData(numRows int, appendEvery int) error {
 			at.framework.GetTableData().InsertRow(pkValueString, rowData, false)
 		}
 
-		if err := at.framework.GetDestination().Append(at.framework.GetContext(), at.framework.GetTableData(), false); err != nil {
+		if err := at.framework.GetBaseline().Append(at.framework.GetContext(), at.framework.GetTableData(), false); err != nil {
 			return fmt.Errorf("failed to append data: %w", err)
 		}
 
@@ -84,11 +84,12 @@ func main() {
 			logger.Fatal("Failed to load baseline", slog.Any("err", err))
 		}
 
-		var ok bool
-		_iceberg, ok = baseline.(*iceberg.Store)
+		_icebergStore, ok := baseline.(iceberg.Store)
 		if !ok {
 			logger.Fatal(fmt.Sprintf("baseline is not an iceberg store: %T", baseline))
 		}
+
+		_iceberg = &_icebergStore
 	} else {
 		dest, err = utils.LoadDestination(ctx, settings.Config, nil)
 		if err != nil {

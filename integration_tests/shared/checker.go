@@ -77,7 +77,7 @@ func (tf *TestFramework) VerifyRowData(rows *sql.Rows, i int, valueMultiplier fl
 		},
 	}
 
-	if ArrayAsListOfString(tf.dest) {
+	if tf.ArrayAsListOfString() {
 		expectedJSONArray = []any{
 			fmt.Sprintf(`{"array_field1":"array_value_%d_1","array_field2":%d}`, i, i+1),
 			fmt.Sprintf(`{"array_field1":"array_value_%d_2","array_field2":%d}`, i, i+2),
