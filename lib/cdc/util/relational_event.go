@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -50,7 +51,7 @@ func (s *SchemaEventPayload) GetColumns() (*columns.Columns, error) {
 		col := columns.NewColumn(columns.EscapeName(field.FieldName), typing.Invalid)
 		val, parseErr := field.ParseValue(field.Default)
 		if parseErr != nil {
-			return nil, fmt.Errorf("failed to parse field %q for default value: %w", field.FieldName, parseErr)
+			slog.Warn("Failed to parse field %q for default value: %w, so we're skipping it", slog.String("field", field.FieldName), slog.Any("error", parseErr))
 		} else {
 			if field.ShouldSetDefaultValue(val) {
 				col.SetDefaultValue(val)
