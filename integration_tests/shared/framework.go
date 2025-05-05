@@ -7,6 +7,7 @@ import (
 
 	"github.com/artie-labs/transfer/clients/bigquery/dialect"
 	databricksdialect "github.com/artie-labs/transfer/clients/databricks/dialect"
+	"github.com/artie-labs/transfer/clients/iceberg"
 	mssqlDialect "github.com/artie-labs/transfer/clients/mssql/dialect"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -20,10 +21,12 @@ import (
 
 type TestFramework struct {
 	ctx         context.Context
-	dest        destination.Destination
 	tableID     sql.TableIdentifier
 	tableData   *optimization.TableData
 	topicConfig kafkalib.TopicConfig
+
+	dest    destination.Destination
+	iceberg *iceberg.Store
 }
 
 func (t TestFramework) BigQuery() bool {
@@ -36,11 +39,19 @@ func (t TestFramework) MSSQL() bool {
 	return ok
 }
 
-func NewTestFramework(ctx context.Context, dest destination.Destination, topicConfig kafkalib.TopicConfig) *TestFramework {
+func NewTestFramework(ctx context.Context, dest destination.Destination, _iceberg *iceberg.Store, topicConfig kafkalib.TopicConfig) *TestFramework {
+	var tableID sql.TableIdentifier
+	if _iceberg != nil {
+		tableID = _iceberg.IdentifierFor(topicConfig.BuildDatabaseAndSchemaPair(), topicConfig.TableName)
+	} else {
+		tableID = dest.IdentifierFor(topicConfig.BuildDatabaseAndSchemaPair(), topicConfig.TableName)
+	}
+
 	return &TestFramework{
 		ctx:         ctx,
 		dest:        dest,
-		tableID:     dest.IdentifierFor(topicConfig.BuildDatabaseAndSchemaPair(), topicConfig.TableName),
+		iceberg:     _iceberg,
+		tableID:     tableID,
 		topicConfig: topicConfig,
 	}
 }
@@ -176,6 +187,10 @@ func (tf *TestFramework) VerifyDataContent(rowCount int) error {
 
 func (tf *TestFramework) Cleanup(tableID sql.TableIdentifier) error {
 	dropTableID := tableID.WithDisableDropProtection(true)
+	if tf.iceberg != nil {
+		return tf.iceberg.DeleteTable(tf.ctx, dropTableID)
+	}
+
 	return tf.dest.DropTable(tf.ctx, dropTableID)
 }
 
@@ -196,8 +211,12 @@ func (tf *TestFramework) GetContext() context.Context {
 }
 
 // These destinations return array as array<string>.
-func ArrayAsListOfString(dest destination.Destination) bool {
-	switch dest.Dialect().(type) {
+func (tf *TestFramework) ArrayAsListOfString() bool {
+	if tf.iceberg != nil {
+		return true
+	}
+
+	switch tf.dest.Dialect().(type) {
 	case dialect.BigQueryDialect, databricksdialect.DatabricksDialect:
 		return true
 	default:
