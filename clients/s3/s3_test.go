@@ -66,7 +66,7 @@ func TestObjectPrefix(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		store, err := LoadStore(config.Config{S3: tc.config})
+		store, err := LoadStore(t.Context(), config.Config{S3: tc.config})
 		if tc.expectedErr != "" {
 			assert.ErrorContains(t, err, tc.expectedErr, tc.name)
 		} else {

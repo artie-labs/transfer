@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/clients/shared"
-	"github.com/artie-labs/transfer/lib/awslib"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -47,14 +46,7 @@ func (s Store) buildColumnParts(columns []columns.Column) []string {
 }
 
 func (s Store) uploadToS3(ctx context.Context, fp string) (string, error) {
-	s3URI, err := awslib.UploadLocalFileToS3(ctx, awslib.UploadArgs{
-		Bucket:                     s.config.Iceberg.S3Tables.Bucket,
-		FilePath:                   fp,
-		OverrideAWSAccessKeyID:     s.config.Iceberg.S3Tables.AwsAccessKeyID,
-		OverrideAWSAccessKeySecret: s.config.Iceberg.S3Tables.AwsSecretAccessKey,
-		Region:                     s.config.Iceberg.S3Tables.Region,
-	})
-
+	s3URI, err := s.s3Client.UploadLocalFileToS3(ctx, s.config.Iceberg.S3Tables.Bucket, "", fp)
 	if err != nil {
 		return "", fmt.Errorf("failed to upload to s3: %w", err)
 	}
