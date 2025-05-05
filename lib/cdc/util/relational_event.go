@@ -36,6 +36,17 @@ type Source struct {
 	Gtid *string `json:"gtid,omitempty"`
 }
 
+func shouldParseValue(value any) bool {
+	if str, ok := value.(string); ok {
+		// We can't parse this because this is a formula, not a value.
+		if str == "CURRENT_TIMESTAMP" {
+			return false
+		}
+	}
+
+	return true
+}
+
 func (s *SchemaEventPayload) GetColumns() (*columns.Columns, error) {
 	fieldsObject := s.Schema.GetSchemaFromLabel(debezium.After)
 	if fieldsObject == nil {
@@ -48,12 +59,14 @@ func (s *SchemaEventPayload) GetColumns() (*columns.Columns, error) {
 		// We are purposefully doing this to ensure that the correct typing is set
 		// When we invoke event.Save()
 		col := columns.NewColumn(columns.EscapeName(field.FieldName), typing.Invalid)
-		val, parseErr := field.ParseValue(field.Default)
-		if parseErr != nil {
-			return nil, fmt.Errorf("failed to parse field %q for default value: %w", field.FieldName, parseErr)
-		} else {
-			if field.ShouldSetDefaultValue(val) {
-				col.SetDefaultValue(val)
+		if shouldParseValue(field.Default) {
+			val, err := field.ParseValue(field.Default)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse field %q for default value: %w", field.FieldName, err)
+			} else {
+				if field.ShouldSetDefaultValue(val) {
+					col.SetDefaultValue(val)
+				}
 			}
 		}
 
