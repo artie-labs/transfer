@@ -64,6 +64,8 @@ type CreateSessionRequest struct {
 	Jars                     []string       `json:"jars,omitempty"`
 	Conf                     map[string]any `json:"conf"`
 	HeartbeatTimeoutInSecond int            `json:"heartbeatTimeoutInSecond,omitempty"`
+	DriverMemory             string         `json:"driverMemory,omitempty"`
+	ExecutorMemory           string         `json:"executorMemory"`
 }
 
 type CreateSessionResponse struct {
