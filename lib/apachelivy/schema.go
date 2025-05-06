@@ -2,6 +2,8 @@ package apachelivy
 
 import (
 	"fmt"
+
+	"github.com/artie-labs/transfer/lib/typing"
 )
 
 // SparkSQL does not support primary keys.
@@ -33,18 +35,18 @@ func (g GetSchemaResponse) BuildColumns() ([]Column, error) {
 
 	var cols []Column
 	for _, row := range g.Data {
-		name, ok := row[colNameIndex].(string)
-		if !ok {
+		name, err := typing.AssertTypeOrNil[string](row[colNameIndex])
+		if err != nil {
 			return nil, fmt.Errorf("col_name is not a string, type: %T", row[colNameIndex])
 		}
 
-		dataType, ok := row[colTypeIndex].(string)
-		if !ok {
+		dataType, err := typing.AssertTypeOrNil[string](row[colTypeIndex])
+		if err != nil {
 			return nil, fmt.Errorf("data_type is not a string, type: %T", row[colTypeIndex])
 		}
 
-		comment, ok := row[colCommentIndex].(string)
-		if !ok {
+		comment, err := typing.AssertTypeOrNil[string](row[colCommentIndex])
+		if err != nil {
 			return nil, fmt.Errorf("comment is not a string, type: %T", row[colCommentIndex])
 		}
 
