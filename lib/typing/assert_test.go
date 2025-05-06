@@ -30,3 +30,18 @@ func TestAssertType(t *testing.T) {
 		assert.ErrorContains(t, err, "expected type bool, got string")
 	}
 }
+
+func TestAssertTypeOptional(t *testing.T) {
+	{
+		// String to string
+		val, err := AssertTypeOptional[string]("hello")
+		assert.NoError(t, err)
+		assert.Equal(t, "hello", val)
+	}
+	{
+		// Nil to string
+		val, err := AssertTypeOptional[string](nil)
+		assert.NoError(t, err)
+		assert.Equal(t, "", val)
+	}
+}
