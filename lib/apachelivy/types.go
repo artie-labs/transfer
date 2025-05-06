@@ -143,7 +143,7 @@ func (g GetStatementResponse) MarshalJSON() ([]byte, error) {
 
 type GetSchemaResponse struct {
 	Schema GetSchemaStructResponse `json:"schema"`
-	Data   [][]string              `json:"data"`
+	Data   [][]any                 `json:"data"`
 }
 
 type GetSchemaStructResponse struct {

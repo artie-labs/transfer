@@ -1,7 +1,10 @@
 package shared
 
 import (
+	"encoding/json"
 	"fmt"
+
+	"github.com/artie-labs/transfer/lib/apachelivy"
 )
 
 func (tf *TestFramework) verifyRowCountIceberg(expected int) error {
@@ -15,21 +18,19 @@ func (tf *TestFramework) verifyRowCountIceberg(expected int) error {
 		return fmt.Errorf("failed to marshal response: %w", err)
 	}
 
-	fmt.Println(string(bytes))
+	var getSchemaResp apachelivy.GetSchemaResponse
+	if err := json.Unmarshal(bytes, &getSchemaResp); err != nil {
+		return fmt.Errorf("failed to unmarshal response: %w", err)
+	}
 
-	// var getSchemaResp apachelivy.GetSchemaResponse
-	// if err := json.Unmarshal(bytes, &getSchemaResp); err != nil {
-	// 	return fmt.Errorf("failed to unmarshal response: %w", err)
-	// }
+	count, ok := getSchemaResp.Data[0][0].(float64)
+	if !ok {
+		return fmt.Errorf("row count is not a float")
+	}
 
-	// count, err := strconv.Atoi(getSchemaResp.Data[0][0])
-	// if err != nil {
-	// 	return fmt.Errorf("failed to convert count to int: %w", err)
-	// }
-
-	// if count != expected {
-	// 	return fmt.Errorf("unexpected row count: expected %d, got %d", expected, count)
-	// }
+	if int(count) != expected {
+		return fmt.Errorf("unexpected row count: expected %d, got %d", expected, int(count))
+	}
 
 	return nil
 }
