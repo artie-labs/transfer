@@ -11,16 +11,12 @@ func AssertType[T any](val any) (T, error) {
 	return castedVal, nil
 }
 
-func AssertTypeOrNil[T any](val any) (T, error) {
+// AssertTypeOptional - will return zero if the value is nil, otherwise it will assert the type
+func AssertTypeOptional[T any](val any) (T, error) {
 	var zero T
 	if val == nil {
 		return zero, nil
 	}
 
-	castedVal, isOk := val.(T)
-	if !isOk {
-		return zero, fmt.Errorf("expected type %T, got %T", zero, val)
-	}
-
-	return castedVal, nil
+	return AssertType[T](val)
 }
