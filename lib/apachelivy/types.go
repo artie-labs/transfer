@@ -65,7 +65,7 @@ type CreateSessionRequest struct {
 	Conf                     map[string]any `json:"conf"`
 	HeartbeatTimeoutInSecond int            `json:"heartbeatTimeoutInSecond,omitempty"`
 	DriverMemory             string         `json:"driverMemory,omitempty"`
-	ExecutorMemory           string         `json:"executorMemory"`
+	ExecutorMemory           string         `json:"executorMemory,omitempty"`
 }
 
 type CreateSessionResponse struct {
@@ -143,7 +143,7 @@ func (g GetStatementResponse) MarshalJSON() ([]byte, error) {
 
 type GetSchemaResponse struct {
 	Schema GetSchemaStructResponse `json:"schema"`
-	Data   [][]string              `json:"data"`
+	Data   [][]any                 `json:"data"`
 }
 
 type GetSchemaStructResponse struct {

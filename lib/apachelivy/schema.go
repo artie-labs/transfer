@@ -33,10 +33,25 @@ func (g GetSchemaResponse) BuildColumns() ([]Column, error) {
 
 	var cols []Column
 	for _, row := range g.Data {
+		name, ok := row[colNameIndex].(string)
+		if !ok {
+			return nil, fmt.Errorf("col_name is not a string")
+		}
+
+		dataType, ok := row[colTypeIndex].(string)
+		if !ok {
+			return nil, fmt.Errorf("data_type is not a string")
+		}
+
+		comment, ok := row[colCommentIndex].(string)
+		if !ok {
+			return nil, fmt.Errorf("comment is not a string")
+		}
+
 		cols = append(cols, Column{
-			Name:     row[colNameIndex],
-			DataType: row[colTypeIndex],
-			Comment:  row[colCommentIndex],
+			Name:     name,
+			DataType: dataType,
+			Comment:  comment,
 		})
 	}
 

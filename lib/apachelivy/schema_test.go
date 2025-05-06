@@ -13,7 +13,7 @@ func TestGetSchemaResponse_BuildColumns(t *testing.T) {
 			Schema: GetSchemaStructResponse{
 				Fields: []GetSchemaFieldResponse{},
 			},
-			Data: [][]string{},
+			Data: [][]any{},
 		}
 
 		_, err := resp.BuildColumns()
@@ -41,7 +41,7 @@ func TestGetSchemaResponse_BuildColumns(t *testing.T) {
 					},
 				},
 			},
-			Data: [][]string{
+			Data: [][]any{
 				{
 					"id",
 					"bigint",

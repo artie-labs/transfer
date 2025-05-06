@@ -7,6 +7,7 @@ import (
 
 	"github.com/artie-labs/transfer/clients/bigquery/dialect"
 	databricksdialect "github.com/artie-labs/transfer/clients/databricks/dialect"
+	"github.com/artie-labs/transfer/clients/iceberg"
 	mssqlDialect "github.com/artie-labs/transfer/clients/mssql/dialect"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -20,27 +21,45 @@ import (
 
 type TestFramework struct {
 	ctx         context.Context
-	dest        destination.Destination
 	tableID     sql.TableIdentifier
 	tableData   *optimization.TableData
 	topicConfig kafkalib.TopicConfig
+
+	dest    destination.Destination
+	iceberg *iceberg.Store
 }
 
 func (t TestFramework) BigQuery() bool {
+	if t.dest == nil {
+		return false
+	}
+
 	_, ok := t.dest.Dialect().(dialect.BigQueryDialect)
 	return ok
 }
 
 func (t TestFramework) MSSQL() bool {
+	if t.dest == nil {
+		return false
+	}
+
 	_, ok := t.dest.Dialect().(mssqlDialect.MSSQLDialect)
 	return ok
 }
 
-func NewTestFramework(ctx context.Context, dest destination.Destination, topicConfig kafkalib.TopicConfig) *TestFramework {
+func NewTestFramework(ctx context.Context, dest destination.Destination, _iceberg *iceberg.Store, topicConfig kafkalib.TopicConfig) *TestFramework {
+	var tableID sql.TableIdentifier
+	if _iceberg != nil {
+		tableID = _iceberg.IdentifierFor(topicConfig.BuildDatabaseAndSchemaPair(), topicConfig.TableName)
+	} else {
+		tableID = dest.IdentifierFor(topicConfig.BuildDatabaseAndSchemaPair(), topicConfig.TableName)
+	}
+
 	return &TestFramework{
 		ctx:         ctx,
 		dest:        dest,
-		tableID:     dest.IdentifierFor(topicConfig.BuildDatabaseAndSchemaPair(), topicConfig.TableName),
+		iceberg:     _iceberg,
+		tableID:     tableID,
 		topicConfig: topicConfig,
 	}
 }
@@ -117,65 +136,27 @@ func (tf *TestFramework) GenerateRowData(pkValue int) map[string]any {
 }
 
 func (tf *TestFramework) VerifyRowCount(expected int) error {
-	rows, err := tf.dest.Query(fmt.Sprintf("SELECT COUNT(*) FROM %s", tf.tableID.FullyQualifiedName()))
-	if err != nil {
-		return fmt.Errorf("failed to query table: %w", err)
+	if tf.iceberg != nil {
+		return tf.verifyRowCountIceberg(expected)
 	}
 
-	var count int
-	if rows.Next() {
-		if err := rows.Scan(&count); err != nil {
-			return fmt.Errorf("failed to scan count: %w", err)
-		}
-	}
-
-	if err := rows.Err(); err != nil {
-		return fmt.Errorf("failed to get rows: %w", err)
-	}
-
-	if count != expected {
-		return fmt.Errorf("unexpected row count: expected %d, got %d", expected, count)
-	}
-
-	return nil
+	return tf.verifyRowCountDestination(expected)
 }
 
 func (tf *TestFramework) VerifyDataContent(rowCount int) error {
-	baseQuery := fmt.Sprintf("SELECT id, name, value, json_data, json_array, json_string, json_boolean, json_number FROM %s ORDER BY id", tf.tableID.FullyQualifiedName())
-
-	if tf.BigQuery() {
-		// BigQuery does not support booleans, numbers and strings in a JSON column.
-		baseQuery = fmt.Sprintf("SELECT id, name, value, TO_JSON_STRING(json_data), TO_JSON_STRING(json_array) FROM %s ORDER BY id", tf.tableID.FullyQualifiedName())
+	if tf.iceberg != nil {
+		return tf.verifyDataContentIceberg(rowCount)
 	}
 
-	rows, err := tf.dest.Query(baseQuery)
-	if err != nil {
-		return fmt.Errorf("failed to query table data: %w", err)
-	}
-
-	for i := 0; i < rowCount; i++ {
-		if !rows.Next() {
-			return fmt.Errorf("expected more rows: expected %d, got %d", rowCount, i)
-		}
-
-		if err := tf.scanAndCheckRow(rows, i); err != nil {
-			return fmt.Errorf("failed to check row %d: %w", i, err)
-		}
-	}
-
-	if rows.Next() {
-		return fmt.Errorf("unexpected extra rows found")
-	}
-
-	if err := rows.Err(); err != nil {
-		return fmt.Errorf("failed to get rows: %w", err)
-	}
-
-	return nil
+	return tf.verifyDataContentDestination(rowCount)
 }
 
 func (tf *TestFramework) Cleanup(tableID sql.TableIdentifier) error {
 	dropTableID := tableID.WithDisableDropProtection(true)
+	if tf.iceberg != nil {
+		return tf.iceberg.DeleteTable(tf.ctx, dropTableID)
+	}
+
 	return tf.dest.DropTable(tf.ctx, dropTableID)
 }
 
@@ -191,13 +172,25 @@ func (tf *TestFramework) GetDestination() destination.Destination {
 	return tf.dest
 }
 
+func (tf *TestFramework) GetBaseline() destination.Baseline {
+	if tf.iceberg != nil {
+		return tf.iceberg
+	}
+
+	return tf.dest
+}
+
 func (tf *TestFramework) GetContext() context.Context {
 	return tf.ctx
 }
 
 // These destinations return array as array<string>.
-func ArrayAsListOfString(dest destination.Destination) bool {
-	switch dest.Dialect().(type) {
+func (tf *TestFramework) ArrayAsListOfString() bool {
+	if tf.iceberg != nil {
+		return false
+	}
+
+	switch tf.dest.Dialect().(type) {
 	case dialect.BigQueryDialect, databricksdialect.DatabricksDialect:
 		return true
 	default:

@@ -6,8 +6,10 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/artie-labs/transfer/clients/iceberg"
 	"github.com/artie-labs/transfer/integration_tests/shared"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/utils"
 	"github.com/artie-labs/transfer/lib/kafkalib"
@@ -18,9 +20,9 @@ type AppendTest struct {
 	framework *shared.TestFramework
 }
 
-func NewAppendTest(ctx context.Context, dest destination.Destination, topicConfig kafkalib.TopicConfig) *AppendTest {
+func NewAppendTest(ctx context.Context, dest destination.Destination, _iceberg *iceberg.Store, topicConfig kafkalib.TopicConfig) *AppendTest {
 	return &AppendTest{
-		framework: shared.NewTestFramework(ctx, dest, topicConfig),
+		framework: shared.NewTestFramework(ctx, dest, _iceberg, topicConfig),
 	}
 }
 
@@ -33,7 +35,7 @@ func (at *AppendTest) generateTestData(numRows int, appendEvery int) error {
 			at.framework.GetTableData().InsertRow(pkValueString, rowData, false)
 		}
 
-		if err := at.framework.GetDestination().Append(at.framework.GetContext(), at.framework.GetTableData(), false); err != nil {
+		if err := at.framework.GetBaseline().Append(at.framework.GetContext(), at.framework.GetTableData(), false); err != nil {
 			return fmt.Errorf("failed to append data: %w", err)
 		}
 
@@ -74,9 +76,25 @@ func main() {
 		logger.Fatal("Failed to load settings", slog.Any("err", err))
 	}
 
-	dest, err := utils.LoadDestination(ctx, settings.Config, nil)
-	if err != nil {
-		logger.Fatal("Failed to load destination", slog.Any("err", err))
+	var _iceberg *iceberg.Store
+	var dest destination.Destination
+	if settings.Config.Output == constants.Iceberg {
+		baseline, err := utils.LoadBaseline(ctx, settings.Config)
+		if err != nil {
+			logger.Fatal("Failed to load baseline", slog.Any("err", err))
+		}
+
+		_icebergStore, ok := baseline.(iceberg.Store)
+		if !ok {
+			logger.Fatal(fmt.Sprintf("baseline is not an iceberg store: %T", baseline))
+		}
+
+		_iceberg = &_icebergStore
+	} else {
+		dest, err = utils.LoadDestination(ctx, settings.Config, nil)
+		if err != nil {
+			logger.Fatal("Failed to load destination", slog.Any("err", err))
+		}
 	}
 
 	tc, err := settings.Config.TopicConfigs()
@@ -88,8 +106,8 @@ func main() {
 		logger.Fatal("Expected 1 topic config", slog.Int("num_configs", len(tc)))
 	}
 
-	test := NewAppendTest(ctx, dest, *tc[0])
-	if err := test.Run(); err != nil {
+	test := NewAppendTest(ctx, dest, _iceberg, *tc[0])
+	if err = test.Run(); err != nil {
 		logger.Fatal("Test failed", slog.Any("err", err))
 	}
 

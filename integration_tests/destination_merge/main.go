@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/artie-labs/transfer/clients/iceberg"
 	"github.com/artie-labs/transfer/integration_tests/shared"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -20,9 +21,9 @@ type MergeTest struct {
 	framework *shared.TestFramework
 }
 
-func NewMergeTest(ctx context.Context, dest destination.Destination, topicConfig kafkalib.TopicConfig) *MergeTest {
+func NewMergeTest(ctx context.Context, dest destination.Destination, _iceberg *iceberg.Store, topicConfig kafkalib.TopicConfig) *MergeTest {
 	return &MergeTest{
-		framework: shared.NewTestFramework(ctx, dest, topicConfig),
+		framework: shared.NewTestFramework(ctx, dest, _iceberg, topicConfig),
 	}
 }
 
@@ -176,7 +177,7 @@ func main() {
 		logger.Fatal("Expected 1 topic config", slog.Int("num_configs", len(tc)))
 	}
 
-	test := NewMergeTest(ctx, dest, *tc[0])
+	test := NewMergeTest(ctx, dest, nil, *tc[0])
 	if err := test.Run(); err != nil {
 		logger.Fatal("Test failed", slog.Any("err", err))
 	}

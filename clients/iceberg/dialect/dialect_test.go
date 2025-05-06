@@ -38,3 +38,8 @@ func TestIcebergDialect_BuildDedupeQueries(t *testing.T) {
 	}
 
 }
+
+func TestIcebergDialect_BuildCreateTemporaryView(t *testing.T) {
+	query := IcebergDialect{}.BuildCreateTemporaryView("{{VIEW_NAME}}", []string{"{{ID}}", "{{NAME}}"}, "{{S3_PATH}}")
+	assert.Equal(t, `CREATE OR REPLACE TEMPORARY VIEW {{VIEW_NAME}} ( {{ID}}, {{NAME}} ) USING csv OPTIONS (path '{{S3_PATH}}', sep '\t', header 'false', compression 'gzip', nullValue '__artie_null_value', escape '"', inferSchema 'false', multiLine 'true');`, query)
+}
