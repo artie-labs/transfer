@@ -35,17 +35,17 @@ func (g GetSchemaResponse) BuildColumns() ([]Column, error) {
 
 	var cols []Column
 	for _, row := range g.Data {
-		name, err := typing.AssertTypeOrNil[string](row[colNameIndex])
+		name, err := typing.AssertTypeOptional[string](row[colNameIndex])
 		if err != nil {
 			return nil, fmt.Errorf("col_name is not a string, type: %T", row[colNameIndex])
 		}
 
-		dataType, err := typing.AssertTypeOrNil[string](row[colTypeIndex])
+		dataType, err := typing.AssertTypeOptional[string](row[colTypeIndex])
 		if err != nil {
 			return nil, fmt.Errorf("data_type is not a string, type: %T", row[colTypeIndex])
 		}
 
-		comment, err := typing.AssertTypeOrNil[string](row[colCommentIndex])
+		comment, err := typing.AssertTypeOptional[string](row[colCommentIndex])
 		if err != nil {
 			return nil, fmt.Errorf("comment is not a string, type: %T", row[colCommentIndex])
 		}
