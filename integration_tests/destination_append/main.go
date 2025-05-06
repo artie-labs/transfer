@@ -53,7 +53,7 @@ func (at *AppendTest) Run() error {
 	at.framework.SetupColumns(nil)
 
 	appendRows := 200
-	appendEvery := 10
+	appendEvery := 50
 	if err := at.generateTestData(appendRows, appendEvery); err != nil {
 		return fmt.Errorf("failed to generate test data: %w", err)
 	}
