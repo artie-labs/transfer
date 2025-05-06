@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+
+	"github.com/artie-labs/transfer/lib/typing"
 )
 
 func (tf *TestFramework) scanAndCheckRow(rows *sql.Rows, i int) error {
@@ -19,7 +21,7 @@ func (tf *TestFramework) VerifyRowData(rows *sql.Rows, i int, valueMultiplier fl
 	var jsonDataStr string
 	var jsonArrayStr string
 	var jsonStringStr string
-	var jsonBooleanStr bool
+	var jsonBoolean bool
 	var jsonNumber string
 
 	if tf.BigQuery() {
@@ -28,15 +30,74 @@ func (tf *TestFramework) VerifyRowData(rows *sql.Rows, i int, valueMultiplier fl
 			return fmt.Errorf("failed to scan row: %w", err)
 		}
 	} else {
-		if err := rows.Scan(&id, &name, &value, &jsonDataStr, &jsonArrayStr, &jsonStringStr, &jsonBooleanStr, &jsonNumber); err != nil {
+		if err := rows.Scan(&id, &name, &value, &jsonDataStr, &jsonArrayStr, &jsonStringStr, &jsonBoolean, &jsonNumber); err != nil {
 			return fmt.Errorf("failed to scan row: %w", err)
 		}
 	}
 
-	expectedName := fmt.Sprintf("test_name_%d", i)
-	expectedValue := float64(i) * valueMultiplier
-	if id != i {
-		return fmt.Errorf("unexpected id: expected %d, got %d", i, id)
+	row := map[string]any{
+		"id":           id,
+		"name":         name,
+		"value":        value,
+		"json_data":    jsonDataStr,
+		"json_array":   jsonArrayStr,
+		"json_string":  jsonStringStr,
+		"json_boolean": jsonBoolean,
+		"json_number":  jsonNumber,
+	}
+
+	if err := tf.verifyRowData(row, i, valueMultiplier); err != nil {
+		return fmt.Errorf("failed to verify row data: %w", err)
+	}
+
+	return nil
+}
+
+func (tf *TestFramework) verifyRowData(row map[string]any, index int, valueMultiplier float64) error {
+	id, err := typing.AssertType[int](row["id"])
+	if err != nil {
+		return err
+	}
+
+	name, err := typing.AssertType[string](row["name"])
+	if err != nil {
+		return err
+	}
+
+	value, err := typing.AssertType[float64](row["value"])
+	if err != nil {
+		return err
+	}
+
+	jsonDataStr, err := typing.AssertType[string](row["json_data"])
+	if err != nil {
+		return err
+	}
+
+	jsonArrayStr, err := typing.AssertType[string](row["json_array"])
+	if err != nil {
+		return err
+	}
+
+	jsonStringStr, err := typing.AssertType[string](row["json_string"])
+	if err != nil {
+		return err
+	}
+
+	jsonBoolean, err := typing.AssertType[bool](row["json_boolean"])
+	if err != nil {
+		return err
+	}
+
+	jsonNumber, err := typing.AssertType[string](row["json_number"])
+	if err != nil {
+		return fmt.Errorf("json_number is not a string: %w", err)
+	}
+
+	expectedName := fmt.Sprintf("test_name_%d", index)
+	expectedValue := float64(index) * valueMultiplier
+	if id != index {
+		return fmt.Errorf("unexpected id: expected %d, got %d", index, id)
 	}
 	if name != expectedName {
 		return fmt.Errorf("unexpected name: expected %s, got %s", expectedName, name)
@@ -47,13 +108,14 @@ func (tf *TestFramework) VerifyRowData(rows *sql.Rows, i int, valueMultiplier fl
 
 	// Verify JSON data
 	expectedJSONData := map[string]interface{}{
-		"field1": fmt.Sprintf("value_%d", i),
-		"field2": i,
-		"field3": i%2 == 0,
+		"field1": fmt.Sprintf("value_%d", index),
+		"field2": index,
+		"field3": index%2 == 0,
 	}
+
 	var actualJSONData map[string]interface{}
 	if err := json.Unmarshal([]byte(jsonDataStr), &actualJSONData); err != nil {
-		return fmt.Errorf("failed to unmarshal json_data for row %d: %w", i, err)
+		return fmt.Errorf("failed to unmarshal json_data for row %d: %w", index, err)
 	}
 
 	// Normalize numeric types in actual JSON data
@@ -62,31 +124,31 @@ func (tf *TestFramework) VerifyRowData(rows *sql.Rows, i int, valueMultiplier fl
 	}
 
 	if !reflect.DeepEqual(expectedJSONData, actualJSONData) {
-		return fmt.Errorf("unexpected json_data for row %d: expected %v, got %v", i, expectedJSONData, actualJSONData)
+		return fmt.Errorf("unexpected json_data for row %d: expected %v, got %v", index, expectedJSONData, actualJSONData)
 	}
 
 	// Verify JSON array
 	expectedJSONArray := []interface{}{
 		map[string]interface{}{
-			"array_field1": fmt.Sprintf("array_value_%d_1", i),
-			"array_field2": i + 1,
+			"array_field1": fmt.Sprintf("array_value_%d_1", index),
+			"array_field2": index + 1,
 		},
 		map[string]interface{}{
-			"array_field1": fmt.Sprintf("array_value_%d_2", i),
-			"array_field2": i + 2,
+			"array_field1": fmt.Sprintf("array_value_%d_2", index),
+			"array_field2": index + 2,
 		},
 	}
 
 	if tf.ArrayAsListOfString() {
 		expectedJSONArray = []any{
-			fmt.Sprintf(`{"array_field1":"array_value_%d_1","array_field2":%d}`, i, i+1),
-			fmt.Sprintf(`{"array_field1":"array_value_%d_2","array_field2":%d}`, i, i+2),
+			fmt.Sprintf(`{"array_field1":"array_value_%d_1","array_field2":%d}`, index, index+1),
+			fmt.Sprintf(`{"array_field1":"array_value_%d_2","array_field2":%d}`, index, index+2),
 		}
 	}
 
 	var actualJSONArray []interface{}
 	if err := json.Unmarshal([]byte(jsonArrayStr), &actualJSONArray); err != nil {
-		return fmt.Errorf("failed to unmarshal json_array for row %d: %w", i, err)
+		return fmt.Errorf("failed to unmarshal json_array for row %d: %w", index, err)
 	}
 
 	// Normalize numeric types in actual JSON array
@@ -108,25 +170,23 @@ func (tf *TestFramework) VerifyRowData(rows *sql.Rows, i int, valueMultiplier fl
 	}
 
 	// Validate JSON boolean
-	if jsonBooleanStr != (i%2 == 0) {
-		return fmt.Errorf("unexpected json_boolean for row %d: expected %t, got %t", i, i%2 == 0, jsonBooleanStr)
+	if jsonBoolean != (index%2 == 0) {
+		return fmt.Errorf("unexpected json_boolean for row %d: expected %t, got %t", index, index%2 == 0, jsonBoolean)
 	}
 
 	// Validate JSON number
-	if jsonNumber != fmt.Sprintf("%d", i) {
-		return fmt.Errorf("unexpected json_number for row %d: expected %s, got %q", i, fmt.Sprintf("%d", i), jsonNumber)
+	if jsonNumber != fmt.Sprintf("%d", index) {
+		return fmt.Errorf("unexpected json_number for row %d: expected %s, got %q", index, fmt.Sprintf("%d", index), jsonNumber)
 	}
 
 	// Validate JSON string
-	expectedJSONString := fmt.Sprintf(`"hello world %d"`, i)
+	expectedJSONString := fmt.Sprintf(`"hello world %d"`, index)
 
 	if tf.MSSQL() {
-		expectedJSONString = fmt.Sprintf("hello world %d", i)
+		expectedJSONString = fmt.Sprintf("hello world %d", index)
 	}
 
 	if jsonStringStr != expectedJSONString {
-		return fmt.Errorf("unexpected json_string for row %d: expected %s, got %q", i, expectedJSONString, jsonStringStr)
+		return fmt.Errorf("unexpected json_string for row %d: expected %s, got %q", index, expectedJSONString, jsonStringStr)
 	}
-
-	return nil
 }
