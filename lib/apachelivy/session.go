@@ -27,7 +27,7 @@ func shouldCreateNewSession(resp GetSessionResponse, statusCode int, err error) 
 	return slices.Contains(TerminalSessionStates, resp.State), nil
 }
 
-func (c *Client) ensureSession(ctx context.Context) error {
+func (c *Client) ensureSession(ctx context.Context, forceCheck bool) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -36,7 +36,7 @@ func (c *Client) ensureSession(ctx context.Context) error {
 		return c.newSession(ctx, SessionKindSql, true)
 	}
 
-	if time.Since(c.lastChecked).Seconds() > (float64(c.sessionHeartbeatTimeoutInSecond) - sessionBufferSeconds) {
+	if forceCheck || time.Since(c.lastChecked).Seconds() > (float64(c.sessionHeartbeatTimeoutInSecond)-sessionBufferSeconds) {
 		c.lastChecked = time.Now()
 		shouldCreateNewSession, err := shouldCreateNewSession(c.getSession(ctx))
 		if err != nil {

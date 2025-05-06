@@ -46,8 +46,8 @@ func (c *Client) buildRetryConfig() (retry.RetryConfig, error) {
 	return cfg, nil
 }
 
-func (c *Client) queryContext(ctx context.Context, query string) (GetStatementResponse, error) {
-	if err := c.ensureSession(ctx); err != nil {
+func (c *Client) queryContext(ctx context.Context, query string, attempt int) (GetStatementResponse, error) {
+	if err := c.ensureSession(ctx, attempt > 0); err != nil {
 		return GetStatementResponse{}, err
 	}
 
@@ -70,13 +70,13 @@ func (c *Client) QueryContext(ctx context.Context, query string) (GetStatementRe
 		return GetStatementResponse{}, err
 	}
 
-	return retry.WithRetriesAndResult(retryCfg, func(_ int, _ error) (GetStatementResponse, error) {
-		return c.queryContext(ctx, query)
+	return retry.WithRetriesAndResult(retryCfg, func(attempt int, _ error) (GetStatementResponse, error) {
+		return c.queryContext(ctx, query, attempt)
 	})
 }
 
-func (c *Client) execContext(ctx context.Context, query string) error {
-	if err := c.ensureSession(ctx); err != nil {
+func (c *Client) execContext(ctx context.Context, query string, attempt int) error {
+	if err := c.ensureSession(ctx, attempt > 0); err != nil {
 		return err
 	}
 
@@ -99,8 +99,8 @@ func (c *Client) ExecContext(ctx context.Context, query string) error {
 		return err
 	}
 
-	return retry.WithRetries(retryCfg, func(_ int, _ error) error {
-		return c.execContext(ctx, query)
+	return retry.WithRetries(retryCfg, func(attempt int, _ error) error {
+		return c.execContext(ctx, query, attempt)
 	})
 }
 
