@@ -40,8 +40,9 @@ func (tf *TestFramework) verifyDataContentIceberg(rowCount int) error {
 	// Limit this to 1k rows since that's the default limit for Livy.
 	iters := rowCount / 1000
 	totalRows := 0
-	for i := 0; i < iters; i++ {
-		query := fmt.Sprintf("SELECT id, name, value, json_data, json_array, json_string, json_boolean, json_number FROM %s ORDER BY id LIMIT 1000 OFFSET %d", tf.tableID.FullyQualifiedName(), i*1000)
+	for iter := 0; iter < iters; iter++ {
+		offset := iter * 1000
+		query := fmt.Sprintf("SELECT id, name, value, json_data, json_array, json_string, json_boolean, json_number FROM %s ORDER BY id LIMIT 1000 OFFSET %d", tf.tableID.FullyQualifiedName(), offset)
 		resp, err := tf.iceberg.GetApacheLivyClient().QueryContext(tf.ctx, query)
 		if err != nil {
 			return fmt.Errorf("failed to query table: %w", err)
@@ -78,7 +79,7 @@ func (tf *TestFramework) verifyDataContentIceberg(rowCount int) error {
 				}
 			}
 
-			if err := tf.verifyRowData(row, rowNumber, 1.5); err != nil {
+			if err := tf.verifyRowData(row, rowNumber+offset, 1.5); err != nil {
 				return fmt.Errorf("failed to verify row %d: %w", rowNumber, err)
 			}
 		}
