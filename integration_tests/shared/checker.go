@@ -161,7 +161,7 @@ func (tf *TestFramework) verifyRowData(row map[string]any, index int, valueMulti
 	}
 
 	if !reflect.DeepEqual(expectedJSONArray, actualJSONArray) {
-		return fmt.Errorf("unexpected json_array for row %d: expected %v, got %v", i, expectedJSONArray, actualJSONArray)
+		return fmt.Errorf("unexpected json_array for row %d: expected %v, got %v", index, expectedJSONArray, actualJSONArray)
 	}
 
 	// Early exit if BigQuery
@@ -189,4 +189,6 @@ func (tf *TestFramework) verifyRowData(row map[string]any, index int, valueMulti
 	if jsonStringStr != expectedJSONString {
 		return fmt.Errorf("unexpected json_string for row %d: expected %s, got %q", index, expectedJSONString, jsonStringStr)
 	}
+
+	return nil
 }

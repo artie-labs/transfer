@@ -57,14 +57,20 @@ func (tf *TestFramework) verifyDataContentIceberg(rowCount int) error {
 		return fmt.Errorf("failed to build columns: %w", err)
 	}
 
-	for _, rowValues := range getSchemaResp.Data {
+	if rowCount != len(getSchemaResp.Data) {
+		return fmt.Errorf("unexpected row count: expected %d, got %d", rowCount, len(getSchemaResp.Data))
+	}
+
+	for rowNumber, rowValues := range getSchemaResp.Data {
 		row := make(map[string]any)
 		for i, value := range rowValues {
 			row[columns[i].Name] = value
 		}
 
+		if err := tf.verifyRowData(row, rowNumber, 1.5); err != nil {
+			return fmt.Errorf("failed to verify row %d: %w", rowNumber, err)
+		}
 	}
 
-	// TODO
 	return nil
 }
