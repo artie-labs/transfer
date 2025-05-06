@@ -53,8 +53,16 @@ func (tf *TestFramework) VerifyRowData(rows *sql.Rows, i int, valueMultiplier fl
 	return nil
 }
 
+func asInt(value any) (int, error) {
+	if castedValue, ok := value.(float64); ok {
+		return int(castedValue), nil
+	}
+
+	return typing.AssertType[int](value)
+}
+
 func (tf *TestFramework) verifyRowData(row map[string]any, index int, valueMultiplier float64) error {
-	id, err := typing.AssertType[int](row["id"])
+	id, err := asInt(row["id"])
 	if err != nil {
 		return err
 	}

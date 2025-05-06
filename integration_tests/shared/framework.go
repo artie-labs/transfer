@@ -187,7 +187,7 @@ func (tf *TestFramework) GetContext() context.Context {
 // These destinations return array as array<string>.
 func (tf *TestFramework) ArrayAsListOfString() bool {
 	if tf.iceberg != nil {
-		return true
+		return false
 	}
 
 	switch tf.dest.Dialect().(type) {
