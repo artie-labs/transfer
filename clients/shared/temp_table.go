@@ -92,7 +92,6 @@ func (t TemporaryDataFile) WriteTemporaryTableFile(tableData *optimization.Table
 				}
 			}
 
-			fmt.Println("colName", col.Name(), "result", result.Value)
 			row = append(row, result.Value)
 		}
 
