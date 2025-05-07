@@ -43,6 +43,7 @@ func (s Snowflake) ToConfig() (*gosnowflake.Config, error) {
 		Account:     s.AccountID,
 		User:        s.Username,
 		Warehouse:   s.Warehouse,
+		Role:        s.Role,
 		Region:      s.Region,
 		Application: s.Application,
 		Params: map[string]*string{
