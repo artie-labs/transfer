@@ -62,11 +62,11 @@ type Snowflake struct {
 	// If pathToPrivateKey is specified, the password field will be ignored
 	PathToPrivateKey string `yaml:"pathToPrivateKey,omitempty"`
 	Password         string `yaml:"password,omitempty"`
-
-	Warehouse   string `yaml:"warehouse"`
-	Region      string `yaml:"region"`
-	Host        string `yaml:"host"`
-	Application string `yaml:"application"`
+	Role             string `yaml:"role"`
+	Warehouse        string `yaml:"warehouse"`
+	Region           string `yaml:"region"`
+	Host             string `yaml:"host"`
+	Application      string `yaml:"application"`
 
 	// ExternalStage configuration
 	ExternalStage *ExternalStage `yaml:"externalStage,omitempty"`
