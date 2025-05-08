@@ -70,7 +70,7 @@ func (c *Credentials) refresh(ctx context.Context) error {
 	return nil
 }
 
-func (c Credentials) isExpired() bool {
+func (c *Credentials) isExpired() bool {
 	// 10 minute buffer
 	return c.expiresAt.Before(time.Now().Add(expirationBuffer))
 }
