@@ -139,6 +139,14 @@ func LoadSnowflake(ctx context.Context, cfg config.Config, _store *db.Store) (*S
 	return s, nil
 }
 
+func (s Store) GetS3Client() (awslib.S3Client, error) {
+	if !s.useExternalStage() {
+		return awslib.S3Client{}, fmt.Errorf("external stage is not enabled")
+	}
+
+	return s._awsS3Client, nil
+}
+
 func (s *Store) ensureExternalStageExists(ctx context.Context) error {
 	if !s.useExternalStage() {
 		return nil

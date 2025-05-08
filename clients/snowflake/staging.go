@@ -77,7 +77,12 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	}()
 
 	if s.useExternalStage() {
-		_, err = s._awsS3Client.UploadLocalFileToS3(
+		s3Client, err := s.GetS3Client()
+		if err != nil {
+			return fmt.Errorf("failed to get S3 client: %w", err)
+		}
+
+		_, err = s3Client.UploadLocalFileToS3(
 			ctx,
 			s.config.Snowflake.ExternalStage.Bucket,
 			s.config.Snowflake.ExternalStage.Prefix,
