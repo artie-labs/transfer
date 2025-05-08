@@ -29,6 +29,7 @@ type Store struct {
 
 	// Generated:
 	_awsCredentials *awslib.Credentials
+	_awsS3Client    awslib.S3Client
 	db.Store
 }
 
@@ -166,7 +167,27 @@ func LoadRedshift(ctx context.Context, cfg config.Config, _store *db.Store) (*St
 		}
 
 		s._awsCredentials = &creds
+	} else {
+		awsCfg, err := awslib.NewDefaultConfig(ctx, os.Getenv("AWS_REGION"))
+		if err != nil {
+			return nil, fmt.Errorf("failed to build aws config: %w", err)
+		}
+
+		s._awsS3Client = awslib.NewS3Client(awsCfg)
 	}
 
 	return s, nil
+}
+
+func (s *Store) BuildS3Client(ctx context.Context) (awslib.S3Client, error) {
+	if s._awsCredentials != nil {
+		creds, err := s._awsCredentials.BuildCredentials(ctx)
+		if err != nil {
+			return awslib.S3Client{}, fmt.Errorf("failed to build credentials: %w", err)
+		}
+
+		return awslib.NewS3Client(awslib.NewConfigWithCredentialsAndRegion(creds, os.Getenv("AWS_REGION"))), nil
+	}
+
+	return s._awsS3Client, nil
 }

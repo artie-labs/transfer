@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/artie-labs/transfer/clients/shared"
-	"github.com/artie-labs/transfer/lib/awslib"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -45,26 +44,12 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		}
 	}()
 
-	args := awslib.UploadArgs{
-		OptionalS3Prefix: s.optionalS3Prefix,
-		Bucket:           s.bucket,
-		FilePath:         fp,
-		Region:           os.Getenv("AWS_REGION"),
+	s3Client, err := s.BuildS3Client(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to build s3 client: %w", err)
 	}
 
-	if s._awsCredentials != nil {
-		creds, err := s._awsCredentials.BuildCredentials(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to build credentials: %w", err)
-		}
-
-		args.OverrideAWSAccessKeyID = creds.Value.AccessKeyID
-		args.OverrideAWSAccessKeySecret = creds.Value.SecretAccessKey
-		args.OverrideAWSSessionToken = creds.Value.SessionToken
-	}
-
-	// Load fp into s3, get S3 URI and pass it down.
-	s3Uri, err := awslib.UploadLocalFileToS3(ctx, args)
+	s3Uri, err := s3Client.UploadLocalFileToS3(ctx, s.bucket, s.optionalS3Prefix, fp)
 	if err != nil {
 		return fmt.Errorf("failed to upload %q to s3: %w", fp, err)
 	}
