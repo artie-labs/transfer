@@ -2,6 +2,7 @@ package awslib
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -17,6 +18,7 @@ type Credentials struct {
 	awsSecretAccessKey string
 	awsSessionToken    string
 	expiresAt          time.Time
+	mu                 sync.Mutex
 
 	// Arguments to generate the credentials:
 	_awsAccessKeyID     string
@@ -68,13 +70,16 @@ func (c *Credentials) refresh(ctx context.Context) error {
 	return nil
 }
 
-func (c Credentials) IsExpired() bool {
+func (c *Credentials) isExpired() bool {
 	// 10 minute buffer
 	return c.expiresAt.Before(time.Now().Add(expirationBuffer))
 }
 
 func (c *Credentials) BuildCredentials(ctx context.Context) (credentials.StaticCredentialsProvider, error) {
-	if c.IsExpired() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.isExpired() {
 		// If expired, then refresh the creds and then run this function again.
 		if err := c.refresh(ctx); err != nil {
 			return credentials.StaticCredentialsProvider{}, err
