@@ -3,12 +3,14 @@ package snowflake
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/snowflakedb/gosnowflake"
 
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/clients/snowflake/dialect"
+	"github.com/artie-labs/transfer/lib/awslib"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination"
@@ -22,6 +24,9 @@ type Store struct {
 	db.Store
 	configMap *types.DestinationTableConfigMap
 	config    config.Config
+
+	// Only set if we're using an external stage:
+	_awsS3Client awslib.S3Client
 }
 
 func (s *Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, table string) sql.TableIdentifier {
@@ -122,7 +127,24 @@ func LoadSnowflake(ctx context.Context, cfg config.Config, _store *db.Store) (*S
 		return nil, fmt.Errorf("failed to set up external stage: %w", err)
 	}
 
+	if s.useExternalStage() {
+		awsCfg, err := awslib.NewDefaultConfig(ctx, os.Getenv("AWS_REGION"))
+		if err != nil {
+			return nil, fmt.Errorf("failed to build aws config: %w", err)
+		}
+
+		s._awsS3Client = awslib.NewS3Client(awsCfg)
+	}
+
 	return s, nil
+}
+
+func (s Store) GetS3Client() (awslib.S3Client, error) {
+	if !s.useExternalStage() {
+		return awslib.S3Client{}, fmt.Errorf("external stage is not enabled")
+	}
+
+	return s._awsS3Client, nil
 }
 
 func (s *Store) ensureExternalStageExists(ctx context.Context) error {
