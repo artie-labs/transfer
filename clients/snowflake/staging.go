@@ -10,7 +10,6 @@ import (
 
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/clients/snowflake/dialect"
-	"github.com/artie-labs/transfer/lib/awslib"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -78,13 +77,13 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	}()
 
 	if s.useExternalStage() {
-		// Upload to S3 using our built-in library
-		_, err = awslib.UploadLocalFileToS3(ctx, awslib.UploadArgs{
-			Bucket:           s.config.Snowflake.ExternalStage.Bucket,
-			OptionalS3Prefix: filepath.Join(s.config.Snowflake.ExternalStage.Prefix),
-			FilePath:         file.FilePath,
-			Region:           os.Getenv("AWS_REGION"),
-		})
+		_, err = s._awsS3Client.UploadLocalFileToS3(
+			ctx,
+			s.config.Snowflake.ExternalStage.Bucket,
+			s.config.Snowflake.ExternalStage.Prefix,
+			file.FilePath,
+		)
+
 		if err != nil {
 			return fmt.Errorf("failed to upload file to S3: %w", err)
 		}
