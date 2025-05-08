@@ -6,7 +6,6 @@ import (
 	"maps"
 	"slices"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 
 	"github.com/artie-labs/transfer/clients/iceberg/dialect"
@@ -262,10 +261,11 @@ func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {
 		return Store{}, err
 	}
 
-	awsCfg := aws.Config{
-		Region:      cfg.Iceberg.S3Tables.Region,
-		Credentials: credentials.NewStaticCredentialsProvider(cfg.Iceberg.S3Tables.AwsAccessKeyID, cfg.Iceberg.S3Tables.AwsSecretAccessKey, ""),
-	}
+	awsCfg := awslib.NewConfigWithCredentialsAndRegion(
+		ctx,
+		credentials.NewStaticCredentialsProvider(cfg.Iceberg.S3Tables.AwsAccessKeyID, cfg.Iceberg.S3Tables.AwsSecretAccessKey, ""),
+		cfg.Iceberg.S3Tables.Region,
+	)
 
 	store := Store{
 		catalogName:      cfg.Iceberg.S3Tables.CatalogName(),
