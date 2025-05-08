@@ -262,7 +262,6 @@ func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {
 	}
 
 	awsCfg := awslib.NewConfigWithCredentialsAndRegion(
-		ctx,
 		credentials.NewStaticCredentialsProvider(cfg.Iceberg.S3Tables.AwsAccessKeyID, cfg.Iceberg.S3Tables.AwsSecretAccessKey, ""),
 		cfg.Iceberg.S3Tables.Region,
 	)
