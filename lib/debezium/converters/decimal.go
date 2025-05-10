@@ -116,10 +116,7 @@ func IntPow(n, m int) int {
 	}
 }
 
-// RescaleDecimal returns a new decimal with the desired scale (number of digits after the decimal point).
-// If the input already has the desired scale, it is returned as-is.
-// If the input has a larger scale than expected, an error is returned (downscaling is not supported).
-// If the input has a smaller scale, it is scaled up by multiplying by 10^(expectedScale - currentScale).
+// RescaleDecimal returns a new decimal with the desired scale
 func RescaleDecimal(decimal *apd.Decimal, expectedScale int32) (*apd.Decimal, error) {
 	currentScale := int32Abs(decimal.Exponent)
 	if currentScale == expectedScale {
