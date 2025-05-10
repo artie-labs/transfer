@@ -154,7 +154,7 @@ func TestPadBytesLeft(t *testing.T) {
 		assert.Len(t, out, 10)
 	}
 	{
-		// Length is exact
+		// Length is exact (padding required)
 		out := padBytesLeft(false, []byte("hello"), 5)
 		assert.Equal(t, []byte{0x68, 0x65, 0x6c, 0x6c, 0x6f}, out)
 		assert.Equal(t, string("hello"), string(out))
