@@ -68,9 +68,9 @@ func buildTemporaryFilePath(tableData *optimization.TableData) string {
 	return fmt.Sprintf("/tmp/%d_%s.parquet", tableData.LatestCDCTs.UnixMilli(), stringutil.Random(4))
 }
 
-// writeParquetFile writes the table data to a parquet file at the specified path.
+// WriteParquetFiles writes the table data to a parquet file at the specified path.
 // Returns an error if any step of the writing process fails.
-func writeParquetFile(tableData *optimization.TableData, filePath string) error {
+func WriteParquetFiles(tableData *optimization.TableData, filePath string) error {
 	cols := tableData.ReadOnlyInMemoryCols().ValidColumns()
 	schema, err := parquetutil.BuildCSVSchema(cols)
 	if err != nil {
@@ -126,7 +126,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (b
 	}
 
 	fp := buildTemporaryFilePath(tableData)
-	if err := writeParquetFile(tableData, fp); err != nil {
+	if err := WriteParquetFiles(tableData, fp); err != nil {
 		return false, err
 	}
 
