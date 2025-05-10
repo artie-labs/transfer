@@ -102,8 +102,13 @@ func ParseValue(colVal any, colKind typing.KindDetails) (any, error) {
 		}
 
 		fmt.Println("decimalValue", decimalValue.Value())
-		bytes, _ := converters.EncodeDecimal(decimalValue.Value())
-		bytes, err = padBytesLeft(bytes, int(colKind.ExtendedDecimalDetails.TwosComplementByteArrLength()))
+		bytes, scale := converters.EncodeDecimal(decimalValue.Value())
+		bytes, err = padBytesLeft(
+			decimalValue.Value().Sign(),
+			bytes,
+			int(colKind.ExtendedDecimalDetails.TwosComplementByteArrLength()),
+			scale,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -118,7 +123,7 @@ func ParseValue(colVal any, colKind typing.KindDetails) (any, error) {
 }
 
 // padBytesLeft pads the left side of the bytes with zeros.
-func padBytesLeft(bytes []byte, length int) ([]byte, error) {
+func padBytesLeft(sign int, bytes []byte, length int, scale int32) ([]byte, error) {
 	if len(bytes) == length {
 		return bytes, nil
 	}
@@ -127,7 +132,17 @@ func padBytesLeft(bytes []byte, length int) ([]byte, error) {
 		return nil, fmt.Errorf("bytes (%d) are longer than the length: %d", len(bytes), length)
 	}
 
+	padByte := byte(0x00)
+	if sign < 0 {
+		padByte = 0xFF
+	}
+
+	// If the first byte is negative, we need to pad with 0xFF on the left
 	padded := make([]byte, length)
+	for i := 0; i < length; i++ {
+		padded[i] = padByte
+	}
+
 	copy(padded[length-len(bytes):], bytes)
 	return padded, nil
 }
