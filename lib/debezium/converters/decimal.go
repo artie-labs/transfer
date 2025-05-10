@@ -92,7 +92,15 @@ func padBytesLeft(isNegative bool, bytes []byte, length int) []byte {
 	return append(padding, bytes...)
 }
 
-func RescaleDecimal(decimal *apd.Decimal, scale int32, expectedScale int32) (*apd.Decimal, error) {
+func int32Abs(n int32) int32 {
+	if n < 0 {
+		return -n
+	}
+	return n
+}
+
+func RescaleDecimal(decimal *apd.Decimal, expectedScale int32) (*apd.Decimal, error) {
+	scale := int32Abs(decimal.Exponent)
 	if scale == expectedScale {
 		return decimal, nil
 	}
@@ -102,24 +110,29 @@ func RescaleDecimal(decimal *apd.Decimal, scale int32, expectedScale int32) (*ap
 	}
 
 	if scale < expectedScale {
-		// We need to scale up
-		decimal.Coeff.Shift(int32(expectedScale - scale))
+		// We need to scale up by multiplying by 10^(expectedScale - scale)
+		multiplier := new(apd.Decimal)
+		multiplier.SetInt64(10)
+		multiplier.Exponent = expectedScale - scale
+		result := new(apd.Decimal)
+		if _, err := apd.BaseContext.Mul(result, decimal, multiplier); err != nil {
+			return nil, fmt.Errorf("failed to rescale decimal: %w", err)
+		}
+
+		return result, nil
 	}
 
 	return decimal, nil
 }
 
-func EncodeDecimalWithFixedLength(decimal *apd.Decimal, expectedScale int, length int) ([]byte, int32) {
-	bigIntValue := decimal.Coeff.MathBigInt()
-	if decimal.Negative {
-		bigIntValue.Neg(bigIntValue)
+func EncodeDecimalWithFixedLength(decimal *apd.Decimal, expectedScale int, length int) ([]byte, error) {
+	decimal, err := RescaleDecimal(decimal, int32(expectedScale))
+	if err != nil {
+		return nil, err
 	}
 
-	bytes, scale := EncodeDecimal(decimal)
-
-	fmt.Println("expectedScale", expectedScale, "scale", scale)
-
-	return padBytesLeft(decimal.Negative, bytes, length), scale
+	bytes, _ := EncodeDecimal(decimal)
+	return padBytesLeft(decimal.Negative, bytes, length), nil
 }
 
 // DecodeDecimal is used to decode `org.apache.kafka.connect.data.Decimal`.
