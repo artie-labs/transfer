@@ -122,6 +122,7 @@ func RescaleDecimal(decimal *apd.Decimal, expectedScale int32) (*apd.Decimal, er
 	if currentScale == expectedScale {
 		return decimal, nil
 	}
+
 	if currentScale > expectedScale {
 		return nil, fmt.Errorf("number scale (%d) is larger than expected scale (%d)", currentScale, expectedScale)
 	}
