@@ -99,6 +99,23 @@ func int32Abs(n int32) int32 {
 	return n
 }
 
+// IntPow returns the result of raising n to the power of m.
+// We implemented our own instead of using math.Pow as it'll return a float64 which may cause conversion issues.
+func IntPow(n, m int) int {
+	switch m {
+	case 0:
+		return 1
+	case 1:
+		return n
+	default:
+		result := n
+		for i := 2; i <= m; i++ {
+			result *= n
+		}
+		return result
+	}
+}
+
 // RescaleDecimal returns a new decimal with the desired scale (number of digits after the decimal point).
 // If the input already has the desired scale, it is returned as-is.
 // If the input has a larger scale than expected, an error is returned (downscaling is not supported).
@@ -112,23 +129,13 @@ func RescaleDecimal(decimal *apd.Decimal, expectedScale int32) (*apd.Decimal, er
 		return nil, fmt.Errorf("number scale (%d) is larger than expected scale (%d)", currentScale, expectedScale)
 	}
 
-	// Scale up: multiply by 10^(expectedScale - currentScale)
-	diff := expectedScale - currentScale
-	// Compute 10^diff as an apd.Decimal
-	var ten, exp apd.BigInt
-	ten.SetInt64(10)
-	exp.SetInt64(int64(diff))
-	multiplier := new(apd.Decimal)
-	multiplier.SetInt64(1)
-	multiplier.Coeff.Exp(&ten, &exp, nil) // multiplier = 10^diff
-	multiplier.Exponent = 0
-
-	result := new(apd.Decimal)
-	if _, err := apd.BaseContext.Mul(result, decimal, multiplier); err != nil {
+	var result apd.Decimal
+	multipler := IntPow(10, int(expectedScale-currentScale))
+	if _, err := apd.BaseContext.Mul(&result, decimal, apd.New(int64(multipler), 0)); err != nil {
 		return nil, fmt.Errorf("failed to rescale decimal: %w", err)
 	}
 	result.Exponent = -expectedScale
-	return result, nil
+	return &result, nil
 }
 
 func EncodeDecimalWithFixedLength(decimal *apd.Decimal, expectedScale int, length int) ([]byte, error) {

@@ -160,6 +160,25 @@ func TestPadBytesLeft(t *testing.T) {
 	}
 }
 
+func TestIntPow(t *testing.T) {
+	{
+		// 2^3
+		assert.Equal(t, 8, IntPow(2, 3))
+	}
+	{
+		// 2^0
+		assert.Equal(t, 1, IntPow(2, 0))
+	}
+	{
+		// 2^1
+		assert.Equal(t, 2, IntPow(2, 1))
+	}
+	{
+		// 10^3
+		assert.Equal(t, 1000, IntPow(10, 3))
+	}
+}
+
 func TestRescaleDecimal(t *testing.T) {
 	{
 		// No rescaling needed
