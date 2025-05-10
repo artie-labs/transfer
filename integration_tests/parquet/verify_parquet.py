@@ -4,6 +4,7 @@ import pandas as pd
 import sys
 import argparse
 from datetime import datetime
+from decimal import Decimal
 
 def verify_parquet_file(file_path):
     """
@@ -13,9 +14,14 @@ def verify_parquet_file(file_path):
     # Read the parquet file
     df = pd.read_parquet(file_path)
     
+    # Sort by 'id' to ensure consistent row order
+    df = df.sort_values(by='id').reset_index(drop=True)
+    
     # Print the data
     print("DataFrame contents:")
     print(df)
+    for i, row in df.iterrows():
+        print(f"Row {i} score value: {row['score']} (type: {type(row['score'])})")
     
     # Define expected data
     expected_columns = ['id', 'name', 'age', 'created_at', 'score']
@@ -25,14 +31,14 @@ def verify_parquet_file(file_path):
             'name': 'John Doe',
             'age': 30,
             'created_at': datetime.fromisoformat("2024-03-20 10:00:00"),
-            'score': -97.410511
+            'score': Decimal('-97.410511')
         },
         {
             'id': 2,
             'name': 'Jane Smith',
             'age': 25,
             'created_at': datetime.fromisoformat("2024-03-20 11:00:00"),
-            'score': -97.410511
+            'score': Decimal('-97.410511')
         }
     ]
     
@@ -46,8 +52,10 @@ def verify_parquet_file(file_path):
     for i, expected_row in enumerate(expected_rows):
         for col, expected_value in expected_row.items():
             actual_value = df.iloc[i][col]
-            if isinstance(expected_value, float):
-                assert abs(actual_value - expected_value) < 1e-6, f"Row {i}, Column {col}: Expected {expected_value}, got {actual_value}"
+            if isinstance(expected_value, Decimal):
+                # Convert actual value to Decimal for comparison
+                actual_decimal = Decimal(str(actual_value))
+                assert actual_decimal == expected_value, f"Row {i}, Column {col}: Expected {expected_value}, got {actual_decimal}"
             else:
                 assert actual_value == expected_value, f"Row {i}, Column {col}: Expected {expected_value}, got {actual_value}"
     
