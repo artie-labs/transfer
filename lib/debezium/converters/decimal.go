@@ -76,6 +76,32 @@ func EncodeDecimal(decimal *apd.Decimal) ([]byte, int32) {
 	return encodeBigInt(bigIntValue), -decimal.Exponent
 }
 
+func padBytesLeft(isNegative bool, bytes []byte, length int) []byte {
+	if len(bytes) >= length {
+		return bytes
+	}
+
+	padding := make([]byte, length-len(bytes))
+	if isNegative {
+		// For negative numbers, pad with 0xFF to maintain two's complement
+		for i := range padding {
+			padding[i] = 0xFF
+		}
+	}
+
+	return append(padding, bytes...)
+}
+
+func EncodeDecimalWithFixedLength(decimal *apd.Decimal, length int) ([]byte, int32) {
+	bigIntValue := decimal.Coeff.MathBigInt()
+	if decimal.Negative {
+		bigIntValue.Neg(bigIntValue)
+	}
+
+	bytes, scale := EncodeDecimal(decimal)
+	return padBytesLeft(decimal.Negative, bytes, length), scale
+}
+
 // DecodeDecimal is used to decode `org.apache.kafka.connect.data.Decimal`.
 func DecodeDecimal(data []byte, scale int32) *apd.Decimal {
 	bigInt := new(apd.BigInt).SetMathBigInt(decodeBigInt(data))
