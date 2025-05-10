@@ -108,6 +108,7 @@ func ParseValue(colVal any, colKind typing.KindDetails) (any, error) {
 			return nil, err
 		}
 
+		fmt.Println("bytes", string(bytes))
 		return string(bytes), nil
 	case typing.Integer.Kind:
 		return primitives.Int64Converter{}.Convert(colVal)
