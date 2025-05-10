@@ -22,3 +22,6 @@ scratch/
 
 ## Ignore virtual env from the integration tests
 integration_tests/parquet/venv/
+
+# Ignore the output of the integration tests
+integration_tests/parquet/output/

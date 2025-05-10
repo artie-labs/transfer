@@ -24,14 +24,14 @@ def verify_parquet_file(file_path):
             'id': 1,
             'name': 'John Doe',
             'age': 30,
-            'created_at': datetime.fromisoformat("2024-03-20T10:00:00+00:00"),
-            'score': -97.410511i
+            'created_at': datetime.fromisoformat("2024-03-20 10:00:00"),
+            'score': -97.410511
         },
         {
             'id': 2,
             'name': 'Jane Smith',
             'age': 25,
-            'created_at': datetime.fromisoformat("2024-03-20T11:00:00+00:00"),
+            'created_at': datetime.fromisoformat("2024-03-20 11:00:00"),
             'score': -97.410511
         }
     ]
