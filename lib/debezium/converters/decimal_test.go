@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"bytes"
 	"math"
 	"math/big"
 	"testing"
@@ -8,6 +9,7 @@ import (
 	"github.com/artie-labs/transfer/lib/numbers"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
+	"github.com/cockroachdb/apd/v3"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -137,5 +139,133 @@ func TestVariableDecimal_Convert(t *testing.T) {
 		assert.Equal(t, int32(-1), castedValue.Details().Precision())
 		assert.Equal(t, int32(7), castedValue.Details().Scale())
 		assert.Equal(t, "-105.2813669", castedValue.String())
+	}
+}
+
+func TestPadBytesLeft(t *testing.T) {
+	{
+		// Length is already longer than the expected length
+		out := padBytesLeft(false, []byte("hello"), 5)
+		assert.Equal(t, []byte("hello"), out)
+	}
+	{
+		// Length is shorter than the expected length
+		out := padBytesLeft(false, []byte("hello"), 10)
+		assert.Equal(t, []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x68, 0x65, 0x6c, 0x6c, 0x6f}, out)
+	}
+	{
+		// Length is shorter than the expected length with negative number
+		out := padBytesLeft(true, []byte("hello"), 10)
+		assert.Equal(t, []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0x68, 0x65, 0x6c, 0x6c, 0x6f}, out)
+	}
+}
+
+func TestRescaleDecimal(t *testing.T) {
+	{
+		// No rescaling needed
+		dec, err := RescaleDecimal(numbers.MustParseDecimal("123.45"), 2)
+		assert.NoError(t, err)
+		assert.Equal(t, "123.45", dec.String())
+	}
+	{
+		// Scale up
+		dec, err := RescaleDecimal(numbers.MustParseDecimal("123.45"), 4)
+		assert.NoError(t, err)
+		assert.Equal(t, "123.4500", dec.String())
+	}
+	{
+		// Scale up with negative number
+		dec, err := RescaleDecimal(numbers.MustParseDecimal("-123.45"), 4)
+		assert.NoError(t, err)
+		assert.Equal(t, "-123.4500", dec.String())
+	}
+	{
+		// Trying to scale down (error)
+		_, err := RescaleDecimal(numbers.MustParseDecimal("123.45"), 1)
+		assert.ErrorContains(t, err, "number scale (2) is larger than expected scale (1)")
+	}
+	{
+		// Zero
+		dec, err := RescaleDecimal(numbers.MustParseDecimal("0"), 1)
+		assert.NoError(t, err)
+		assert.Equal(t, "0.0", dec.String())
+	}
+}
+
+func TestEncodeDecimalWithFixedLength(t *testing.T) {
+	tests := []struct {
+		name          string
+		input         string
+		expectedScale int
+		length        int
+		expected      []byte
+		expectError   bool
+	}{
+		{
+			name:          "basic encoding",
+			input:         "123.45",
+			expectedScale: 2,
+			length:        4,
+			expected:      []byte{0x00, 0x00, 0x30, 0x39},
+			expectError:   false,
+		},
+		{
+			name:          "negative number",
+			input:         "-123.45",
+			expectedScale: 2,
+			length:        4,
+			expected:      []byte{0xFF, 0xFF, 0xCF, 0xC7},
+			expectError:   false,
+		},
+		{
+			name:          "scale up",
+			input:         "123.45",
+			expectedScale: 4,
+			length:        4,
+			expected:      []byte{0x00, 0x12, 0xd6, 0x44}, // 1234500 in big-endian
+			expectError:   false,
+		},
+		{
+			name:          "error on scale down",
+			input:         "123.456",
+			expectedScale: 2,
+			length:        4,
+			expected:      nil,
+			expectError:   true,
+		},
+		{
+			name:          "zero value",
+			input:         "0.0",
+			expectedScale: 4,
+			length:        4,
+			expected:      []byte{0x00, 0x00, 0x00, 0x00},
+			expectError:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			input := new(apd.Decimal)
+			_, _, err := input.SetString(tt.input)
+			if err != nil {
+				t.Fatalf("failed to parse input: %v", err)
+			}
+
+			result, err := EncodeDecimalWithFixedLength(input, tt.expectedScale, tt.length)
+			if tt.expectError {
+				if err == nil {
+					t.Error("expected error but got none")
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if !bytes.Equal(result, tt.expected) {
+				t.Errorf("expected %v, got %v", tt.expected, result)
+			}
+		})
 	}
 }

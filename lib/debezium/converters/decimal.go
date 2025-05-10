@@ -99,30 +99,36 @@ func int32Abs(n int32) int32 {
 	return n
 }
 
+// RescaleDecimal returns a new decimal with the desired scale (number of digits after the decimal point).
+// If the input already has the desired scale, it is returned as-is.
+// If the input has a larger scale than expected, an error is returned (downscaling is not supported).
+// If the input has a smaller scale, it is scaled up by multiplying by 10^(expectedScale - currentScale).
 func RescaleDecimal(decimal *apd.Decimal, expectedScale int32) (*apd.Decimal, error) {
-	scale := int32Abs(decimal.Exponent)
-	if scale == expectedScale {
+	currentScale := int32Abs(decimal.Exponent)
+	if currentScale == expectedScale {
 		return decimal, nil
 	}
-
-	if scale > expectedScale {
-		return nil, fmt.Errorf("number scale (%d) is larger than expected scale (%d)", scale, expectedScale)
+	if currentScale > expectedScale {
+		return nil, fmt.Errorf("number scale (%d) is larger than expected scale (%d)", currentScale, expectedScale)
 	}
 
-	if scale < expectedScale {
-		// We need to scale up by multiplying by 10^(expectedScale - scale)
-		multiplier := new(apd.Decimal)
-		multiplier.SetInt64(10)
-		multiplier.Exponent = expectedScale - scale
-		result := new(apd.Decimal)
-		if _, err := apd.BaseContext.Mul(result, decimal, multiplier); err != nil {
-			return nil, fmt.Errorf("failed to rescale decimal: %w", err)
-		}
+	// Scale up: multiply by 10^(expectedScale - currentScale)
+	diff := expectedScale - currentScale
+	// Compute 10^diff as an apd.Decimal
+	var ten, exp apd.BigInt
+	ten.SetInt64(10)
+	exp.SetInt64(int64(diff))
+	multiplier := new(apd.Decimal)
+	multiplier.SetInt64(1)
+	multiplier.Coeff.Exp(&ten, &exp, nil) // multiplier = 10^diff
+	multiplier.Exponent = 0
 
-		return result, nil
+	result := new(apd.Decimal)
+	if _, err := apd.BaseContext.Mul(result, decimal, multiplier); err != nil {
+		return nil, fmt.Errorf("failed to rescale decimal: %w", err)
 	}
-
-	return decimal, nil
+	result.Exponent = -expectedScale
+	return result, nil
 }
 
 func EncodeDecimalWithFixedLength(decimal *apd.Decimal, expectedScale int, length int) ([]byte, error) {
