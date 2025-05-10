@@ -103,7 +103,7 @@ func ParseValue(colVal any, colKind typing.KindDetails) (any, error) {
 
 		bytes, err := converters.EncodeDecimalWithFixedLength(
 			decimalValue.Value(),
-			int(colKind.ExtendedDecimalDetails.Scale()),
+			colKind.ExtendedDecimalDetails.Scale(),
 			int(colKind.ExtendedDecimalDetails.TwosComplementByteArrLength()),
 		)
 		if err != nil {

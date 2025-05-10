@@ -136,7 +136,7 @@ func RescaleDecimal(decimal *apd.Decimal, expectedScale int32) (*apd.Decimal, er
 	return &result, nil
 }
 
-func EncodeDecimalWithFixedLength(decimal *apd.Decimal, expectedScale int, length int) ([]byte, error) {
+func EncodeDecimalWithFixedLength(decimal *apd.Decimal, expectedScale int32, length int) ([]byte, error) {
 	decimal, err := RescaleDecimal(decimal, int32(expectedScale))
 	if err != nil {
 		return nil, err
