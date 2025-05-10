@@ -101,6 +101,7 @@ func ParseValue(colVal any, colKind typing.KindDetails) (any, error) {
 			return decimalValue.String(), nil
 		}
 
+		fmt.Println("decimalValue", decimalValue.Value())
 		bytes, _ := converters.EncodeDecimal(decimalValue.Value())
 		bytes, err = padBytesLeft(bytes, int(colKind.ExtendedDecimalDetails.TwosComplementByteArrLength()))
 		if err != nil {
