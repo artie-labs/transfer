@@ -1,13 +1,14 @@
 package main
 
 import (
-	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 
 	"github.com/artie-labs/transfer/clients/s3"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/numbers"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -44,16 +45,14 @@ func main() {
 	// Create output directory if it doesn't exist
 	outputDir := "output"
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
-		fmt.Printf("Failed to create output directory: %v\n", err)
-		os.Exit(1)
+		logger.Fatal("Failed to create output directory", slog.Any("error", err))
 	}
 
 	// Write the parquet file
 	parquetPath := filepath.Join(outputDir, "test.parquet")
 	if err := s3.WriteParquetFiles(tableData, parquetPath); err != nil {
-		fmt.Printf("Failed to write parquet file: %v\n", err)
-		os.Exit(1)
+		logger.Fatal("Failed to write parquet file", slog.Any("error", err))
 	}
 
-	fmt.Printf("Wrote parquet file to %s\n", parquetPath)
+	slog.Info("Wrote parquet file", slog.String("path", parquetPath))
 }
