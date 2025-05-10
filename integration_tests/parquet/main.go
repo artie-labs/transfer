@@ -8,9 +8,11 @@ import (
 	"github.com/artie-labs/transfer/clients/s3"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/lib/numbers"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
 
 func main() {
@@ -20,6 +22,7 @@ func main() {
 	cols.AddColumn(columns.NewColumn("name", typing.String))
 	cols.AddColumn(columns.NewColumn("age", typing.Integer))
 	cols.AddColumn(columns.NewColumn("created_at", typing.TimestampTZ))
+	cols.AddColumn(columns.NewColumn("score", typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(10, 7))))
 
 	tableData := optimization.NewTableData(cols, config.Replication, []string{"id"}, kafkalib.TopicConfig{}, "test_table")
 
@@ -29,12 +32,14 @@ func main() {
 		"name":       "John Doe",
 		"age":        30,
 		"created_at": "2024-03-20T10:00:00Z",
+		"score":      decimal.NewDecimalWithPrecision(numbers.MustParseDecimal("-97.410511"), 10),
 	}, false)
 	tableData.InsertRow("2", map[string]any{
 		"id":         2,
 		"name":       "Jane Smith",
 		"age":        25,
 		"created_at": "2024-03-20T11:00:00Z",
+		"score":      decimal.NewDecimalWithPrecision(numbers.MustParseDecimal("-97.410511"), 10),
 	}, false)
 
 	// Create output directory if it doesn't exist
