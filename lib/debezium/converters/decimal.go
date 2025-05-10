@@ -92,13 +92,33 @@ func padBytesLeft(isNegative bool, bytes []byte, length int) []byte {
 	return append(padding, bytes...)
 }
 
-func EncodeDecimalWithFixedLength(decimal *apd.Decimal, length int) ([]byte, int32) {
+func RescaleDecimal(decimal *apd.Decimal, scale int32, expectedScale int32) (*apd.Decimal, error) {
+	if scale == expectedScale {
+		return decimal, nil
+	}
+
+	if scale > expectedScale {
+		return nil, fmt.Errorf("number scale (%d) is larger than expected scale (%d)", scale, expectedScale)
+	}
+
+	if scale < expectedScale {
+		// We need to scale up
+		decimal.Coeff.Shift(int32(expectedScale - scale))
+	}
+
+	return decimal, nil
+}
+
+func EncodeDecimalWithFixedLength(decimal *apd.Decimal, expectedScale int, length int) ([]byte, int32) {
 	bigIntValue := decimal.Coeff.MathBigInt()
 	if decimal.Negative {
 		bigIntValue.Neg(bigIntValue)
 	}
 
 	bytes, scale := EncodeDecimal(decimal)
+
+	fmt.Println("expectedScale", expectedScale, "scale", scale)
+
 	return padBytesLeft(decimal.Negative, bytes, length), scale
 }
 
