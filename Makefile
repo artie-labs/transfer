@@ -80,10 +80,10 @@ dest-itest-merge:
 parquet-venv:
 	@echo "Setting up Python venv for parquet integration test..."
 	@if [ ! -d integration_tests/parquet/venv ]; then \
-	  python3 -m venv integration_tests/parquet/venv; \
+		python3 -m venv integration_tests/parquet/venv; \
 	fi
 	@integration_tests/parquet/venv/bin/pip install --upgrade pip > /dev/null
-	@integration_tests/parquet/venv/bin/pip install pandas pyarrow > /dev/null
+	@integration_tests/parquet/venv/bin/pip install -r integration_tests/parquet/requirements.txt > /dev/null
 
 .PHONY: test-parquet
 test-parquet: parquet-venv
