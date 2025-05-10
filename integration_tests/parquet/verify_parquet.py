@@ -38,7 +38,7 @@ def verify_parquet_file(file_path):
             'name': 'Jane Smith',
             'age': 25,
             'created_at': datetime.fromisoformat("2024-03-20 11:00:00"),
-            'score': Decimal('-97.410511')
+            'score': Decimal('99.410511')
         }
     ]
     
