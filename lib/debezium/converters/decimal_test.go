@@ -228,30 +228,33 @@ func TestRescaleDecimal(t *testing.T) {
 func TestEncodeDecimalWithFixedLength(t *testing.T) {
 	{
 		// Basic encoding
-		dec, err := EncodeDecimalWithFixedLength(numbers.MustParseDecimal("123.45"), 2, 4)
+		scale := int32(2)
+		dec, err := EncodeDecimalWithFixedLength(numbers.MustParseDecimal("123.45"), scale, 4)
 		assert.NoError(t, err)
 		assert.Equal(t, []byte{0x00, 0x00, 0x30, 0x39}, dec)
 
-		actual := DecodeDecimal(dec, 2)
+		actual := DecodeDecimal(dec, scale)
 		assert.Equal(t, "123.45", actual.String())
 	}
 	{
 		// Negative number
-		dec, err := EncodeDecimalWithFixedLength(numbers.MustParseDecimal("-123.45"), 2, 4)
+		scale := int32(2)
+		dec, err := EncodeDecimalWithFixedLength(numbers.MustParseDecimal("-123.45"), scale, 4)
 		assert.NoError(t, err)
 		assert.Equal(t, []byte{0xFF, 0xFF, 0xCF, 0xC7}, dec)
 
-		actual := DecodeDecimal(dec, 2)
+		actual := DecodeDecimal(dec, scale)
 		assert.Equal(t, "-123.45", actual.String())
 	}
 
 	{
 		// Scaling up
-		dec, err := EncodeDecimalWithFixedLength(numbers.MustParseDecimal("123.45"), 4, 4)
+		scale := int32(4)
+		dec, err := EncodeDecimalWithFixedLength(numbers.MustParseDecimal("123.45"), scale, 4)
 		assert.NoError(t, err)
 		assert.Equal(t, []byte{0x00, 0x12, 0xd6, 0x44}, dec)
 
-		actual := DecodeDecimal(dec, 4)
+		actual := DecodeDecimal(dec, scale)
 		assert.Equal(t, "123.4500", actual.String())
 	}
 	{
@@ -261,11 +264,12 @@ func TestEncodeDecimalWithFixedLength(t *testing.T) {
 	}
 	{
 		// Zero
-		dec, err := EncodeDecimalWithFixedLength(numbers.MustParseDecimal("0"), 2, 4)
+		scale := int32(2)
+		dec, err := EncodeDecimalWithFixedLength(numbers.MustParseDecimal("0"), scale, 4)
 		assert.NoError(t, err)
 		assert.Equal(t, []byte{0x00, 0x00, 0x00, 0x00}, dec)
 
-		actual := DecodeDecimal(dec, 2)
+		actual := DecodeDecimal(dec, scale)
 		assert.Equal(t, "0.00", actual.String())
 	}
 }
