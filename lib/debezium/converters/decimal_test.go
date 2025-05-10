@@ -143,18 +143,34 @@ func TestVariableDecimal_Convert(t *testing.T) {
 func TestPadBytesLeft(t *testing.T) {
 	{
 		// Length is already longer than the expected length
-		out := padBytesLeft(false, []byte("hello"), 5)
+		out := padBytesLeft(false, []byte("hello"), 3)
 		assert.Equal(t, []byte("hello"), out)
+		assert.Len(t, out, 5)
 	}
 	{
-		// Length is shorter than the expected length
+		// Length is shorter (padding required)
 		out := padBytesLeft(false, []byte("hello"), 10)
-		assert.Equal(t, []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x68, 0x65, 0x6c, 0x6c, 0x6f}, out)
+		assert.Equal(t, append([]byte{0x00, 0x00, 0x00, 0x00, 0x00}, []byte("hello")...), out)
+		assert.Len(t, out, 10)
 	}
 	{
-		// Length is shorter than the expected length with negative number
-		out := padBytesLeft(true, []byte("hello"), 10)
-		assert.Equal(t, []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0x68, 0x65, 0x6c, 0x6c, 0x6f}, out)
+		// Length is exact
+		out := padBytesLeft(false, []byte("hello"), 5)
+		assert.Equal(t, []byte{0x68, 0x65, 0x6c, 0x6c, 0x6f}, out)
+		assert.Equal(t, string("hello"), string(out))
+		assert.Len(t, out, 5)
+	}
+	{
+		// Negative number
+		out := padBytesLeft(true, []byte("-123.45"), 9)
+		assert.Equal(t, append([]byte{0xff, 0xff}, []byte("-123.45")...), out)
+		assert.Len(t, out, 9)
+	}
+	{
+		// Positive number
+		out := padBytesLeft(false, []byte("123.45"), 9)
+		assert.Equal(t, append([]byte{0x00, 0x00, 0x00}, []byte("123.45")...), out)
+		assert.Len(t, out, 9)
 	}
 }
 
