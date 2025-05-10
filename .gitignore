@@ -19,3 +19,6 @@ scratch/
 # .tfstate files
 *.tfstate
 *.tfstate.*
+
+## Ignore virtual env from the integration tests
+integration_tests/parquet/venv/
