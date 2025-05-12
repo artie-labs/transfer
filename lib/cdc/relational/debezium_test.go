@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/typing/converters"
 
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -144,6 +145,12 @@ func (r *RelationTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 				"name": "io.debezium.time.MicroTimestamp",
 				"version": 1,
 				"field": "ts_no_tz3"
+			}, {
+				"type": "string",
+				"optional": true,
+				"name": "io.debezium.data.Json",
+				"version": 1,
+				"field": "c_json"
 			}],
 			"optional": true,
 			"name": "dbserver1.inventory.customers.Value",
@@ -163,7 +170,8 @@ func (r *RelationTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 			"email": "sally.thomas@acme.com",
 			"ts_no_tz1": 1675360295175445,
 			"ts_no_tz2": 1675360392604675,
-			"ts_no_tz3": 1675360451434545
+			"ts_no_tz3": 1675360451434545,
+			"c_json": "{\"a\": 1, \"b\": 2}"
 		},
 		"source": {
 			"version": "2.0.0.Final",
@@ -207,6 +215,12 @@ func (r *RelationTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 		time.Date(2023, time.February, 2, 17, 51, 35, 175445*1000, time.UTC),
 		evtData["ts_no_tz1"],
 	)
+
+	assert.Equal(r.T(), map[string]any{"a": float64(1), "b": float64(2)}, evtData["c_json"])
+	jsonData, err := converters.StructConverter{}.Convert(evtData["c_json"])
+	assert.NoError(r.T(), err)
+	assert.Equal(r.T(), `{"a":1,"b":2}`, jsonData)
+
 	assert.Equal(r.T(), time.Date(2023, time.February, 2, 17, 54, 11, 451000000, time.UTC), evt.GetExecutionTime())
 	assert.Equal(r.T(), "customers", evt.GetTableName())
 }
