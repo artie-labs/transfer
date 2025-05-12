@@ -76,7 +76,6 @@ func (BigQueryDialect) KindForDataType(rawBqType string, _ string) (typing.KindD
 			// BigQuery [BIGNUMERIC] type will default to BIGNUMERIC(76, 38)
 			return typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(76, 38)), nil
 		}
-
 		return typing.ParseNumeric(parameters)
 	case "decimal", "float", "float64", "bigdecimal":
 		return typing.Float, nil
