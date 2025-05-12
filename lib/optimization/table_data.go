@@ -320,10 +320,10 @@ func mergeColumn(inMemoryCol columns.Column, destCol columns.Column) columns.Col
 
 	fmt.Println("colName", inMemoryCol.Name(), "destColName", destCol.Name())
 	if inMemoryCol.KindDetails.ExtendedDecimalDetails != nil {
-		fmt.Println("inMemoryCol.KindDetails.ExtendedDecimalDetails", fmt.Sprintf("%d, %d", inMemoryCol.KindDetails.ExtendedDecimalDetails.Precision, inMemoryCol.KindDetails.ExtendedDecimalDetails.Scale))
+		fmt.Println("inMemoryCol.KindDetails.ExtendedDecimalDetails", fmt.Sprintf("%d, %d", inMemoryCol.KindDetails.ExtendedDecimalDetails.Precision(), inMemoryCol.KindDetails.ExtendedDecimalDetails.Scale()))
 	}
 	if destCol.KindDetails.ExtendedDecimalDetails != nil {
-		fmt.Println("destCol.KindDetails.ExtendedDecimalDetails", fmt.Sprintf("%d, %d", destCol.KindDetails.ExtendedDecimalDetails.Precision, destCol.KindDetails.ExtendedDecimalDetails.Scale))
+		fmt.Println("destCol.KindDetails.ExtendedDecimalDetails", fmt.Sprintf("%d, %d", destCol.KindDetails.ExtendedDecimalDetails.Precision(), destCol.KindDetails.ExtendedDecimalDetails.Scale()))
 	}
 
 	// Copy over the decimal details
