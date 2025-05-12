@@ -23,7 +23,7 @@ func (d Details) TwosComplementByteArrLength() int32 {
 	return (d.precision + 1) / 2
 }
 
-func (d Details) Unset() bool {
+func (d Details) NotSet() bool {
 	return d.precision == PrecisionNotSpecified && d.scale == DefaultScale
 }
 
