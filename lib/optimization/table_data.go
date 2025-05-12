@@ -318,16 +318,8 @@ func mergeColumn(inMemoryCol columns.Column, destCol columns.Column) columns.Col
 		inMemoryCol.KindDetails.OptionalIntegerKind = destCol.KindDetails.OptionalIntegerKind
 	}
 
-	fmt.Println("colName", inMemoryCol.Name(), "destColName", destCol.Name())
-	if inMemoryCol.KindDetails.ExtendedDecimalDetails != nil {
-		fmt.Println("inMemoryCol.KindDetails.ExtendedDecimalDetails", fmt.Sprintf("%d, %d", inMemoryCol.KindDetails.ExtendedDecimalDetails.Precision(), inMemoryCol.KindDetails.ExtendedDecimalDetails.Scale()))
-	}
-	if destCol.KindDetails.ExtendedDecimalDetails != nil {
-		fmt.Println("destCol.KindDetails.ExtendedDecimalDetails", fmt.Sprintf("%d, %d", destCol.KindDetails.ExtendedDecimalDetails.Precision(), destCol.KindDetails.ExtendedDecimalDetails.Scale()))
-	}
-
 	// Copy over the decimal details
-	if destCol.KindDetails.ExtendedDecimalDetails != nil && inMemoryCol.KindDetails.ExtendedDecimalDetails == nil {
+	if destCol.KindDetails.ExtendedDecimalDetails != nil && (inMemoryCol.KindDetails.ExtendedDecimalDetails == nil || inMemoryCol.KindDetails.ExtendedDecimalDetails.Unset()) {
 		inMemoryCol.KindDetails.ExtendedDecimalDetails = destCol.KindDetails.ExtendedDecimalDetails
 	}
 

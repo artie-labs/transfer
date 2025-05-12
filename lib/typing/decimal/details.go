@@ -23,6 +23,10 @@ func (d Details) TwosComplementByteArrLength() int32 {
 	return (d.precision + 1) / 2
 }
 
+func (d Details) Unset() bool {
+	return d.precision == PrecisionNotSpecified && d.scale == DefaultScale
+}
+
 func NewDetails(precision int32, scale int32) Details {
 	if precision == 0 {
 		// MySQL, PostgreSQL, and SQLServer do not allow a zero precision, so this should never happen.
