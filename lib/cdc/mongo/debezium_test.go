@@ -7,6 +7,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/debezium"
 	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/lib/typing/converters"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -177,6 +178,11 @@ func TestMongoDBEventCustomer(t *testing.T) {
 	assert.False(t, evtDataWithIncludedAt[constants.UpdateColumnMarker].(time.Time).IsZero())
 
 	assert.Equal(t, map[string]any{"object": "foo"}, evtData["nested"])
+
+	convertedNestedValue, err := converters.StructConverter{}.Convert(evtData["nested"])
+	assert.NoError(t, err)
+	assert.Equal(t, `{"object":"foo"}`, convertedNestedValue)
+
 	assert.Equal(t, evtData[constants.DeleteColumnMarker], false)
 	assert.Equal(t, evtData[constants.OnlySetDeleteColumnMarker], false)
 	assert.Equal(t, evt.GetExecutionTime(), time.Date(2022, time.November, 18, 6, 35, 21, 0, time.UTC))
