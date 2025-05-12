@@ -19,6 +19,11 @@ func TestDetails_BigQueryKind(t *testing.T) {
 	}
 }
 
+func TestDetails_NotSet(t *testing.T) {
+	details := NewDetails(PrecisionNotSpecified, DefaultScale)
+	assert.True(t, details.NotSet())
+}
+
 func TestDecimalDetailsKind(t *testing.T) {
 	type _testCase struct {
 		Name      string
@@ -85,5 +90,6 @@ func TestDecimalDetailsKind(t *testing.T) {
 		assert.Equal(t, testCase.ExpectedSnowflakeKind, d.SnowflakeKind(), testCase.Name)
 		assert.Equal(t, testCase.ExpectedRedshiftKind, d.RedshiftKind(), testCase.Name)
 		assert.Equal(t, testCase.ExpectedBigQueryKind, d.BigQueryKind(false), testCase.Name)
+		assert.False(t, d.NotSet(), testCase.Name)
 	}
 }

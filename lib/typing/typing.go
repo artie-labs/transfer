@@ -26,6 +26,10 @@ type KindDetails struct {
 	OptionalIntegerKind     *OptionalIntegerKind
 }
 
+func (k KindDetails) DecimalDetailsNotSet() bool {
+	return k.ExtendedDecimalDetails == nil || k.ExtendedDecimalDetails.NotSet()
+}
+
 var (
 	Invalid = KindDetails{
 		Kind: "invalid",

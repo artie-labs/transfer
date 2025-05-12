@@ -318,13 +318,13 @@ func mergeColumn(inMemoryCol columns.Column, destCol columns.Column) columns.Col
 		inMemoryCol.KindDetails.OptionalIntegerKind = destCol.KindDetails.OptionalIntegerKind
 	}
 
-	// Copy over the decimal details
-	if destCol.KindDetails.ExtendedDecimalDetails != nil && inMemoryCol.KindDetails.ExtendedDecimalDetails == nil {
+	// If destination column details does have decimal details set and in-memory is not, then we should copy it over.
+	if !destCol.KindDetails.DecimalDetailsNotSet() && inMemoryCol.KindDetails.DecimalDetailsNotSet() {
 		inMemoryCol.KindDetails.ExtendedDecimalDetails = destCol.KindDetails.ExtendedDecimalDetails
 	}
 
 	// If the destination column does not have extended decimal details, we should remove it from the in-memory column as well
-	if destCol.KindDetails.ExtendedDecimalDetails == nil && inMemoryCol.KindDetails.ExtendedDecimalDetails != nil {
+	if destCol.KindDetails.DecimalDetailsNotSet() && !inMemoryCol.KindDetails.DecimalDetailsNotSet() {
 		inMemoryCol.KindDetails.ExtendedDecimalDetails = nil
 	}
 
