@@ -1,7 +1,6 @@
 package mongo
 
 import (
-	"encoding/json"
 	"testing"
 	"time"
 
@@ -177,11 +176,7 @@ func TestMongoDBEventCustomer(t *testing.T) {
 	assert.Equal(t, time.Date(2022, time.November, 18, 6, 35, 21, 0, time.UTC), evtDataWithIncludedAt[constants.DatabaseUpdatedColumnMarker])
 	assert.False(t, evtDataWithIncludedAt[constants.UpdateColumnMarker].(time.Time).IsZero())
 
-	var nestedData map[string]any
-	err = json.Unmarshal([]byte(evtData["nested"].(string)), &nestedData)
-	assert.NoError(t, err)
-
-	assert.Equal(t, nestedData["object"], "foo")
+	assert.Equal(t, map[string]any{"object": "foo"}, evtData["nested"])
 	assert.Equal(t, evtData[constants.DeleteColumnMarker], false)
 	assert.Equal(t, evtData[constants.OnlySetDeleteColumnMarker], false)
 	assert.Equal(t, evt.GetExecutionTime(), time.Date(2022, time.November, 18, 6, 35, 21, 0, time.UTC))
