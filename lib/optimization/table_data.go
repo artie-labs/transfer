@@ -318,6 +318,11 @@ func mergeColumn(inMemoryCol columns.Column, destCol columns.Column) columns.Col
 		inMemoryCol.KindDetails.OptionalIntegerKind = destCol.KindDetails.OptionalIntegerKind
 	}
 
+	// Copy over numeric type, if exists.
+	if destCol.KindDetails.OptionalNumericType != nil {
+		inMemoryCol.KindDetails.OptionalNumericType = destCol.KindDetails.OptionalNumericType
+	}
+
 	// Copy over the decimal details
 	if destCol.KindDetails.ExtendedDecimalDetails != nil && inMemoryCol.KindDetails.ExtendedDecimalDetails == nil {
 		inMemoryCol.KindDetails.ExtendedDecimalDetails = destCol.KindDetails.ExtendedDecimalDetails
