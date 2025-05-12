@@ -16,6 +16,14 @@ const (
 	BigIntegerKind
 )
 
+type OptionalNumericType int
+
+const (
+	NotSpecifiedNumericType OptionalNumericType = iota
+	NumericType
+	BigNumericType
+)
+
 // TODO: KindDetails should store the raw data type from the target table (if exists).
 type KindDetails struct {
 	Kind                   string
@@ -24,6 +32,10 @@ type KindDetails struct {
 	// Optional kind details metadata
 	OptionalStringPrecision *int32
 	OptionalIntegerKind     *OptionalIntegerKind
+
+	// OptionalNumericType: This is used only for BigQuery right now
+	// Since there is a distinction between numeric and bignumeric types.
+	OptionalNumericType *OptionalNumericType
 }
 
 var (

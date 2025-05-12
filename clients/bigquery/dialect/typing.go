@@ -37,6 +37,15 @@ func (BigQueryDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, s
 	case typing.EDecimal.Kind:
 		// [kindDetails.ExtendedDecimalDetails] may be nil if the target data type is a variable numeric or bignumeric.
 		if kindDetails.ExtendedDecimalDetails == nil {
+			if kindDetails.OptionalNumericType != nil {
+				switch *kindDetails.OptionalNumericType {
+				case typing.NumericType:
+					return "numeric"
+				case typing.BigNumericType:
+					return "bignumeric"
+				}
+			}
+
 			if settings.BigNumericForVariableNumeric() {
 				return "bignumeric"
 			} else {
@@ -70,13 +79,24 @@ func (BigQueryDialect) KindForDataType(rawBqType string, _ string) (typing.KindD
 			// BigQuery [NUMERIC] type will default to NUMERIC(38, 9)
 			return typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(38, 9)), nil
 		}
-		return typing.ParseNumeric(parameters)
+
+		kd, err := typing.ParseNumeric(parameters)
+		if err != nil {
+			return typing.Invalid, err
+		}
+		kd.OptionalNumericType = typing.ToPtr(typing.NumericType)
+		return kd, nil
 	case "bignumeric":
 		if len(parameters) == 0 {
 			// BigQuery [BIGNUMERIC] type will default to BIGNUMERIC(76, 38)
 			return typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(76, 38)), nil
 		}
-		return typing.ParseNumeric(parameters)
+		kd, err := typing.ParseNumeric(parameters)
+		if err != nil {
+			return typing.Invalid, err
+		}
+		kd.OptionalNumericType = typing.ToPtr(typing.BigNumericType)
+		return kd, nil
 	case "decimal", "float", "float64", "bigdecimal":
 		return typing.Float, nil
 	case "int", "integer", "int64":
