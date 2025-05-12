@@ -76,6 +76,76 @@ func EncodeDecimal(decimal *apd.Decimal) ([]byte, int32) {
 	return encodeBigInt(bigIntValue), -decimal.Exponent
 }
 
+func padBytesLeft(isNegative bool, bytes []byte, length int) []byte {
+	if len(bytes) >= length {
+		return bytes
+	}
+
+	padding := make([]byte, length-len(bytes))
+	if isNegative {
+		// For negative numbers, pad with 0xFF to maintain two's complement
+		for i := range padding {
+			padding[i] = 0xFF
+		}
+	}
+
+	return append(padding, bytes...)
+}
+
+func int32Abs(n int32) int32 {
+	if n < 0 {
+		return -n
+	}
+	return n
+}
+
+// IntPow returns the result of raising n to the power of m.
+// We implemented our own instead of using math.Pow as it'll return a float64 which may cause conversion issues.
+func IntPow(n, m int) int {
+	switch m {
+	case 0:
+		return 1
+	case 1:
+		return n
+	default:
+		result := n
+		for i := 2; i <= m; i++ {
+			result *= n
+		}
+		return result
+	}
+}
+
+// RescaleDecimal returns a new decimal with the desired scale
+func RescaleDecimal(decimal *apd.Decimal, expectedScale int32) (*apd.Decimal, error) {
+	currentScale := int32Abs(decimal.Exponent)
+	if currentScale == expectedScale {
+		return decimal, nil
+	}
+
+	if currentScale > expectedScale {
+		return nil, fmt.Errorf("number scale (%d) is larger than expected scale (%d)", currentScale, expectedScale)
+	}
+
+	var result apd.Decimal
+	multipler := IntPow(10, int(expectedScale-currentScale))
+	if _, err := apd.BaseContext.Mul(&result, decimal, apd.New(int64(multipler), 0)); err != nil {
+		return nil, fmt.Errorf("failed to rescale decimal: %w", err)
+	}
+	result.Exponent = -expectedScale
+	return &result, nil
+}
+
+func EncodeDecimalWithFixedLength(decimal *apd.Decimal, expectedScale int32, length int) ([]byte, error) {
+	decimal, err := RescaleDecimal(decimal, int32(expectedScale))
+	if err != nil {
+		return nil, err
+	}
+
+	bytes, _ := EncodeDecimal(decimal)
+	return padBytesLeft(decimal.Negative, bytes, length), nil
+}
+
 // DecodeDecimal is used to decode `org.apache.kafka.connect.data.Decimal`.
 func DecodeDecimal(data []byte, scale int32) *apd.Decimal {
 	bigInt := new(apd.BigInt).SetMathBigInt(decodeBigInt(data))

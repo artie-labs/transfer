@@ -139,3 +139,137 @@ func TestVariableDecimal_Convert(t *testing.T) {
 		assert.Equal(t, "-105.2813669", castedValue.String())
 	}
 }
+
+func TestPadBytesLeft(t *testing.T) {
+	{
+		// Length is already longer than the expected length
+		out := padBytesLeft(false, []byte("hello"), 3)
+		assert.Equal(t, []byte("hello"), out)
+		assert.Len(t, out, 5)
+	}
+	{
+		// Length is shorter (padding required)
+		out := padBytesLeft(false, []byte("hello"), 10)
+		assert.Equal(t, append([]byte{0x00, 0x00, 0x00, 0x00, 0x00}, []byte("hello")...), out)
+		assert.Len(t, out, 10)
+	}
+	{
+		// Length is exact (padding required)
+		out := padBytesLeft(false, []byte("hello"), 5)
+		assert.Equal(t, []byte{0x68, 0x65, 0x6c, 0x6c, 0x6f}, out)
+		assert.Equal(t, string("hello"), string(out))
+		assert.Len(t, out, 5)
+	}
+	{
+		// Negative number
+		out := padBytesLeft(true, []byte("-123.45"), 9)
+		assert.Equal(t, append([]byte{0xff, 0xff}, []byte("-123.45")...), out)
+		assert.Len(t, out, 9)
+	}
+	{
+		// Positive number
+		out := padBytesLeft(false, []byte("123.45"), 9)
+		assert.Equal(t, append([]byte{0x00, 0x00, 0x00}, []byte("123.45")...), out)
+		assert.Len(t, out, 9)
+	}
+}
+
+func TestIntPow(t *testing.T) {
+	{
+		// 2^3
+		assert.Equal(t, 8, IntPow(2, 3))
+	}
+	{
+		// 2^0
+		assert.Equal(t, 1, IntPow(2, 0))
+	}
+	{
+		// 2^1
+		assert.Equal(t, 2, IntPow(2, 1))
+	}
+	{
+		// 10^3
+		assert.Equal(t, 1000, IntPow(10, 3))
+	}
+}
+
+func TestRescaleDecimal(t *testing.T) {
+	{
+		// No rescaling needed
+		dec, err := RescaleDecimal(numbers.MustParseDecimal("123.45"), 2)
+		assert.NoError(t, err)
+		assert.Equal(t, "123.45", dec.String())
+	}
+	{
+		// Scale up
+		dec, err := RescaleDecimal(numbers.MustParseDecimal("123.45"), 4)
+		assert.NoError(t, err)
+		assert.Equal(t, "123.4500", dec.String())
+	}
+	{
+		// Scale up with negative number
+		dec, err := RescaleDecimal(numbers.MustParseDecimal("-123.45"), 4)
+		assert.NoError(t, err)
+		assert.Equal(t, "-123.4500", dec.String())
+	}
+	{
+		// Trying to scale down (error)
+		_, err := RescaleDecimal(numbers.MustParseDecimal("123.45"), 1)
+		assert.ErrorContains(t, err, "number scale (2) is larger than expected scale (1)")
+	}
+	{
+		// Zero
+		dec, err := RescaleDecimal(numbers.MustParseDecimal("0"), 1)
+		assert.NoError(t, err)
+		assert.Equal(t, "0.0", dec.String())
+	}
+}
+
+func TestEncodeDecimalWithFixedLength(t *testing.T) {
+	{
+		// Basic encoding
+		scale := int32(2)
+		dec, err := EncodeDecimalWithFixedLength(numbers.MustParseDecimal("123.45"), scale, 4)
+		assert.NoError(t, err)
+		assert.Equal(t, []byte{0x00, 0x00, 0x30, 0x39}, dec)
+
+		actual := DecodeDecimal(dec, scale)
+		assert.Equal(t, "123.45", actual.String())
+	}
+	{
+		// Negative number
+		scale := int32(2)
+		dec, err := EncodeDecimalWithFixedLength(numbers.MustParseDecimal("-123.45"), scale, 4)
+		assert.NoError(t, err)
+		assert.Equal(t, []byte{0xFF, 0xFF, 0xCF, 0xC7}, dec)
+
+		actual := DecodeDecimal(dec, scale)
+		assert.Equal(t, "-123.45", actual.String())
+	}
+
+	{
+		// Scaling up
+		scale := int32(4)
+		dec, err := EncodeDecimalWithFixedLength(numbers.MustParseDecimal("123.45"), scale, 4)
+		assert.NoError(t, err)
+		assert.Equal(t, []byte{0x00, 0x12, 0xd6, 0x44}, dec)
+
+		actual := DecodeDecimal(dec, scale)
+		assert.Equal(t, "123.4500", actual.String())
+	}
+	{
+		// Error (scaling down)
+		_, err := EncodeDecimalWithFixedLength(numbers.MustParseDecimal("123.45"), 1, 5)
+		assert.ErrorContains(t, err, "number scale (2) is larger than expected scale (1)")
+	}
+	{
+		// Zero
+		scale := int32(2)
+		dec, err := EncodeDecimalWithFixedLength(numbers.MustParseDecimal("0"), scale, 4)
+		assert.NoError(t, err)
+		assert.Equal(t, []byte{0x00, 0x00, 0x00, 0x00}, dec)
+
+		actual := DecodeDecimal(dec, scale)
+		assert.Equal(t, "0.00", actual.String())
+	}
+}
