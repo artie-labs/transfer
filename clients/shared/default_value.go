@@ -76,6 +76,12 @@ func DefaultValue(column columns.Column, dialect sql.Dialect) (any, error) {
 		return decimalValue.String(), nil
 	case typing.String.Kind:
 		return sql.QuoteLiteral(fmt.Sprint(column.DefaultValue())), nil
+	case
+		typing.Boolean.Kind,
+		typing.Integer.Kind,
+		typing.Float.Kind,
+		typing.EDecimal.Kind:
+		return fmt.Sprint(column.DefaultValue()), nil
 	default:
 		return nil, fmt.Errorf("unsupported default value type: %q", column.KindDetails.Kind)
 	}
