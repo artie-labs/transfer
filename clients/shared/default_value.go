@@ -2,6 +2,7 @@ package shared
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
@@ -70,6 +71,13 @@ func DefaultValue(column columns.Column, dialect sql.Dialect) (any, error) {
 		return decimalValue.String(), nil
 	case typing.String.Kind:
 		return sql.QuoteLiteral(fmt.Sprint(column.DefaultValue())), nil
+	case typing.Struct.Kind:
+		value, err := json.Marshal(column.DefaultValue())
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal default value: %w", err)
+		}
+
+		return string(value), nil
 	}
 
 	return column.DefaultValue(), nil
