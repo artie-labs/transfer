@@ -107,8 +107,6 @@ func BackfillColumn(ctx context.Context, dest destination.Destination, column co
 			return fmt.Errorf("failed to escape default value: %w", err)
 		}
 
-		fmt.Println("defaultVal", defaultVal, "column", column.KindDetails.Kind)
-
 		escapedCol := dialect.QuoteIdentifier(column.Name())
 		query := fmt.Sprintf(`UPDATE %s as t SET t.%s = %v WHERE t.%s IS NULL;`,
 			// UPDATE table as t SET t.col = default_val WHERE t.col IS NULL
