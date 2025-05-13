@@ -44,7 +44,7 @@ func TestColumn_DefaultValue(t *testing.T) {
 	}
 	{
 		// JSON (empty)
-		col := columns.NewColumnWithDefaultValue("", typing.Struct, "{}")
+		col := columns.NewColumnWithDefaultValue("", typing.Struct, map[string]any{})
 		for _, dialect := range dialects {
 			actualValue, actualErr := DefaultValue(col, dialect)
 			assert.NoError(t, actualErr)
@@ -62,8 +62,8 @@ func TestColumn_DefaultValue(t *testing.T) {
 	}
 	{
 		// JSON (with values)
-		jsonStr := `{"age": 0, "membership_level": "standard"}`
-		col := columns.NewColumnWithDefaultValue("", typing.Struct, jsonStr)
+		jsonMap := map[string]any{"age": 0, "membership_level": "standard"}
+		col := columns.NewColumnWithDefaultValue("", typing.Struct, jsonMap)
 		for _, dialect := range dialects {
 			actualValue, actualErr := DefaultValue(col, dialect)
 			assert.NoError(t, actualErr, fmt.Sprintf("dialect: %v", dialect))
@@ -71,11 +71,11 @@ func TestColumn_DefaultValue(t *testing.T) {
 			var expectedValue string
 			switch dialect.(type) {
 			case bigQueryDialect.BigQueryDialect:
-				expectedValue = "JSON'" + jsonStr + "'"
+				expectedValue = `JSON'{"age":0,"membership_level":"standard"}'`
 			case redshiftDialect.RedshiftDialect:
-				expectedValue = "JSON_PARSE('" + jsonStr + "')"
+				expectedValue = `JSON_PARSE('{"age":0,"membership_level":"standard"}')`
 			case snowflakeDialect.SnowflakeDialect:
-				expectedValue = "'" + jsonStr + "'"
+				expectedValue = `'{"age":0,"membership_level":"standard"}'`
 			}
 			assert.Equal(t, expectedValue, actualValue, fmt.Sprintf("dialect: %v", dialect))
 		}

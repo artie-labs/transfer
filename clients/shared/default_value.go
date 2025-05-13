@@ -2,6 +2,7 @@ package shared
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
@@ -25,7 +26,12 @@ func DefaultValue(column columns.Column, dialect sql.Dialect) (any, error) {
 
 	switch column.KindDetails.Kind {
 	case typing.Struct.Kind, typing.Array.Kind:
-		return dialect.EscapeStruct(fmt.Sprint(column.DefaultValue())), nil
+		value, err := json.Marshal(column.DefaultValue())
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal default value: %w", err)
+		}
+
+		return dialect.EscapeStruct(string(value)), nil
 	case typing.Date.Kind:
 		_time, err := ext.ParseDateFromAny(column.DefaultValue())
 		if err != nil {
@@ -70,9 +76,16 @@ func DefaultValue(column columns.Column, dialect sql.Dialect) (any, error) {
 		return decimalValue.String(), nil
 	case typing.String.Kind:
 		return sql.QuoteLiteral(fmt.Sprint(column.DefaultValue())), nil
+	case
+		typing.Boolean.Kind,
+		typing.Integer.Kind,
+		typing.Float.Kind,
+		typing.EDecimal.Kind:
+		return fmt.Sprint(column.DefaultValue()), nil
+	default:
+		return nil, fmt.Errorf("unsupported default value type: %q", column.KindDetails.Kind)
 	}
 
-	return column.DefaultValue(), nil
 }
 
 func BackfillColumn(ctx context.Context, dest destination.Destination, column columns.Column, tableID sql.TableIdentifier) error {
