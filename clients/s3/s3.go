@@ -3,8 +3,6 @@ package s3
 import (
 	"context"
 	"fmt"
-	"log/slog"
-	"os"
 	"strings"
 	"time"
 
@@ -130,16 +128,18 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (b
 		return false, err
 	}
 
-	defer func() {
-		// Delete the file regardless of outcome to avoid fs build up.
-		if removeErr := os.RemoveAll(fp); removeErr != nil {
-			slog.Warn("Failed to delete temp file", slog.Any("err", removeErr), slog.String("filePath", fp))
-		}
-	}()
+	// defer func() {
+	// 	// Delete the file regardless of outcome to avoid fs build up.
+	// 	if removeErr := os.RemoveAll(fp); removeErr != nil {
+	// 		slog.Warn("Failed to delete temp file", slog.Any("err", removeErr), slog.String("filePath", fp))
+	// 	}
+	// }()
 
-	if _, err := s.s3Client.UploadLocalFileToS3(ctx, s.config.S3.Bucket, s.ObjectPrefix(tableData), fp); err != nil {
-		return false, fmt.Errorf("failed to upload file to s3: %w", err)
-	}
+	// if _, err := s.s3Client.UploadLocalFileToS3(ctx, s.config.S3.Bucket, s.ObjectPrefix(tableData), fp); err != nil {
+	// 	return false, fmt.Errorf("failed to upload file to s3: %w", err)
+	// }
+
+	fmt.Println("Wrote this to fp", fp)
 
 	return true, nil
 }
