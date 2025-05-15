@@ -22,6 +22,7 @@ type Converter interface {
 type GetStringConverterOpts struct {
 	TimestampTZLayoutOverride  string
 	TimestampNTZLayoutOverride string
+	UseNewStringMethod         bool
 }
 
 func GetStringConverter(kd typing.KindDetails, opts GetStringConverterOpts) (Converter, error) {
@@ -30,7 +31,9 @@ func GetStringConverter(kd typing.KindDetails, opts GetStringConverterOpts) (Con
 	case typing.Boolean.Kind:
 		return BooleanConverter{}, nil
 	case typing.String.Kind:
-		return StringConverter{}, nil
+		return StringConverter{
+			useNewMethod: opts.UseNewStringMethod,
+		}, nil
 	// Time types
 	case typing.Date.Kind:
 		return DateConverter{}, nil
@@ -77,9 +80,36 @@ func (BooleanConverter) Convert(value any) (string, error) {
 	}
 }
 
-type StringConverter struct{}
+type StringConverter struct {
+	useNewMethod bool
+}
 
-func (StringConverter) Convert(value any) (string, error) {
+func (s StringConverter) Convert(value any) (string, error) {
+	if s.useNewMethod {
+		return s.ConvertNew(value)
+	}
+
+	return s.ConvertOld(value)
+}
+
+func (StringConverter) ConvertNew(value any) (string, error) {
+	switch castedValue := value.(type) {
+	case int, int8, int16, int32, int64:
+		return IntegerConverter{}.Convert(castedValue)
+	case float32, float64:
+		return FloatConverter{}.Convert(castedValue)
+	case bool:
+		return BooleanConverter{}.Convert(castedValue)
+	case string:
+		return castedValue, nil
+	case map[string]any:
+		return StructConverter{}.Convert(castedValue)
+	default:
+		return "", fmt.Errorf("unsupported value: %v, type: %T", value, value)
+	}
+}
+
+func (StringConverter) ConvertOld(value any) (string, error) {
 	// TODO Simplify this function
 	isArray := reflect.ValueOf(value).Kind() == reflect.Slice
 	_, isMap := value.(map[string]any)
@@ -100,7 +130,6 @@ type DateConverter struct{}
 
 func (DateConverter) Convert(value any) (string, error) {
 	_time, err := ext.ParseDateFromAny(value)
-
 	if err != nil {
 		return "", fmt.Errorf("failed to cast colVal as date, colVal: '%v', err: %w", value, err)
 	}
