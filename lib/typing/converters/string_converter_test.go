@@ -305,6 +305,10 @@ func TestStringConverter_Convert(t *testing.T) {
 		val, err := conv.Convert(map[string]any{"foo": "bar"})
 		assert.NoError(t, err)
 		assert.Equal(t, `{"foo":"bar"}`, val)
+
+		var obj any
+		assert.NoError(t, json.Unmarshal([]byte(val), &obj))
+		assert.Equal(t, map[string]any{"foo": "bar"}, obj)
 	}
 	{
 		// Array
@@ -312,8 +316,8 @@ func TestStringConverter_Convert(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, `["foo","bar"]`, val)
 
-		var arr []any
+		var arr any
 		assert.NoError(t, json.Unmarshal([]byte(val), &arr))
-		assert.Equal(t, []any{"foo", "bar"}, arr)
+		assert.Equal(t, []any{"foo", "bar"}, arr.([]any))
 	}
 }
