@@ -35,8 +35,7 @@ type SharedDestinationColumnSettings struct {
 	// TODO: Deprecate BigQueryNumericForVariableNumeric in favor of UseBigNumericForVariableNumeric
 	// BigQueryNumericForVariableNumeric - If enabled, we will use BigQuery's NUMERIC type for variable numeric types.
 	BigQueryNumericForVariableNumeric bool `yaml:"bigQueryNumericForVariableNumeric"`
-
-	UseBigNumericForVariableNumeric bool `yaml:"useBigNumericForVariableNumeric"`
+	UseBigNumericForVariableNumeric   bool `yaml:"useBigNumericForVariableNumeric"`
 }
 
 func (s SharedDestinationColumnSettings) BigNumericForVariableNumeric() bool {
@@ -50,6 +49,8 @@ type SharedDestinationSettings struct {
 	// This is only supported by Redshift at the moment.
 	ExpandStringPrecision bool                            `yaml:"expandStringPrecision"`
 	ColumnSettings        SharedDestinationColumnSettings `yaml:"columnSettings"`
+	// TODO: Standardize on this method.
+	UseNewStringMethod bool `yaml:"useNewStringMethod"`
 }
 
 type Reporting struct {

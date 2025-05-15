@@ -15,15 +15,16 @@ import (
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/artie-labs/transfer/lib/typing/converters"
 	"github.com/artie-labs/transfer/lib/typing/values"
 )
 
-func castColValStaging(colVal any, colKind typing.KindDetails, _ config.SharedDestinationSettings) (shared.ValueConvertResponse, error) {
+func castColValStaging(colVal any, colKind typing.KindDetails, cfg config.SharedDestinationSettings) (shared.ValueConvertResponse, error) {
 	if colVal == nil {
 		return shared.ValueConvertResponse{Value: constants.NullValuePlaceholder}, nil
 	}
 
-	value, err := values.ToString(colVal, colKind)
+	value, err := values.ToStringOpts(colVal, colKind, converters.GetStringConverterOpts{UseNewStringMethod: cfg.UseNewStringMethod})
 	if err != nil {
 		return shared.ValueConvertResponse{}, err
 	}
