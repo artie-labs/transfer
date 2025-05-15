@@ -109,6 +109,10 @@ func (StringConverter) ConvertNew(value any) (string, error) {
 	case *decimal.Decimal:
 		return DecimalConverter{}.Convert(castedValue)
 	default:
+		if reflect.ValueOf(value).Kind() == reflect.Slice {
+			return ArrayConverter{}.Convert(value)
+		}
+
 		return "", fmt.Errorf("unsupported value: %v, type: %T", value, value)
 	}
 }

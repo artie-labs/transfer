@@ -305,4 +305,10 @@ func TestStringConverter_Convert(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, `{"foo":"bar"}`, val)
 	}
+	{
+		// Array
+		val, err := conv.Convert([]string{"foo", "bar"})
+		assert.NoError(t, err)
+		assert.Equal(t, `["foo","bar"]`, val)
+	}
 }
