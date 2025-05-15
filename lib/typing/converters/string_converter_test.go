@@ -3,6 +3,7 @@ package converters
 import (
 	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/artie-labs/transfer/lib/typing"
 
@@ -277,6 +278,12 @@ func TestStringConverter_Convert(t *testing.T) {
 		val, err := conv.Convert(true)
 		assert.NoError(t, err)
 		assert.Equal(t, "true", val)
+	}
+	{
+		// time.Time
+		val, err := conv.Convert(time.Date(2021, 1, 1, 2, 3, 4, 5678910, time.UTC))
+		assert.NoError(t, err)
+		assert.Equal(t, "2021-01-01T02:03:04.00567891Z", val)
 	}
 	{
 		// Integers
