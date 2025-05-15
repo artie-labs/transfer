@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/artie-labs/transfer/lib/typing"
@@ -310,5 +311,9 @@ func TestStringConverter_Convert(t *testing.T) {
 		val, err := conv.Convert([]string{"foo", "bar"})
 		assert.NoError(t, err)
 		assert.Equal(t, `["foo","bar"]`, val)
+
+		var arr []any
+		assert.NoError(t, json.Unmarshal([]byte(val), &arr))
+		assert.Equal(t, []any{"foo", "bar"}, arr)
 	}
 }
