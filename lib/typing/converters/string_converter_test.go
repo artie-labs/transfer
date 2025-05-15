@@ -262,3 +262,47 @@ func TestStructConverter_Convert(t *testing.T) {
 		assert.Equal(t, "123", val)
 	}
 }
+
+func TestStringConverter_Convert(t *testing.T) {
+	conv := StringConverter{useNewMethod: true}
+	{
+		// String
+		val, err := conv.Convert("foo")
+		assert.NoError(t, err)
+		assert.Equal(t, "foo", val)
+	}
+	{
+		// Boolean
+		val, err := conv.Convert(true)
+		assert.NoError(t, err)
+		assert.Equal(t, "true", val)
+	}
+	{
+		// Integers
+		for _, value := range []any{42, int8(42), int16(42), int32(42), int64(42), float32(42), float64(42)} {
+			val, err := conv.Convert(value)
+			assert.NoError(t, err)
+			assert.Equal(t, "42", val)
+		}
+	}
+	{
+		// Floats
+		for _, value := range []any{123.45, float32(123.45), float64(123.45)} {
+			val, err := conv.Convert(value)
+			assert.NoError(t, err)
+			assert.Equal(t, "123.45", val)
+		}
+	}
+	{
+		// Decimal
+		val, err := conv.Convert(decimal.NewDecimal(numbers.MustParseDecimal("123.45")))
+		assert.NoError(t, err)
+		assert.Equal(t, "123.45", val)
+	}
+	{
+		// JSON
+		val, err := conv.Convert(map[string]any{"foo": "bar"})
+		assert.NoError(t, err)
+		assert.Equal(t, `{"foo":"bar"}`, val)
+	}
+}
