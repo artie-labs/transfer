@@ -104,6 +104,10 @@ func (StringConverter) ConvertNew(value any) (string, error) {
 		return castedValue, nil
 	case map[string]any:
 		return StructConverter{}.Convert(castedValue)
+	case time.Time:
+		return TimestampTZConverter{}.Convert(castedValue)
+	case *decimal.Decimal:
+		return DecimalConverter{}.Convert(castedValue)
 	default:
 		return "", fmt.Errorf("unsupported value: %v, type: %T", value, value)
 	}
