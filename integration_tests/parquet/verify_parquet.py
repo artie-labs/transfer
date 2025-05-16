@@ -3,7 +3,7 @@
 import pandas as pd
 import sys
 import argparse
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 
 def verify_parquet_file(file_path):
@@ -30,14 +30,14 @@ def verify_parquet_file(file_path):
             'id': 1,
             'name': 'John Doe',
             'age': 30,
-            'created_at': datetime.fromisoformat("2024-03-20 10:00:00"),
+            'created_at': datetime.fromisoformat("2024-03-20 10:00:00").replace(tzinfo=timezone.utc),
             'score': Decimal('-97.410511')
         },
         {
             'id': 2,
             'name': 'Jane Smith',
             'age': 25,
-            'created_at': datetime.fromisoformat("2024-03-20 11:00:00"),
+            'created_at': datetime.fromisoformat("2024-03-20 11:00:00").replace(tzinfo=timezone.utc),
             'score': Decimal('99.410511')
         }
     ]
@@ -52,12 +52,7 @@ def verify_parquet_file(file_path):
     for i, expected_row in enumerate(expected_rows):
         for col, expected_value in expected_row.items():
             actual_value = df.iloc[i][col]
-            if isinstance(expected_value, Decimal):
-                # Convert actual value to Decimal for comparison
-                actual_decimal = Decimal(str(actual_value))
-                assert actual_decimal == expected_value, f"Row {i}, Column {col}: Expected {expected_value}, got {actual_decimal}"
-            else:
-                assert actual_value == expected_value, f"Row {i}, Column {col}: Expected {expected_value}, got {actual_value}"
+            assert actual_value == expected_value, f"Row {i}, Column {col}: Expected {expected_value}, got {actual_value}"
     
     print("All assertions passed!")
     return True
