@@ -20,17 +20,14 @@ func ShouldDeleteFromName(name string) bool {
 		return false
 	}
 
-	if strings.EqualFold(suffixParts[len(suffixParts)-1], "msm") {
+	part := suffixParts[2]
+	if strings.EqualFold(part, "msm") {
 		return false
 	}
 
-	unix, err := strconv.Atoi(suffixParts[2])
+	unix, err := strconv.Atoi(part)
 	if err != nil {
-		slog.Error("Failed to parse unix string",
-			slog.Any("err", err),
-			slog.String("tableName", name),
-			slog.String("tsString", suffixParts[2]),
-		)
+		slog.Error("Failed to parse unix string", slog.Any("err", err), slog.String("tableName", name), slog.String("part", part))
 		return false
 	}
 
