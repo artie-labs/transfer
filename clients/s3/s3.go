@@ -73,7 +73,7 @@ func buildTemporaryFilePath(tableData *optimization.TableData) string {
 // Returns an error if any step of the writing process fails.
 func WriteParquetFiles(tableData *optimization.TableData, filePath string, location *time.Location) error {
 	cols := tableData.ReadOnlyInMemoryCols().ValidColumns()
-	schema, err := parquetutil.BuildCSVSchema(cols)
+	schema, err := parquetutil.BuildCSVSchema(cols, location)
 	if err != nil {
 		return fmt.Errorf("failed to generate parquet schema: %w", err)
 	}

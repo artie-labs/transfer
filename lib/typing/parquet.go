@@ -3,6 +3,7 @@ package typing
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/xitongsys/parquet-go/parquet"
@@ -80,7 +81,7 @@ type Field struct {
 	Fields []Field `json:"Fields,omitempty"`
 }
 
-func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
+func (k *KindDetails) ParquetAnnotation(colName string, location *time.Location) (*Field, error) {
 	switch k.Kind {
 	case String.Kind, Struct.Kind:
 		return &Field{
@@ -114,12 +115,17 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 			}.String(),
 		}, nil
 	case TimestampNTZ.Kind, TimestampTZ.Kind:
+		adjustedForUTC := true
+		if location != nil {
+			adjustedForUTC = false
+		}
+
 		return &Field{
 			Tag: FieldTag{
 				Name:             colName,
 				Type:             ToPtr(parquet.Type_INT64.String()),
 				LogicalType:      ToPtr("TIMESTAMP"),
-				IsAdjustedForUTC: ToPtr(true),
+				IsAdjustedForUTC: ToPtr(adjustedForUTC),
 				Unit:             ToPtr("MILLIS"),
 			}.String(),
 		}, nil
