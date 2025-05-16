@@ -20,8 +20,8 @@ def verify_parquet_file(file_path):
     # Print the data
     print("DataFrame contents:")
     print(df)
-    for i, row in df.iterrows():
-        print(f"Row {i} score value: {row['score']} (type: {type(row['score'])})")
+    print("\nColumn data types:")
+    print(df.dtypes)
     
     # Define expected data
     expected_columns = ['id', 'name', 'age', 'created_at', 'score']
