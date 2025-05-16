@@ -138,6 +138,7 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 	}()
 
 	var ordinalColumns []string
+	var colNames []string
 	for idx, column := range tableData.ReadOnlyInMemoryCols().ValidColumns() {
 		ordinalColumn := fmt.Sprintf("_c%d", idx)
 		switch column.KindDetails.Kind {
@@ -146,9 +147,10 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 		}
 
 		ordinalColumns = append(ordinalColumns, ordinalColumn)
+		colNames = append(colNames, column.Name())
 	}
 
-	copyCommand := s.dialect().BuildCopyIntoQuery(tempTableID, ordinalColumns, file.DBFSFilePath())
+	copyCommand := s.dialect().BuildCopyIntoQuery(tempTableID, colNames, ordinalColumns, file.DBFSFilePath())
 	result, err := s.ExecContext(ctx, copyCommand)
 	if err != nil {
 		return fmt.Errorf("failed to run COPY INTO for temporary table: %w", err)
