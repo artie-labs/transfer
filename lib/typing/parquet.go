@@ -18,6 +18,9 @@ type FieldTag struct {
 	Scale          *int
 	Precision      *int
 	Length         *int
+	// This is used for timestamps only:
+	IsAdjustedForUTC *bool
+	Unit             *string
 }
 
 func (f FieldTag) String() string {
@@ -53,6 +56,14 @@ func (f FieldTag) String() string {
 
 	if f.Length != nil {
 		parts = append(parts, fmt.Sprintf("length=%v", *f.Length))
+	}
+
+	if f.IsAdjustedForUTC != nil {
+		parts = append(parts, fmt.Sprintf("isadjustedforutc=%t", *f.IsAdjustedForUTC))
+	}
+
+	if f.Unit != nil {
+		parts = append(parts, fmt.Sprintf("unit=%s", *f.Unit))
 	}
 
 	return strings.Join(parts, ", ")
@@ -99,9 +110,10 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 	case TimestampNTZ.Kind, TimestampTZ.Kind:
 		return &Field{
 			Tag: FieldTag{
-				Name:          colName,
-				Type:          ToPtr(parquet.Type_INT64.String()),
-				ConvertedType: ToPtr(parquet.ConvertedType_TIMESTAMP_MILLIS.String()),
+				Name:             colName,
+				Type:             ToPtr(parquet.Type_INT64.String()),
+				IsAdjustedForUTC: ToPtr(true),
+				Unit:             ToPtr("MILLIS"),
 			}.String(),
 		}, nil
 	case Integer.Kind:
