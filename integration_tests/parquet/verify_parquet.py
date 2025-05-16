@@ -24,20 +24,22 @@ def verify_parquet_file(file_path):
     print(df.dtypes)
     
     # Define expected data
-    expected_columns = ['id', 'name', 'age', 'created_at', 'score']
+    expected_columns = ['id', 'name', 'age', 'created_at', 'created_at_ntz', 'score']
     expected_rows = [
         {
             'id': 1,
             'name': 'John Doe',
             'age': 30,
-            'created_at': datetime.fromisoformat("2024-03-20 10:00:00").replace(tzinfo=timezone.utc),
+            'created_at': datetime.fromisoformat("2024-03-20 10:00:00.111").replace(tzinfo=timezone.utc),
+            'created_at_ntz': datetime.fromisoformat("2024-03-20 10:00:00.111").replace(tzinfo=timezone.utc),
             'score': Decimal('-97.410511')
         },
         {
             'id': 2,
             'name': 'Jane Smith',
             'age': 25,
-            'created_at': datetime.fromisoformat("2024-03-20 11:00:00").replace(tzinfo=timezone.utc),
+            'created_at': datetime.fromisoformat("2024-03-20 11:00:00.555").replace(tzinfo=timezone.utc),
+            'created_at_ntz': datetime.fromisoformat("2024-03-20 11:00:00.444").replace(tzinfo=timezone.utc),
             'score': Decimal('99.410511')
         }
     ]
