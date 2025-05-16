@@ -50,7 +50,7 @@ func main() {
 
 	// Write the parquet file
 	parquetPath := filepath.Join(outputDir, "test.parquet")
-	if err := s3.WriteParquetFiles(tableData, parquetPath); err != nil {
+	if err := s3.WriteParquetFiles(tableData, parquetPath, nil); err != nil {
 		logger.Fatal("Failed to write parquet file", slog.Any("error", err))
 	}
 

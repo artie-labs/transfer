@@ -59,7 +59,7 @@ func (f FieldTag) String() string {
 	}
 
 	if f.IsAdjustedForUTC != nil {
-		parts = append(parts, fmt.Sprintf("isadjustedforutc=%t", *f.IsAdjustedForUTC))
+		parts = append(parts, fmt.Sprintf("isAdjustedToUTC=%t", *f.IsAdjustedForUTC))
 	}
 
 	if f.Unit != nil {
