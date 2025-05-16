@@ -22,7 +22,7 @@ func millisecondsAfterMidnight(t time.Time) int32 {
 	return int32(t.Sub(midnight).Milliseconds())
 }
 
-func ParseValue(colVal any, colKind typing.KindDetails) (any, error) {
+func ParseValue(colVal any, colKind typing.KindDetails, location *time.Location) (any, error) {
 	if colVal == nil {
 		return nil, nil
 	}
@@ -51,11 +51,19 @@ func ParseValue(colVal any, colKind typing.KindDetails) (any, error) {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
 		}
 
+		if location != nil {
+			_time = _time.In(location)
+		}
+
 		return _time.UnixMilli(), nil
 	case typing.TimestampTZ.Kind:
 		_time, err := ext.ParseTimestampTZFromAny(colVal)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
+		}
+
+		if location != nil {
+			_time = _time.In(location)
 		}
 
 		return _time.UnixMilli(), nil
