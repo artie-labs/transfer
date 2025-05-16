@@ -20,6 +20,8 @@ func TestShouldDeleteFromName(t *testing.T) {
 			fmt.Sprintf("future_tbl___artie_suffix_%d", time.Now().Add(constants.TemporaryTableTTL).Unix()),
 			fmt.Sprintf("future_tbl___notartie_%d", time.Now().Add(-1*time.Hour).Unix()),
 			fmt.Sprintf("%s_foo_msm", constants.ArtiePrefix),
+			fmt.Sprintf("%s_foo_MSM", constants.ArtiePrefix),
+			fmt.Sprintf("%s_foo_foo_MSM", constants.ArtiePrefix),
 		}
 
 		for _, tblToNotDelete := range tablesToNotDrop {
