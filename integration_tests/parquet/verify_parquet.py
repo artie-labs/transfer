@@ -20,7 +20,7 @@ def verify_parquet_file(file_path):
     # Print the data
     print("DataFrame contents:")
     print(df)
-    print("\nColumn data types:")
+    print("Column data types:")
     print(df.dtypes)
     
     # Define expected data
