@@ -3,10 +3,10 @@
 import pandas as pd
 import sys
 import argparse
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 
-def verify_parquet_file(file_path):
+def verify_parquet_file(file_path, location):
     """
     Read and verify the contents of a parquet file.
     Returns True if all verifications pass, False otherwise.
@@ -20,24 +20,26 @@ def verify_parquet_file(file_path):
     # Print the data
     print("DataFrame contents:")
     print(df)
-    for i, row in df.iterrows():
-        print(f"Row {i} score value: {row['score']} (type: {type(row['score'])})")
+    print("Column data types:")
+    print(df.dtypes)
     
     # Define expected data
-    expected_columns = ['id', 'name', 'age', 'created_at', 'score']
+    expected_columns = ['id', 'name', 'age', 'created_at', 'created_at_ntz', 'score']
     expected_rows = [
         {
             'id': 1,
             'name': 'John Doe',
             'age': 30,
-            'created_at': datetime.fromisoformat("2024-03-20 10:00:00"),
+            'created_at': datetime.fromisoformat("2024-03-20 06:00:00.111") if location else datetime.fromisoformat("2024-03-20 10:00:00.111").replace(tzinfo=timezone.utc),
+            'created_at_ntz': datetime.fromisoformat("2024-03-20 06:00:00.111") if location else datetime.fromisoformat("2024-03-20 10:00:00.111").replace(tzinfo=timezone.utc),
             'score': Decimal('-97.410511')
         },
         {
             'id': 2,
             'name': 'Jane Smith',
             'age': 25,
-            'created_at': datetime.fromisoformat("2024-03-20 11:00:00"),
+            'created_at': datetime.fromisoformat("2024-03-20 07:00:00.555") if location else datetime.fromisoformat("2024-03-20 11:00:00.555").replace(tzinfo=timezone.utc),
+            'created_at_ntz': datetime.fromisoformat("2024-03-20 07:00:00.444") if location else datetime.fromisoformat("2024-03-20 11:00:00.444").replace(tzinfo=timezone.utc),
             'score': Decimal('99.410511')
         }
     ]
@@ -52,22 +54,18 @@ def verify_parquet_file(file_path):
     for i, expected_row in enumerate(expected_rows):
         for col, expected_value in expected_row.items():
             actual_value = df.iloc[i][col]
-            if isinstance(expected_value, Decimal):
-                # Convert actual value to Decimal for comparison
-                actual_decimal = Decimal(str(actual_value))
-                assert actual_decimal == expected_value, f"Row {i}, Column {col}: Expected {expected_value}, got {actual_decimal}"
-            else:
-                assert actual_value == expected_value, f"Row {i}, Column {col}: Expected {expected_value}, got {actual_value}"
+            assert actual_value == expected_value, f"Row {i}, Column {col}: Expected {expected_value}, got {actual_value}"
     
     print("All assertions passed!")
     return True
 
 def main():
     parser = argparse.ArgumentParser(description='Verify parquet file contents')
-    parser.add_argument('file_path', help='Path to the parquet file to verify')
+    parser.add_argument('--file-path', help='Path to the parquet file to verify')
+    parser.add_argument('--location', help='Location to use for the parquet file')
     args = parser.parse_args()
-    
-    success = verify_parquet_file(args.file_path)
+
+    success = verify_parquet_file(args.file_path, args.location)
     sys.exit(0 if success else 1)
 
 if __name__ == "__main__":

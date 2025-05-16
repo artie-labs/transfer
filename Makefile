@@ -87,7 +87,12 @@ parquet-venv:
 
 .PHONY: test-parquet
 test-parquet: parquet-venv
-	@echo "Running parquet integration test (Go)..."
+	@echo "Running parquet integration test (Go) with location America/New_York"
+	@cd integration_tests/parquet && go run main.go --location=America/New_York
+	@echo "Running parquet verification (Python)..."
+	@cd integration_tests/parquet && venv/bin/python verify_parquet.py --file-path output/test.parquet --location America/New_York
+	
+	@echo "Running parquet integration test (Go) with no location set"
 	@cd integration_tests/parquet && go run main.go
 	@echo "Running parquet verification (Python)..."
-	@cd integration_tests/parquet && venv/bin/python verify_parquet.py output/test.parquet
+	@cd integration_tests/parquet && venv/bin/python verify_parquet.py --file-path output/test.parquet

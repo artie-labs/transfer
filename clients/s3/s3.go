@@ -26,6 +26,7 @@ import (
 type Store struct {
 	config   config.Config
 	s3Client awslib.S3Client
+	location *time.Location
 }
 
 func (s Store) Validate() error {
@@ -70,9 +71,9 @@ func buildTemporaryFilePath(tableData *optimization.TableData) string {
 
 // WriteParquetFiles writes the table data to a parquet file at the specified path.
 // Returns an error if any step of the writing process fails.
-func WriteParquetFiles(tableData *optimization.TableData, filePath string) error {
+func WriteParquetFiles(tableData *optimization.TableData, filePath string, location *time.Location) error {
 	cols := tableData.ReadOnlyInMemoryCols().ValidColumns()
-	schema, err := parquetutil.BuildCSVSchema(cols)
+	schema, err := parquetutil.BuildCSVSchema(cols, location)
 	if err != nil {
 		return fmt.Errorf("failed to generate parquet schema: %w", err)
 	}
@@ -91,7 +92,7 @@ func WriteParquetFiles(tableData *optimization.TableData, filePath string) error
 	for _, val := range tableData.Rows() {
 		var row []any
 		for _, col := range cols {
-			value, err := parquetutil.ParseValue(val[col.Name()], col.KindDetails)
+			value, err := parquetutil.ParseValue(val[col.Name()], col.KindDetails, location)
 			if err != nil {
 				return fmt.Errorf("failed to parse value, err: %w, value: %v, column: %q", err, val[col.Name()], col.Name())
 			}
@@ -126,7 +127,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (b
 	}
 
 	fp := buildTemporaryFilePath(tableData)
-	if err := WriteParquetFiles(tableData, fp); err != nil {
+	if err := WriteParquetFiles(tableData, fp, s.location); err != nil {
 		return false, err
 	}
 
@@ -155,9 +156,18 @@ func LoadStore(ctx context.Context, cfg config.Config) (*Store, error) {
 		return nil, fmt.Errorf("failed to load aws config: %w", err)
 	}
 
+	var location *time.Location
+	if cfg.SharedDestinationSettings.SharedTimestampSettings.Location != "" {
+		location, err = time.LoadLocation(cfg.SharedDestinationSettings.SharedTimestampSettings.Location)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load location: %w", err)
+		}
+	}
+
 	store := Store{
 		config:   cfg,
 		s3Client: awslib.NewS3Client(awsConfig),
+		location: location,
 	}
 
 	if err := store.Validate(); err != nil {
