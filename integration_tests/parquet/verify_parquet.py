@@ -6,7 +6,7 @@ import argparse
 from datetime import datetime, timezone
 from decimal import Decimal
 
-def verify_parquet_file(file_path):
+def verify_parquet_file(file_path, location):
     """
     Read and verify the contents of a parquet file.
     Returns True if all verifications pass, False otherwise.
@@ -30,16 +30,16 @@ def verify_parquet_file(file_path):
             'id': 1,
             'name': 'John Doe',
             'age': 30,
-            'created_at': datetime.fromisoformat("2024-03-20 10:00:00.111").replace(tzinfo=timezone.utc),
-            'created_at_ntz': datetime.fromisoformat("2024-03-20 10:00:00.111").replace(tzinfo=timezone.utc),
+            'created_at': datetime.fromisoformat("2024-03-20 06:00:00.111") if location else datetime.fromisoformat("2024-03-20 10:00:00.111").replace(tzinfo=timezone.utc),
+            'created_at_ntz': datetime.fromisoformat("2024-03-20 06:00:00.111") if location else datetime.fromisoformat("2024-03-20 10:00:00.111").replace(tzinfo=timezone.utc),
             'score': Decimal('-97.410511')
         },
         {
             'id': 2,
             'name': 'Jane Smith',
             'age': 25,
-            'created_at': datetime.fromisoformat("2024-03-20 11:00:00.555").replace(tzinfo=timezone.utc),
-            'created_at_ntz': datetime.fromisoformat("2024-03-20 11:00:00.444").replace(tzinfo=timezone.utc),
+            'created_at': datetime.fromisoformat("2024-03-20 07:00:00.555") if location else datetime.fromisoformat("2024-03-20 11:00:00.555").replace(tzinfo=timezone.utc),
+            'created_at_ntz': datetime.fromisoformat("2024-03-20 07:00:00.444") if location else datetime.fromisoformat("2024-03-20 11:00:00.444").replace(tzinfo=timezone.utc),
             'score': Decimal('99.410511')
         }
     ]
@@ -61,10 +61,11 @@ def verify_parquet_file(file_path):
 
 def main():
     parser = argparse.ArgumentParser(description='Verify parquet file contents')
-    parser.add_argument('file_path', help='Path to the parquet file to verify')
+    parser.add_argument('--file-path', help='Path to the parquet file to verify')
+    parser.add_argument('--location', help='Location to use for the parquet file')
     args = parser.parse_args()
-    
-    success = verify_parquet_file(args.file_path)
+
+    success = verify_parquet_file(args.file_path, args.location)
     sys.exit(0 if success else 1)
 
 if __name__ == "__main__":

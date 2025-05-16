@@ -25,6 +25,7 @@ func main() {
 
 	var loc *time.Location
 	if locationString != "" {
+		slog.Info("Loading location", slog.String("location", locationString))
 		var err error
 		loc, err = time.LoadLocation(locationString)
 		if err != nil {
