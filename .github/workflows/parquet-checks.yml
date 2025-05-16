@@ -1,0 +1,31 @@
+name: Parquet checks
+
+on: [push]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Download Go dependencies
+        run: |
+          go mod download
+          go mod tidy -diff
+
+      - name: Run Parquet integration tests
+        run: make test-parquet
