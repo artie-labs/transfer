@@ -3,6 +3,7 @@ package typing
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/xitongsys/parquet-go/parquet"
@@ -18,6 +19,10 @@ type FieldTag struct {
 	Scale          *int
 	Precision      *int
 	Length         *int
+	// This is used for timestamps only:
+	LogicalType      *string
+	IsAdjustedForUTC *bool
+	Unit             *string
 }
 
 func (f FieldTag) String() string {
@@ -55,6 +60,19 @@ func (f FieldTag) String() string {
 		parts = append(parts, fmt.Sprintf("length=%v", *f.Length))
 	}
 
+	// Timestamps:
+	if f.LogicalType != nil {
+		parts = append(parts, fmt.Sprintf("logicaltype=%s", *f.LogicalType))
+	}
+
+	if f.IsAdjustedForUTC != nil {
+		parts = append(parts, fmt.Sprintf("logicaltype.isadjustedtoutc=%t", *f.IsAdjustedForUTC))
+	}
+
+	if f.Unit != nil {
+		parts = append(parts, fmt.Sprintf("logicaltype.unit=%s", *f.Unit))
+	}
+
 	return strings.Join(parts, ", ")
 }
 
@@ -63,7 +81,7 @@ type Field struct {
 	Fields []Field `json:"Fields,omitempty"`
 }
 
-func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
+func (k *KindDetails) ParquetAnnotation(colName string, location *time.Location) (*Field, error) {
 	switch k.Kind {
 	case String.Kind, Struct.Kind:
 		return &Field{
@@ -97,11 +115,18 @@ func (k *KindDetails) ParquetAnnotation(colName string) (*Field, error) {
 			}.String(),
 		}, nil
 	case TimestampNTZ.Kind, TimestampTZ.Kind:
+		adjustedForUTC := true
+		if location != nil {
+			adjustedForUTC = false
+		}
+
 		return &Field{
 			Tag: FieldTag{
-				Name:          colName,
-				Type:          ToPtr(parquet.Type_INT64.String()),
-				ConvertedType: ToPtr(parquet.ConvertedType_TIMESTAMP_MILLIS.String()),
+				Name:             colName,
+				Type:             ToPtr(parquet.Type_INT64.String()),
+				LogicalType:      ToPtr("TIMESTAMP"),
+				IsAdjustedForUTC: ToPtr(adjustedForUTC),
+				Unit:             ToPtr("MILLIS"),
 			}.String(),
 		}, nil
 	case Integer.Kind:
