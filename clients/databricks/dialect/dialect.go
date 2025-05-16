@@ -161,7 +161,7 @@ func (d DatabricksDialect) GetDefaultValueStrategy() sql.DefaultValueStrategy {
 	return sql.Native
 }
 
-func (d DatabricksDialect) BuildCopyIntoQuery(tempTableID sql.TableIdentifier, colNames []string, columns []string, filePath string) string {
+func (d DatabricksDialect) BuildCopyIntoQuery(tempTableID sql.TableIdentifier, targetColumns []string, sourceColumns []string, filePath string) string {
 	// Copy file from DBFS -> table via COPY INTO, ref: https://docs.databricks.com/en/sql/language-manual/delta-copy-into.html
 	return fmt.Sprintf(`
 COPY INTO %s (%s)
@@ -179,9 +179,9 @@ FORMAT_OPTIONS (
     'lineSep' = '\n'
 );`,
 		// COPY INTO
-		tempTableID.FullyQualifiedName(), strings.Join(colNames, ", "),
+		tempTableID.FullyQualifiedName(), strings.Join(targetColumns, ", "),
 		// SELECT columns FROM file
-		strings.Join(columns, ", "), filePath,
+		strings.Join(sourceColumns, ", "), filePath,
 		// Null value
 		constants.NullValuePlaceholder,
 	)
