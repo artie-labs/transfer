@@ -75,12 +75,12 @@ func TestParseValue(t *testing.T) {
 	}
 	{
 		// TIMESTAMP NTZ
-		_time := time.Date(2023, 4, 24, 17, 29, 5, 699440000, time.UTC)
+		_time := time.Date(2023, 4, 24, 17, 29, 5, 699_000_000, time.UTC)
 		{
 			// No location
 			value, err := ParseValue(_time, typing.TimestampNTZ, nil)
 			assert.NoError(t, err)
-			assert.Equal(t, int64(1682357345699), value)
+			assert.Equal(t, int64(1_682_357_345_699), value)
 		}
 		{
 			// With location
@@ -89,17 +89,22 @@ func TestParseValue(t *testing.T) {
 
 			value, err := ParseValue(_time, typing.TimestampNTZ, est)
 			assert.NoError(t, err)
-			assert.Equal(t, int64(1682357345699), value)
+			assert.Equal(t, int64(1_682_342_945_699), value)
+
+			_, offset := _time.In(est).Zone()
+			// This needs to be subtract since we need to do the opposite of what we're doing in [ParseValue] to unravel the value back to UTC.
+			estTime := time.UnixMilli(value.(int64) - int64(offset*1000)).In(time.UTC)
+			assert.Equal(t, _time, estTime)
 		}
 	}
 	{
 		// Timestamp TZ
-		_time := time.Date(2023, 4, 24, 17, 29, 5, 699440000, time.UTC)
+		_time := time.Date(2023, 4, 24, 17, 29, 5, 699_000_000, time.UTC)
 		{
 			// No location
 			value, err := ParseValue(_time, typing.TimestampTZ, nil)
 			assert.NoError(t, err)
-			assert.Equal(t, int64(1682357345699), value)
+			assert.Equal(t, int64(1_682_357_345_699), value)
 		}
 		{
 			// With location
@@ -108,7 +113,11 @@ func TestParseValue(t *testing.T) {
 
 			value, err := ParseValue(_time, typing.TimestampTZ, est)
 			assert.NoError(t, err)
-			assert.Equal(t, int64(1682357345699), value)
+			assert.Equal(t, int64(1_682_342_945_699), value)
+
+			_, offset := _time.In(est).Zone()
+			estTime := time.UnixMilli(value.(int64) - int64(offset*1000)).In(time.UTC)
+			assert.Equal(t, _time, estTime)
 		}
 	}
 }
