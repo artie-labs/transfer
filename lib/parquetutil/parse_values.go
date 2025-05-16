@@ -51,22 +51,26 @@ func ParseValue(colVal any, colKind typing.KindDetails, location *time.Location)
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
 		}
 
+		var offsetMS int64
 		if location != nil {
-			_time = _time.In(location)
+			_, offset := _time.In(location).Zone()
+			offsetMS = int64(offset * 1000)
 		}
 
-		return _time.UnixMilli(), nil
+		return _time.UnixMilli() + offsetMS, nil
 	case typing.TimestampTZ.Kind:
 		_time, err := ext.ParseTimestampTZFromAny(colVal)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
 		}
 
+		var offsetMS int64
 		if location != nil {
-			_time = _time.In(location)
+			_, offset := _time.In(location).Zone()
+			offsetMS = int64(offset * 1000)
 		}
 
-		return _time.UnixMilli(), nil
+		return _time.UnixMilli() + offsetMS, nil
 	case typing.String.Kind:
 		return colVal, nil
 	case typing.Struct.Kind:

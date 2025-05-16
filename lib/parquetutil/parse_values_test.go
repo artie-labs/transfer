@@ -75,9 +75,10 @@ func TestParseValue(t *testing.T) {
 	}
 	{
 		// TIMESTAMP NTZ
+		_time := time.Date(2023, 4, 24, 17, 29, 5, 699440000, time.UTC)
 		{
 			// No location
-			value, err := ParseValue("2023-04-24T17:29:05.69944Z", typing.TimestampNTZ, nil)
+			value, err := ParseValue(_time, typing.TimestampNTZ, nil)
 			assert.NoError(t, err)
 			assert.Equal(t, int64(1682357345699), value)
 		}
@@ -86,16 +87,17 @@ func TestParseValue(t *testing.T) {
 			est, err := time.LoadLocation("America/New_York")
 			assert.NoError(t, err)
 
-			value, err := ParseValue("2023-04-24T17:29:05.69944Z", typing.TimestampNTZ, est)
+			value, err := ParseValue(_time, typing.TimestampNTZ, est)
 			assert.NoError(t, err)
 			assert.Equal(t, int64(1682357345699), value)
 		}
 	}
 	{
 		// Timestamp TZ
+		_time := time.Date(2023, 4, 24, 17, 29, 5, 699440000, time.UTC)
 		{
 			// No location
-			value, err := ParseValue("2023-04-24T17:29:05.69944Z", typing.TimestampTZ, nil)
+			value, err := ParseValue(_time, typing.TimestampTZ, nil)
 			assert.NoError(t, err)
 			assert.Equal(t, int64(1682357345699), value)
 		}
@@ -104,7 +106,7 @@ func TestParseValue(t *testing.T) {
 			est, err := time.LoadLocation("America/New_York")
 			assert.NoError(t, err)
 
-			value, err := ParseValue("2023-04-24T17:29:05.69944Z", typing.TimestampTZ, est)
+			value, err := ParseValue(_time, typing.TimestampTZ, est)
 			assert.NoError(t, err)
 			assert.Equal(t, int64(1682357345699), value)
 		}
