@@ -181,7 +181,7 @@ func castColValStaging(colVal any, colKind typing.KindDetails, _ config.SharedDe
 
 func (s Store) writeTemporaryTableFile(tableData *optimization.TableData, fileName string) (string, error) {
 	tempTableDataFile := shared.NewTemporaryDataFileWithFileName(fileName)
-	file, _, err := tempTableDataFile.WriteTemporaryTableFile(tableData, castColValStaging, s.cfg.SharedDestinationSettings)
+	file, _, err := tempTableDataFile.WriteTemporaryTableFile(tableData, castColValStaging, s.cfg.SharedDestinationSettings, true)
 	if err != nil {
 		return "", fmt.Errorf("failed to write temporary table file: %w", err)
 	}

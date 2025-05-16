@@ -64,7 +64,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 
 	// Write data into CSV
 	tempTableDataFile := shared.NewTemporaryDataFile(tempTableID)
-	file, _, err := tempTableDataFile.WriteTemporaryTableFile(tableData, castColValStaging, s.config.SharedDestinationSettings)
+	file, _, err := tempTableDataFile.WriteTemporaryTableFile(tableData, castColValStaging, s.config.SharedDestinationSettings, false)
 	if err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
 	}

@@ -60,7 +60,7 @@ func (s Store) uploadToS3(ctx context.Context, fp string) (string, error) {
 
 func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID sql.TableIdentifier) (string, error) {
 	tempTableDataFile := shared.NewTemporaryDataFile(newTableID)
-	file, _, err := tempTableDataFile.WriteTemporaryTableFile(tableData, castColValStaging, s.config.SharedDestinationSettings)
+	file, _, err := tempTableDataFile.WriteTemporaryTableFile(tableData, castColValStaging, s.config.SharedDestinationSettings, false)
 	if err != nil {
 		return "", fmt.Errorf("failed to write temporary table file: %w", err)
 	}

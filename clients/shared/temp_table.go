@@ -66,7 +66,7 @@ func NewTemporaryDataFileWithFileName(fileName string) TemporaryDataFile {
 	}
 }
 
-func (t TemporaryDataFile) WriteTemporaryTableFile(tableData *optimization.TableData, valueConverter ValueConverterFunc, sharedDestinationSettings config.SharedDestinationSettings) (File, AdditionalOutput, error) {
+func (t TemporaryDataFile) WriteTemporaryTableFile(tableData *optimization.TableData, valueConverter ValueConverterFunc, sharedDestinationSettings config.SharedDestinationSettings, header bool) (File, AdditionalOutput, error) {
 	fp := filepath.Join(os.TempDir(), t.fileName)
 	gzipWriter, err := csvwriter.NewGzipWriter(fp)
 	if err != nil {
@@ -77,6 +77,18 @@ func (t TemporaryDataFile) WriteTemporaryTableFile(tableData *optimization.Table
 
 	columnToNewLengthMap := make(map[string]int32)
 	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
+
+	if header {
+		var headerRow []string
+		for _, colName := range columns {
+			headerRow = append(headerRow, colName.Name())
+		}
+
+		if err := gzipWriter.Write(headerRow); err != nil {
+			return File{}, AdditionalOutput{}, fmt.Errorf("failed to write header: %w", err)
+		}
+	}
+
 	for _, value := range tableData.Rows() {
 		var row []string
 		for _, col := range columns {

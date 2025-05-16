@@ -48,7 +48,7 @@ func TestWriteTemporaryTableFile(t *testing.T) {
 
 	// Write the temporary table file
 	tempTableDataFile := NewTemporaryDataFile(tableID)
-	file, _, err := tempTableDataFile.WriteTemporaryTableFile(tableData, valueConverter, config.SharedDestinationSettings{})
+	file, _, err := tempTableDataFile.WriteTemporaryTableFile(tableData, valueConverter, config.SharedDestinationSettings{}, false)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, file.FilePath)
 	assert.NotEmpty(t, file.FileName)

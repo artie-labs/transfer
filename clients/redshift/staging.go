@@ -84,7 +84,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 
 func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID sql.TableIdentifier) (string, map[string]int32, error) {
 	tempTableDataFile := shared.NewTemporaryDataFile(newTableID)
-	file, additionalOutput, err := tempTableDataFile.WriteTemporaryTableFile(tableData, castColValStaging, s.config.SharedDestinationSettings)
+	file, additionalOutput, err := tempTableDataFile.WriteTemporaryTableFile(tableData, castColValStaging, s.config.SharedDestinationSettings, false)
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to write temporary table file: %w", err)
 	}
