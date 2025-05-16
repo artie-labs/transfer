@@ -1,9 +1,11 @@
 package main
 
 import (
+	"flag"
 	"log/slog"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/artie-labs/transfer/clients/s3"
 	"github.com/artie-labs/transfer/lib/config"
@@ -17,6 +19,19 @@ import (
 )
 
 func main() {
+	var locationString string
+	flag.StringVar(&locationString, "location", "", "The location to use for the parquet file")
+	flag.Parse()
+
+	var loc *time.Location
+	if locationString != "" {
+		var err error
+		loc, err = time.LoadLocation(locationString)
+		if err != nil {
+			logger.Fatal("Failed to load location", slog.Any("error", err))
+		}
+	}
+
 	var cols columns.Columns
 	cols.AddColumn(columns.NewColumn("id", typing.Integer))
 	cols.AddColumn(columns.NewColumn("name", typing.String))
@@ -53,7 +68,7 @@ func main() {
 
 	// Write the parquet file
 	parquetPath := filepath.Join(outputDir, "test.parquet")
-	if err := s3.WriteParquetFiles(tableData, parquetPath, nil); err != nil {
+	if err := s3.WriteParquetFiles(tableData, parquetPath, loc); err != nil {
 		logger.Fatal("Failed to write parquet file", slog.Any("error", err))
 	}
 
