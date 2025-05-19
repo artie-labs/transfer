@@ -65,6 +65,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	}
 
 	copyStmt := s.dialect().BuildCopyStatement(tempTableID, cols, s3Uri, credentialsClause)
+	slog.Info("Running COPY INTO statement", slog.String("tableID", tempTableID.FullyQualifiedName()), slog.String("s3URI", s3Uri))
 	if _, err = s.ExecContext(ctx, copyStmt); err != nil {
 		return fmt.Errorf("failed to run COPY for temporary table: %w", err)
 	}
