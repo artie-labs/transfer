@@ -80,18 +80,11 @@ func (c *Credentials) BuildCredentials(ctx context.Context) (credentials.StaticC
 	slog.Info("Building credentials and acquiring the lock")
 	c.mu.Lock()
 	defer c.mu.Unlock()
-
-	slog.Info("Building credentials and lock has been acquired")
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
-
 	if c.isExpired() {
 		// If expired, then refresh the creds and then run this function again.
 		if err := c.refresh(ctx); err != nil {
 			return credentials.StaticCredentialsProvider{}, err
 		}
-
-		return c.BuildCredentials(ctx)
 	}
 
 	return credentials.NewStaticCredentialsProvider(c.awsAccessKeyID, c.awsSecretAccessKey, c.awsSessionToken), nil
