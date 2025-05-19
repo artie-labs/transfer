@@ -78,14 +78,10 @@ func (c *Credentials) isExpired() bool {
 func (c *Credentials) BuildCredentials(ctx context.Context) (credentials.StaticCredentialsProvider, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-
 	if c.isExpired() {
-		// If expired, then refresh the creds and then run this function again.
 		if err := c.refresh(ctx); err != nil {
 			return credentials.StaticCredentialsProvider{}, err
 		}
-
-		return c.BuildCredentials(ctx)
 	}
 
 	return credentials.NewStaticCredentialsProvider(c.awsAccessKeyID, c.awsSecretAccessKey, c.awsSessionToken), nil
