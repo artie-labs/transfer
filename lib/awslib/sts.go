@@ -2,6 +2,7 @@ package awslib
 
 import (
 	"context"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -79,6 +80,7 @@ func (c *Credentials) BuildCredentials(ctx context.Context) (credentials.StaticC
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	slog.Info("Building credentials")
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
