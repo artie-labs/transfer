@@ -79,6 +79,9 @@ func (c *Credentials) BuildCredentials(ctx context.Context) (credentials.StaticC
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
 	if c.isExpired() {
 		// If expired, then refresh the creds and then run this function again.
 		if err := c.refresh(ctx); err != nil {

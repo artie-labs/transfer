@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 
@@ -38,9 +37,6 @@ func (s *Store) BuildCredentialsClause(ctx context.Context) (string, error) {
 	if s._awsCredentials == nil {
 		return s.credentialsClause, nil
 	}
-
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
 
 	creds, err := s._awsCredentials.BuildCredentials(ctx)
 	if err != nil {
