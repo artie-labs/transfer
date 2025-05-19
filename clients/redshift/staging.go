@@ -20,8 +20,6 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		return fmt.Errorf("failed to load temporary table: %w", err)
 	}
 
-	slog.Info("Created the file", slog.String("filePath", fp))
-
 	for colName, newValue := range colToNewLengthMap {
 		// Try to upsert columns first. If this fails, we won't need to update the destination table.
 		if err = tableConfig.UpsertColumn(colName, columns.UpsertColumnArg{StringPrecision: typing.ToPtr(newValue)}); err != nil {
@@ -46,7 +44,6 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		}
 	}()
 
-	slog.Info("Building s3 client")
 	s3Client, err := s.BuildS3Client(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to build s3 client: %w", err)
@@ -68,7 +65,6 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	}
 
 	copyStmt := s.dialect().BuildCopyStatement(tempTableID, cols, s3Uri, credentialsClause)
-	slog.Info("Running COPY INTO statement", slog.String("tableID", tempTableID.FullyQualifiedName()), slog.String("s3URI", s3Uri))
 	if _, err = s.ExecContext(ctx, copyStmt); err != nil {
 		return fmt.Errorf("failed to run COPY for temporary table: %w", err)
 	}
