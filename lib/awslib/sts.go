@@ -77,10 +77,11 @@ func (c *Credentials) isExpired() bool {
 }
 
 func (c *Credentials) BuildCredentials(ctx context.Context) (credentials.StaticCredentialsProvider, error) {
+	slog.Info("Building credentials and acquiring the lock")
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	slog.Info("Building credentials")
+	slog.Info("Building credentials and lock has been acquired")
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 

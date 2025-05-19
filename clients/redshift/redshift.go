@@ -3,6 +3,7 @@ package redshift
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -181,6 +182,7 @@ func LoadRedshift(ctx context.Context, cfg config.Config, _store *db.Store) (*St
 
 func (s *Store) BuildS3Client(ctx context.Context) (awslib.S3Client, error) {
 	if s._awsCredentials != nil {
+		slog.Info("Calling BuildS3Client")
 		creds, err := s._awsCredentials.BuildCredentials(ctx)
 		if err != nil {
 			return awslib.S3Client{}, fmt.Errorf("failed to build credentials: %w", err)
