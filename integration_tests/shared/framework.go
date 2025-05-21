@@ -154,7 +154,7 @@ func (tf *TestFramework) VerifyDataContent(rowCount int) error {
 func (tf *TestFramework) Cleanup(tableID sql.TableIdentifier) error {
 	dropTableID := tableID.WithDisableDropProtection(true)
 	if tf.iceberg != nil {
-		return tf.iceberg.DeleteTable(tf.ctx, dropTableID)
+		return tf.iceberg.DropTable(tf.ctx, dropTableID)
 	}
 
 	return tf.dest.DropTable(tf.ctx, dropTableID)

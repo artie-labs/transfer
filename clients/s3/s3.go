@@ -149,6 +149,10 @@ func (s *Store) IsRetryableError(_ error) bool {
 	return false // not supported for S3
 }
 
+func (s *Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error {
+	return fmt.Errorf("not supported for S3")
+}
+
 func LoadStore(ctx context.Context, cfg config.Config) (*Store, error) {
 	creds := credentials.NewStaticCredentialsProvider(cfg.S3.AwsAccessKeyID, cfg.S3.AwsSecretAccessKey, "")
 	awsConfig, err := awsCfg.LoadDefaultConfig(ctx, awsCfg.WithCredentialsProvider(creds), awsCfg.WithRegion(cfg.S3.AwsRegion))
