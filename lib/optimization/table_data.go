@@ -9,6 +9,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/lib/maputil"
 	"github.com/artie-labs/transfer/lib/size"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -266,6 +267,27 @@ func (t *TableData) ShouldFlush(cfg config.Config) (bool, string) {
 	}
 
 	return false, ""
+}
+
+func (t *TableData) BuildColumnsToKeep() []string {
+	colsMap := maputil.NewOrderedMap[bool](false)
+	if t.Mode() == config.History {
+		colsMap.Add(constants.OperationColumnMarker, true)
+	}
+
+	if t.TopicConfig().SoftDelete {
+		colsMap.Add(constants.DeleteColumnMarker, true)
+	}
+
+	if t.TopicConfig().IncludeArtieUpdatedAt {
+		colsMap.Add(constants.UpdateColumnMarker, true)
+	}
+
+	if t.TopicConfig().IncludeDatabaseUpdatedAt {
+		colsMap.Add(constants.DatabaseUpdatedColumnMarker, true)
+	}
+
+	return colsMap.Keys()
 }
 
 // MergeColumnsFromDestination - When running Transfer, we will have 2 column types.
