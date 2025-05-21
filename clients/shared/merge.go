@@ -34,6 +34,7 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 		tableData.TopicConfig().SoftDelete,
 		tableData.TopicConfig().IncludeArtieUpdatedAt,
 		tableData.TopicConfig().IncludeDatabaseUpdatedAt,
+		tableData.TopicConfig().IncludeArtieOperation,
 		tableData.Mode(),
 	)
 

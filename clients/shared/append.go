@@ -28,6 +28,7 @@ func Append(ctx context.Context, dest destination.Destination, tableData *optimi
 		tableData.TopicConfig().SoftDelete,
 		tableData.TopicConfig().IncludeArtieUpdatedAt,
 		tableData.TopicConfig().IncludeDatabaseUpdatedAt,
+		tableData.TopicConfig().IncludeArtieOperation,
 		tableData.Mode(),
 	)
 

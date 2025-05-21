@@ -85,6 +85,7 @@ func MultiStepMerge(ctx context.Context, dest destination.Destination, tableData
 			tableData.TopicConfig().SoftDelete,
 			tableData.TopicConfig().IncludeArtieUpdatedAt,
 			tableData.TopicConfig().IncludeDatabaseUpdatedAt,
+			tableData.TopicConfig().IncludeArtieOperation,
 			tableData.Mode(),
 		)
 

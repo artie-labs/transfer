@@ -9,7 +9,7 @@ import (
 )
 
 // shouldSkipColumn takes the `colName` and `softDelete` and will return whether we should skip this column when calculating the diff.
-func shouldSkipColumn(colName string, softDelete bool, includeArtieUpdatedAt bool, includeDatabaseUpdatedAt bool, mode config.Mode) bool {
+func shouldSkipColumn(colName string, softDelete bool, includeArtieUpdatedAt bool, includeDatabaseUpdatedAt bool, includeArtieOperation bool, mode config.Mode) bool {
 	// TODO: Figure out a better way to not pass in so many variables when calculating shouldSkipColumn
 	if colName == constants.DeleteColumnMarker && softDelete {
 		// We need this column to be created if soft deletion is turned on.
@@ -31,8 +31,12 @@ func shouldSkipColumn(colName string, softDelete bool, includeArtieUpdatedAt boo
 		return false
 	}
 
-	if colName == constants.OperationColumnMarker && mode == config.History {
-		return false
+	if colName == constants.OperationColumnMarker {
+		if mode == config.History || includeArtieOperation {
+			return false
+		}
+
+		return true
 	}
 
 	return strings.Contains(colName, constants.ArtiePrefix)
@@ -70,10 +74,10 @@ func Diff(sourceColumns []Column, targetColumns []Column) DiffResults {
 	}
 }
 
-func filterColumns(columns []Column, softDelete bool, includeArtieUpdatedAt bool, includeDatabaseUpdatedAt bool, mode config.Mode) []Column {
+func filterColumns(columns []Column, softDelete bool, includeArtieUpdatedAt bool, includeDatabaseUpdatedAt bool, includeArtieOperation bool, mode config.Mode) []Column {
 	var filteredColumns []Column
 	for _, col := range columns {
-		if shouldSkipColumn(col.Name(), softDelete, includeArtieUpdatedAt, includeDatabaseUpdatedAt, mode) {
+		if shouldSkipColumn(col.Name(), softDelete, includeArtieUpdatedAt, includeDatabaseUpdatedAt, includeArtieOperation, mode) {
 			continue
 		}
 
@@ -84,10 +88,10 @@ func filterColumns(columns []Column, softDelete bool, includeArtieUpdatedAt bool
 }
 
 // DiffAndFilter - will diff the columns and filter out any Artie metadata columns that should not exist in the target table.
-func DiffAndFilter(columnsInSource []Column, columnsInDestination []Column, softDelete bool, includeArtieUpdatedAt bool, includeDatabaseUpdatedAt bool, mode config.Mode) ([]Column, []Column) {
+func DiffAndFilter(columnsInSource []Column, columnsInDestination []Column, softDelete bool, includeArtieUpdatedAt bool, includeDatabaseUpdatedAt bool, includeArtieOperation bool, mode config.Mode) ([]Column, []Column) {
 	diffResult := Diff(columnsInSource, columnsInDestination)
-	return filterColumns(diffResult.SourceColumnsMissing, softDelete, includeArtieUpdatedAt, includeDatabaseUpdatedAt, mode),
-		filterColumns(diffResult.TargetColumnsMissing, softDelete, includeArtieUpdatedAt, includeDatabaseUpdatedAt, mode)
+	return filterColumns(diffResult.SourceColumnsMissing, softDelete, includeArtieUpdatedAt, includeDatabaseUpdatedAt, includeArtieOperation, mode),
+		filterColumns(diffResult.TargetColumnsMissing, softDelete, includeArtieUpdatedAt, includeDatabaseUpdatedAt, includeArtieOperation, mode)
 }
 
 func buildColumnsMap(cols []Column) *maputil.OrderedMap[Column] {

@@ -61,6 +61,7 @@ func (s Store) Append(ctx context.Context, tableData *optimization.TableData, us
 		tableData.TopicConfig().SoftDelete,
 		tableData.TopicConfig().IncludeArtieUpdatedAt,
 		tableData.TopicConfig().IncludeDatabaseUpdatedAt,
+		tableData.TopicConfig().IncludeArtieOperation,
 		tableData.Mode(),
 	)
 
@@ -149,6 +150,7 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bo
 		tableData.TopicConfig().SoftDelete,
 		tableData.TopicConfig().IncludeArtieUpdatedAt,
 		tableData.TopicConfig().IncludeDatabaseUpdatedAt,
+		tableData.TopicConfig().IncludeArtieOperation,
 		tableData.Mode(),
 	)
 
