@@ -150,7 +150,12 @@ func (s *Store) IsRetryableError(_ error) bool {
 }
 
 func (s *Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error {
-	return fmt.Errorf("not supported for S3")
+	castedTableID, ok := tableID.(TableIdentifier)
+	if !ok {
+		return fmt.Errorf("expected tableID to be a TableIdentifier, got %T", tableID)
+	}
+
+	return s.s3Client.DeleteFolder(ctx, s.config.S3.Bucket, castedTableID.FullyQualifiedName())
 }
 
 func LoadStore(ctx context.Context, cfg config.Config) (*Store, error) {

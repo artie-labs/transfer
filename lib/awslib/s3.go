@@ -71,9 +71,9 @@ func (s S3Client) DeleteFolder(ctx context.Context, bucket, folder string) error
 			return nil
 		}
 
-		var objectIdentifiers []types.ObjectIdentifier
+		var objectIDs []types.ObjectIdentifier
 		for _, object := range objects.Contents {
-			objectIdentifiers = append(objectIdentifiers, types.ObjectIdentifier{
+			objectIDs = append(objectIDs, types.ObjectIdentifier{
 				Key: object.Key,
 			})
 		}
@@ -82,7 +82,7 @@ func (s S3Client) DeleteFolder(ctx context.Context, bucket, folder string) error
 		_, err = s.client.DeleteObjects(ctx, &s3.DeleteObjectsInput{
 			Bucket: aws.String(bucket),
 			Delete: &types.Delete{
-				Objects: objectIdentifiers,
+				Objects: objectIDs,
 				Quiet:   aws.Bool(true),
 			},
 		})
@@ -91,22 +91,10 @@ func (s S3Client) DeleteFolder(ctx context.Context, bucket, folder string) error
 			return fmt.Errorf("failed to delete objects: %w", err)
 		}
 
-		// Check if we've reached the end of the listing
-		noMoreObjects := !*objects.IsTruncated
-
-		// Check if we're stuck with the same continuation token
-		var isStuck bool
-		if continuationToken != nil && objects.NextContinuationToken != nil {
-			isStuck = *continuationToken == *objects.NextContinuationToken
-		}
-
-		// Break if either condition is true
-		if noMoreObjects || isStuck {
-			break
-		}
-
 		continuationToken = objects.NextContinuationToken
+		if continuationToken == nil {
+			// If there's no more objects to paginate, we're done.
+			return nil
+		}
 	}
-
-	return nil
 }
