@@ -296,3 +296,21 @@ func TestMergeColumn(t *testing.T) {
 		}
 	}
 }
+
+func TestTableData_BuildColumnsToKeep(t *testing.T) {
+	{
+		// Nothing except history mode should give us the operation column
+		td := TableData{mode: config.History}
+		assert.ElementsMatch(t, []string{constants.OperationColumnMarker}, td.BuildColumnsToKeep())
+	}
+	{
+		// Soft delete is enabled
+		td := TableData{mode: config.Replication, topicConfig: kafkalib.TopicConfig{SoftDelete: true}}
+		assert.ElementsMatch(t, []string{constants.DeleteColumnMarker}, td.BuildColumnsToKeep())
+	}
+	{
+		// Artie + DB updated at are both true
+		td := TableData{mode: config.Replication, topicConfig: kafkalib.TopicConfig{IncludeArtieUpdatedAt: true, IncludeDatabaseUpdatedAt: true}}
+		assert.ElementsMatch(t, []string{constants.UpdateColumnMarker, constants.DatabaseUpdatedColumnMarker}, td.BuildColumnsToKeep())
+	}
+}

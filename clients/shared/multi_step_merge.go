@@ -82,10 +82,7 @@ func MultiStepMerge(ctx context.Context, dest destination.Destination, tableData
 		_, targetKeysMissing := columns.DiffAndFilter(
 			tableData.ReadOnlyInMemoryCols().GetColumns(),
 			targetTableConfig.GetColumns(),
-			tableData.TopicConfig().SoftDelete,
-			tableData.TopicConfig().IncludeArtieUpdatedAt,
-			tableData.TopicConfig().IncludeDatabaseUpdatedAt,
-			tableData.Mode(),
+			tableData.BuildColumnsToKeep(),
 		)
 
 		if targetTableConfig.CreateTable() {

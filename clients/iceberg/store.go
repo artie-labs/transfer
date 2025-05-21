@@ -58,10 +58,7 @@ func (s Store) Append(ctx context.Context, tableData *optimization.TableData, us
 	_, targetKeysMissing := columns.DiffAndFilter(
 		tableData.ReadOnlyInMemoryCols().GetColumns(),
 		tableConfig.GetColumns(),
-		tableData.TopicConfig().SoftDelete,
-		tableData.TopicConfig().IncludeArtieUpdatedAt,
-		tableData.TopicConfig().IncludeDatabaseUpdatedAt,
-		tableData.Mode(),
+		tableData.BuildColumnsToKeep(),
 	)
 
 	if tableConfig.CreateTable() {
@@ -146,10 +143,7 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bo
 	srcKeysMissing, targetKeysMissing := columns.DiffAndFilter(
 		tableData.ReadOnlyInMemoryCols().GetColumns(),
 		tableConfig.GetColumns(),
-		tableData.TopicConfig().SoftDelete,
-		tableData.TopicConfig().IncludeArtieUpdatedAt,
-		tableData.TopicConfig().IncludeDatabaseUpdatedAt,
-		tableData.Mode(),
+		tableData.BuildColumnsToKeep(),
 	)
 
 	if tableConfig.CreateTable() {

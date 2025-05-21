@@ -25,10 +25,7 @@ func Append(ctx context.Context, dest destination.Destination, tableData *optimi
 	_, targetKeysMissing := columns.DiffAndFilter(
 		tableData.ReadOnlyInMemoryCols().GetColumns(),
 		tableConfig.GetColumns(),
-		tableData.TopicConfig().SoftDelete,
-		tableData.TopicConfig().IncludeArtieUpdatedAt,
-		tableData.TopicConfig().IncludeDatabaseUpdatedAt,
-		tableData.Mode(),
+		tableData.BuildColumnsToKeep(),
 	)
 
 	if tableConfig.CreateTable() {
