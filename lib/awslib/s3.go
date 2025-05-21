@@ -51,3 +51,36 @@ func (s S3Client) UploadLocalFileToS3(ctx context.Context, bucket, prefix, filep
 
 	return fmt.Sprintf("s3://%s/%s", bucket, objectKey), nil
 }
+
+func (s S3Client) DeleteFolder(ctx context.Context, bucket, folder string) error {
+	var continuationToken *string
+	// We'll need to list all the objects in the folder and then delete them.
+	for {
+		objects, err := s.client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
+			Bucket:            aws.String(bucket),
+			Prefix:            aws.String(folder),
+			ContinuationToken: continuationToken,
+		})
+
+		if err != nil {
+			return fmt.Errorf("failed to list objects: %w", err)
+		}
+
+		for _, object := range objects.Contents {
+			_, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
+				Bucket: aws.String(bucket),
+				Key:    object.Key,
+			})
+
+			if err != nil {
+				return fmt.Errorf("failed to delete object: %w", err)
+			}
+		}
+
+		if !*objects.IsTruncated {
+			break
+		}
+
+		continuationToken = objects.NextContinuationToken
+	}
+}
