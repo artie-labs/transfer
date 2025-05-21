@@ -219,6 +219,7 @@ func (e *EventsTestSuite) TestEvent_TableName() {
 			// Now it should include the operation column marker
 			fakeEvent := &mocks.FakeEvent{}
 			fakeEvent.OperationReturns("u")
+			fakeEvent.GetDataReturns(map[string]any{}, nil)
 			evt, err := ToMemoryEvent(fakeEvent, idMap, kafkalib.TopicConfig{TableName: "orders", IncludeArtieOperation: true}, config.Replication)
 			assert.NoError(e.T(), err)
 			assert.Equal(e.T(), "orders", evt.Table)
