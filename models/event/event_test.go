@@ -1,6 +1,7 @@
 package event
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -199,6 +200,33 @@ func (e *EventsTestSuite) TestEvent_TableName() {
 		evt, err = ToMemoryEvent(e.fakeEvent, idMap, kafkalib.TopicConfig{TableName: "dusty__history"}, config.History)
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), "dusty__history", evt.Table)
+	}
+	{
+		// Pass in a regular event
+		{
+			// No operation column marker since topic config is not configured to include it.
+			fakeEvent := &mocks.FakeEvent{}
+			fakeEvent.OperationReturns("u")
+			evt, err := ToMemoryEvent(fakeEvent, idMap, kafkalib.TopicConfig{TableName: "orders"}, config.Replication)
+			assert.NoError(e.T(), err)
+			assert.Equal(e.T(), "orders", evt.Table)
+
+			fmt.Println("evt.Data", evt.Data)
+			_, ok := evt.Data[constants.OperationColumnMarker]
+			assert.False(e.T(), ok)
+		}
+		{
+			// Now it should include the operation column marker
+			fakeEvent := &mocks.FakeEvent{}
+			fakeEvent.OperationReturns("u")
+			evt, err := ToMemoryEvent(fakeEvent, idMap, kafkalib.TopicConfig{TableName: "orders", IncludeArtieOperation: true}, config.Replication)
+			assert.NoError(e.T(), err)
+			assert.Equal(e.T(), "orders", evt.Table)
+
+			value, ok := evt.Data[constants.OperationColumnMarker]
+			assert.True(e.T(), ok)
+			assert.Equal(e.T(), "u", value)
+		}
 	}
 }
 
