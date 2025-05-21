@@ -137,6 +137,11 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 	if err != nil {
 		return Event{}, err
 	}
+
+	if tc.IncludeArtieOperation {
+		evtData[constants.OperationColumnMarker] = event.Operation()
+	}
+
 	tblName := cmp.Or(tc.TableName, event.GetTableName())
 	if cfgMode == config.History {
 		if !strings.HasSuffix(tblName, constants.HistoryModeSuffix) {
@@ -144,8 +149,6 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 			tblName += constants.HistoryModeSuffix
 			slog.Warn(fmt.Sprintf("History mode is enabled, but table name does not have a %s suffix, so we're adding it...", constants.HistoryModeSuffix), slog.String("tblName", tblName))
 		}
-
-		evtData[constants.OperationColumnMarker] = event.Operation()
 
 		// We don't need the deletion markers either.
 		delete(evtData, constants.DeleteColumnMarker)
