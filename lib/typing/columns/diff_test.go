@@ -23,7 +23,7 @@ func TestShouldSkipColumn(t *testing.T) {
 	}
 	{
 		// Test only set delete column marker with soft delete enabled
-		assert.True(t, shouldSkipColumn(constants.OnlySetDeleteColumnMarker, []string{}))
+		assert.True(t, shouldSkipColumn(constants.OnlySetDeleteColumnMarker, []string{constants.DeleteColumnMarker}))
 	}
 	{
 		// Test update column marker with artie updated at enabled
@@ -39,7 +39,7 @@ func TestShouldSkipColumn(t *testing.T) {
 	}
 	{
 		// Test regular column with artie updated at and soft delete enabled
-		assert.False(t, shouldSkipColumn("email", []string{}))
+		assert.False(t, shouldSkipColumn("email", []string{constants.UpdateColumnMarker, constants.DeleteColumnMarker}))
 	}
 	{
 		// Test database updated column without database updated at enabled
