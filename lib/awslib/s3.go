@@ -53,6 +53,7 @@ func (s S3Client) UploadLocalFileToS3(ctx context.Context, bucket, prefix, filep
 	return fmt.Sprintf("s3://%s/%s", bucket, objectKey), nil
 }
 
+// DeleteFolder - Folders in S3 are virtual, so we need to list all the objects in the folder and then delete them
 func (s S3Client) DeleteFolder(ctx context.Context, bucket, folder string) error {
 	var continuationToken *string
 	for {
