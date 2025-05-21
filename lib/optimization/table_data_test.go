@@ -304,6 +304,11 @@ func TestTableData_BuildColumnsToKeep(t *testing.T) {
 		assert.ElementsMatch(t, []string{constants.OperationColumnMarker}, td.BuildColumnsToKeep())
 	}
 	{
+		// If history mode and include artie operation are both true, we should only get the operation column once
+		td := TableData{mode: config.History, topicConfig: kafkalib.TopicConfig{IncludeArtieOperation: true}}
+		assert.ElementsMatch(t, []string{constants.OperationColumnMarker}, td.BuildColumnsToKeep())
+	}
+	{
 		// Soft delete is enabled
 		td := TableData{mode: config.Replication, topicConfig: kafkalib.TopicConfig{SoftDelete: true}}
 		assert.ElementsMatch(t, []string{constants.DeleteColumnMarker}, td.BuildColumnsToKeep())
@@ -312,5 +317,10 @@ func TestTableData_BuildColumnsToKeep(t *testing.T) {
 		// Artie + DB updated at are both true
 		td := TableData{mode: config.Replication, topicConfig: kafkalib.TopicConfig{IncludeArtieUpdatedAt: true, IncludeDatabaseUpdatedAt: true}}
 		assert.ElementsMatch(t, []string{constants.UpdateColumnMarker, constants.DatabaseUpdatedColumnMarker}, td.BuildColumnsToKeep())
+	}
+	{
+		// Include artie operation is true
+		td := TableData{mode: config.Replication, topicConfig: kafkalib.TopicConfig{IncludeArtieOperation: true}}
+		assert.ElementsMatch(t, []string{constants.OperationColumnMarker}, td.BuildColumnsToKeep())
 	}
 }

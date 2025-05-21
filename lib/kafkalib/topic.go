@@ -53,6 +53,7 @@ type TopicConfig struct {
 	SoftDelete               bool   `yaml:"softDelete"`
 	SkippedOperations        string `yaml:"skippedOperations,omitempty"`
 	IncludeArtieUpdatedAt    bool   `yaml:"includeArtieUpdatedAt"`
+	IncludeArtieOperation    bool   `yaml:"includeArtieOperation"`
 	IncludeDatabaseUpdatedAt bool   `yaml:"includeDatabaseUpdatedAt"`
 	// TODO: Deprecate BigQueryPartitionSettings and use AdditionalMergePredicates instead.
 	BigQueryPartitionSettings *partition.BigQuerySettings `yaml:"bigQueryPartitionSettings,omitempty"`
