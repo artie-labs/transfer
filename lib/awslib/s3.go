@@ -7,6 +7,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
 type S3Client struct {
@@ -50,4 +51,51 @@ func (s S3Client) UploadLocalFileToS3(ctx context.Context, bucket, prefix, filep
 	}
 
 	return fmt.Sprintf("s3://%s/%s", bucket, objectKey), nil
+}
+
+// DeleteFolder - Folders in S3 are virtual, so we need to list all the objects in the folder and then delete them
+func (s S3Client) DeleteFolder(ctx context.Context, bucket, folder string) error {
+	var continuationToken *string
+	for {
+		objects, err := s.client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
+			Bucket:            aws.String(bucket),
+			Prefix:            aws.String(folder),
+			ContinuationToken: continuationToken,
+		})
+
+		if err != nil {
+			return fmt.Errorf("failed to list objects: %w", err)
+		}
+
+		// If no objects found, we're done
+		if len(objects.Contents) == 0 {
+			return nil
+		}
+
+		var objectIDs []types.ObjectIdentifier
+		for _, object := range objects.Contents {
+			objectIDs = append(objectIDs, types.ObjectIdentifier{
+				Key: object.Key,
+			})
+		}
+
+		// Delete objects in batch
+		_, err = s.client.DeleteObjects(ctx, &s3.DeleteObjectsInput{
+			Bucket: aws.String(bucket),
+			Delete: &types.Delete{
+				Objects: objectIDs,
+				Quiet:   aws.Bool(true),
+			},
+		})
+
+		if err != nil {
+			return fmt.Errorf("failed to delete objects: %w", err)
+		}
+
+		continuationToken = objects.NextContinuationToken
+		if continuationToken == nil {
+			// If there's no more objects to paginate, we're done.
+			return nil
+		}
+	}
 }
