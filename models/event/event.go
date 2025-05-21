@@ -139,7 +139,6 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 	}
 
 	if tc.IncludeArtieOperation {
-		fmt.Println("Adding operation column marker", event.Operation())
 		evtData[constants.OperationColumnMarker] = event.Operation()
 	}
 
@@ -151,7 +150,6 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 			slog.Warn(fmt.Sprintf("History mode is enabled, but table name does not have a %s suffix, so we're adding it...", constants.HistoryModeSuffix), slog.String("tblName", tblName))
 		}
 
-		fmt.Println("Adding operation column marker", event.Operation())
 		evtData[constants.OperationColumnMarker] = event.Operation()
 
 		// We don't need the deletion markers either.
