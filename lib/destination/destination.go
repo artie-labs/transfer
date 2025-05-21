@@ -27,10 +27,6 @@ type Destination interface {
 	// Helper functions for merge
 	GetTableConfig(tableID sqllib.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error)
 	PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, tempTableID sqllib.TableIdentifier, parentTableID sqllib.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error
-
-	// Helper function for multi-step merge
-	// This is only available to Snowflake for now.
-	DropTable(ctx context.Context, tableID sqllib.TableIdentifier) error
 }
 
 type Baseline interface {
@@ -38,6 +34,7 @@ type Baseline interface {
 	Append(ctx context.Context, tableData *optimization.TableData, useTempTable bool) error
 	IsRetryableError(err error) bool
 	IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, table string) sqllib.TableIdentifier
+	DropTable(ctx context.Context, tableID sqllib.TableIdentifier) error
 }
 
 // ExecContextStatements executes one or more statements against a [Destination].
