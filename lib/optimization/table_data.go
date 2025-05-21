@@ -275,6 +275,10 @@ func (t *TableData) BuildColumnsToKeep() []string {
 		colsMap.Add(constants.OperationColumnMarker, true)
 	}
 
+	if t.TopicConfig().IncludeArtieOperation {
+		colsMap.Add(constants.OperationColumnMarker, true)
+	}
+
 	if t.TopicConfig().SoftDelete {
 		colsMap.Add(constants.DeleteColumnMarker, true)
 	}
