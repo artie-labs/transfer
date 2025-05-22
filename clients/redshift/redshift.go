@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 
@@ -113,6 +114,9 @@ func (s *Store) SweepTemporaryTables(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
 
 	return shared.Sweep(ctx, s, tcs, s.dialect().BuildSweepQuery)
 }
