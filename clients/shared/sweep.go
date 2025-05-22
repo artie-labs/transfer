@@ -27,6 +27,7 @@ func Sweep(ctx context.Context, dest destination.Destination, topicConfigs []*ka
 				return err
 			}
 
+			slog.Info("Found table", slog.String("schema", tableSchema), slog.String("name", tableName))
 			if ddl.ShouldDeleteFromName(tableName) {
 				if err = ddl.DropTemporaryTable(ctx, dest, dest.IdentifierFor(dbAndSchemaPair, tableName), true); err != nil {
 					return err
