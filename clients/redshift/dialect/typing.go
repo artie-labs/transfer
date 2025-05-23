@@ -60,7 +60,7 @@ func (RedshiftDialect) DataTypeForKind(kd typing.KindDetails, _ bool, _ config.S
 	return kd.Kind
 }
 
-func (RedshiftDialect) KindForDataType(rawType string, stringPrecision string) (typing.KindDetails, error) {
+func (RedshiftDialect) KindForDataType(rawType string, _ string) (typing.KindDetails, error) {
 	rawType = strings.ToLower(rawType)
 	if strings.HasPrefix(rawType, "numeric") {
 		_, parameters, err := sql.ParseDataTypeDefinition(rawType)
@@ -71,9 +71,14 @@ func (RedshiftDialect) KindForDataType(rawType string, stringPrecision string) (
 	}
 
 	if strings.Contains(rawType, "character varying") {
-		precision, err := strconv.ParseInt(stringPrecision, 10, 32)
+		_, parameters, err := sql.ParseDataTypeDefinition(rawType)
 		if err != nil {
-			return typing.Invalid, fmt.Errorf("failed to parse string precision: %q, err: %w", stringPrecision, err)
+			return typing.Invalid, err
+		}
+
+		precision, err := strconv.ParseInt(parameters[0], 10, 32)
+		if err != nil {
+			return typing.Invalid, fmt.Errorf("failed to parse string precision: %q, err: %w", parameters[0], err)
 		}
 
 		return typing.KindDetails{
