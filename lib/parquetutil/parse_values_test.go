@@ -96,6 +96,21 @@ func TestParseValue(t *testing.T) {
 			estTime := time.UnixMilli(value.(int64) - int64(offset*1000)).In(time.UTC)
 			assert.Equal(t, _time, estTime)
 		}
+		{
+			// With location (EST)
+			est, err := time.LoadLocation("America/New_York")
+			assert.NoError(t, err)
+
+			// This is 2019-01-17 00:00:00 EST
+			_time := time.UnixMilli(1547697600000)
+			value, err := ParseValue(_time, typing.TimestampNTZ, est)
+			assert.NoError(t, err)
+			assert.Equal(t, int64(1_682_342_945_699), value)
+
+			_, offset := _time.In(est).Zone()
+			estTime := time.UnixMilli(value.(int64) - int64(offset*1000)).In(est)
+			assert.Equal(t, _time, estTime)
+		}
 	}
 	{
 		// Timestamp TZ

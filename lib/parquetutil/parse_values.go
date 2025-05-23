@@ -53,24 +53,27 @@ func ParseValue(colVal any, colKind typing.KindDetails, location *time.Location)
 
 		var offsetMS int64
 		if location != nil {
+			// Convert to UTC first
+			utcTime := _time.UTC()
+			// Then get the offset from the original timezone
 			_, offset := _time.In(location).Zone()
 			offsetMS = int64(offset * 1000)
+			return utcTime.UnixMilli() - offsetMS, nil
 		}
 
-		return _time.UnixMilli() + offsetMS, nil
+		return _time.UnixMilli(), nil
 	case typing.TimestampTZ.Kind:
 		_time, err := ext.ParseTimestampTZFromAny(colVal)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
 		}
 
-		var offsetMS int64
 		if location != nil {
-			_, offset := _time.In(location).Zone()
-			offsetMS = int64(offset * 1000)
+			local := _time.In(location)
+			return time.Date(local.Year(), local.Month(), local.Day(), local.Hour(), local.Minute(), local.Second(), local.Nanosecond(), location).UnixMilli(), nil
 		}
 
-		return _time.UnixMilli() + offsetMS, nil
+		return _time.UnixMilli(), nil
 	case typing.String.Kind:
 		return colVal, nil
 	case typing.Struct.Kind:
