@@ -61,6 +61,7 @@ func (RedshiftDialect) DataTypeForKind(kd typing.KindDetails, _ bool, _ config.S
 }
 
 func (RedshiftDialect) KindForDataType(rawType string, stringPrecision string) (typing.KindDetails, error) {
+	// TODO: Deprecate [stringPrecision] as arg
 	rawType = strings.ToLower(rawType)
 	if strings.HasPrefix(rawType, "numeric") {
 		_, parameters, err := sql.ParseDataTypeDefinition(rawType)
