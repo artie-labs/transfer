@@ -76,6 +76,10 @@ func (RedshiftDialect) KindForDataType(rawType string, _ string) (typing.KindDet
 			return typing.Invalid, err
 		}
 
+		if len(parameters) != 1 {
+			return typing.Invalid, fmt.Errorf("expected 1 parameter for character varying, got %d, value: %q", len(parameters), rawType)
+		}
+
 		precision, err := strconv.ParseInt(parameters[0], 10, 32)
 		if err != nil {
 			return typing.Invalid, fmt.Errorf("failed to parse string precision: %q, err: %w", parameters[0], err)
