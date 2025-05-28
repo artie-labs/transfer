@@ -96,3 +96,7 @@ test-parquet: parquet-venv
 	@cd integration_tests/parquet && go run main.go
 	@echo "Running parquet verification (Python)..."
 	@cd integration_tests/parquet && venv/bin/python verify_parquet.py --file-path output/test.parquet
+
+.PHONY: dest-itest-types
+dest-itest-types:
+	go run integration_tests/destination_types/main.go --config .personal/integration_tests/redshift.yaml
