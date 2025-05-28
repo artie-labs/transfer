@@ -49,6 +49,8 @@ func (d DestinationTypes) Run(ctx context.Context) error {
 		if err := shared.RedshiftAssertColumns(ctx, d.destination, d.tableID); err != nil {
 			return fmt.Errorf("failed to assert columns: %w", err)
 		}
+
+		return nil
 	}
 
 	return fmt.Errorf("unsupported destination dialect: %T", d.destination.Dialect())
@@ -83,4 +85,6 @@ func main() {
 	if err := destinationTypes.Run(ctx); err != nil {
 		logger.Fatal("Failed to run destination types", slog.Any("err", err))
 	}
+
+	slog.Info(fmt.Sprintf("✌️ ✌️ ✌️ Destination types test completed successfully for: %T", dest.Dialect()))
 }

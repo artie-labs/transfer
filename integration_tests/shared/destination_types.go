@@ -137,12 +137,11 @@ func RedshiftAssertColumns(ctx context.Context, dest destination.Destination, ta
 				return err
 			}
 
-			fmt.Println("col.KindDetails.ExtendedDecimalDetails.Precision", fmt.Sprintf("%d", col.KindDetails.ExtendedDecimalDetails.Precision))
-			if err := assertEqual("c_decimal_10_2", col.KindDetails.ExtendedDecimalDetails.Precision, int32(10)); err != nil {
+			if err := assertEqual("c_decimal_10_2", int(col.KindDetails.ExtendedDecimalDetails.Precision()), 10); err != nil {
 				return err
 			}
 
-			if err := assertEqual("c_decimal_10_2", col.KindDetails.ExtendedDecimalDetails.Scale, int32(2)); err != nil {
+			if err := assertEqual("c_decimal_10_2", int(col.KindDetails.ExtendedDecimalDetails.Scale()), 2); err != nil {
 				return err
 			}
 		case "c_super":
