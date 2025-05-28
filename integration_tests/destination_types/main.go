@@ -29,11 +29,18 @@ func NewDestinationTypes(dest destination.Destination, topicConfig kafkalib.Topi
 	return DestinationTypes{
 		destination: dest,
 		topicConfig: topicConfig,
-		tableID:     dest.IdentifierFor(topicConfig.BuildDatabaseAndSchemaPair(), stringutil.Random(10)),
+		tableID:     dest.IdentifierFor(topicConfig.BuildDatabaseAndSchemaPair(), fmt.Sprintf("test_%s", stringutil.Random(10))),
 	}, nil
 }
 
 func (d DestinationTypes) Run(ctx context.Context) error {
+	defer func() {
+		tableID := d.tableID.WithDisableDropProtection(true)
+		if err := d.destination.DropTable(ctx, tableID); err != nil {
+			logger.Fatal("Failed to drop table", slog.Any("err", err))
+		}
+	}()
+
 	if _, ok := d.destination.Dialect().(dialect.RedshiftDialect); ok {
 		if err := shared.RedshiftCreateTable(ctx, d.destination, d.tableID); err != nil {
 			return fmt.Errorf("failed to create table: %w", err)

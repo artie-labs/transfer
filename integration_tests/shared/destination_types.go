@@ -102,7 +102,7 @@ func RedshiftAssertColumns(ctx context.Context, dest destination.Destination, ta
 			if err := assertEqual("c_varchar_max", col.KindDetails.Kind, typing.String.Kind); err != nil {
 				return err
 			}
-			if err := assertEqual("c_varchar_max", col.KindDetails.OptionalStringPrecision, nil); err != nil {
+			if err := assertEqual("c_varchar_max", *col.KindDetails.OptionalStringPrecision, int32(65535)); err != nil {
 				return err
 			}
 		case "c_varchar_12345":
@@ -137,11 +137,12 @@ func RedshiftAssertColumns(ctx context.Context, dest destination.Destination, ta
 				return err
 			}
 
-			if err := assertEqual("c_decimal_10_2", col.KindDetails.ExtendedDecimalDetails.Precision, 10); err != nil {
+			fmt.Println("col.KindDetails.ExtendedDecimalDetails.Precision", fmt.Sprintf("%d", col.KindDetails.ExtendedDecimalDetails.Precision))
+			if err := assertEqual("c_decimal_10_2", col.KindDetails.ExtendedDecimalDetails.Precision, int32(10)); err != nil {
 				return err
 			}
 
-			if err := assertEqual("c_decimal_10_2", col.KindDetails.ExtendedDecimalDetails.Scale, 2); err != nil {
+			if err := assertEqual("c_decimal_10_2", col.KindDetails.ExtendedDecimalDetails.Scale, int32(2)); err != nil {
 				return err
 			}
 		case "c_super":

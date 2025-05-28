@@ -68,6 +68,7 @@ func (RedshiftDialect) KindForDataType(rawType string, _ string) (typing.KindDet
 
 	switch dataType {
 	case "numeric":
+		fmt.Println("parameters", parameters)
 		return typing.ParseNumeric(parameters)
 	case "character varying":
 		if len(parameters) != 1 {
