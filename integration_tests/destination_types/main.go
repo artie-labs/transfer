@@ -2,9 +2,12 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 
+	"github.com/artie-labs/transfer/clients/redshift/dialect"
+	"github.com/artie-labs/transfer/integration_tests/shared"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/utils"
@@ -30,8 +33,18 @@ func NewDestinationTypes(dest destination.Destination, topicConfig kafkalib.Topi
 	}, nil
 }
 
-func (d DestinationTypes) Run() error {
-	return nil
+func (d DestinationTypes) Run(ctx context.Context) error {
+	if _, ok := d.destination.Dialect().(dialect.RedshiftDialect); ok {
+		if err := shared.RedshiftCreateTable(ctx, d.destination, d.tableID); err != nil {
+			return fmt.Errorf("failed to create table: %w", err)
+		}
+
+		if err := shared.RedshiftAssertColumns(ctx, d.destination, d.tableID); err != nil {
+			return fmt.Errorf("failed to assert columns: %w", err)
+		}
+	}
+
+	return fmt.Errorf("unsupported destination dialect: %T", d.destination.Dialect())
 }
 
 func main() {
@@ -60,7 +73,7 @@ func main() {
 		logger.Fatal("Failed to create destination types", slog.Any("err", err))
 	}
 
-	if err := destinationTypes.Run(); err != nil {
+	if err := destinationTypes.Run(ctx); err != nil {
 		logger.Fatal("Failed to run destination types", slog.Any("err", err))
 	}
 }
