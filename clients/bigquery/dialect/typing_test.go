@@ -33,7 +33,7 @@ func TestBigQueryDialect_KindForDataType_NoDataLoss(t *testing.T) {
 	}
 
 	for _, kindDetail := range kindDetails {
-		kd, err := BigQueryDialect{}.KindForDataType(BigQueryDialect{}.DataTypeForKind(kindDetail, false, config.SharedDestinationColumnSettings{}), "")
+		kd, err := BigQueryDialect{}.KindForDataType(BigQueryDialect{}.DataTypeForKind(kindDetail, false, config.SharedDestinationColumnSettings{}))
 		assert.NoError(t, err)
 		assert.Equal(t, kindDetail, kd)
 	}
@@ -44,7 +44,7 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 	{
 		// Booleans
 		for _, boolKind := range []string{"bool", "boolean"} {
-			kd, err := dialect.KindForDataType(boolKind, "")
+			kd, err := dialect.KindForDataType(boolKind)
 			assert.NoError(t, err)
 			assert.Equal(t, typing.Boolean, kd)
 		}
@@ -52,7 +52,7 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 	{
 		// Strings
 		for _, stringKind := range []string{"string", "varchar", "string (10)", "STrinG"} {
-			kd, err := dialect.KindForDataType(stringKind, "")
+			kd, err := dialect.KindForDataType(stringKind)
 			assert.NoError(t, err)
 			assert.Equal(t, typing.String, kd)
 		}
@@ -62,18 +62,18 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 		{
 			// Invalid
 			{
-				kd, err := dialect.KindForDataType("numeric(1,2,3)", "")
+				kd, err := dialect.KindForDataType("numeric(1,2,3)")
 				assert.ErrorContains(t, err, "invalid number of parts: 3")
 				assert.Equal(t, typing.Invalid, kd)
 			}
 			{
-				_, err := dialect.KindForDataType("numeric(5", "")
+				_, err := dialect.KindForDataType("numeric(5")
 				assert.ErrorContains(t, err, "missing closing parenthesis")
 			}
 		}
 		{
 			// NUMERIC (no precision or scale)
-			kd, err := dialect.KindForDataType("numeric", "")
+			kd, err := dialect.KindForDataType("numeric")
 			assert.NoError(t, err)
 			assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
 			assert.Equal(t, int32(38), kd.ExtendedDecimalDetails.Precision())
@@ -81,7 +81,7 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 		}
 		{
 			// Numeric(5)
-			kd, err := dialect.KindForDataType("NUMERIC(5)", "")
+			kd, err := dialect.KindForDataType("NUMERIC(5)")
 			assert.NoError(t, err)
 
 			assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
@@ -92,7 +92,7 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 		}
 		{
 			// Numeric(5, 0)
-			kd, err := dialect.KindForDataType("NUMERIC(5, 0)", "")
+			kd, err := dialect.KindForDataType("NUMERIC(5, 0)")
 			assert.NoError(t, err)
 
 			assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
@@ -102,7 +102,7 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 		}
 		{
 			// Numeric(5, 2)
-			kd, err := dialect.KindForDataType("numeric(5, 2)", "")
+			kd, err := dialect.KindForDataType("numeric(5, 2)")
 			assert.NoError(t, err)
 			assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
 			assert.Equal(t, int32(5), kd.ExtendedDecimalDetails.Precision())
@@ -110,7 +110,7 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 		}
 		{
 			// BigNumeric(5, 2)
-			kd, err := dialect.KindForDataType("bignumeric(5, 2)", "")
+			kd, err := dialect.KindForDataType("bignumeric(5, 2)")
 			assert.NoError(t, err)
 			assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
 			assert.Equal(t, int32(5), kd.ExtendedDecimalDetails.Precision())
@@ -118,7 +118,7 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 		}
 		{
 			// BIGNUMERIC (no precision or scale)
-			kd, err := dialect.KindForDataType("bignumeric", "")
+			kd, err := dialect.KindForDataType("bignumeric")
 			assert.NoError(t, err)
 			assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
 			assert.Equal(t, int32(76), kd.ExtendedDecimalDetails.Precision())
@@ -128,7 +128,7 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 	{
 		// Integers
 		for _, intKind := range []string{"int", "integer", "inT64"} {
-			kd, err := dialect.KindForDataType(intKind, "")
+			kd, err := dialect.KindForDataType(intKind)
 			assert.NoError(t, err)
 			assert.Equal(t, typing.Integer, kd, intKind)
 		}
@@ -136,7 +136,7 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 	{
 		// Arrays
 		for _, arrayKind := range []string{"array<integer>", "array<string>"} {
-			kd, err := dialect.KindForDataType(arrayKind, "")
+			kd, err := dialect.KindForDataType(arrayKind)
 			assert.NoError(t, err)
 			assert.Equal(t, typing.Array, kd, arrayKind)
 		}
@@ -144,44 +144,44 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 	{
 		// Structs
 		for _, structKind := range []string{"struct<foo STRING>", "record", "json"} {
-			kd, err := dialect.KindForDataType(structKind, "")
+			kd, err := dialect.KindForDataType(structKind)
 			assert.NoError(t, err)
 			assert.Equal(t, typing.Struct, kd, structKind)
 		}
 	}
 	{
 		// Date
-		kd, err := dialect.KindForDataType("date", "")
+		kd, err := dialect.KindForDataType("date")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.Date, kd)
 	}
 	{
 		// Time
-		kd, err := dialect.KindForDataType("time", "")
+		kd, err := dialect.KindForDataType("time")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.Time, kd)
 	}
 	{
 		// Timestamp (Timestamp TZ)
-		kd, err := dialect.KindForDataType("timestamp", "")
+		kd, err := dialect.KindForDataType("timestamp")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.TimestampTZ, kd)
 	}
 	{
 		// Datetime (Timestamp NTZ)
-		kd, err := dialect.KindForDataType("datetime", "")
+		kd, err := dialect.KindForDataType("datetime")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.TimestampNTZ, kd)
 	}
 	{
 		// Invalid types
 		{
-			kd, err := dialect.KindForDataType("", "")
+			kd, err := dialect.KindForDataType("")
 			assert.ErrorContains(t, err, `unsupported data type: ""`)
 			assert.Equal(t, typing.Invalid, kd)
 		}
 		{
-			kd, err := dialect.KindForDataType("foo", "")
+			kd, err := dialect.KindForDataType("foo")
 			assert.ErrorContains(t, err, `unsupported data type: "foo"`)
 			assert.Equal(t, typing.Invalid, kd)
 		}

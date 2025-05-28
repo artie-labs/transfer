@@ -111,7 +111,7 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DestinationTableConfig, error)
 }
 
 func (g GetTableCfgArgs) buildColumnFromRow(row map[string]string) (columns.Column, error) {
-	kindDetails, err := g.Destination.Dialect().KindForDataType(row[g.ColumnNameForDataType], row[constants.StrPrecisionCol])
+	kindDetails, err := g.Destination.Dialect().KindForDataType(row[g.ColumnNameForDataType])
 	if err != nil {
 		return columns.Column{}, fmt.Errorf("failed to get kind details: %w", err)
 	}
