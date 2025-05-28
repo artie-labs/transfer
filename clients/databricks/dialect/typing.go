@@ -41,7 +41,7 @@ func (DatabricksDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool,
 	return kindDetails.Kind
 }
 
-func (DatabricksDialect) KindForDataType(rawType string, _ string) (typing.KindDetails, error) {
+func (DatabricksDialect) KindForDataType(rawType string) (typing.KindDetails, error) {
 	rawType = strings.ToLower(rawType)
 	if strings.HasPrefix(rawType, "decimal") {
 		_, parameters, err := sql.ParseDataTypeDefinition(rawType)

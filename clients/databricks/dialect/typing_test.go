@@ -72,97 +72,97 @@ func TestDatabricksDialect_KindForDataType(t *testing.T) {
 		// Decimal
 		{
 			// Invalid
-			_, err := DatabricksDialect{}.KindForDataType("DECIMAL(9", "")
+			_, err := DatabricksDialect{}.KindForDataType("DECIMAL(9")
 			assert.ErrorContains(t, err, "missing closing parenthesis")
 		}
 		{
 			// Valid
-			kd, err := DatabricksDialect{}.KindForDataType("DECIMAL(10, 2)", "")
+			kd, err := DatabricksDialect{}.KindForDataType("DECIMAL(10, 2)")
 			assert.NoError(t, err)
 			assert.Equal(t, typing.KindDetails{Kind: typing.EDecimal.Kind, ExtendedDecimalDetails: typing.ToPtr(decimal.NewDetails(10, 2))}, kd)
 		}
 	}
 	{
 		// Array
-		kd, err := DatabricksDialect{}.KindForDataType("ARRAY<string>", "")
+		kd, err := DatabricksDialect{}.KindForDataType("ARRAY<string>")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.Array, kd)
 	}
 	{
 		// String
-		kd, err := DatabricksDialect{}.KindForDataType("STRING", "")
+		kd, err := DatabricksDialect{}.KindForDataType("STRING")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.String, kd)
 	}
 	{
 		// Binary
-		kd, err := DatabricksDialect{}.KindForDataType("BINARY", "")
+		kd, err := DatabricksDialect{}.KindForDataType("BINARY")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.String, kd)
 	}
 	{
 		// BigInt
-		kd, err := DatabricksDialect{}.KindForDataType("BIGINT", "")
+		kd, err := DatabricksDialect{}.KindForDataType("BIGINT")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.BigIntegerKind)}, kd)
 	}
 	{
 		// Boolean
-		kd, err := DatabricksDialect{}.KindForDataType("BOOLEAN", "")
+		kd, err := DatabricksDialect{}.KindForDataType("BOOLEAN")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.Boolean, kd)
 	}
 	{
 		// Date
-		kd, err := DatabricksDialect{}.KindForDataType("DATE", "")
+		kd, err := DatabricksDialect{}.KindForDataType("DATE")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.Date, kd)
 	}
 	{
 		// Double
-		kd, err := DatabricksDialect{}.KindForDataType("DOUBLE", "")
+		kd, err := DatabricksDialect{}.KindForDataType("DOUBLE")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.Float, kd)
 	}
 	{
 		// Float
-		kd, err := DatabricksDialect{}.KindForDataType("FLOAT", "")
+		kd, err := DatabricksDialect{}.KindForDataType("FLOAT")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.Float, kd)
 	}
 	{
 		// Integer
-		kd, err := DatabricksDialect{}.KindForDataType("INT", "")
+		kd, err := DatabricksDialect{}.KindForDataType("INT")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.IntegerKind)}, kd)
 	}
 	{
 		// Small Int
-		kd, err := DatabricksDialect{}.KindForDataType("SMALLINT", "")
+		kd, err := DatabricksDialect{}.KindForDataType("SMALLINT")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.SmallIntegerKind)}, kd)
 	}
 	{
 		// Timestamp
-		kd, err := DatabricksDialect{}.KindForDataType("TIMESTAMP", "")
+		kd, err := DatabricksDialect{}.KindForDataType("TIMESTAMP")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.TimestampTZ, kd)
 	}
 	{
 		// Timestamp NTZ
-		kd, err := DatabricksDialect{}.KindForDataType("TIMESTAMP_NTZ", "")
+		kd, err := DatabricksDialect{}.KindForDataType("TIMESTAMP_NTZ")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.TimestampNTZ, kd)
 	}
 	{
 		// Variant
-		kd, err := DatabricksDialect{}.KindForDataType("VARIANT", "")
+		kd, err := DatabricksDialect{}.KindForDataType("VARIANT")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.KindDetails{Kind: typing.String.Kind}, kd)
 	}
 	{
 		// Object
-		kd, err := DatabricksDialect{}.KindForDataType("OBJECT", "")
+		kd, err := DatabricksDialect{}.KindForDataType("OBJECT")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.KindDetails{Kind: typing.String.Kind}, kd)
 	}
