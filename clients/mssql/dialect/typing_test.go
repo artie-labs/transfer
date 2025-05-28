@@ -61,24 +61,24 @@ func TestMSSQLDialect_KindForDataType(t *testing.T) {
 	}
 
 	for col, expectedKind := range colToExpectedKind {
-		kd, err := dialect.KindForDataType(col, "")
+		kd, err := dialect.KindForDataType(col)
 		assert.NoError(t, err)
 		assert.Equal(t, expectedKind.Kind, kd.Kind, col)
 	}
 
 	{
-		_, err := dialect.KindForDataType("numeric(5", "")
+		_, err := dialect.KindForDataType("numeric(5")
 		assert.ErrorContains(t, err, "missing closing parenthesis")
 	}
 	{
-		kd, err := dialect.KindForDataType("numeric(5, 2)", "")
+		kd, err := dialect.KindForDataType("numeric(5, 2)")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
 		assert.Equal(t, int32(5), kd.ExtendedDecimalDetails.Precision())
 		assert.Equal(t, int32(2), kd.ExtendedDecimalDetails.Scale())
 	}
 	{
-		kd, err := dialect.KindForDataType("char", "5")
+		kd, err := dialect.KindForDataType("char(5)")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.String.Kind, kd.Kind)
 		assert.Equal(t, int32(5), *kd.OptionalStringPrecision)
