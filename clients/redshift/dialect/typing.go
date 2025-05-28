@@ -60,28 +60,16 @@ func (RedshiftDialect) DataTypeForKind(kd typing.KindDetails, _ bool, _ config.S
 	return kd.Kind
 }
 
-func (RedshiftDialect) KindForDataType(rawType string, stringPrecision string) (typing.KindDetails, error) {
-	// TODO: Deprecate [stringPrecision] as arg
-	rawType = strings.ToLower(rawType)
-	if strings.HasPrefix(rawType, "numeric") {
-		_, parameters, err := sql.ParseDataTypeDefinition(rawType)
-		if err != nil {
-			return typing.Invalid, err
-		}
-		return typing.ParseNumeric(parameters)
+func (RedshiftDialect) KindForDataType(rawType string, _ string) (typing.KindDetails, error) {
+	dataType, parameters, err := sql.ParseDataTypeDefinition(strings.ToLower(rawType))
+	if err != nil {
+		return typing.Invalid, err
 	}
 
-	if strings.Contains(rawType, "character varying") {
-		_oldPrecision, err := strconv.ParseInt(stringPrecision, 10, 32)
-		if err != nil {
-			return typing.Invalid, fmt.Errorf("failed to parse string precision: %q, err: %w", stringPrecision, err)
-		}
-
-		_, parameters, err := sql.ParseDataTypeDefinition(rawType)
-		if err != nil {
-			return typing.Invalid, err
-		}
-
+	switch dataType {
+	case "numeric":
+		return typing.ParseNumeric(parameters)
+	case "character varying":
 		if len(parameters) != 1 {
 			return typing.Invalid, fmt.Errorf("expected 1 parameter for character varying, got %d, value: %q", len(parameters), rawType)
 		}
@@ -91,17 +79,10 @@ func (RedshiftDialect) KindForDataType(rawType string, stringPrecision string) (
 			return typing.Invalid, fmt.Errorf("failed to parse string precision: %q, err: %w", parameters[0], err)
 		}
 
-		if precision != _oldPrecision {
-			return typing.Invalid, fmt.Errorf("expected both precision to equal, new preciison is %d and old precision is %d", precision, _oldPrecision)
-		}
-
 		return typing.KindDetails{
 			Kind:                    typing.String.Kind,
 			OptionalStringPrecision: typing.ToPtr(int32(precision)),
 		}, nil
-	}
-
-	switch rawType {
 	case "character":
 		return typing.KindDetails{Kind: typing.String.Kind}, nil
 	case "super":
