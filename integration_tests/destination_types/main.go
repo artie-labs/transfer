@@ -8,11 +8,26 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/utils"
+	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
+	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
 type DestinationTypes struct {
 	destination destination.Destination
+	topicConfig kafkalib.TopicConfig
+
+	// Generated:
+	tableID sql.TableIdentifier
+}
+
+func NewDestinationTypes(dest destination.Destination, topicConfig kafkalib.TopicConfig) (DestinationTypes, error) {
+	return DestinationTypes{
+		destination: dest,
+		topicConfig: topicConfig,
+		tableID:     dest.IdentifierFor(topicConfig.BuildDatabaseAndSchemaPair(), stringutil.Random(10)),
+	}, nil
 }
 
 func (d DestinationTypes) Run() error {
@@ -31,7 +46,19 @@ func main() {
 		logger.Fatal("Failed to load destination", slog.Any("err", err))
 	}
 
-	destinationTypes := DestinationTypes{destination: dest}
+	tcs, err := settings.Config.TopicConfigs()
+	if err != nil {
+		logger.Fatal("Failed to get topic config", slog.Any("err", err))
+	}
+
+	if len(tcs) != 1 {
+		logger.Fatal("Expected 1 topic config, got", slog.Any("count", len(tcs)))
+	}
+
+	destinationTypes, err := NewDestinationTypes(dest, *tcs[0])
+	if err != nil {
+		logger.Fatal("Failed to create destination types", slog.Any("err", err))
+	}
 
 	if err := destinationTypes.Run(); err != nil {
 		logger.Fatal("Failed to run destination types", slog.Any("err", err))
