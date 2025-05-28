@@ -77,27 +77,27 @@ func TestIcebergDialect_KindForDataType(t *testing.T) {
 	_dialect := IcebergDialect{}
 	{
 		// Boolean
-		kd, err := _dialect.KindForDataType("BOOLEAN", "")
+		kd, err := _dialect.KindForDataType("BOOLEAN")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.Boolean, kd)
 	}
 	{
 		// Decimal (10, 2)
-		kd, err := _dialect.KindForDataType("DECIMAL(10, 2)", "")
+		kd, err := _dialect.KindForDataType("DECIMAL(10, 2)")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
 		assert.Equal(t, decimal.NewDetails(10, 2), *kd.ExtendedDecimalDetails)
 	}
 	{
 		// INTEGER
-		kd, err := _dialect.KindForDataType("INTEGER", "")
+		kd, err := _dialect.KindForDataType("INTEGER")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.Integer.Kind, kd.Kind)
 		assert.Equal(t, typing.ToPtr(typing.IntegerKind), kd.OptionalIntegerKind)
 	}
 	{
 		// LONG
-		kd, err := _dialect.KindForDataType("LONG", "")
+		kd, err := _dialect.KindForDataType("LONG")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.Integer.Kind, kd.Kind)
 		assert.Equal(t, typing.ToPtr(typing.BigIntegerKind), kd.OptionalIntegerKind)
@@ -105,33 +105,33 @@ func TestIcebergDialect_KindForDataType(t *testing.T) {
 	{
 		// Float and Double
 		for _, kind := range []string{"FLOAT", "DOUBLE"} {
-			kd, err := _dialect.KindForDataType(kind, "")
+			kd, err := _dialect.KindForDataType(kind)
 			assert.NoError(t, err)
 			assert.Equal(t, typing.Float, kd)
 		}
 	}
 	{
 		// Date
-		kd, err := _dialect.KindForDataType("DATE", "")
+		kd, err := _dialect.KindForDataType("DATE")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.Date, kd)
 	}
 	{
 		// TimestampTZ
-		kd, err := _dialect.KindForDataType("TIMESTAMP", "")
+		kd, err := _dialect.KindForDataType("TIMESTAMP")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.TimestampTZ, kd)
 	}
 	{
 		// TimestampNTZ
-		kd, err := _dialect.KindForDataType("TIMESTAMP_NTZ", "")
+		kd, err := _dialect.KindForDataType("TIMESTAMP_NTZ")
 		assert.NoError(t, err)
 		assert.Equal(t, typing.TimestampNTZ, kd)
 	}
 	{
 		// String and other data types that map to a string.
 		for _, kind := range []string{"STRING", "BINARY", "UUID", "FIXED"} {
-			kd, err := _dialect.KindForDataType(kind, "")
+			kd, err := _dialect.KindForDataType(kind)
 			assert.NoError(t, err)
 			assert.Equal(t, typing.String, kd)
 		}

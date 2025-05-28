@@ -44,7 +44,7 @@ func (IcebergDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, _ 
 	}
 }
 
-func (IcebergDialect) KindForDataType(rawType string, _ string) (typing.KindDetails, error) {
+func (IcebergDialect) KindForDataType(rawType string) (typing.KindDetails, error) {
 	rawType = strings.ToLower(rawType)
 	if strings.HasPrefix(rawType, "decimal") {
 		_, parameters, err := sql.ParseDataTypeDefinition(rawType)
