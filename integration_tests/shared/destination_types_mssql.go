@@ -223,6 +223,11 @@ func MSSQLAssertColumns(ctx context.Context, dest destination.Destination, table
 			if err := assertEqual("c_text", col.KindDetails.Kind, typing.String.Kind); err != nil {
 				return err
 			}
+
+			// https://learn.microsoft.com/en-us/sql/t-sql/data-types/ntext-text-and-image-transact-sql?view=sql-server-ver17#text
+			if err := assertEqual("c_text", *col.KindDetails.OptionalStringPrecision, int32(2147483647)); err != nil {
+				return err
+			}
 		default:
 			return fmt.Errorf("unexpected column: %q", col.Name())
 		}
