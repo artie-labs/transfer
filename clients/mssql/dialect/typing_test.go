@@ -41,12 +41,6 @@ func TestMSSQLDialect_KindForDataType(t *testing.T) {
 	dialect := MSSQLDialect{}
 
 	colToExpectedKind := map[string]typing.KindDetails{
-		"char":           typing.String,
-		"varchar":        typing.String,
-		"nchar":          typing.String,
-		"nvarchar":       typing.String,
-		"ntext":          typing.String,
-		"text":           typing.String,
 		"smallint":       typing.Integer,
 		"tinyint":        typing.Integer,
 		"int":            typing.Integer,
@@ -67,6 +61,25 @@ func TestMSSQLDialect_KindForDataType(t *testing.T) {
 	}
 
 	{
+		// String types, that are all precision 55.
+		stringTypeMap := map[string]typing.KindDetails{
+			"char(55)":     typing.String,
+			"varchar(55)":  typing.String,
+			"nchar(55)":    typing.String,
+			"nvarchar(55)": typing.String,
+			"ntext(55)":    typing.String,
+			"text(55)":     typing.String,
+		}
+
+		for rawType, expectedKind := range stringTypeMap {
+			kd, err := dialect.KindForDataType(rawType, "")
+			assert.NoError(t, err)
+			assert.Equal(t, expectedKind.Kind, kd.Kind, rawType)
+			assert.Equal(t, int32(55), *kd.OptionalStringPrecision, rawType)
+		}
+	}
+
+	{
 		_, err := dialect.KindForDataType("numeric(5", "")
 		assert.ErrorContains(t, err, "missing closing parenthesis")
 	}
@@ -76,11 +89,5 @@ func TestMSSQLDialect_KindForDataType(t *testing.T) {
 		assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
 		assert.Equal(t, int32(5), kd.ExtendedDecimalDetails.Precision())
 		assert.Equal(t, int32(2), kd.ExtendedDecimalDetails.Scale())
-	}
-	{
-		kd, err := dialect.KindForDataType("char", "5")
-		assert.NoError(t, err)
-		assert.Equal(t, typing.String.Kind, kd.Kind)
-		assert.Equal(t, int32(5), *kd.OptionalStringPrecision)
 	}
 }
