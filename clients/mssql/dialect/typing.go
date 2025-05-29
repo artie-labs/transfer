@@ -55,38 +55,40 @@ func (MSSQLDialect) DataTypeForKind(kindDetails typing.KindDetails, isPk bool, _
 	return kindDetails.Kind
 }
 
-func (MSSQLDialect) KindForDataType(rawType string, stringPrecision string) (typing.KindDetails, error) {
-	rawType = strings.ToLower(rawType)
-	if strings.HasPrefix(rawType, "numeric") {
-		_, parameters, err := sql.ParseDataTypeDefinition(rawType)
-		if err != nil {
-			return typing.Invalid, err
-		}
-		return typing.ParseNumeric(parameters)
+func (MSSQLDialect) KindForDataType(rawType string, _ string) (typing.KindDetails, error) {
+	dataType, parameters, err := sql.ParseDataTypeDefinition(strings.ToLower(rawType))
+	if err != nil {
+		return typing.Invalid, err
 	}
 
-	switch rawType {
+	switch dataType {
 	case
 		"char",
 		"varchar",
 		"nchar",
 		"nvarchar",
+		"text",
 		"ntext":
-		var strPrecision *int32
-		precision, err := strconv.ParseInt(stringPrecision, 10, 32)
-		if err == nil {
-			strPrecision = typing.ToPtr(int32(precision))
+		if len(parameters) != 1 {
+			return typing.Invalid, fmt.Errorf("expected 1 parameter for %q, got %d", rawType, len(parameters))
 		}
 
-		// precision of -1 means it's MAX.
+		precision, err := strconv.ParseInt(parameters[0], 10, 32)
+		if err != nil {
+			return typing.Invalid, err
+		}
+
 		if precision == -1 {
-			strPrecision = nil
+			// Precision of -1 means it's MAX.
+			return typing.String, nil
 		}
 
 		return typing.KindDetails{
 			Kind:                    typing.String.Kind,
-			OptionalStringPrecision: strPrecision,
+			OptionalStringPrecision: typing.ToPtr(int32(precision)),
 		}, nil
+	case "decimal", "numeric":
+		return typing.ParseNumeric(parameters)
 	case
 		"smallint",
 		"tinyint",
@@ -107,8 +109,6 @@ func (MSSQLDialect) KindForDataType(rawType string, stringPrecision string) (typ
 		return typing.Date, nil
 	case "bit":
 		return typing.Boolean, nil
-	case "text":
-		return typing.String, nil
 	default:
 		return typing.Invalid, fmt.Errorf("unsupported data type: %q", rawType)
 	}
