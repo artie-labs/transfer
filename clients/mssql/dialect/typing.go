@@ -67,6 +67,7 @@ func (MSSQLDialect) KindForDataType(rawType string, _ string) (typing.KindDetail
 		"varchar",
 		"nchar",
 		"nvarchar",
+		"text",
 		"ntext":
 		if len(parameters) != 1 {
 			return typing.Invalid, fmt.Errorf("expected 1 parameter for %q, got %d", rawType, len(parameters))
@@ -108,8 +109,6 @@ func (MSSQLDialect) KindForDataType(rawType string, _ string) (typing.KindDetail
 		return typing.Date, nil
 	case "bit":
 		return typing.Boolean, nil
-	case "text":
-		return typing.String, nil
 	default:
 		return typing.Invalid, fmt.Errorf("unsupported data type: %q", rawType)
 	}

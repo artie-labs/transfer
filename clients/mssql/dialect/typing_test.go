@@ -59,7 +59,6 @@ func TestMSSQLDialect_KindForDataType(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, expectedKind.Kind, kd.Kind, col)
 	}
-
 	{
 		// String types, that are all precision 55.
 		stringTypeMap := map[string]typing.KindDetails{
