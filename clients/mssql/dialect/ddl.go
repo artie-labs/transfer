@@ -17,7 +17,7 @@ SELECT
     CASE
         WHEN DATA_TYPE IN ('numeric', 'decimal') THEN
             DATA_TYPE + '(' + CAST(NUMERIC_PRECISION AS VARCHAR) + ',' + CAST(NUMERIC_SCALE AS VARCHAR) + ')'
-        WHEN DATA_TYPE IN ('varchar', 'nvarchar', 'char', 'nchar') THEN
+        WHEN DATA_TYPE IN ('varchar', 'nvarchar', 'char', 'nchar', 'ntext', 'text') THEN
             DATA_TYPE + '(' + CAST(CHARACTER_MAXIMUM_LENGTH AS VARCHAR) + ')'
 		WHEN DATA_TYPE IN ('datetime2', 'time') THEN
 			DATA_TYPE + '(' + CAST(DATETIME_PRECISION AS VARCHAR) + ')'
@@ -38,7 +38,7 @@ func (MSSQLDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (string
 		return "", nil, err
 	}
 
-	return describeTableQuery, []any{mssql.VarChar(mssqlTableID.Table()), mssql.VarChar(mssqlTableID.Schema())}, nil
+	return describeTableQuery, []any{mssql.VarChar(mssqlTableID.Schema()), mssql.VarChar(mssqlTableID.Table())}, nil
 }
 
 func (MSSQLDialect) BuildAddColumnQuery(tableID sql.TableIdentifier, sqlPart string) string {

@@ -68,7 +68,6 @@ func (MSSQLDialect) KindForDataType(rawType string, _ string) (typing.KindDetail
 		"nchar",
 		"nvarchar",
 		"ntext":
-
 		if len(parameters) != 1 {
 			return typing.Invalid, fmt.Errorf("expected 1 parameter for %q, got %d", rawType, len(parameters))
 		}
