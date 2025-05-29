@@ -87,7 +87,7 @@ func (MSSQLDialect) KindForDataType(rawType string, _ string) (typing.KindDetail
 			Kind:                    typing.String.Kind,
 			OptionalStringPrecision: typing.ToPtr(int32(precision)),
 		}, nil
-	case "numeric":
+	case "decimal", "numeric":
 		return typing.ParseNumeric(parameters)
 	case
 		"smallint",

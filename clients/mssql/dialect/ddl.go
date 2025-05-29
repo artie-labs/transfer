@@ -10,27 +10,35 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
+// TODO: Remove [CHARACTER_MAXIMUM_LENGTH] once it's fully supported.
+const describeTableQuery = `
+SELECT
+    COLUMN_NAME,
+    CASE
+        WHEN DATA_TYPE IN ('numeric', 'decimal') THEN
+            DATA_TYPE + '(' + CAST(NUMERIC_PRECISION AS VARCHAR) + ',' + CAST(NUMERIC_SCALE AS VARCHAR) + ')'
+        WHEN DATA_TYPE IN ('varchar', 'nvarchar', 'char', 'nchar') THEN
+            DATA_TYPE + '(' + CAST(CHARACTER_MAXIMUM_LENGTH AS VARCHAR) + ')'
+		WHEN DATA_TYPE IN ('datetime2', 'time') THEN
+			DATA_TYPE + '(' + CAST(DATETIME_PRECISION AS VARCHAR) + ')'
+        ELSE
+            DATA_TYPE
+    END AS DATA_TYPE,
+	COLUMN_DEFAULT AS DEFAULT_VALUE,
+	CHARACTER_MAXIMUM_LENGTH
+FROM
+    INFORMATION_SCHEMA.COLUMNS
+WHERE
+    LOWER(TABLE_SCHEMA) = LOWER(?) AND LOWER(TABLE_NAME) = LOWER(?);
+`
+
 func (MSSQLDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (string, []any, error) {
 	mssqlTableID, err := typing.AssertType[TableIdentifier](tableID)
 	if err != nil {
 		return "", nil, err
 	}
 
-	return `
-SELECT
-    COLUMN_NAME,
-    CASE
-        WHEN DATA_TYPE = 'numeric' THEN
-		'numeric(' + COALESCE(CAST(NUMERIC_PRECISION AS VARCHAR), '') + ',' + COALESCE(CAST(NUMERIC_SCALE AS VARCHAR), '') + ')'
-		ELSE
-		DATA_TYPE
-	END AS DATA_TYPE,
-    CHARACTER_MAXIMUM_LENGTH,
-    COLUMN_DEFAULT AS DEFAULT_VALUE
-FROM
-    INFORMATION_SCHEMA.COLUMNS
-WHERE
-    LOWER(TABLE_NAME) = LOWER(?) AND LOWER(TABLE_SCHEMA) = LOWER(?);`, []any{mssql.VarChar(mssqlTableID.Table()), mssql.VarChar(mssqlTableID.Schema())}, nil
+	return describeTableQuery, []any{mssql.VarChar(mssqlTableID.Table()), mssql.VarChar(mssqlTableID.Schema())}, nil
 }
 
 func (MSSQLDialect) BuildAddColumnQuery(tableID sql.TableIdentifier, sqlPart string) string {
