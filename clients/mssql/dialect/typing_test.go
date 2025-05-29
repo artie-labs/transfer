@@ -83,4 +83,9 @@ func TestMSSQLDialect_KindForDataType(t *testing.T) {
 		assert.Equal(t, typing.String.Kind, kd.Kind)
 		assert.Equal(t, int32(5), *kd.OptionalStringPrecision)
 	}
+	{
+		// Invalid
+		_, err := dialect.KindForDataType("invalid", "5")
+		assert.True(t, typing.IsUnsupportedDataTypeError(err))
+	}
 }
