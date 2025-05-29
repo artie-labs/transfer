@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 )
@@ -16,7 +15,7 @@ func (RedshiftDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (str
 	}
 
 	// This query is a modified fork from: https://gist.github.com/alexanderlz/7302623
-	return fmt.Sprintf(`
+	return `
 SELECT
     c.column_name,
     CASE
@@ -27,7 +26,6 @@ SELECT
         ELSE
             c.data_type
     END AS data_type,
-    c.%s,
     d.description
 FROM
     INFORMATION_SCHEMA.COLUMNS c
@@ -39,7 +37,7 @@ LEFT JOIN
     PG_CATALOG.PG_DESCRIPTION d ON d.objsubid = c.ordinal_position AND d.objoid = c1.oid
 WHERE
     LOWER(c.table_schema) = LOWER($1) AND LOWER(c.table_name) = LOWER($2);
-`, constants.StrPrecisionCol), []any{redshiftTableID.Schema(), redshiftTableID.Table()}, nil
+`, []any{redshiftTableID.Schema(), redshiftTableID.Table()}, nil
 }
 
 func (RedshiftDialect) BuildAddColumnQuery(tableID sql.TableIdentifier, sqlPart string) string {
