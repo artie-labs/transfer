@@ -54,7 +54,7 @@ func (MSSQLDialect) BuildDedupeTableQuery(_ sql.TableIdentifier, _ []string) str
 }
 
 func (MSSQLDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string {
-	panic("not implemented")
+	panic("not implemented") // We don't currently support deduping for MS SQL.
 }
 
 func (MSSQLDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string {
