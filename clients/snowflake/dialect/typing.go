@@ -46,10 +46,8 @@ func (SnowflakeDialect) KindForDataType(snowflakeType string) (typing.KindDetail
 
 	// Geography, geometry date, time, varbinary, binary are currently not supported.
 	switch dataType {
-	case "number", "numeric":
+	case "number", "numeric", "decimal":
 		return typing.ParseNumeric(parameters)
-	case "decimal":
-		return typing.EDecimal, nil
 	case "float", "float4",
 		"float8", "double", "double precision", "real":
 		return typing.Float, nil
