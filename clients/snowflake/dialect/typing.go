@@ -85,6 +85,6 @@ func (SnowflakeDialect) KindForDataType(snowflakeType string) (typing.KindDetail
 	case "date":
 		return typing.Date, nil
 	default:
-		return typing.Invalid, fmt.Errorf("unsupported data type: %q", snowflakeType)
+		return typing.Invalid, typing.NewUnsupportedDataTypeError(fmt.Sprintf("unsupported data type: %q", rawType))
 	}
 }
