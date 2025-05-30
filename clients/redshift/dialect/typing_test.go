@@ -61,7 +61,7 @@ func TestRedshiftDialect_KindForDataType(t *testing.T) {
 	dialect := RedshiftDialect{}
 	{
 		// Invalid
-		_, err := dialect.KindForDataType("invalid", "")
+		_, err := dialect.KindForDataType("invalid")
 		assert.True(t, typing.IsUnsupportedDataTypeError(err))
 	}
 	{

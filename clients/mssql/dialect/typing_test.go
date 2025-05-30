@@ -39,6 +39,11 @@ func TestMSSQLDialect_DataTypeForKind(t *testing.T) {
 
 func TestMSSQLDialect_KindForDataType(t *testing.T) {
 	dialect := MSSQLDialect{}
+	{
+		// Invalid
+		_, err := dialect.KindForDataType("invalid")
+		assert.True(t, typing.IsUnsupportedDataTypeError(err))
+	}
 
 	colToExpectedKind := map[string]typing.KindDetails{
 		"smallint":       typing.Integer,
