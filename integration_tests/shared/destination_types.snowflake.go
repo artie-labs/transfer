@@ -3,6 +3,7 @@ package shared
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/maputil"
@@ -99,7 +100,7 @@ func SnowflakeAssertColumns(ctx context.Context, dest destination.Destination, t
 	}
 
 	for _, col := range foundCols {
-		switch col.Name() {
+		switch strings.ToLower(col.Name()) {
 		case "c_array":
 			if err := assertEqual("c_array", col.KindDetails.Kind, typing.Array.Kind); err != nil {
 				return err
