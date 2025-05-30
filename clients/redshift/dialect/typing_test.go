@@ -95,13 +95,13 @@ func TestRedshiftDialect_KindForDataType(t *testing.T) {
 	}
 	{
 		// Double
-		{
-			kd, err := dialect.KindForDataType("double precision")
-			assert.NoError(t, err)
-			assert.Equal(t, typing.Float, kd)
+		doubleTypeMap := map[string]typing.KindDetails{
+			"double precision": typing.Float,
+			"DOUBLE precision": typing.Float,
 		}
-		{
-			kd, err := dialect.KindForDataType("DOUBLE precision")
+
+		for rawType, expectedKind := range doubleTypeMap {
+			kd, err := dialect.KindForDataType(rawType)
 			assert.NoError(t, err)
 			assert.Equal(t, expectedKind, kd)
 		}
