@@ -116,6 +116,10 @@ func (rd RedshiftDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableId
 	return parts
 }
 
+func (rd RedshiftDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string {
+	panic("not implemented")
+}
+
 func (rd RedshiftDialect) buildMergeInsertQuery(
 	tableID sql.TableIdentifier,
 	subQuery string,

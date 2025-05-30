@@ -100,6 +100,10 @@ func (bd BigQueryDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableId
 	return parts
 }
 
+func (bd BigQueryDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string {
+	panic("not implemented")
+}
+
 func (bd BigQueryDialect) BuildMergeQueries(
 	tableID sql.TableIdentifier,
 	subQuery string,

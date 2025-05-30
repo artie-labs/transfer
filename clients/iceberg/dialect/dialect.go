@@ -93,6 +93,10 @@ func (id IcebergDialect) BuildDedupeQueries(
 	return parts
 }
 
+func (IcebergDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string {
+	panic("not implemented")
+}
+
 func (id IcebergDialect) BuildMergeQueries(
 	tableID sql.TableIdentifier,
 	subQuery string,

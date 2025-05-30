@@ -79,6 +79,10 @@ func (d DatabricksDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableI
 	return []string{stagingTableQuery, deleteQuery, insertQuery}
 }
 
+func (d DatabricksDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string {
+	panic("not implemented")
+}
+
 func (d DatabricksDialect) BuildMergeQueries(
 	tableID sql.TableIdentifier,
 	subQuery string,
