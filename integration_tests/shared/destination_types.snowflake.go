@@ -108,6 +108,22 @@ func SnowflakeAssertColumns(ctx context.Context, dest destination.Destination, t
 			if err := assertEqual(col.Name(), col.KindDetails.Kind, typing.Integer.Kind); err != nil {
 				return err
 			}
+		case "c_boolean":
+			if err := assertEqual(col.Name(), col.KindDetails.Kind, typing.Boolean.Kind); err != nil {
+				return err
+			}
+		case "c_float", "c_float4", "c_float8", "c_double", "c_double_precision", "c_real":
+			if err := assertEqual(col.Name(), col.KindDetails.Kind, typing.Float.Kind); err != nil {
+				return err
+			}
+		case "c_date":
+			if err := assertEqual(col.Name(), col.KindDetails.Kind, typing.Date.Kind); err != nil {
+				return err
+			}
+		case "c_datetime":
+			if err := assertEqual(col.Name(), col.KindDetails.Kind, typing.TimestampNTZ.Kind); err != nil {
+				return err
+			}
 		default:
 			return fmt.Errorf("unexpected column: %q", col.Name())
 		}
