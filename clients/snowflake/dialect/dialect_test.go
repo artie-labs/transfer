@@ -157,30 +157,60 @@ WHEN NOT MATCHED THEN INSERT ("__ARTIE_DELETE","BAR","ID","UPDATED_AT") VALUES (
 
 func TestSnowflakeDialect_BuildMergeQueryIntoStagingTable(t *testing.T) {
 	fqTable := "db.schema.table"
-	_cols := buildColumns(map[string]typing.KindDetails{
-		"id":                                typing.String,
-		"bar":                               typing.String,
-		"updated_at":                        typing.TimestampNTZ,
-		constants.DeleteColumnMarker:        typing.Boolean,
-		constants.OnlySetDeleteColumnMarker: typing.Boolean,
-	})
-
 	fakeTableID := &mocks.FakeTableIdentifier{}
 	fakeTableID.FullyQualifiedNameReturns(fqTable)
+	{
+		// Normal case
+		_cols := buildColumns(map[string]typing.KindDetails{
+			"id":                                typing.String,
+			"bar":                               typing.String,
+			"updated_at":                        typing.TimestampNTZ,
+			constants.DeleteColumnMarker:        typing.Boolean,
+			constants.OnlySetDeleteColumnMarker: typing.Boolean,
+		})
 
-	statements := SnowflakeDialect{}.BuildMergeQueryIntoStagingTable(
-		fakeTableID,
-		fqTable,
-		[]columns.Column{columns.NewColumn("id", typing.Invalid)},
-		nil,
-		_cols.ValidColumns(),
-	)
+		statements := SnowflakeDialect{}.BuildMergeQueryIntoStagingTable(
+			fakeTableID,
+			fqTable,
+			[]columns.Column{columns.NewColumn("id", typing.Invalid)},
+			nil,
+			_cols.ValidColumns(),
+		)
 
-	assert.Len(t, statements, 1)
-	assert.Equal(t, `
+		assert.Len(t, statements, 1)
+		assert.Equal(t, `
 MERGE INTO db.schema.table tgt USING ( db.schema.table ) AS stg ON tgt."ID" = stg."ID"
 WHEN MATCHED THEN UPDATE SET "__ARTIE_DELETE"=stg."__ARTIE_DELETE","__ARTIE_ONLY_SET_DELETE"=stg."__ARTIE_ONLY_SET_DELETE","BAR"=stg."BAR","ID"=stg."ID","UPDATED_AT"=stg."UPDATED_AT"
 WHEN NOT MATCHED THEN INSERT ("__ARTIE_DELETE","__ARTIE_ONLY_SET_DELETE","BAR","ID","UPDATED_AT") VALUES (stg."__ARTIE_DELETE",stg."__ARTIE_ONLY_SET_DELETE",stg."BAR",stg."ID",stg."UPDATED_AT");`, statements[0])
+	}
+	{
+		// bar is toasted
+		_cols := buildColumns(map[string]typing.KindDetails{
+			"id":                                typing.String,
+			"bar":                               typing.String,
+			"updated_at":                        typing.TimestampNTZ,
+			constants.DeleteColumnMarker:        typing.Boolean,
+			constants.OnlySetDeleteColumnMarker: typing.Boolean,
+		})
+
+		_cols.UpsertColumn("bar", columns.UpsertColumnArg{
+			ToastCol: typing.ToPtr(true),
+		})
+
+		statements := SnowflakeDialect{}.BuildMergeQueryIntoStagingTable(
+			fakeTableID,
+			fqTable,
+			[]columns.Column{columns.NewColumn("id", typing.Invalid)},
+			nil,
+			_cols.ValidColumns(),
+		)
+
+		assert.Len(t, statements, 1)
+		assert.Equal(t, `
+MERGE INTO db.schema.table tgt USING ( db.schema.table ) AS stg ON tgt."ID" = stg."ID"
+WHEN MATCHED THEN UPDATE SET "__ARTIE_DELETE"=stg."__ARTIE_DELETE","__ARTIE_ONLY_SET_DELETE"=stg."__ARTIE_ONLY_SET_DELETE","BAR"= CASE WHEN COALESCE(stg."BAR" NOT LIKE '%__debezium_unavailable_value%', TRUE) THEN stg."BAR" ELSE tgt."BAR" END,"ID"=stg."ID","UPDATED_AT"=stg."UPDATED_AT"
+WHEN NOT MATCHED THEN INSERT ("__ARTIE_DELETE","__ARTIE_ONLY_SET_DELETE","BAR","ID","UPDATED_AT") VALUES (stg."__ARTIE_DELETE",stg."__ARTIE_ONLY_SET_DELETE",stg."BAR",stg."ID",stg."UPDATED_AT");`, statements[0])
+	}
 }
 
 func TestSnowflakeDialect_BuildMergeQueries(t *testing.T) {
