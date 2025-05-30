@@ -51,7 +51,7 @@ func (SnowflakeDialect) KindForDataType(snowflakeType string) (typing.KindDetail
 	case "float", "float4",
 		"float8", "double", "double precision", "real":
 		return typing.Float, nil
-	case "int", "integer", "smallint", "tinyint", "bigint", "byteint":
+	case "int", "integer", "bigint", "smallint", "tinyint", "byteint":
 		return typing.Integer, nil
 	case "varchar", "char", "character", "string", "text":
 		switch len(parameters) {

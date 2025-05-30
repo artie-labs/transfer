@@ -114,7 +114,7 @@ func TestSnowflakeDialect_KindForDataType(t *testing.T) {
 	}
 	{
 		// Integers
-		expectedIntegers := []string{"INT", "INTEGER", "SMALLINT", "TINYINT", "BIGINT", "BYTEINT"}
+		expectedIntegers := []string{"INT", "INTEGER", "BIGINT", "SMALLINT", "TINYINT", "BYTEINT"}
 		for _, expectedInteger := range expectedIntegers {
 			kd, err := SnowflakeDialect{}.KindForDataType(expectedInteger)
 			assert.NoError(t, err)
