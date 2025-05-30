@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	redshiftDialect "github.com/artie-labs/transfer/clients/redshift/dialect"
 	"github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
@@ -15,9 +16,20 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
+func ensureMultiStepMergeSupported(dest destination.Destination) error {
+	switch castedType := dest.Dialect().(type) {
+	case dialect.SnowflakeDialect, redshiftDialect.RedshiftDialect:
+		// Supported
+	default:
+		return fmt.Errorf("multi-step merge is only supported on Snowflake and Redshift, type: %T", castedType)
+	}
+
+	return nil
+}
+
 func MultiStepMerge(ctx context.Context, dest destination.Destination, tableData *optimization.TableData, opts types.MergeOpts) (bool, error) {
-	if _, ok := dest.Dialect().(dialect.SnowflakeDialect); !ok {
-		return false, fmt.Errorf("multi-step merge is only supported on Snowflake")
+	if err := ensureMultiStepMergeSupported(dest); err != nil {
+		return false, err
 	}
 
 	msmSettings := tableData.MultiStepMergeSettings()
@@ -39,13 +51,8 @@ func MultiStepMerge(ctx context.Context, dest destination.Destination, tableData
 	}
 
 	if msmSettings.IsFirstFlush() {
-		sflkMSMTableID, ok := msmTableID.(dialect.TableIdentifier)
-		if !ok {
-			return false, fmt.Errorf("failed to get snowflake table identifier")
-		}
-
 		// If it's the first time we are doing this, we should ensure the MSM table has been dropped.
-		if err := dest.DropTable(ctx, sflkMSMTableID.WithDisableDropProtection(true)); err != nil {
+		if err := dest.DropTable(ctx, msmTableID.WithDisableDropProtection(true)); err != nil {
 			return false, fmt.Errorf("failed to drop msm table: %w", err)
 		}
 
@@ -137,9 +144,8 @@ func merge(ctx context.Context, dwh destination.Destination, tableData *optimiza
 		}
 	}()
 
-	snowflakeDialect, ok := dwh.Dialect().(dialect.SnowflakeDialect)
-	if !ok {
-		return fmt.Errorf("multi-step merge is only supported on Snowflake")
+	if err := ensureMultiStepMergeSupported(dwh); err != nil {
+		return fmt.Errorf("multi-step merge is not supported: %w", err)
 	}
 
 	if opts.PrepareTemporaryTable {
@@ -151,7 +157,7 @@ func merge(ctx context.Context, dwh destination.Destination, tableData *optimiza
 	// TODO: Support column backfill
 	subQuery := temporaryTableID.FullyQualifiedName()
 	if opts.SubQueryDedupe {
-		subQuery = snowflakeDialect.BuildDedupeTableQuery(temporaryTableID, tableData.PrimaryKeys())
+		subQuery = dwh.Dialect().BuildDedupeTableQuery(temporaryTableID, tableData.PrimaryKeys())
 	}
 
 	if subQuery == "" {
