@@ -33,7 +33,9 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (b
 		AdditionalEqualityStrings: s.additionalEqualityStrings(tableData),
 	}
 
+	fmt.Println("here")
 	if tableData.MultiStepMergeSettings().Enabled {
+		fmt.Println("Multi-step merge is enabled")
 		return shared.MultiStepMerge(ctx, s, tableData, mergeOpts)
 	} else {
 		if err := shared.Merge(ctx, s, tableData, mergeOpts); err != nil {
