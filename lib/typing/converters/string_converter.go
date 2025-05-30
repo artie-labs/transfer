@@ -41,7 +41,7 @@ func GetStringConverter(kd typing.KindDetails, opts GetStringConverterOpts) (Con
 	case typing.Time.Kind:
 		return TimeConverter{}, nil
 	case typing.TimestampNTZ.Kind:
-		return NewTimestampNTZConverter(opts.TimestampNTZLayoutOverride), nil
+		return NewTimestampNTZConverter(opts.TimestampNTZLayoutOverride, opts.Location), nil
 	case typing.TimestampTZ.Kind:
 		return NewTimestampTZConverter(opts.TimestampTZLayoutOverride), nil
 	// Array and struct types
