@@ -8,6 +8,7 @@ import (
 
 	mssqlDialect "github.com/artie-labs/transfer/clients/mssql/dialect"
 	"github.com/artie-labs/transfer/clients/redshift/dialect"
+	snowflakeDialect "github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/integration_tests/shared"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination"
@@ -60,6 +61,18 @@ func (d DestinationTypes) Run(ctx context.Context) error {
 		}
 
 		if err := shared.MSSQLAssertColumns(ctx, d.destination, d.tableID); err != nil {
+			return fmt.Errorf("failed to assert columns: %w", err)
+		}
+
+		return nil
+	}
+
+	if _, ok := d.destination.Dialect().(snowflakeDialect.SnowflakeDialect); ok {
+		if err := shared.SnowflakeCreateTable(ctx, d.destination, d.tableID); err != nil {
+			return fmt.Errorf("failed to create table: %w", err)
+		}
+
+		if err := shared.SnowflakeAssertColumns(ctx, d.destination, d.tableID); err != nil {
 			return fmt.Errorf("failed to assert columns: %w", err)
 		}
 

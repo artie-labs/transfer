@@ -68,15 +68,9 @@ func TestSnowflakeDialect_KindForDataType_Number(t *testing.T) {
 func TestSnowflakeDialect_KindForDataType(t *testing.T) {
 	{
 		// Invalid
-		{
-			kd, err := SnowflakeDialect{}.KindForDataType("")
-			assert.ErrorContains(t, err, `unsupported data type: ""`)
-			assert.Equal(t, typing.Invalid, kd)
-		}
-		{
-			kd, err := SnowflakeDialect{}.KindForDataType("abc123")
-			assert.ErrorContains(t, err, `unsupported data type: "abc123"`)
-			assert.Equal(t, typing.Invalid, kd)
+		for _, variant := range []string{"", "abc123"} {
+			_, err := SnowflakeDialect{}.KindForDataType(variant)
+			assert.True(t, typing.IsUnsupportedDataTypeError(err))
 		}
 	}
 	{
@@ -102,11 +96,13 @@ func TestSnowflakeDialect_KindForDataType(t *testing.T) {
 			assert.Equal(t, typing.Invalid, kd)
 		}
 		{
-			kd, err := SnowflakeDialect{}.KindForDataType("NUMERIC(38, 2)")
-			assert.NoError(t, err)
-			assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
-			assert.Equal(t, int32(38), kd.ExtendedDecimalDetails.Precision())
-			assert.Equal(t, int32(2), kd.ExtendedDecimalDetails.Scale())
+			for _, variant := range []string{"NUMERIC(38, 2)", "DECIMAL(38, 2)"} {
+				kd, err := SnowflakeDialect{}.KindForDataType(variant)
+				assert.NoError(t, err)
+				assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
+				assert.Equal(t, int32(38), kd.ExtendedDecimalDetails.Precision())
+				assert.Equal(t, int32(2), kd.ExtendedDecimalDetails.Scale())
+			}
 		}
 		{
 			kd, err := SnowflakeDialect{}.KindForDataType("NUMBER(38, 2)")
@@ -114,11 +110,6 @@ func TestSnowflakeDialect_KindForDataType(t *testing.T) {
 			assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
 			assert.Equal(t, int32(38), kd.ExtendedDecimalDetails.Precision())
 			assert.Equal(t, int32(2), kd.ExtendedDecimalDetails.Scale())
-		}
-		{
-			kd, err := SnowflakeDialect{}.KindForDataType("DECIMAL")
-			assert.NoError(t, err)
-			assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
 		}
 	}
 	{
