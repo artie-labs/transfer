@@ -92,6 +92,7 @@ func SnowflakeAssertColumns(ctx context.Context, dest destination.Destination, t
 			return fmt.Errorf("failed to get kind for data type: %w", err)
 		}
 
+		fmt.Println("columnName", columnName, "columnType", columnType)
 		foundCols = append(foundCols, columns.NewColumn(columnName, kd))
 	}
 
@@ -105,8 +106,21 @@ func SnowflakeAssertColumns(ctx context.Context, dest destination.Destination, t
 			if err := assertEqual("c_array", col.KindDetails.Kind, typing.Array.Kind); err != nil {
 				return err
 			}
-		case "c_int", "c_integer", "c_bigint", "c_smallint", "c_tinyint", "c_byteint":
+		case "c_int", "c_integer", "c_smallint", "c_tinyint", "c_byteint":
 			if err := assertEqual(col.Name(), col.KindDetails.Kind, typing.Integer.Kind); err != nil {
+				return err
+			}
+		case "c_bigint":
+			// The result of creating a bigint column is that describe table will return [NUMBER(38, 0)]
+			if err := assertEqual(col.Name(), col.KindDetails.Kind, typing.EDecimal.Kind); err != nil {
+				return err
+			}
+
+			if err := assertEqual(col.Name(), int(col.KindDetails.ExtendedDecimalDetails.Precision()), 38); err != nil {
+				return err
+			}
+
+			if err := assertEqual(col.Name(), int(col.KindDetails.ExtendedDecimalDetails.Scale()), 0); err != nil {
 				return err
 			}
 		case "c_boolean":
