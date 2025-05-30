@@ -76,12 +76,15 @@ func SnowflakeAssertColumns(ctx context.Context, dest destination.Destination, t
 
 	var foundCols []columns.Column
 	for _, row := range rows {
-		columnName, err := maputil.GetTypeFromMap[string](row, "COLUMN_NAME")
+
+		fmt.Println("row", row)
+
+		columnName, err := maputil.GetTypeFromMap[string](row, "name")
 		if err != nil {
 			return fmt.Errorf("failed to get column name: %w", err)
 		}
 
-		columnType, err := maputil.GetTypeFromMap[string](row, "DATA_TYPE")
+		columnType, err := maputil.GetTypeFromMap[string](row, "type")
 		if err != nil {
 			return fmt.Errorf("failed to get column type: %w", err)
 		}
