@@ -24,7 +24,7 @@ func SnowflakeCreateTable(ctx context.Context, dest destination.Destination, tab
 		"c_double_precision DOUBLE PRECISION",
 		"c_real REAL",
 		"c_int INT",
-		"c_int8 INT8",
+		"c_integer INTEGER",
 		"c_bigint BIGINT",
 		"c_smallint SMALLINT",
 		"c_tinyint TINYINT",
