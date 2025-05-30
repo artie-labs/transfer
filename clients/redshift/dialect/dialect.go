@@ -116,8 +116,27 @@ func (rd RedshiftDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableId
 	return parts
 }
 
+// BuildMergeQueryIntoStagingTable - This is used to merge data from a staging table into a multi-step merge staging table.
 func (rd RedshiftDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string {
-	panic("not implemented")
+	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, rd)
+	if len(additionalEqualityStrings) > 0 {
+		equalitySQLParts = append(equalitySQLParts, additionalEqualityStrings...)
+	}
+
+	baseQuery := fmt.Sprintf(`
+MERGE INTO %s %s USING ( %s ) AS %s ON %s`,
+		tableID.FullyQualifiedName(), constants.TargetAlias, subQuery, constants.StagingAlias, strings.Join(equalitySQLParts, " AND "),
+	)
+
+	return []string{baseQuery + fmt.Sprintf(`
+WHEN MATCHED THEN UPDATE SET %s
+WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s);`,
+		// Update
+		sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, rd),
+		// Insert
+		strings.Join(sql.QuoteColumns(cols, rd), ","),
+		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, rd), ","),
+	)}
 }
 
 func (rd RedshiftDialect) buildMergeInsertQuery(
