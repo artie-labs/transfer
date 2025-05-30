@@ -110,6 +110,6 @@ func (MSSQLDialect) KindForDataType(rawType string) (typing.KindDetails, error) 
 	case "bit":
 		return typing.Boolean, nil
 	default:
-		return typing.Invalid, fmt.Errorf("unsupported data type: %q", rawType)
+		return typing.Invalid, typing.NewUnsupportedDataTypeError(fmt.Sprintf("unsupported data type: %q", rawType))
 	}
 }
