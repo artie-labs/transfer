@@ -19,12 +19,15 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/values"
 )
 
-func castColValStaging(colVal any, colKind typing.KindDetails, cfg config.SharedDestinationSettings) (shared.ValueConvertResponse, error) {
+func (s Store) castColValStaging(colVal any, colKind typing.KindDetails, cfg config.SharedDestinationSettings) (shared.ValueConvertResponse, error) {
 	if colVal == nil {
 		return shared.ValueConvertResponse{Value: constants.NullValuePlaceholder}, nil
 	}
 
-	value, err := values.ToStringOpts(colVal, colKind, converters.GetStringConverterOpts{UseNewStringMethod: cfg.UseNewStringMethod})
+	value, err := values.ToStringOpts(colVal, colKind, converters.GetStringConverterOpts{
+		UseNewStringMethod: cfg.UseNewStringMethod,
+		Location:           s.location,
+	})
 	if err != nil {
 		return shared.ValueConvertResponse{}, err
 	}
@@ -60,7 +63,7 @@ func (s Store) uploadToS3(ctx context.Context, fp string) (string, error) {
 
 func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTableID sql.TableIdentifier) (string, error) {
 	tempTableDataFile := shared.NewTemporaryDataFile(newTableID)
-	file, _, err := tempTableDataFile.WriteTemporaryTableFile(tableData, castColValStaging, s.config.SharedDestinationSettings)
+	file, _, err := tempTableDataFile.WriteTemporaryTableFile(tableData, s.castColValStaging, s.config.SharedDestinationSettings)
 	if err != nil {
 		return "", fmt.Errorf("failed to write temporary table file: %w", err)
 	}

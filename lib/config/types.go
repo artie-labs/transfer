@@ -59,7 +59,7 @@ type SharedDestinationSettings struct {
 type SharedTimestampSettings struct {
 	// If [location] is specified, we'll be using that location for all timestamp (without timezone) columns.
 	// The only exception is to Parquet where there's no explicit timestamp with timezone column, so both will use the location.
-	// Note: This only works for Parquet at the moment.
+	// Note: This only works for Parquet and Iceberg at the moment.
 	Location string `yaml:"location"`
 }
 
