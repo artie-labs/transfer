@@ -39,13 +39,8 @@ func MultiStepMerge(ctx context.Context, dest destination.Destination, tableData
 	}
 
 	if msmSettings.IsFirstFlush() {
-		sflkMSMTableID, ok := msmTableID.(dialect.TableIdentifier)
-		if !ok {
-			return false, fmt.Errorf("failed to get snowflake table identifier")
-		}
-
 		// If it's the first time we are doing this, we should ensure the MSM table has been dropped.
-		if err := dest.DropTable(ctx, sflkMSMTableID.WithDisableDropProtection(true)); err != nil {
+		if err := dest.DropTable(ctx, msmTableID.WithDisableDropProtection(true)); err != nil {
 			return false, fmt.Errorf("failed to drop msm table: %w", err)
 		}
 

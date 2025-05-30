@@ -14,6 +14,17 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
 
+func TestTableData_WipeData(t *testing.T) {
+	td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "foo")
+	td.containsHardDeletes = true
+
+	assert.True(t, td.ContainsHardDeletes())
+
+	// After we wipe the table data, hard delete flag should stick
+	td.WipeData()
+	assert.True(t, td.ContainsHardDeletes())
+}
+
 func TestTableData_ReadOnlyInMemoryCols(t *testing.T) {
 	// Making sure the columns are actually read only.
 	var cols columns.Columns
