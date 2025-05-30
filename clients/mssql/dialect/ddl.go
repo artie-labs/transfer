@@ -10,7 +10,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-// TODO: Remove [CHARACTER_MAXIMUM_LENGTH] once it's fully supported.
 const describeTableQuery = `
 SELECT
     COLUMN_NAME,
@@ -24,8 +23,7 @@ SELECT
         ELSE
             DATA_TYPE
     END AS DATA_TYPE,
-    COLUMN_DEFAULT AS DEFAULT_VALUE,
-    CHARACTER_MAXIMUM_LENGTH
+    COLUMN_DEFAULT AS DEFAULT_VALUE
 FROM
     INFORMATION_SCHEMA.COLUMNS
 WHERE
