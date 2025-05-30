@@ -92,7 +92,6 @@ func SnowflakeAssertColumns(ctx context.Context, dest destination.Destination, t
 			return fmt.Errorf("failed to get kind for data type: %w", err)
 		}
 
-		fmt.Println("columnName", columnName, "columnType", columnType)
 		foundCols = append(foundCols, columns.NewColumn(columnName, kd))
 	}
 
@@ -106,20 +105,13 @@ func SnowflakeAssertColumns(ctx context.Context, dest destination.Destination, t
 			if err := assertEqual("c_array", col.KindDetails.Kind, typing.Array.Kind); err != nil {
 				return err
 			}
-		case "c_int", "c_integer", "c_smallint", "c_tinyint":
-			if err := assertEqual(col.Name(), col.KindDetails.Kind, typing.Integer.Kind); err != nil {
-				return err
-			}
-		case "c_bigint", "c_byteint":
-			// The result of creating a bigint and byteint column is that describe table will return [NUMBER(38, 0)]
+		case "c_bigint", "c_byteint", "c_int", "c_integer", "c_smallint", "c_tinyint", "c_number_38_0":
 			if err := assertEqual(col.Name(), col.KindDetails.Kind, typing.EDecimal.Kind); err != nil {
 				return err
 			}
-
 			if err := assertEqual(col.Name(), int(col.KindDetails.ExtendedDecimalDetails.Precision()), 38); err != nil {
 				return err
 			}
-
 			if err := assertEqual(col.Name(), int(col.KindDetails.ExtendedDecimalDetails.Scale()), 0); err != nil {
 				return err
 			}
@@ -127,16 +119,84 @@ func SnowflakeAssertColumns(ctx context.Context, dest destination.Destination, t
 			if err := assertEqual(col.Name(), col.KindDetails.Kind, typing.Boolean.Kind); err != nil {
 				return err
 			}
-		case "c_float", "c_float4", "c_float8", "c_double", "c_double_precision", "c_real":
-			if err := assertEqual(col.Name(), col.KindDetails.Kind, typing.Float.Kind); err != nil {
+		case "c_char", "c_character":
+			if err := assertEqual(col.Name(), col.KindDetails.Kind, typing.String.Kind); err != nil {
+				return err
+			}
+			if err := assertEqual(col.Name(), int(*col.KindDetails.OptionalStringPrecision), 1); err != nil {
+				return err
+			}
+		case "c_char_5", "c_character_5":
+			if err := assertEqual(col.Name(), col.KindDetails.Kind, typing.String.Kind); err != nil {
+				return err
+			}
+			if err := assertEqual(col.Name(), int(*col.KindDetails.OptionalStringPrecision), 5); err != nil {
 				return err
 			}
 		case "c_date":
 			if err := assertEqual(col.Name(), col.KindDetails.Kind, typing.Date.Kind); err != nil {
 				return err
 			}
-		case "c_datetime":
+		case "c_datetime", "c_timestamp", "c_timestamp_ntz":
 			if err := assertEqual(col.Name(), col.KindDetails.Kind, typing.TimestampNTZ.Kind); err != nil {
+				return err
+			}
+		case "c_timestamp_ltz":
+			if err := assertEqual(col.Name(), col.KindDetails.Kind, typing.TimestampTZ.Kind); err != nil {
+				return err
+			}
+		case "c_timestamp_tz":
+			if err := assertEqual(col.Name(), col.KindDetails.Kind, typing.TimestampTZ.Kind); err != nil {
+				return err
+			}
+		case "c_decimal_5_0":
+			if err := assertEqual(col.Name(), col.KindDetails.Kind, typing.EDecimal.Kind); err != nil {
+				return err
+			}
+			if err := assertEqual(col.Name(), int(col.KindDetails.ExtendedDecimalDetails.Precision()), 5); err != nil {
+				return err
+			}
+			if err := assertEqual(col.Name(), int(col.KindDetails.ExtendedDecimalDetails.Scale()), 0); err != nil {
+				return err
+			}
+		case "c_decimal_5_2", "c_numeric_5_2":
+			if err := assertEqual(col.Name(), col.KindDetails.Kind, typing.EDecimal.Kind); err != nil {
+				return err
+			}
+			if err := assertEqual(col.Name(), int(col.KindDetails.ExtendedDecimalDetails.Precision()), 5); err != nil {
+				return err
+			}
+			if err := assertEqual(col.Name(), int(col.KindDetails.ExtendedDecimalDetails.Scale()), 2); err != nil {
+				return err
+			}
+		case "c_float", "c_float4", "c_float8", "c_double", "c_double_precision", "c_real":
+			if err := assertEqual(col.Name(), col.KindDetails.Kind, typing.Float.Kind); err != nil {
+				return err
+			}
+		case "c_object":
+			if err := assertEqual(col.Name(), col.KindDetails.Kind, typing.Struct.Kind); err != nil {
+				return err
+			}
+		case "c_string", "c_text", "c_varchar":
+			if err := assertEqual(col.Name(), col.KindDetails.Kind, typing.String.Kind); err != nil {
+				return err
+			}
+			if err := assertEqual(col.Name(), int(*col.KindDetails.OptionalStringPrecision), 16777216); err != nil {
+				return err
+			}
+		case "c_varchar_5":
+			if err := assertEqual(col.Name(), col.KindDetails.Kind, typing.String.Kind); err != nil {
+				return err
+			}
+			if err := assertEqual(col.Name(), int(*col.KindDetails.OptionalStringPrecision), 5); err != nil {
+				return err
+			}
+		case "c_time":
+			if err := assertEqual(col.Name(), col.KindDetails.Kind, typing.Time.Kind); err != nil {
+				return err
+			}
+		case "c_variant":
+			if err := assertEqual(col.Name(), col.KindDetails.Kind, typing.Struct.Kind); err != nil {
 				return err
 			}
 		default:
