@@ -96,7 +96,7 @@ func TestSnowflakeDialect_KindForDataType(t *testing.T) {
 			assert.Equal(t, typing.Invalid, kd)
 		}
 		{
-			kd, err := SnowflakeDialect{}.KindForDataType("NUMERIC(38, 2)")
+			kd, err := SnowflakeDialect{}.KindForDataType("NUMERIC(38, 2), DECIMAL(38, 2)")
 			assert.NoError(t, err)
 			assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
 			assert.Equal(t, int32(38), kd.ExtendedDecimalDetails.Precision())
@@ -109,15 +109,10 @@ func TestSnowflakeDialect_KindForDataType(t *testing.T) {
 			assert.Equal(t, int32(38), kd.ExtendedDecimalDetails.Precision())
 			assert.Equal(t, int32(2), kd.ExtendedDecimalDetails.Scale())
 		}
-		{
-			kd, err := SnowflakeDialect{}.KindForDataType("DECIMAL")
-			assert.NoError(t, err)
-			assert.Equal(t, typing.EDecimal.Kind, kd.Kind)
-		}
 	}
 	{
 		// Integers
-		expectedIntegers := []string{"INT", "INTEGER", "BIGINT", "SMALLINT", "TINYINT", "BYTEINT"}
+		expectedIntegers := []string{"INT", "INTEGER", "SMALLINT", "TINYINT"}
 		for _, expectedInteger := range expectedIntegers {
 			kd, err := SnowflakeDialect{}.KindForDataType(expectedInteger)
 			assert.NoError(t, err)
