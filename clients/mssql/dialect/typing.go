@@ -55,7 +55,7 @@ func (MSSQLDialect) DataTypeForKind(kindDetails typing.KindDetails, isPk bool, _
 	return kindDetails.Kind
 }
 
-func (MSSQLDialect) KindForDataType(rawType string, _ string) (typing.KindDetails, error) {
+func (MSSQLDialect) KindForDataType(rawType string) (typing.KindDetails, error) {
 	dataType, parameters, err := sql.ParseDataTypeDefinition(strings.ToLower(rawType))
 	if err != nil {
 		return typing.Invalid, err

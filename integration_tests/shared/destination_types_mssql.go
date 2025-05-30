@@ -72,7 +72,7 @@ func MSSQLAssertColumns(ctx context.Context, dest destination.Destination, table
 			return fmt.Errorf("failed to get column type: %w", err)
 		}
 
-		kd, err := dest.Dialect().KindForDataType(columnType, "")
+		kd, err := dest.Dialect().KindForDataType(columnType)
 		if err != nil {
 			return fmt.Errorf("failed to get kind for data type: %w", err)
 		}

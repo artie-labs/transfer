@@ -60,7 +60,7 @@ func (RedshiftDialect) DataTypeForKind(kd typing.KindDetails, _ bool, _ config.S
 	return kd.Kind
 }
 
-func (RedshiftDialect) KindForDataType(rawType string, _ string) (typing.KindDetails, error) {
+func (RedshiftDialect) KindForDataType(rawType string) (typing.KindDetails, error) {
 	dataType, parameters, err := sql.ParseDataTypeDefinition(strings.ToLower(rawType))
 	if err != nil {
 		return typing.Invalid, err
