@@ -186,3 +186,7 @@ FORMAT_OPTIONS (
 		constants.NullValuePlaceholder,
 	)
 }
+
+func (DatabricksDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string {
+	panic("not implemented")
+}
