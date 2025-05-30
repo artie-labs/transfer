@@ -191,7 +191,7 @@ func merge(ctx context.Context, dwh destination.Destination, tableData *optimiza
 
 	var mergeStatements []string
 	if opts.UseBuildMergeQueryIntoStagingTable {
-		mergeStatements = snowflakeDialect.BuildMergeQueryIntoStagingTable(
+		mergeStatements = dwh.Dialect().BuildMergeQueryIntoStagingTable(
 			targetTableID,
 			subQuery,
 			primaryKeys,
@@ -199,7 +199,7 @@ func merge(ctx context.Context, dwh destination.Destination, tableData *optimiza
 			validColumns,
 		)
 	} else {
-		_mergeStatements, err := snowflakeDialect.BuildMergeQueries(
+		_mergeStatements, err := dwh.Dialect().BuildMergeQueries(
 			targetTableID,
 			subQuery,
 			primaryKeys,
