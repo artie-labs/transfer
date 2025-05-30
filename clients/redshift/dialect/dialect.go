@@ -246,3 +246,7 @@ func (rd RedshiftDialect) BuildCopyStatement(tableID sql.TableIdentifier, cols [
 		sql.QuoteLiteral(constants.NullValuePlaceholder), credentialsClause,
 	)
 }
+
+func (RedshiftDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string {
+	panic("not implemented")
+}

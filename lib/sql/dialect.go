@@ -39,6 +39,7 @@ type Dialect interface {
 	BuildDedupeTableQuery(tableID TableIdentifier, primaryKeys []string) string
 	BuildDescribeTableQuery(tableID TableIdentifier) (string, []any, error)
 	BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string
+	BuildMergeQueryIntoStagingTable(tableID TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string
 	BuildMergeQueries(
 		tableID TableIdentifier,
 		subQuery string,

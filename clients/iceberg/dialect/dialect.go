@@ -218,3 +218,7 @@ func (id IcebergDialect) BuildAppendToTable(tableID sql.TableIdentifier, viewNam
 	// Ref: https://downloads.apache.org/spark/docs/3.1.1/sql-ref-syntax-dml-insert-into.html
 	return fmt.Sprintf("INSERT INTO %s (%s) SELECT %s FROM %s", tableID.FullyQualifiedName(), strings.Join(columns, ", "), strings.Join(columns, ", "), viewName)
 }
+
+func (IcebergDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string {
+	panic("not implemented")
+}

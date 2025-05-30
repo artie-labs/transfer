@@ -181,3 +181,7 @@ WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s) VALUES (%s);`,
 		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, bd), ","),
 	)}, nil
 }
+
+func (bd BigQueryDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string {
+	panic("not implemented")
+}
