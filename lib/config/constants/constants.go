@@ -112,10 +112,7 @@ type ColComment struct {
 
 type S3OutputFormat string
 
-const (
-	// TODO - We should support TSV, Avro
-	ParquetFormat S3OutputFormat = "parquet"
-)
+const ParquetFormat S3OutputFormat = "parquet"
 
 func IsValidS3OutputFormat(format S3OutputFormat) bool {
 	return format == ParquetFormat
