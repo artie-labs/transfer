@@ -124,3 +124,7 @@ const (
 	StagingAlias TableAlias = "stg"
 	TargetAlias  TableAlias = "tgt"
 )
+
+func BuildTableAlias(escapedTable string) TableAlias {
+	return TableAlias(escapedTable)
+}

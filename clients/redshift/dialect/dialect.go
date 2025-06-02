@@ -250,15 +250,15 @@ func (rd RedshiftDialect) BuildCopyStatement(tableID sql.TableIdentifier, cols [
 func (rd RedshiftDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, _ []string, cols []columns.Column) []string {
 	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, rd)
 	baseQuery := fmt.Sprintf(`
-MERGE INTO %s %s USING ( %s ) AS %s ON %s`,
-		tableID.FullyQualifiedName(), constants.TargetAlias, subQuery, constants.StagingAlias, strings.Join(equalitySQLParts, " AND "),
+MERGE INTO %s USING ( %s ) AS %s ON %s`,
+		tableID.FullyQualifiedName(), subQuery, constants.StagingAlias, strings.Join(equalitySQLParts, " AND "),
 	)
 
 	return []string{baseQuery + fmt.Sprintf(`
 WHEN MATCHED THEN UPDATE SET %s
 WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s);`,
 		// Update
-		sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, rd),
+		sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.BuildTableAlias(tableID.EscapedTable()), rd),
 		// Insert
 		strings.Join(sql.QuoteColumns(cols, rd), ","),
 		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, rd), ","),

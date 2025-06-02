@@ -44,7 +44,7 @@ func ExecContextStatements(ctx context.Context, dest Destination, statements []s
 	case 0:
 		return fmt.Errorf("statements is empty")
 	case 1:
-		slog.Debug("Executing...", slog.String("query", statements[0]))
+		slog.Info("Executing...", slog.String("query", statements[0]))
 		if _, err := dest.ExecContext(ctx, statements[0]); err != nil {
 			return fmt.Errorf("failed to execute statement: %w", err)
 		}
@@ -65,7 +65,7 @@ func ExecContextStatements(ctx context.Context, dest Destination, statements []s
 		}()
 
 		for _, statement := range statements {
-			slog.Debug("Executing...", slog.String("query", statement))
+			slog.Info("Executing...", slog.String("query", statement))
 			if _, err = tx.ExecContext(ctx, statement); err != nil {
 				return fmt.Errorf("failed to execute statement: %q, err: %w", statement, err)
 			}
