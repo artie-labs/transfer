@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	redshift "github.com/artie-labs/transfer/clients/redshift/dialect"
 	"github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
@@ -15,9 +16,18 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
+func ensureAccessToMSM(dest destination.Destination) error {
+	switch castedDialect := dest.Dialect().(type) {
+	case dialect.SnowflakeDialect, redshift.RedshiftDialect:
+		return nil
+	default:
+		return fmt.Errorf("multi-step merge is only supported on Snowflake and Redshift, type: %T", castedDialect)
+	}
+}
+
 func MultiStepMerge(ctx context.Context, dest destination.Destination, tableData *optimization.TableData, opts types.MergeOpts) (bool, error) {
-	if _, ok := dest.Dialect().(dialect.SnowflakeDialect); !ok {
-		return false, fmt.Errorf("multi-step merge is only supported on Snowflake")
+	if err := ensureAccessToMSM(dest); err != nil {
+		return false, err
 	}
 
 	msmSettings := tableData.MultiStepMergeSettings()
