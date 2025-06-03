@@ -148,8 +148,23 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 		return fmt.Errorf("failed to generate merge statements: %w", err)
 	}
 
-	if _, err = destination.ExecContextStatements(ctx, dest, mergeStatements); err != nil {
+	results, err := destination.ExecContextStatements(ctx, dest, mergeStatements)
+	if err != nil {
 		return fmt.Errorf("failed to execute merge statements: %w", err)
+	}
+
+	var totalRowsAffected int64
+	for _, result := range results {
+		rowsAffected, err := result.RowsAffected()
+		if err != nil {
+			return fmt.Errorf("failed to get rows affected: %w", err)
+		}
+
+		totalRowsAffected += rowsAffected
+	}
+
+	if rows := tableData.NumberOfRows(); rows > uint(totalRowsAffected) {
+		return fmt.Errorf("expected %d rows to be affected, got %d", rows, totalRowsAffected)
 	}
 
 	return nil
