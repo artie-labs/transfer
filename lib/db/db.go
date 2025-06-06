@@ -22,6 +22,7 @@ type Store interface {
 	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 	Begin() (*sql.Tx, error)
 	IsRetryableError(err error) bool
+	ExecContextStatements(ctx context.Context, statements []string) ([]sql.Result, error)
 }
 
 type storeWrapper struct {

@@ -7,7 +7,6 @@ import (
 
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib/partition"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -72,7 +71,7 @@ func generateMergeString(bqSettings *partition.BigQuerySettings, dialect sql.Dia
 }
 
 func (s *Store) MergeAndAssertRows(ctx context.Context, tableData *optimization.TableData, statements []string) error {
-	results, err := destination.ExecContextStatements(ctx, s.Store, statements)
+	results, err := s.ExecContextStatements(ctx, statements)
 	if err != nil {
 		return fmt.Errorf("failed to execute merge statements: %w", err)
 	}

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -41,7 +40,7 @@ type Baseline interface {
 
 // ExecContextStatements executes one or more statements against a [Destination].
 // If there is more than one statement, the statements will be executed inside of a transaction.
-func ExecContextStatements(ctx context.Context, store db.Store, statements []string) ([]sql.Result, error) {
+func ExecContextStatements(ctx context.Context, store Destination, statements []string) ([]sql.Result, error) {
 	switch len(statements) {
 	case 0:
 		return nil, fmt.Errorf("statements is empty")
