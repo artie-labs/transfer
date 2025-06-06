@@ -6,6 +6,7 @@ import (
 
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -42,4 +43,28 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (b
 	}
 
 	return true, nil
+}
+
+func (s *Store) MergeAndAssertRows(ctx context.Context, tableData *optimization.TableData, statements []string) error {
+	results, err := destination.ExecContextStatements(ctx, s.Store, statements)
+	if err != nil {
+		return fmt.Errorf("failed to execute merge statements: %w", err)
+	}
+
+	var totalRowsAffected int64
+	for _, result := range results {
+		rowsAffected, err := result.RowsAffected()
+		if err != nil {
+			return fmt.Errorf("failed to get rows affected: %w", err)
+		}
+
+		totalRowsAffected += rowsAffected
+	}
+
+	// [totalRowsAffected] may be higher if the table contains duplicate rows.
+	if rows := tableData.NumberOfRows(); rows > uint(totalRowsAffected) {
+		return fmt.Errorf("expected %d rows to be affected, got %d", rows, totalRowsAffected)
+	}
+
+	return nil
 }
