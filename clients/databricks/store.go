@@ -52,7 +52,7 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bo
 	return true, nil
 }
 
-func (s *Store) MergeAndAssertRows(ctx context.Context, tableData *optimization.TableData, statements []string) error {
+func (s Store) MergeAndAssertRows(ctx context.Context, tableData *optimization.TableData, statements []string) error {
 	results, err := s.ExecContextStatements(ctx, statements)
 	if err != nil {
 		return fmt.Errorf("failed to execute merge statements: %w", err)
