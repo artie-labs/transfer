@@ -2,6 +2,7 @@ package lib
 
 import (
 	"log/slog"
+	"sync/atomic"
 	"time"
 )
 
@@ -22,7 +23,7 @@ type Heartbeats struct {
 
 	// [test] - If true, the heartbeat will be ticked.
 	test  bool
-	ticks int
+	ticks int32
 }
 
 func NewHeartbeats(initialDelay time.Duration, intervalTicker time.Duration, metric string, tags map[string]any) *Heartbeats {
@@ -70,7 +71,7 @@ func (h *Heartbeats) start(done <-chan struct{}) {
 			return
 		case <-ticker.C:
 			if h.test {
-				h.ticks++
+				atomic.AddInt32(&h.ticks, 1)
 			}
 
 			slog.Info("[Heartbeats] Process is still running",

@@ -1,6 +1,7 @@
 package lib
 
 import (
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -18,7 +19,7 @@ func TestHeartbeats(t *testing.T) {
 
 		time.Sleep(3 * oneHundredMillisecond)
 		done()
-		assert.Zero(t, heartbeats.ticks)
+		assert.Zero(t, atomic.LoadInt32(&heartbeats.ticks))
 	}
 	{
 		heartbeats := NewHeartbeats(oneHundredMillisecond, 2*oneHundredMillisecond, "test", map[string]any{"test": "test"})
@@ -28,6 +29,6 @@ func TestHeartbeats(t *testing.T) {
 		// Sleep 500 ms + buffer of 25 ms to make sure we hit the second tick
 		time.Sleep(5*oneHundredMillisecond + 25*time.Millisecond)
 		done()
-		assert.Equal(t, 2, heartbeats.ticks)
+		assert.Equal(t, int32(2), atomic.LoadInt32(&heartbeats.ticks))
 	}
 }
