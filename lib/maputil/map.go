@@ -7,13 +7,14 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
+// GetKeyFromMap - If the key does not exists, it will return the default value.
 func GetKeyFromMap(obj map[string]any, key string, defaultValue any) any {
 	if len(obj) == 0 {
 		return defaultValue
 	}
 
-	val, isOk := obj[key]
-	if !isOk {
+	val, ok := obj[key]
+	if !ok {
 		return defaultValue
 	}
 
@@ -25,8 +26,8 @@ func GetInt32FromMap(obj map[string]any, key string) (int32, error) {
 		return 0, fmt.Errorf("object is empty")
 	}
 
-	valInterface, isOk := obj[key]
-	if !isOk {
+	valInterface, ok := obj[key]
+	if !ok {
 		return 0, fmt.Errorf("key: %s does not exist in object", key)
 	}
 
@@ -39,8 +40,8 @@ func GetInt32FromMap(obj map[string]any, key string) (int32, error) {
 }
 
 func GetTypeFromMap[T any](obj map[string]any, key string) (T, error) {
-	value, isOk := obj[key]
-	if !isOk {
+	value, ok := obj[key]
+	if !ok {
 		var zero T
 		return zero, fmt.Errorf("key: %q does not exist in object", key)
 	}
