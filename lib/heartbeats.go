@@ -41,7 +41,6 @@ func (h *Heartbeats) Start() func() {
 	}
 }
 
-// Start begins monitoring for deadlocks. It waits for startTime, then logs a heartbeat every interval until done is closed.
 func (h *Heartbeats) start(done <-chan struct{}) {
 	// Wait for the initial delay before starting heartbeats
 	timer := time.NewTimer(h.initialDelay)
@@ -49,11 +48,11 @@ func (h *Heartbeats) start(done <-chan struct{}) {
 
 	select {
 	case <-timer.C:
-		// Start the ticker after the initial delay
 	case <-done:
 		return
 	}
 
+	// We're here if the initial delay has been passed
 	ticker := time.NewTicker(h.intervalTicker)
 	defer ticker.Stop()
 
