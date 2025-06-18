@@ -10,7 +10,8 @@ import (
 // Once that's done, you'll then want to start the function via [Start] which returns a done function that should be used invoked by a defer.
 type Heartbeats struct {
 	startTime time.Time
-	// [initialDelay] - The time to wait before starting the heartbeat.
+	// [initialDelay] - The time to wait before starting the heartbeat. If the main process finishes before the initial delay, heartbeats will not be started.
+	// This is done to prevent noise in our logs.
 	initialDelay time.Duration
 	// [intervalTicker] - The interval at which to send heartbeats ping.
 	intervalTicker time.Duration
