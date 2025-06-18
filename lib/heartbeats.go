@@ -11,10 +11,13 @@ type Heartbeats struct {
 	initialDelay time.Duration
 	// [intervalTicker] - The interval at which to send heartbeats ping.
 	intervalTicker time.Duration
-
 	// Metadata
 	metric string
 	tags   map[string]any
+
+	// [test] - If true, the heartbeat will be ticked.
+	test  bool
+	ticks int
 }
 
 func NewHeartbeats(initialDelay time.Duration, intervalTicker time.Duration, metric string, tags map[string]any) *Heartbeats {
@@ -61,6 +64,10 @@ func (h *Heartbeats) start(done <-chan struct{}) {
 		case <-done:
 			return
 		case <-ticker.C:
+			if h.test {
+				h.ticks++
+			}
+
 			slog.Info("Heartbeat check", slog.String("metric", h.metric), slog.Any("tags", h.tags), slog.Duration("duration", time.Since(h.startTime)))
 		}
 	}
