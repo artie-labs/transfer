@@ -1,3 +1,6 @@
+//go:build generate
+// +build generate
+
 package mocks
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
@@ -9,3 +12,5 @@ package mocks
 //counterfeiter:generate -o=tableid.mock.go ../sql TableIdentifier
 
 //counterfeiter:generate -o=event.mock.go ../cdc Event
+
+// counterfeiter:generate -o=fake_slog_handler.go log/slog Handler
