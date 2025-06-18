@@ -7,7 +7,7 @@ import (
 
 // Heartbeats is a struct that allows us to monitor long running processes to spot potential deadlocks
 // To use heartbeats, you'll first want to create the struct by invoking [NewHeartbeats]
-// Once that's done, you'll then want to start the function via [Start] which returns a done function
+// Once that's done, you'll then want to start the function via [Start] which returns a done function that should be used invoked by a defer.
 type Heartbeats struct {
 	startTime time.Time
 	// [initialDelay] - The time to wait before starting the heartbeat.
