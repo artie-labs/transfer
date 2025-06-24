@@ -1,6 +1,7 @@
 package util
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -96,17 +97,13 @@ func (s *SchemaEventPayload) GetTableName() string {
 	return s.Payload.Source.Table
 }
 
-func (s *SchemaEventPayload) GetSourceMetadata() map[string]any {
-	return map[string]any{
-		"connector": s.Payload.Source.Connector,
-		"ts_ms":     s.Payload.Source.TsMs,
-		"db":        s.Payload.Source.Database,
-		"schema":    s.Payload.Source.Schema,
-		"table":     s.Payload.Source.Table,
-		"file":      s.Payload.Source.File,
-		"pos":       s.Payload.Source.Pos,
-		"gtid":      s.Payload.Source.Gtid,
+func (s *SchemaEventPayload) GetSourceMetadata() (string, error) {
+	json, err := json.Marshal(s.Payload.Source)
+	if err != nil {
+		return "", err
 	}
+
+	return string(json), nil
 }
 
 func (s *SchemaEventPayload) GetData(tc kafkalib.TopicConfig) (map[string]any, error) {

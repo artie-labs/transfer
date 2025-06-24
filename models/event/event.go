@@ -143,7 +143,12 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 	}
 
 	if tc.IncludeSourceMetadata {
-		evtData[constants.SourceMetadataColumnMarker] = event.GetSourceMetadata()
+		metadata, err := event.GetSourceMetadata()
+		if err != nil {
+			return Event{}, err
+		}
+
+		evtData[constants.SourceMetadataColumnMarker] = metadata
 		cols.AddColumn(columns.NewColumn(constants.SourceMetadataColumnMarker, typing.Struct))
 	}
 

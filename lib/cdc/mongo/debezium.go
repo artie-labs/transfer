@@ -108,13 +108,13 @@ func (s *SchemaEventPayload) GetTableName() string {
 	return s.Payload.Source.Collection
 }
 
-func (s *SchemaEventPayload) GetSourceMetadata() map[string]any {
-	return map[string]any{
-		"connector":  s.Payload.Source.Connector,
-		"ts_ms":      s.Payload.Source.TsMs,
-		"db":         s.Payload.Source.Database,
-		"collection": s.Payload.Source.Collection,
+func (s *SchemaEventPayload) GetSourceMetadata() (string, error) {
+	json, err := json.Marshal(s.Payload.Source)
+	if err != nil {
+		return "", err
 	}
+
+	return string(json), nil
 }
 
 func (s *SchemaEventPayload) GetOptionalSchema() (map[string]typing.KindDetails, error) {
