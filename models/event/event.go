@@ -142,6 +142,10 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 		evtData[constants.OperationColumnMarker] = event.Operation()
 	}
 
+	if tc.IncludeFullSourceTableName {
+		evtData[constants.FullSourceTableNameMarker] = event.GetFullTableName()
+	}
+
 	tblName := cmp.Or(tc.TableName, event.GetTableName())
 	if cfgMode == config.History {
 		if !strings.HasSuffix(tblName, constants.HistoryModeSuffix) {

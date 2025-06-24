@@ -92,6 +92,14 @@ func (s *SchemaEventPayload) GetTableName() string {
 	return s.Payload.Source.Table
 }
 
+func (s *SchemaEventPayload) GetFullTableName() string {
+	if s.Payload.Source.Schema != "" {
+		return s.Payload.Source.Schema + "." + s.Payload.Source.Table
+	}
+
+	return s.Payload.Source.Table
+}
+
 func (s *SchemaEventPayload) GetData(tc kafkalib.TopicConfig) (map[string]any, error) {
 	var err error
 	var retMap map[string]any

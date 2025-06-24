@@ -108,6 +108,11 @@ func (s *SchemaEventPayload) GetTableName() string {
 	return s.Payload.Source.Collection
 }
 
+func (s *SchemaEventPayload) GetFullTableName() string {
+	// MongoDB doesn't have schemas, the full table name is the same as the table name.
+	return s.GetTableName()
+}
+
 func (s *SchemaEventPayload) GetOptionalSchema() (map[string]typing.KindDetails, error) {
 	// MongoDB does not have a schema at the database level.
 	return nil, nil
