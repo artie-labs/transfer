@@ -142,8 +142,9 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 		evtData[constants.OperationColumnMarker] = event.Operation()
 	}
 
-	if tc.IncludeFullSourceTableName {
-		evtData[constants.FullSourceTableNameMarker] = event.GetFullTableName()
+	if tc.IncludeSourceMetadata {
+		evtData[constants.SourceMetadataColumnMarker] = event.GetSourceMetadata()
+		cols.AddColumn(columns.NewColumn(constants.SourceMetadataColumnMarker, typing.Struct))
 	}
 
 	tblName := cmp.Or(tc.TableName, event.GetTableName())

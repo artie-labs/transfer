@@ -92,12 +92,17 @@ func (s *SchemaEventPayload) GetTableName() string {
 	return s.Payload.Source.Table
 }
 
-func (s *SchemaEventPayload) GetFullTableName() string {
-	if s.Payload.Source.Schema != "" {
-		return s.Payload.Source.Schema + "." + s.Payload.Source.Table
+func (s *SchemaEventPayload) GetSourceMetadata() map[string]any {
+	return map[string]any{
+		"connector": s.Payload.Source.Connector,
+		"ts_ms":     s.Payload.Source.TsMs,
+		"db":        s.Payload.Source.Database,
+		"schema":    s.Payload.Source.Schema,
+		"table":     s.Payload.Source.Table,
+		"file":      s.Payload.Source.File,
+		"pos":       s.Payload.Source.Pos,
+		"gtid":      s.Payload.Source.Gtid,
 	}
-
-	return s.Payload.Source.Table
 }
 
 func (s *SchemaEventPayload) GetData(tc kafkalib.TopicConfig) (map[string]any, error) {

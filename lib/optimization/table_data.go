@@ -291,8 +291,8 @@ func (t *TableData) BuildColumnsToKeep() []string {
 		colsMap.Add(constants.DatabaseUpdatedColumnMarker, true)
 	}
 
-	if t.TopicConfig().IncludeFullSourceTableName {
-		colsMap.Add(constants.FullSourceTableNameMarker, true)
+	if t.TopicConfig().IncludeSourceMetadata {
+		colsMap.Add(constants.SourceMetadataColumnMarker, true)
 	}
 
 	return colsMap.Keys()

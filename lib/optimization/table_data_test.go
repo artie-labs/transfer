@@ -335,8 +335,8 @@ func TestTableData_BuildColumnsToKeep(t *testing.T) {
 		assert.ElementsMatch(t, []string{constants.OperationColumnMarker}, td.BuildColumnsToKeep())
 	}
 	{
-		// Include full source table name is true
-		td := TableData{mode: config.Replication, topicConfig: kafkalib.TopicConfig{IncludeFullSourceTableName: true}}
-		assert.ElementsMatch(t, []string{constants.FullSourceTableNameMarker}, td.BuildColumnsToKeep())
+		// Include source metadata is true
+		td := TableData{mode: config.Replication, topicConfig: kafkalib.TopicConfig{IncludeSourceMetadata: true}}
+		assert.ElementsMatch(t, []string{constants.SourceMetadataColumnMarker}, td.BuildColumnsToKeep())
 	}
 }
