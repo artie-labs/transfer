@@ -55,7 +55,7 @@ type TopicConfig struct {
 	IncludeArtieUpdatedAt    bool   `yaml:"includeArtieUpdatedAt"`
 	IncludeArtieOperation    bool   `yaml:"includeArtieOperation"`
 	IncludeDatabaseUpdatedAt bool   `yaml:"includeDatabaseUpdatedAt"`
-	IncludeSourceMetadata    bool   `yaml:"includeFullSourceMeta"`
+	IncludeSourceMetadata    bool   `yaml:"includeSourceMetadata"`
 	// TODO: Deprecate BigQueryPartitionSettings and use AdditionalMergePredicates instead.
 	BigQueryPartitionSettings *partition.BigQuerySettings `yaml:"bigQueryPartitionSettings,omitempty"`
 	AdditionalMergePredicates []partition.MergePredicates `yaml:"additionalMergePredicates,omitempty"`
