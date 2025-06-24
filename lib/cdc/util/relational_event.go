@@ -34,6 +34,10 @@ type Source struct {
 	File string  `json:"file,omitempty"`
 	Pos  int64   `json:"pos,omitempty"`
 	Gtid *string `json:"gtid,omitempty"`
+
+	// MSSQL specific
+	LSN           string `json:"lsn,omitempty"`
+	TransactionID *int64 `json:"transaction_id,omitempty"`
 }
 
 func shouldParseValue(value any) bool {
