@@ -108,6 +108,15 @@ func (s *SchemaEventPayload) GetTableName() string {
 	return s.Payload.Source.Collection
 }
 
+func (s *SchemaEventPayload) GetSourceMetadata() (string, error) {
+	json, err := json.Marshal(s.Payload.Source)
+	if err != nil {
+		return "", err
+	}
+
+	return string(json), nil
+}
+
 func (s *SchemaEventPayload) GetOptionalSchema() (map[string]typing.KindDetails, error) {
 	// MongoDB does not have a schema at the database level.
 	return nil, nil

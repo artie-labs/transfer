@@ -1,6 +1,7 @@
 package util
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -94,6 +95,15 @@ func (s *SchemaEventPayload) GetExecutionTime() time.Time {
 
 func (s *SchemaEventPayload) GetTableName() string {
 	return s.Payload.Source.Table
+}
+
+func (s *SchemaEventPayload) GetSourceMetadata() (string, error) {
+	json, err := json.Marshal(s.Payload.Source)
+	if err != nil {
+		return "", err
+	}
+
+	return string(json), nil
 }
 
 func (s *SchemaEventPayload) GetData(tc kafkalib.TopicConfig) (map[string]any, error) {

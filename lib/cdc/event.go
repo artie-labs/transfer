@@ -19,6 +19,7 @@ type Event interface {
 	Operation() string
 	DeletePayload() bool
 	GetTableName() string
+	GetSourceMetadata() (string, error)
 	GetData(tc kafkalib.TopicConfig) (map[string]any, error)
 	GetOptionalSchema() (map[string]typing.KindDetails, error)
 	// GetColumns will inspect the envelope's payload right now and return.

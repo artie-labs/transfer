@@ -28,6 +28,7 @@ const (
 	DatabaseUpdatedColumnMarker = ArtiePrefix + "_db_updated_at"
 	OperationColumnMarker       = ArtiePrefix + "_operation"
 	ExceededValueMarker         = ArtiePrefix + "_exceeded_value"
+	SourceMetadataColumnMarker  = ArtiePrefix + "_source_metadata"
 
 	TemporaryTableTTL = 6 * time.Hour
 
@@ -51,6 +52,7 @@ var ArtieColumns = []string{
 	UpdateColumnMarker,
 	DatabaseUpdatedColumnMarker,
 	OperationColumnMarker,
+	SourceMetadataColumnMarker,
 }
 
 // ExporterKind is used for the Telemetry package
