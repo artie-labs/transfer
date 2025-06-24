@@ -145,7 +145,7 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 	if tc.IncludeSourceMetadata {
 		metadata, err := event.GetSourceMetadata()
 		if err != nil {
-			return Event{}, err
+			return Event{}, fmt.Errorf("failed to get source metadata: %w", err)
 		}
 
 		evtData[constants.SourceMetadataColumnMarker] = metadata
