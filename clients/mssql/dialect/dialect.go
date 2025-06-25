@@ -15,7 +15,12 @@ import (
 type MSSQLDialect struct{}
 
 func (MSSQLDialect) QuoteIdentifier(identifier string) string {
-	return fmt.Sprintf(`"%s"`, strings.ReplaceAll(identifier, `"`, ``))
+	charToReplace := []string{`[`, `]`}
+	for _, char := range charToReplace {
+		identifier = strings.ReplaceAll(identifier, char, ``)
+	}
+
+	return fmt.Sprintf(`[%s]`, identifier)
 }
 
 func (MSSQLDialect) EscapeStruct(value string) string {
