@@ -29,10 +29,10 @@ func TestMSSQLDialect_BuildInsertQuery(t *testing.T) {
 
 	// Verify the result
 	expectedQuery := `
-INSERT INTO database.schema.table ("id","name","__artie_delete")
-SELECT stg."id",stg."name",stg."__artie_delete" FROM SELECT * FROM staging AS stg
+INSERT INTO database.schema.table ([id],[name],[__artie_delete])
+SELECT stg.[id],stg.[name],stg.[__artie_delete] FROM SELECT * FROM staging AS stg
 LEFT JOIN database.schema.table AS tgt ON tgt.id = stg.id
-WHERE tgt."id" IS NULL;`
+WHERE tgt.[id] IS NULL;`
 	assert.Equal(t, expectedQuery, query)
 }
 
@@ -54,9 +54,9 @@ func TestMSSQLDialect_BuildUpdateAllColumnsQuery(t *testing.T) {
 
 	// Verify the result
 	expectedQuery := `
-UPDATE tgt SET "id"=stg."id","name"=stg."name","__artie_delete"=stg."__artie_delete"
+UPDATE tgt SET [id]=stg.[id],[name]=stg.[name],[__artie_delete]=stg.[__artie_delete]
 FROM SELECT * FROM staging AS stg LEFT JOIN database.schema.table AS tgt ON tgt.id = stg.id
-WHERE COALESCE(stg."__artie_only_set_delete", 0) = 0;`
+WHERE COALESCE(stg.[__artie_only_set_delete], 0) = 0;`
 
 	assert.Equal(t, expectedQuery, query)
 }
@@ -74,9 +74,9 @@ func TestMSSQLDialect_BuildUpdateDeleteColumnQuery(t *testing.T) {
 
 	// Verify the result
 	expectedQuery := `
-UPDATE tgt SET "__artie_delete"=stg."__artie_delete"
+UPDATE tgt SET [__artie_delete]=stg.[__artie_delete]
 FROM SELECT * FROM staging AS stg LEFT JOIN database.schema.table AS tgt ON tgt.id = stg.id
-WHERE COALESCE(stg."__artie_only_set_delete", 0) = 1;`
+WHERE COALESCE(stg.[__artie_only_set_delete], 0) = 1;`
 
 	assert.Equal(t, expectedQuery, query)
 }
@@ -103,9 +103,9 @@ func TestMSSQLDialect_BuildRegularMergeQueries(t *testing.T) {
 	expectedQuery := `
 MERGE INTO database.schema.table tgt
 USING SELECT * FROM staging AS stg ON tgt.id = stg.id
-WHEN MATCHED AND stg."__artie_delete" = 1 THEN DELETE
-WHEN MATCHED AND COALESCE(stg."__artie_delete", 0) = 0 THEN UPDATE SET "id"=stg."id","name"=stg."name"
-WHEN NOT MATCHED AND COALESCE(stg."__artie_delete", 1) = 0 THEN INSERT ("id","name") VALUES (stg."id",stg."name");`
+WHEN MATCHED AND stg.[__artie_delete] = 1 THEN DELETE
+WHEN MATCHED AND COALESCE(stg.[__artie_delete], 0) = 0 THEN UPDATE SET [id]=stg.[id],[name]=stg.[name]
+WHEN NOT MATCHED AND COALESCE(stg.[__artie_delete], 1) = 0 THEN INSERT ([id],[name]) VALUES (stg.[id],stg.[name]);`
 
 	assert.Equal(t, expectedQuery, queries[0])
 }
@@ -135,22 +135,22 @@ func TestMSSQLDialect_BuildSoftDeleteMergeQueries(t *testing.T) {
 
 	// The first query should be the insert query
 	expectedInsertQuery := `
-INSERT INTO database.schema.table ("id","name","__artie_delete")
-SELECT stg."id",stg."name",stg."__artie_delete" FROM SELECT * FROM staging AS stg
+INSERT INTO database.schema.table ([id],[name],[__artie_delete])
+SELECT stg.[id],stg.[name],stg.[__artie_delete] FROM SELECT * FROM staging AS stg
 LEFT JOIN database.schema.table AS tgt ON tgt.id = stg.id
-WHERE tgt."id" IS NULL;`
+WHERE tgt.[id] IS NULL;`
 
 	// The second query should be the update all columns query
 	expectedUpdateAllColumnsQuery := `
-UPDATE tgt SET "id"=stg."id","name"=stg."name","__artie_delete"=stg."__artie_delete"
+UPDATE tgt SET [id]=stg.[id],[name]=stg.[name],[__artie_delete]=stg.[__artie_delete]
 FROM SELECT * FROM staging AS stg LEFT JOIN database.schema.table AS tgt ON tgt.id = stg.id
-WHERE COALESCE(stg."__artie_only_set_delete", 0) = 0;`
+WHERE COALESCE(stg.[__artie_only_set_delete], 0) = 0;`
 
 	// The third query should be the update delete column query
 	expectedUpdateDeleteColumnQuery := `
-UPDATE tgt SET "__artie_delete"=stg."__artie_delete"
+UPDATE tgt SET [__artie_delete]=stg.[__artie_delete]
 FROM SELECT * FROM staging AS stg LEFT JOIN database.schema.table AS tgt ON tgt.id = stg.id
-WHERE COALESCE(stg."__artie_only_set_delete", 0) = 1;`
+WHERE COALESCE(stg.[__artie_only_set_delete], 0) = 1;`
 
 	assert.Equal(t, expectedInsertQuery, queries[0])
 	assert.Equal(t, expectedUpdateAllColumnsQuery, queries[1])

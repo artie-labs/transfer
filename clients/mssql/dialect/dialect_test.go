@@ -13,9 +13,17 @@ import (
 
 func TestMSSQLDialect_QuoteIdentifier(t *testing.T) {
 	dialect := MSSQLDialect{}
-	assert.Equal(t, `"foo"`, dialect.QuoteIdentifier("foo"))
-	assert.Equal(t, `"FOO"`, dialect.QuoteIdentifier("FOO"))
-	assert.Equal(t, `"FOO; BAD"`, dialect.QuoteIdentifier(`FOO"; BAD`))
+
+	expectedValueMap := map[string]string{
+		"foo":       `[foo]`,
+		"FOO":       `[FOO]`,
+		`FOO"; BAD`: `[FOO"; BAD]`,
+		`[ESCAPED]`: `[ESCAPED]`,
+	}
+
+	for key, expectedValue := range expectedValueMap {
+		assert.Equal(t, expectedValue, dialect.QuoteIdentifier(key), key)
+	}
 }
 
 func TestMSSQLDialect_IsColumnAlreadyExistsErr(t *testing.T) {
@@ -63,14 +71,14 @@ func TestMSSQLDialect_BuildCreateTableQuery(t *testing.T) {
 
 func TestMSSQLDialect_BuildDropTableQuery(t *testing.T) {
 	assert.Equal(t,
-		`DROP TABLE IF EXISTS "schema1"."table1"`,
+		`DROP TABLE IF EXISTS [schema1].[table1]`,
 		MSSQLDialect{}.BuildDropTableQuery(NewTableIdentifier("schema1", "table1")),
 	)
 }
 
 func TestMSSQLDialect_BuildTruncateTableQuery(t *testing.T) {
 	assert.Equal(t,
-		`TRUNCATE TABLE "schema1"."table1"`,
+		`TRUNCATE TABLE [schema1].[table1]`,
 		MSSQLDialect{}.BuildTruncateTableQuery(NewTableIdentifier("schema1", "table1")),
 	)
 }
@@ -97,11 +105,11 @@ func TestMSSQLDialect_BuildDropColumnQuery(t *testing.T) {
 
 func TestMSSQLDialect_BuildIsNotToastValueExpression(t *testing.T) {
 	assert.Equal(t,
-		`COALESCE(tbl."bar", '') NOT LIKE '%__debezium_unavailable_value%'`,
+		`COALESCE(tbl.[bar], '') NOT LIKE '%__debezium_unavailable_value%'`,
 		MSSQLDialect{}.BuildIsNotToastValueExpression("tbl", columns.NewColumn("bar", typing.Invalid)),
 	)
 	assert.Equal(t,
-		`COALESCE(tbl."foo", '') NOT LIKE '%__debezium_unavailable_value%'`,
+		`COALESCE(tbl.[foo], '') NOT LIKE '%__debezium_unavailable_value%'`,
 		MSSQLDialect{}.BuildIsNotToastValueExpression("tbl", columns.NewColumn("foo", typing.Struct)),
 	)
 }
@@ -134,10 +142,10 @@ func TestMSSQLDialect_BuildMergeQueries(t *testing.T) {
 		assert.Len(t, queries, 1)
 		assert.Equal(t, `
 MERGE INTO database.schema.table tgt
-USING database.schema.table AS stg ON tgt."id" = stg."id"
-WHEN MATCHED AND stg."__artie_delete" = 1 THEN DELETE
-WHEN MATCHED AND COALESCE(stg."__artie_delete", 0) = 0 THEN UPDATE SET "id"=stg."id","bar"=stg."bar","updated_at"=stg."updated_at","start"=stg."start"
-WHEN NOT MATCHED AND COALESCE(stg."__artie_delete", 1) = 0 THEN INSERT ("id","bar","updated_at","start") VALUES (stg."id",stg."bar",stg."updated_at",stg."start");`, queries[0])
+USING database.schema.table AS stg ON tgt.[id] = stg.[id]
+WHEN MATCHED AND stg.[__artie_delete] = 1 THEN DELETE
+WHEN MATCHED AND COALESCE(stg.[__artie_delete], 0) = 0 THEN UPDATE SET [id]=stg.[id],[bar]=stg.[bar],[updated_at]=stg.[updated_at],[start]=stg.[start]
+WHEN NOT MATCHED AND COALESCE(stg.[__artie_delete], 1) = 0 THEN INSERT ([id],[bar],[updated_at],[start]) VALUES (stg.[id],stg.[bar],stg.[updated_at],stg.[start]);`, queries[0])
 	}
 	{
 		// Soft delete:
@@ -153,17 +161,17 @@ WHEN NOT MATCHED AND COALESCE(stg."__artie_delete", 1) = 0 THEN INSERT ("id","ba
 		assert.NoError(t, err)
 		assert.Len(t, queries, 3)
 		assert.Equal(t, `
-INSERT INTO database.schema.table ("id","bar","updated_at","start","__artie_delete")
-SELECT stg."id",stg."bar",stg."updated_at",stg."start",stg."__artie_delete" FROM {SUB_QUERY} AS stg
-LEFT JOIN database.schema.table AS tgt ON tgt."id" = stg."id"
-WHERE tgt."id" IS NULL;`, queries[0])
+INSERT INTO database.schema.table ([id],[bar],[updated_at],[start],[__artie_delete])
+SELECT stg.[id],stg.[bar],stg.[updated_at],stg.[start],stg.[__artie_delete] FROM {SUB_QUERY} AS stg
+LEFT JOIN database.schema.table AS tgt ON tgt.[id] = stg.[id]
+WHERE tgt.[id] IS NULL;`, queries[0])
 		assert.Equal(t, `
-UPDATE tgt SET "id"=stg."id","bar"=stg."bar","updated_at"=stg."updated_at","start"=stg."start","__artie_delete"=stg."__artie_delete"
-FROM {SUB_QUERY} AS stg LEFT JOIN database.schema.table AS tgt ON tgt."id" = stg."id"
-WHERE COALESCE(stg."__artie_only_set_delete", 0) = 0;`, queries[1])
+UPDATE tgt SET [id]=stg.[id],[bar]=stg.[bar],[updated_at]=stg.[updated_at],[start]=stg.[start],[__artie_delete]=stg.[__artie_delete]
+FROM {SUB_QUERY} AS stg LEFT JOIN database.schema.table AS tgt ON tgt.[id] = stg.[id]
+WHERE COALESCE(stg.[__artie_only_set_delete], 0) = 0;`, queries[1])
 		assert.Equal(t, `
-UPDATE tgt SET "__artie_delete"=stg."__artie_delete"
-FROM {SUB_QUERY} AS stg LEFT JOIN database.schema.table AS tgt ON tgt."id" = stg."id"
-WHERE COALESCE(stg."__artie_only_set_delete", 0) = 1;`, queries[2])
+UPDATE tgt SET [__artie_delete]=stg.[__artie_delete]
+FROM {SUB_QUERY} AS stg LEFT JOIN database.schema.table AS tgt ON tgt.[id] = stg.[id]
+WHERE COALESCE(stg.[__artie_only_set_delete], 0) = 1;`, queries[2])
 	}
 }
