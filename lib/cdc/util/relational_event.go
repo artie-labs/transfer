@@ -97,6 +97,14 @@ func (s *SchemaEventPayload) GetTableName() string {
 	return s.Payload.Source.Table
 }
 
+func (s *SchemaEventPayload) GetFullTableName() string {
+	if s.Payload.Source.Schema != "" {
+		return s.Payload.Source.Schema + "." + s.Payload.Source.Table
+	}
+
+	return s.Payload.Source.Table
+}
+
 func (s *SchemaEventPayload) GetSourceMetadata() (string, error) {
 	json, err := json.Marshal(s.Payload.Source)
 	if err != nil {

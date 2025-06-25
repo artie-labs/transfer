@@ -108,6 +108,11 @@ func (s *SchemaEventPayload) GetTableName() string {
 	return s.Payload.Source.Collection
 }
 
+func (s *SchemaEventPayload) GetFullTableName() string {
+	// MongoDB doesn't have schemas, the full table name is the same as the table name.
+	return s.GetTableName()
+}
+
 func (s *SchemaEventPayload) GetSourceMetadata() (string, error) {
 	json, err := json.Marshal(s.Payload.Source)
 	if err != nil {

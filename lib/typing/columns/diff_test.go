@@ -55,6 +55,11 @@ func TestShouldSkipColumn(t *testing.T) {
 		assert.True(t, shouldSkipColumn(constants.SourceMetadataColumnMarker, []string{constants.DeleteColumnMarker}))
 	}
 	{
+		// Test full source table name
+		assert.False(t, shouldSkipColumn(constants.FullSourceTableNameColumnMarker, []string{constants.UpdateColumnMarker, constants.FullSourceTableNameColumnMarker}))
+		assert.True(t, shouldSkipColumn(constants.FullSourceTableNameColumnMarker, []string{constants.UpdateColumnMarker}))
+	}
+	{
 		// Test operation column in replication mode
 		assert.True(t, shouldSkipColumn(constants.OperationColumnMarker, []string{}))
 	}

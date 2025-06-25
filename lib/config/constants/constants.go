@@ -23,12 +23,13 @@ const (
 	// not a real column and should never be included in the target table.
 	OnlySetDeleteColumnMarker = ArtiePrefix + "_only_set_delete"
 
-	DeletionConfidencePadding   = 4 * time.Hour
-	UpdateColumnMarker          = ArtiePrefix + "_updated_at"
-	DatabaseUpdatedColumnMarker = ArtiePrefix + "_db_updated_at"
-	OperationColumnMarker       = ArtiePrefix + "_operation"
-	ExceededValueMarker         = ArtiePrefix + "_exceeded_value"
-	SourceMetadataColumnMarker  = ArtiePrefix + "_source_metadata"
+	DeletionConfidencePadding       = 4 * time.Hour
+	UpdateColumnMarker              = ArtiePrefix + "_updated_at"
+	DatabaseUpdatedColumnMarker     = ArtiePrefix + "_db_updated_at"
+	OperationColumnMarker           = ArtiePrefix + "_operation"
+	ExceededValueMarker             = ArtiePrefix + "_exceeded_value"
+	SourceMetadataColumnMarker      = ArtiePrefix + "_source_metadata"
+	FullSourceTableNameColumnMarker = ArtiePrefix + "_full_source_table_name"
 
 	TemporaryTableTTL = 6 * time.Hour
 
@@ -53,6 +54,7 @@ var ArtieColumns = []string{
 	DatabaseUpdatedColumnMarker,
 	OperationColumnMarker,
 	SourceMetadataColumnMarker,
+	FullSourceTableNameColumnMarker,
 }
 
 // ExporterKind is used for the Telemetry package
