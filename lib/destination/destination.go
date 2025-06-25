@@ -25,6 +25,7 @@ type Destination interface {
 	Begin() (*sql.Tx, error)
 
 	// Helper functions for merge
+	MergeAndAssertRows(ctx context.Context, tableData *optimization.TableData, statements []string) error
 	GetTableConfig(tableID sqllib.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error)
 	PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, tempTableID sqllib.TableIdentifier, parentTableID sqllib.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error
 }
@@ -39,20 +40,20 @@ type Baseline interface {
 
 // ExecContextStatements executes one or more statements against a [Destination].
 // If there is more than one statement, the statements will be executed inside of a transaction.
-func ExecContextStatements(ctx context.Context, dest Destination, statements []string) ([]sql.Result, error) {
+func ExecContextStatements(ctx context.Context, store Destination, statements []string) ([]sql.Result, error) {
 	switch len(statements) {
 	case 0:
 		return nil, fmt.Errorf("statements is empty")
 	case 1:
 		slog.Debug("Executing...", slog.String("query", statements[0]))
-		result, err := dest.ExecContext(ctx, statements[0])
+		result, err := store.ExecContext(ctx, statements[0])
 		if err != nil {
 			return nil, fmt.Errorf("failed to execute statement: %w", err)
 		}
 
 		return []sql.Result{result}, nil
 	default:
-		tx, err := dest.Begin()
+		tx, err := store.Begin()
 		if err != nil {
 			return nil, fmt.Errorf("failed to start tx: %w", err)
 		}

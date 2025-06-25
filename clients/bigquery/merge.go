@@ -69,3 +69,27 @@ func generateMergeString(bqSettings *partition.BigQuerySettings, dialect sql.Dia
 
 	return "", fmt.Errorf("unexpected partitionType: %s and/or partitionBy: %s", bqSettings.PartitionType, bqSettings.PartitionBy)
 }
+
+func (s *Store) MergeAndAssertRows(ctx context.Context, tableData *optimization.TableData, statements []string) error {
+	results, err := s.ExecContextStatements(ctx, statements)
+	if err != nil {
+		return fmt.Errorf("failed to execute merge statements: %w", err)
+	}
+
+	var totalRowsAffected int64
+	for _, result := range results {
+		rowsAffected, err := result.RowsAffected()
+		if err != nil {
+			return fmt.Errorf("failed to get rows affected: %w", err)
+		}
+
+		totalRowsAffected += rowsAffected
+	}
+
+	// [totalRowsAffected] may be higher if the table contains duplicate rows.
+	if rows := tableData.NumberOfRows(); rows > uint(totalRowsAffected) {
+		return fmt.Errorf("expected %d rows to be affected, got %d", rows, totalRowsAffected)
+	}
+
+	return nil
+}
