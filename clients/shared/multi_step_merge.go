@@ -199,7 +199,7 @@ func merge(ctx context.Context, dwh destination.Destination, tableData *optimiza
 		mergeStatements = _mergeStatements
 	}
 
-	if _, err := destination.ExecContextStatements(ctx, dwh, mergeStatements); err != nil {
+	if err := destination.ExecContextStatements(ctx, dwh, mergeStatements); err != nil {
 		return fmt.Errorf("failed to execute merge statements: %w", err)
 	}
 
