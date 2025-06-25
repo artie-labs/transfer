@@ -89,12 +89,7 @@ func (s *Store) GetConfigMap() *types.DestinationTableConfigMap {
 func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
 	stagingTableID := shared.TempTableID(tableID)
 	dedupeQueries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt)
-
-	if _, err := destination.ExecContextStatements(ctx, s, dedupeQueries); err != nil {
-		return fmt.Errorf("failed to dedupe: %w", err)
-	}
-
-	return nil
+	return destination.ExecContextStatements(ctx, s, dedupeQueries)
 }
 
 func LoadSnowflake(ctx context.Context, cfg config.Config, _store *db.Store) (*Store, error) {
