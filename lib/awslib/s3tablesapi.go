@@ -43,6 +43,19 @@ func IsNotFoundError(err error) bool {
 	return false
 }
 
+func IsConflictError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	var apiErr smithy.APIError
+	if errors.As(err, &apiErr) && apiErr.ErrorCode() == "ConflictException" {
+		return true
+	}
+
+	return false
+}
+
 func (s S3TablesAPIWrapper) GetTableBucket(ctx context.Context) (s3tables.GetTableBucketOutput, error) {
 	resp, err := s.client.GetTableBucket(ctx, &s3tables.GetTableBucketInput{
 		TableBucketARN: aws.String(s.tableBucketARN),
@@ -100,6 +113,11 @@ func (s S3TablesAPIWrapper) CreateNamespace(ctx context.Context, namespace strin
 		Namespace:      []string{namespace},
 		TableBucketARN: aws.String(s.tableBucketARN),
 	})
+
+	// Swallow the conflict error to avoid false positive error since it may have been created by another request.
+	if IsConflictError(err) {
+		return nil
+	}
 
 	return err
 }
