@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/artie-labs/transfer/lib"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -15,7 +16,11 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-const backfillMaxRetries = 1000
+const (
+	backfillMaxRetries     = 1000
+	heartbeatsInitialDelay = 30 * time.Minute
+	heartbeatsInterval     = 2 * time.Minute
+)
 
 func Merge(ctx context.Context, dest destination.Destination, tableData *optimization.TableData, opts types.MergeOpts) error {
 	if tableData.ShouldSkipUpdate() {
@@ -23,6 +28,14 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 	}
 
 	tableID := dest.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name())
+	hb := lib.NewHeartbeats(heartbeatsInitialDelay, heartbeatsInterval, "merge", map[string]any{
+		"table":   tableData.Name(),
+		"tableID": tableID.FullyQualifiedName(),
+	})
+
+	stop := hb.Start()
+	defer stop()
+
 	tableConfig, err := dest.GetTableConfig(tableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
 		return fmt.Errorf("failed to get table config: %w", err)
