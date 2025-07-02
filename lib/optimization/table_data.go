@@ -186,8 +186,8 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 			for key, val := range rowData {
 				if val == constants.ToastUnavailableValuePlaceholder {
 					// Copy it from prevRow.
-					prevVal, isOk := prevRow[key]
-					if !isOk {
+					prevVal, ok := prevRow[key]
+					if !ok {
 						continue
 					}
 
@@ -215,7 +215,6 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 // Rows returns a read only slice of tableData's rows or rowsData depending on mode
 func (t *TableData) Rows() []map[string]any {
 	var rows []map[string]any
-
 	if t.Mode() == config.History {
 		// History mode, the data is stored under `rows`
 		rows = append(rows, t.rows...)
