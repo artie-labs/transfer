@@ -28,6 +28,7 @@ type Event struct {
 	OptionalSchema map[string]typing.KindDetails
 	Columns        *columns.Columns
 	Deleted        bool
+	Operation      string
 
 	// private metadata:
 	primaryKeys []string
@@ -37,7 +38,7 @@ type Event struct {
 	mode          config.Mode
 }
 
-func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfig, cfgMode config.Mode) (Event, error) {
+func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfig, cfgMode config.Mode, op string) (Event, error) {
 	cols, err := buildFilteredColumns(event, tc)
 	if err != nil {
 		return Event{}, err
@@ -123,6 +124,7 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 		Columns:        cols,
 		Data:           transformData(evtData, tc),
 		Deleted:        event.DeletePayload(),
+		Operation:      op,
 	}
 
 	return _event, nil
@@ -289,7 +291,7 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 		return false, "", fmt.Errorf("failed to retrieve primary key value: %w", err)
 	}
 
-	td.InsertRow(pkValueString, e.Data, e.Deleted)
+	td.InsertRow(pkValueString, e.Data, e.Operation, e.Deleted)
 	// If the message is Kafka, then we only need the latest one
 	if message.Kind() == artie.Kafka {
 		td.PartitionsToLastMessage[message.Partition()] = message

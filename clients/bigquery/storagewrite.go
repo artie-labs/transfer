@@ -15,6 +15,7 @@ import (
 	"github.com/artie-labs/transfer/clients/bigquery/converters"
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	libconverters "github.com/artie-labs/transfer/lib/typing/converters"
@@ -127,7 +128,7 @@ func encodePacked64DatetimeMicros(dateTime time.Time) int64 {
 	return encodePacked64DatetimeSeconds(dateTime)<<microLength | int64(dateTime.Nanosecond()/1000)
 }
 
-func rowToMessage(row map[string]any, columns []columns.Column, messageDescriptor protoreflect.MessageDescriptor) (*dynamicpb.Message, error) {
+func rowToMessage(row optimization.Row, columns []columns.Column, messageDescriptor protoreflect.MessageDescriptor) (*dynamicpb.Message, error) {
 	message := dynamicpb.NewMessage(messageDescriptor)
 	for _, column := range columns {
 		field := message.Descriptor().Fields().ByTextName(column.Name())
@@ -135,7 +136,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 			return nil, fmt.Errorf("failed to find a field named %q", column.Name())
 		}
 
-		value := row[column.Name()]
+		value, _ := row.Get(column.Name())
 		if value == nil {
 			continue
 		}

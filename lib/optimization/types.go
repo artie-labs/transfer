@@ -37,3 +37,8 @@ func NewRow(originalOp string, data map[string]any) Row {
 func (r Row) BuildRow(data map[string]any) Row {
 	return NewRow(r.originalOp, data)
 }
+
+func (r Row) Get(key string) (any, bool) {
+	val, ok := r.data[key]
+	return val, ok
+}

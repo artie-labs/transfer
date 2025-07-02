@@ -187,7 +187,7 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 	}
 	defer managedStream.Close()
 
-	encoder := func(row map[string]any) ([]byte, error) {
+	encoder := func(row optimization.Row) ([]byte, error) {
 		message, err := rowToMessage(row, columns, *messageDescriptor)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert row to message: %w", err)
@@ -201,7 +201,7 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 		return bytes, nil
 	}
 
-	err = batch.BySize(tableData.Rows(), maxRequestByteSize, false, encoder, func(chunk [][]byte, _ []map[string]any) error {
+	err = batch.BySize[optimization.Row](tableData.Rows(), maxRequestByteSize, false, encoder, func(chunk [][]byte, _ []optimization.Row) error {
 		result, err := managedStream.AppendRows(ctx, chunk)
 		if err != nil {
 			return fmt.Errorf("failed to append rows: %w", err)
