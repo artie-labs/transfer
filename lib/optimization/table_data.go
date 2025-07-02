@@ -176,7 +176,7 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 	}
 
 	var prevRowSize int
-	if prevRow, isOk := t.rowsData[pk]; isOk {
+	if prevRow, ok := t.rowsData[pk]; ok {
 		prevRowSize = size.GetApproxSize(prevRow)
 		if delete {
 			// If the row was deleted, preserve the previous values that we have in memory
