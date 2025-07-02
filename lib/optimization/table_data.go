@@ -16,28 +16,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func (m MultiStepMergeSettings) IsFirstFlush() bool {
-	return m.flushCount == 0
-}
-
-func (m MultiStepMergeSettings) IsLastFlush() bool {
-	return m.flushCount == m.TotalFlushCount
-}
-
-func (m MultiStepMergeSettings) FlushCount() int {
-	return m.flushCount
-}
-
-func (m *MultiStepMergeSettings) Increment() {
-	m.flushCount++
-}
-
-type MultiStepMergeSettings struct {
-	Enabled         bool
-	flushCount      int
-	TotalFlushCount int
-}
-
 type TableData struct {
 	mode            config.Mode
 	inMemoryColumns *columns.Columns // list of columns
