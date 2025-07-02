@@ -92,12 +92,17 @@ func WriteParquetFiles(tableData *optimization.TableData, filePath string, locat
 	for _, val := range tableData.Rows() {
 		var row []any
 		for _, col := range cols {
-			value, err := parquetutil.ParseValue(val[col.Name()], col.KindDetails, location)
-			if err != nil {
-				return fmt.Errorf("failed to parse value, err: %w, value: %v, column: %q", err, val[col.Name()], col.Name())
+			value, ok := val.Get(col.Name())
+			if !ok {
+				return fmt.Errorf("value not found for column: %q", col.Name())
 			}
 
-			row = append(row, value)
+			parsedValue, err := parquetutil.ParseValue(value, col.KindDetails, location)
+			if err != nil {
+				return fmt.Errorf("failed to parse value, err: %w, value: %v, column: %q", err, value, col.Name())
+			}
+
+			row = append(row, parsedValue)
 		}
 
 		if err = pw.Write(row); err != nil {

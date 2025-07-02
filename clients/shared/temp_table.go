@@ -77,10 +77,15 @@ func (t TemporaryDataFile) WriteTemporaryTableFile(tableData *optimization.Table
 
 	columnToNewLengthMap := make(map[string]int32)
 	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
-	for _, value := range tableData.Rows() {
-		var row []string
+	for _, row := range tableData.Rows() {
+		var csvRow []string
 		for _, col := range columns {
-			result, castErr := valueConverter(value[col.Name()], col.KindDetails, sharedDestinationSettings)
+			value, ok := row.Get(col.Name())
+			if !ok {
+				return File{}, AdditionalOutput{}, fmt.Errorf("value not found for column: %q", col.Name())
+			}
+
+			result, castErr := valueConverter(value, col.KindDetails, sharedDestinationSettings)
 			if castErr != nil {
 				return File{}, AdditionalOutput{}, castErr
 			}
@@ -92,10 +97,10 @@ func (t TemporaryDataFile) WriteTemporaryTableFile(tableData *optimization.Table
 				}
 			}
 
-			row = append(row, result.Value)
+			csvRow = append(csvRow, result.Value)
 		}
 
-		if err = gzipWriter.Write(row); err != nil {
+		if err = gzipWriter.Write(csvRow); err != nil {
 			return File{}, AdditionalOutput{}, fmt.Errorf("failed to write to csv: %w", err)
 		}
 	}
