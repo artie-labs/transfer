@@ -208,8 +208,8 @@ func (e *EventsTestSuite) TestEvent_Columns() {
 		assert.NoError(e.T(), err)
 
 		assert.Equal(e.T(), 1, len(evt.Columns.GetColumns()))
-		_, isOk := evt.Columns.GetColumn("id")
-		assert.True(e.T(), isOk)
+		_, ok := evt.Columns.GetColumn("id")
+		assert.True(e.T(), ok)
 	}
 	{
 		// Now it should handle escaping column names
@@ -217,21 +217,21 @@ func (e *EventsTestSuite) TestEvent_Columns() {
 		assert.NoError(e.T(), err)
 
 		assert.Equal(e.T(), 2, len(evt.Columns.GetColumns()))
-		_, isOk := evt.Columns.GetColumn("id")
-		assert.True(e.T(), isOk)
+		_, ok := evt.Columns.GetColumn("id")
+		assert.True(e.T(), ok)
 
-		_, isOk = evt.Columns.GetColumn("capital")
-		assert.True(e.T(), isOk)
+		_, ok = evt.Columns.GetColumn("capital")
+		assert.True(e.T(), ok)
 	}
 	{
 		// In history mode, the deletion column markers should be removed from the event data
 		evt, err := ToMemoryEvent(e.fakeEvent, map[string]any{"id": 123}, kafkalib.TopicConfig{}, config.History)
 		assert.NoError(e.T(), err)
 
-		_, isOk := evt.Data[constants.DeleteColumnMarker]
-		assert.False(e.T(), isOk)
-		_, isOk = evt.Data[constants.OnlySetDeleteColumnMarker]
-		assert.False(e.T(), isOk)
+		_, ok := evt.Data[constants.DeleteColumnMarker]
+		assert.False(e.T(), ok)
+		_, ok = evt.Data[constants.OnlySetDeleteColumnMarker]
+		assert.False(e.T(), ok)
 	}
 }
 

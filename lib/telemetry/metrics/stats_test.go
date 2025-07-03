@@ -52,7 +52,7 @@ func TestLoadExporter(t *testing.T) {
 		}
 
 		client := LoadExporter(cfg)
-		_, isOk := client.(NullMetricsProvider)
-		assert.Equal(t, result, isOk)
+		_, ok := client.(NullMetricsProvider)
+		assert.Equal(t, result, ok)
 	}
 }
