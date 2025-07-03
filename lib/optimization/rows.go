@@ -18,3 +18,7 @@ func (r Row) GetValue(key string) (any, bool) {
 func (r Row) GetData() map[string]any {
 	return r.data
 }
+
+func (r *Row) SetValue(key string, value any) {
+	r.data[key] = value
+}

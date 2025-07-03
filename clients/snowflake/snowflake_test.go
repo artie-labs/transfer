@@ -348,7 +348,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 
 	// Now try to execute merge where 1 of the rows have the column now
 	for _, row := range tableData.Rows() {
-		row["new"] = "123"
+		row.SetValue("new", "123")
 		tableData.SetInMemoryColumns(&sflkCols)
 
 		inMemColumns := tableData.ReadOnlyInMemoryCols()

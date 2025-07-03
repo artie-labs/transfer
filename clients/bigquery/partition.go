@@ -6,14 +6,15 @@ import (
 	"slices"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
-func buildDistinctDates(colName string, rows []map[string]any) ([]string, error) {
+func buildDistinctDates(colName string, rows []optimization.Row) ([]string, error) {
 	dateMap := make(map[string]bool)
 	for _, row := range rows {
-		val, isOk := row[colName]
-		if !isOk {
+		val, ok := row.GetValue(colName)
+		if !ok {
 			return nil, fmt.Errorf("column %q does not exist in row: %v", colName, row)
 		}
 
