@@ -32,8 +32,8 @@ func TestNewDatadogClient(t *testing.T) {
 	})
 
 	assert.NoError(t, err)
-	mtr, isOk := client.(*statsClient)
-	assert.True(t, isOk)
+	mtr, ok := client.(*statsClient)
+	assert.True(t, ok)
 	assert.Equal(t, 0.255, mtr.rate)
 
 	clientValue := reflect.ValueOf(mtr.client).Elem()

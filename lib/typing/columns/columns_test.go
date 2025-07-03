@@ -273,12 +273,12 @@ func TestColumns_Mutation(t *testing.T) {
 
 		assert.Equal(t, len(cols.GetColumns()), 2)
 
-		fooCol, isOk := cols.GetColumn("foo")
-		assert.True(t, isOk)
+		fooCol, ok := cols.GetColumn("foo")
+		assert.True(t, ok)
 		assert.Equal(t, typing.String, fooCol.KindDetails)
 
-		barCol, isOk := cols.GetColumn("bar")
-		assert.True(t, isOk)
+		barCol, ok := cols.GetColumn("bar")
+		assert.True(t, ok)
 		assert.Equal(t, typing.Struct, barCol.KindDetails)
 	}
 	{
@@ -298,13 +298,13 @@ func TestColumns_Mutation(t *testing.T) {
 			defaultValue: "123",
 		})
 
-		fooCol, isOk := cols.GetColumn("foo")
-		assert.True(t, isOk)
+		fooCol, ok := cols.GetColumn("foo")
+		assert.True(t, ok)
 		assert.Equal(t, typing.Integer, fooCol.KindDetails)
 		assert.Equal(t, nil, fooCol.defaultValue)
 
-		barCol, isOk := cols.GetColumn("bar")
-		assert.True(t, isOk)
+		barCol, ok := cols.GetColumn("bar")
+		assert.True(t, ok)
 		assert.Equal(t, typing.Boolean, barCol.KindDetails)
 		assert.Equal(t, "123", barCol.defaultValue)
 	}

@@ -77,8 +77,8 @@ func (e *EventsTestSuite) TestSaveEvent() {
 	assert.NoError(e.T(), err)
 
 	td := e.db.GetOrCreateTableData("foo")
-	inMemCol, isOk := td.ReadOnlyInMemoryCols().GetColumn(badColumn)
-	assert.True(e.T(), isOk)
+	inMemCol, ok := td.ReadOnlyInMemoryCols().GetColumn(badColumn)
+	assert.True(e.T(), ok)
 	assert.Equal(e.T(), typing.Invalid, inMemCol.KindDetails)
 }
 
@@ -110,8 +110,8 @@ func (e *EventsTestSuite) TestEvent_SaveCasing() {
 	}
 
 	for _, expectedColumn := range []string{"randomcol", "anothercol"} {
-		_, isOk := rowData[expectedColumn]
-		assert.True(e.T(), isOk, fmt.Sprintf("expected col: %s, rowsData: %v", expectedColumn, rowData))
+		_, ok := rowData[expectedColumn]
+		assert.True(e.T(), ok, fmt.Sprintf("expected col: %s, rowsData: %v", expectedColumn, rowData))
 	}
 
 }
@@ -145,25 +145,25 @@ func (e *EventsTestSuite) TestEventSaveOptionalSchema() {
 	td := e.db.GetOrCreateTableData("foo")
 	{
 		// Optional schema w/ string
-		column, isOk := td.ReadOnlyInMemoryCols().GetColumn("created_at_date_string")
-		assert.True(e.T(), isOk)
+		column, ok := td.ReadOnlyInMemoryCols().GetColumn("created_at_date_string")
+		assert.True(e.T(), ok)
 		assert.Equal(e.T(), typing.String, column.KindDetails)
 
 		// String (with created_at datetime type)
-		column, isOk = td.ReadOnlyInMemoryCols().GetColumn("created_at_date_no_schema")
-		assert.True(e.T(), isOk)
+		column, ok = td.ReadOnlyInMemoryCols().GetColumn("created_at_date_no_schema")
+		assert.True(e.T(), ok)
 		assert.Equal(e.T(), typing.String, column.KindDetails)
 	}
 	{
 		// JSON string
-		column, isOk := td.ReadOnlyInMemoryCols().GetColumn("json_object_string")
-		assert.True(e.T(), isOk)
+		column, ok := td.ReadOnlyInMemoryCols().GetColumn("json_object_string")
+		assert.True(e.T(), ok)
 		assert.Equal(e.T(), typing.String, column.KindDetails)
 	}
 	{
 		// JSON
-		column, isOk := td.ReadOnlyInMemoryCols().GetColumn("json_object_no_schema")
-		assert.True(e.T(), isOk)
+		column, ok := td.ReadOnlyInMemoryCols().GetColumn("json_object_no_schema")
+		assert.True(e.T(), ok)
 		assert.Equal(e.T(), typing.Struct, column.KindDetails)
 	}
 }
@@ -251,32 +251,32 @@ func (e *EventsTestSuite) TestEventSaveColumns() {
 	td := e.db.GetOrCreateTableData("foo")
 	{
 		// String
-		column, isOk := td.ReadOnlyInMemoryCols().GetColumn("randomcol")
-		assert.True(e.T(), isOk)
+		column, ok := td.ReadOnlyInMemoryCols().GetColumn("randomcol")
+		assert.True(e.T(), ok)
 		assert.Equal(e.T(), typing.String, column.KindDetails)
 	}
 	{
 		// Number
-		column, isOk := td.ReadOnlyInMemoryCols().GetColumn("anothercol")
-		assert.True(e.T(), isOk)
+		column, ok := td.ReadOnlyInMemoryCols().GetColumn("anothercol")
+		assert.True(e.T(), ok)
 		assert.Equal(e.T(), typing.Float, column.KindDetails)
 	}
 	{
 		// String
-		column, isOk := td.ReadOnlyInMemoryCols().GetColumn("created_at_date_string")
-		assert.True(e.T(), isOk)
+		column, ok := td.ReadOnlyInMemoryCols().GetColumn("created_at_date_string")
+		assert.True(e.T(), ok)
 		assert.Equal(e.T(), typing.String, column.KindDetails)
 	}
 	{
 		// Boolean
-		column, isOk := td.ReadOnlyInMemoryCols().GetColumn(constants.DeleteColumnMarker)
-		assert.True(e.T(), isOk)
+		column, ok := td.ReadOnlyInMemoryCols().GetColumn(constants.DeleteColumnMarker)
+		assert.True(e.T(), ok)
 		assert.Equal(e.T(), typing.Boolean, column.KindDetails)
 	}
 	{
 		// Boolean
-		column, isOk := td.ReadOnlyInMemoryCols().GetColumn(constants.OnlySetDeleteColumnMarker)
-		assert.True(e.T(), isOk)
+		column, ok := td.ReadOnlyInMemoryCols().GetColumn(constants.OnlySetDeleteColumnMarker)
+		assert.True(e.T(), ok)
 		assert.Equal(e.T(), typing.Boolean, column.KindDetails)
 	}
 }

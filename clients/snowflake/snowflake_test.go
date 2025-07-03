@@ -136,8 +136,8 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 	assert.True(s.T(), commitTx)
 	assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
 
-	_col, isOk := tableData.ReadOnlyInMemoryCols().GetColumn("first_name")
-	assert.True(s.T(), isOk)
+	_col, ok := tableData.ReadOnlyInMemoryCols().GetColumn("first_name")
+	assert.True(s.T(), ok)
 	assert.Equal(s.T(), _col.KindDetails, typing.String)
 }
 
@@ -349,8 +349,8 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	assert.Equal(s.T(), len(s.stageStore.configMap.GetTableConfig(s.identifierFor(tableData)).ReadOnlyColumnsToDelete()), 1,
 		s.stageStore.configMap.GetTableConfig(s.identifierFor(tableData)).ReadOnlyColumnsToDelete())
 
-	_, isOk := s.stageStore.configMap.GetTableConfig(s.identifierFor(tableData)).ReadOnlyColumnsToDelete()["new"]
-	assert.True(s.T(), isOk)
+	_, ok := s.stageStore.configMap.GetTableConfig(s.identifierFor(tableData)).ReadOnlyColumnsToDelete()["new"]
+	assert.True(s.T(), ok)
 
 	// Now try to execute merge where 1 of the rows have the column now
 	for _, row := range tableData.Rows() {

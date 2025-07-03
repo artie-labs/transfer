@@ -20,14 +20,14 @@ func TestHasKeyFunction(t *testing.T) {
 		// False
 		type noKey struct{}
 		var _noKey noKey
-		_, isOk := hasKeyFunction[noKey](_noKey)
-		assert.False(t, isOk)
+		_, ok := hasKeyFunction[noKey](_noKey)
+		assert.False(t, ok)
 	}
 	{
 		// True
 		_key := key{foo: "bar"}
-		castedKey, isOk := hasKeyFunction[key](_key)
-		assert.True(t, isOk)
+		castedKey, ok := hasKeyFunction[key](_key)
+		assert.True(t, ok)
 		assert.Equal(t, "bar", castedKey.Key())
 	}
 }

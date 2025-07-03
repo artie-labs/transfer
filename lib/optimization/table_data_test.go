@@ -35,8 +35,8 @@ func TestTableData_ReadOnlyInMemoryCols(t *testing.T) {
 	readOnlyCols.AddColumn(columns.NewColumn("last_name", typing.String))
 
 	// Check if last_name actually exists.
-	_, isOk := td.ReadOnlyInMemoryCols().GetColumn("last_name")
-	assert.False(t, isOk)
+	_, ok := td.ReadOnlyInMemoryCols().GetColumn("last_name")
+	assert.False(t, ok)
 
 	// Check length is 1.
 	assert.Equal(t, 1, len(td.ReadOnlyInMemoryCols().GetColumns()))
@@ -65,19 +65,19 @@ func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 	}
 
 	// It's saved back in the original format.
-	_, isOk := tableData.ReadOnlyInMemoryCols().GetColumn("foo")
-	assert.False(t, isOk)
+	_, ok := tableData.ReadOnlyInMemoryCols().GetColumn("foo")
+	assert.False(t, ok)
 
-	_, isOk = tableData.ReadOnlyInMemoryCols().GetColumn("FOO")
-	assert.True(t, isOk)
+	_, ok = tableData.ReadOnlyInMemoryCols().GetColumn("FOO")
+	assert.True(t, ok)
 
-	col, isOk := tableData.ReadOnlyInMemoryCols().GetColumn("CHANGE_me")
-	assert.True(t, isOk)
+	col, ok := tableData.ReadOnlyInMemoryCols().GetColumn("CHANGE_me")
+	assert.True(t, ok)
 	assert.Equal(t, typing.TimestampTZ, col.KindDetails)
 
 	// It went from invalid to boolean.
-	col, isOk = tableData.ReadOnlyInMemoryCols().GetColumn("bar")
-	assert.True(t, isOk)
+	col, ok = tableData.ReadOnlyInMemoryCols().GetColumn("bar")
+	assert.True(t, ok)
 	assert.Equal(t, typing.Boolean, col.KindDetails)
 }
 

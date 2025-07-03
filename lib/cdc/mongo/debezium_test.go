@@ -20,8 +20,8 @@ func TestGetPrimaryKey(t *testing.T) {
 		assert.Equal(t, float64(1001), pkMap["_id"])
 
 		// The `id` column should not exist anymore
-		_, isOk := pkMap["id"]
-		assert.False(t, isOk, "JSON key format should not have id field")
+		_, ok := pkMap["id"]
+		assert.False(t, ok, "JSON key format should not have id field")
 	}
 	{
 		// Test string key format with numeric ID
@@ -30,8 +30,8 @@ func TestGetPrimaryKey(t *testing.T) {
 		assert.Equal(t, "1001", pkMap["_id"])
 
 		// The `id` column should not exist anymore
-		_, isOk := pkMap["id"]
-		assert.False(t, isOk, "string key format should not have id field")
+		_, ok := pkMap["id"]
+		assert.False(t, ok, "string key format should not have id field")
 	}
 	{
 		// Test JSON key format with ObjectId
@@ -42,8 +42,8 @@ func TestGetPrimaryKey(t *testing.T) {
 		assert.Equal(t, "63e3a3bf314a4076d249e203", pkMap["_id"])
 
 		// The `id` column should not exist anymore
-		_, isOk := pkMap["id"]
-		assert.False(t, isOk, "JSON key format should not have id field")
+		_, ok := pkMap["id"]
+		assert.False(t, ok, "JSON key format should not have id field")
 	}
 	{
 		// Test string key format with ObjectId
@@ -54,8 +54,8 @@ func TestGetPrimaryKey(t *testing.T) {
 		assert.Equal(t, "65566afbfefeb3c639deaf5d", pkMap["_id"])
 
 		// The `id` column should not exist anymore
-		_, isOk := pkMap["id"]
-		assert.False(t, isOk)
+		_, ok := pkMap["id"]
+		assert.False(t, ok)
 	}
 }
 
@@ -109,8 +109,8 @@ func TestMongoDBEventOrder(t *testing.T) {
 	evt, err := Debezium{}.GetEventFromBytes([]byte(payload))
 	assert.NoError(t, err)
 
-	schemaEvt, isOk := evt.(*SchemaEventPayload)
-	assert.True(t, isOk)
+	schemaEvt, ok := evt.(*SchemaEventPayload)
+	assert.True(t, ok)
 	assert.Equal(t, time.Date(2022, time.November, 18, 6, 35, 21, 0, time.UTC), schemaEvt.GetExecutionTime())
 	assert.Equal(t, "orders", schemaEvt.GetTableName())
 	assert.False(t, evt.DeletePayload())
@@ -159,8 +159,8 @@ func TestMongoDBEventCustomer(t *testing.T) {
 	assert.NoError(t, err)
 	evtData, err := evt.GetData(kafkalib.TopicConfig{})
 	assert.NoError(t, err)
-	_, isOk := evtData[constants.UpdateColumnMarker]
-	assert.False(t, isOk)
+	_, ok := evtData[constants.UpdateColumnMarker]
+	assert.False(t, ok)
 	assert.Equal(t, evtData["_id"], int64(1003))
 	assert.Equal(t, evtData["first_name"], "Robin")
 	assert.Equal(t, evtData["last_name"], "Tang")
@@ -168,8 +168,8 @@ func TestMongoDBEventCustomer(t *testing.T) {
 
 	evtDataWithIncludedAt, err := evt.GetData(kafkalib.TopicConfig{})
 	assert.NoError(t, err)
-	_, isOk = evtDataWithIncludedAt[constants.UpdateColumnMarker]
-	assert.False(t, isOk)
+	_, ok = evtDataWithIncludedAt[constants.UpdateColumnMarker]
+	assert.False(t, ok)
 
 	evtDataWithIncludedAt, err = evt.GetData(kafkalib.TopicConfig{IncludeDatabaseUpdatedAt: true, IncludeArtieUpdatedAt: true})
 	assert.NoError(t, err)
@@ -228,8 +228,8 @@ func TestMongoDBEventCustomerBefore_NoData(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "customers123", evt.GetTableName())
 
-		_, isOk := evtData[constants.UpdateColumnMarker]
-		assert.False(t, isOk)
+		_, ok := evtData[constants.UpdateColumnMarker]
+		assert.False(t, ok)
 
 		assert.True(t, evtData[constants.DeleteColumnMarker].(bool))
 		assert.True(t, evtData[constants.OnlySetDeleteColumnMarker].(bool))
@@ -277,8 +277,8 @@ func TestMongoDBEventCustomerBefore(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "customers123", evt.GetTableName())
 
-		_, isOk := evtData[constants.UpdateColumnMarker]
-		assert.False(t, isOk)
+		_, ok := evtData[constants.UpdateColumnMarker]
+		assert.False(t, ok)
 
 		expectedKeyToVal := map[string]any{
 			"_id":                               int64(1003),
@@ -300,8 +300,8 @@ func TestMongoDBEventCustomerBefore(t *testing.T) {
 		evtData, err := evt.GetData(kafkalib.TopicConfig{IncludeArtieUpdatedAt: true})
 		assert.NoError(t, err)
 
-		_, isOk := evtData[constants.UpdateColumnMarker]
-		assert.True(t, isOk)
+		_, ok := evtData[constants.UpdateColumnMarker]
+		assert.True(t, ok)
 	}
 }
 
@@ -498,8 +498,8 @@ func TestMongoDBEventWithSchema(t *testing.T) {
 `
 	evt, err := Debezium{}.GetEventFromBytes([]byte(payload))
 	assert.NoError(t, err)
-	schemaEvt, isOk := evt.(*SchemaEventPayload)
-	assert.True(t, isOk)
+	schemaEvt, ok := evt.(*SchemaEventPayload)
+	assert.True(t, ok)
 	assert.Equal(t, schemaEvt.Schema.SchemaType, "struct")
 	assert.Equal(t, schemaEvt.Schema.GetSchemaFromLabel(debezium.Source).Fields[0], debezium.Field{
 		Optional:     false,

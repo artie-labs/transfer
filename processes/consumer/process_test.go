@@ -78,8 +78,8 @@ func TestProcessMessageFailures(t *testing.T) {
 		TopicToConfigFormatMap: tcFmtMap,
 	}
 
-	tcFmt, isOk := tcFmtMap.GetTopicFmt(msg.Topic())
-	assert.True(t, isOk)
+	tcFmt, ok := tcFmtMap.GetTopicFmt(msg.Topic())
+	assert.True(t, ok)
 
 	tableName, err = args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{})
 	assert.ErrorContains(t, err, fmt.Sprintf("format: %s is not supported", tcFmt.tc.CDCKeyFormat), err.Error())
