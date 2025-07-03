@@ -20,8 +20,7 @@ func parseValue(colVal any, colKind columns.Column) (any, error) {
 		return colVal, nil
 	}
 
-	boolVal, ok := colVal.(bool)
-	if ok {
+	if boolVal, ok := colVal.(bool); ok {
 		colVal = converters.BooleanToBit(boolVal)
 	}
 
