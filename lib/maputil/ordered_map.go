@@ -47,7 +47,7 @@ func (o *OrderedMap[T]) Add(key string, value T) {
 
 	// Does the key already exist?
 	// Only add it to `keys` if it doesn't exist
-	if _, isOk := o.Get(key); !isOk {
+	if _, ok := o.Get(key); !ok {
 		o.keys = append(o.keys, key)
 	}
 

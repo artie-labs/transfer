@@ -16,8 +16,8 @@ func (d *DestinationTableConfigMap) GetTableConfig(tableID sql.TableIdentifier) 
 	d.RLock()
 	defer d.RUnlock()
 
-	tableConfig, isOk := d.fqNameToConfigMap[tableID.FullyQualifiedName()]
-	if !isOk {
+	tableConfig, ok := d.fqNameToConfigMap[tableID.FullyQualifiedName()]
+	if !ok {
 		return nil
 	}
 

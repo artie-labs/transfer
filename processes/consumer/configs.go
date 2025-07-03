@@ -30,8 +30,8 @@ func (t *TcFmtMap) Add(topic string, fmt TopicConfigFormatter) {
 func (t *TcFmtMap) GetTopicFmt(topic string) (TopicConfigFormatter, bool) {
 	t.Lock()
 	defer t.Unlock()
-	tcFmt, isOk := t.tc[topic]
-	return tcFmt, isOk
+	tcFmt, ok := t.tc[topic]
+	return tcFmt, ok
 }
 
 type TopicConfigFormatter struct {

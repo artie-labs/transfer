@@ -20,8 +20,7 @@ func parseValue(colVal any, colKind columns.Column) (any, error) {
 		return colVal, nil
 	}
 
-	boolVal, isOk := colVal.(bool)
-	if isOk {
+	if boolVal, ok := colVal.(bool); ok {
 		colVal = converters.BooleanToBit(boolVal)
 	}
 
@@ -118,7 +117,7 @@ func parseValue(colVal any, colKind columns.Column) (any, error) {
 	case typing.Boolean.Kind:
 		return strconv.ParseBool(colValString)
 	case typing.EDecimal.Kind:
-		if val, isOk := colVal.(*decimal.Decimal); isOk {
+		if val, ok := colVal.(*decimal.Decimal); ok {
 			return val.String(), nil
 		}
 

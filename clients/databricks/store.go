@@ -108,8 +108,8 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 		}
 	}
 
-	castedTempTableID, isOk := tempTableID.(dialect.TableIdentifier)
-	if !isOk {
+	castedTempTableID, ok := tempTableID.(dialect.TableIdentifier)
+	if !ok {
 		return fmt.Errorf("failed to cast temp table ID to TableIdentifier")
 	}
 

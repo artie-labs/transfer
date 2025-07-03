@@ -40,7 +40,7 @@ type Event struct {
 
 func transformData(data map[string]any, tc kafkalib.TopicConfig) map[string]any {
 	for _, columnToHash := range tc.ColumnsToHash {
-		if value, isOk := data[columnToHash]; isOk {
+		if value, ok := data[columnToHash]; ok {
 			data[columnToHash] = cryptography.HashValue(value)
 		}
 	}
@@ -224,7 +224,7 @@ func (e *Event) Validate() error {
 	}
 
 	// Check if delete flag exists.
-	if _, isOk := e.Data[constants.DeleteColumnMarker]; !isOk {
+	if _, ok := e.Data[constants.DeleteColumnMarker]; !ok {
 		return fmt.Errorf("delete column marker does not exist")
 	}
 
@@ -293,9 +293,9 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 		toastedCol := val == constants.ToastUnavailableValuePlaceholder
 		if !toastedCol {
 			// If the value is in map[string]string, the TOASTED value will look like map[__debezium_unavailable_value:__debezium_unavailable_value]
-			valMap, isOk := val.(map[string]any)
-			if isOk {
-				if _, isOk = valMap[constants.ToastUnavailableValuePlaceholder]; isOk {
+			valMap, ok := val.(map[string]any)
+			if ok {
+				if _, ok = valMap[constants.ToastUnavailableValuePlaceholder]; ok {
 					// Casting the value back into how other TOASTED values look like.
 					val = constants.ToastUnavailableValuePlaceholder
 					toastedCol = true
@@ -312,8 +312,8 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 				return false, "", fmt.Errorf("failed to upsert column: %w", err)
 			}
 		} else {
-			retrievedColumn, isOk := inMemoryColumns.GetColumn(newColName)
-			if !isOk {
+			retrievedColumn, ok := inMemoryColumns.GetColumn(newColName)
+			if !ok {
 				// This would only happen if the columns did not get passed in initially.
 				kindDetails, err := typing.ParseValue(_col, e.OptionalSchema, val)
 				if err != nil {

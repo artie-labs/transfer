@@ -72,7 +72,7 @@ func (f Field) GetScaleAndPrecision() (int32, *int32, error) {
 	}
 
 	var precisionPtr *int32
-	if _, isOk := f.Parameters[KafkaDecimalPrecisionKey]; isOk {
+	if _, ok := f.Parameters[KafkaDecimalPrecisionKey]; ok {
 		precision, precisionErr := maputil.GetInt32FromMap(f.Parameters, KafkaDecimalPrecisionKey)
 		if precisionErr != nil {
 			return 0, nil, precisionErr

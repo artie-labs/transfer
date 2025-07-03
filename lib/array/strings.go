@@ -35,8 +35,8 @@ func InterfaceToArrayString(val any, recastAsArray bool) ([]string, error) {
 
 		var shouldParse bool
 		if kind == reflect.Interface {
-			valMap, isOk := value.(map[string]any)
-			if isOk {
+			valMap, ok := value.(map[string]any)
+			if ok {
 				value = valMap
 			}
 

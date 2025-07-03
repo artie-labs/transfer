@@ -11,11 +11,11 @@ type Bytes struct{}
 // - If value is already a slice of bytes it will be directly returned.
 // - If value is a string we will attempt to base64 decode it.
 func (Bytes) Convert(value any) (any, error) {
-	if bytes, isOk := value.([]byte); isOk {
+	if bytes, ok := value.([]byte); ok {
 		return bytes, nil
 	}
 
-	if stringValue, isOk := value.(string); isOk {
+	if stringValue, ok := value.(string); ok {
 		data, err := base64.StdEncoding.DecodeString(stringValue)
 		if err != nil {
 			return nil, fmt.Errorf("failed to base64 decode: %w", err)

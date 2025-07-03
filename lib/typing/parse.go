@@ -19,7 +19,7 @@ func MustParseValue(key string, optionalSchema map[string]KindDetails, val any) 
 }
 
 func ParseValue(key string, optionalSchema map[string]KindDetails, val any) (KindDetails, error) {
-	if kindDetail, isOk := optionalSchema[key]; isOk {
+	if kindDetail, ok := optionalSchema[key]; ok {
 		return kindDetail, nil
 	}
 
