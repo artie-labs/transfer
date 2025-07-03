@@ -450,8 +450,7 @@ func TestConfig_Validate(t *testing.T) {
 	}
 	{
 		// Invalid flush settings
-		for i := 0; i < bufferPoolSizeMin; i++ {
-			// Reset buffer rows.
+		for i := range bufferPoolSizeMin {
 			cfg.BufferRows = 500
 			cfg.FlushIntervalSeconds = i
 			assert.ErrorContains(t, cfg.Validate(), "flush interval is outside of our range")
@@ -478,7 +477,7 @@ func TestConfig_Validate(t *testing.T) {
 			OutputFormat:       constants.ParquetFormat,
 		}
 
-		assert.Nil(t, cfg.Validate())
+		assert.NoError(t, cfg.Validate())
 	}
 	{
 		// Now let's change to history mode and see.
