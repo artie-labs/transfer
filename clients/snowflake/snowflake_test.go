@@ -354,9 +354,13 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 
 	// Now try to execute merge where 1 of the rows have the column now
 	for _, row := range tableData.Rows() {
-		row.SetValue("new", "123")
-		tableData.SetInMemoryColumns(&sflkCols)
+		pk, ok := row.GetValue("id")
+		assert.True(s.T(), ok)
 
+		rowData := row.GetData()
+		rowData["new"] = "123"
+		tableData.InsertRow(fmt.Sprintf("pk-%v", pk), rowData, false)
+		tableData.SetInMemoryColumns(&sflkCols)
 		inMemColumns := tableData.ReadOnlyInMemoryCols()
 		// Since sflkColumns overwrote the format, let's set it correctly again.
 		inMemColumns.UpdateColumn(columns.NewColumn("created_at", typing.TimestampTZ))
