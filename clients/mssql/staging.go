@@ -41,7 +41,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	defer stmt.Close()
 
 	for _, row := range tableData.Rows() {
-		var parsedRows []any
+		var parsedValues []any
 		for _, col := range cols {
 			value, _ := row.GetValue(col.Name())
 			parsedValue, err := parseValue(value, col)
@@ -49,10 +49,10 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 				return fmt.Errorf("failed to parse value: %w", err)
 			}
 
-			parsedRows = append(parsedRows, parsedValue)
+			parsedValues = append(parsedValues, parsedValue)
 		}
 
-		if _, err = stmt.ExecContext(ctx, parsedRows...); err != nil {
+		if _, err = stmt.ExecContext(ctx, parsedValues...); err != nil {
 			return fmt.Errorf("failed to copy row: %w", err)
 		}
 	}
