@@ -46,24 +46,18 @@ func TestKafka_String(t *testing.T) {
 		Password:        "",
 	}
 
-	assert.Contains(t, k.String(), k.BootstrapServer, k.String())
-	assert.Contains(t, k.String(), k.GroupID, k.String())
-	assert.Contains(t, k.String(), "pass_set=false", k.String())
-	assert.Contains(t, k.String(), "user_set=false", k.String())
+	assert.Equal(t, "bootstrapServer=server, groupID=group-id, user_set=false, pass_set=false", k.String())
 
 	k.Username = "foo"
-	assert.Contains(t, k.String(), "user_set=true", k.String())
-	assert.Contains(t, k.String(), "pass_set=false", k.String())
+	assert.Equal(t, "bootstrapServer=server, groupID=group-id, user_set=true, pass_set=false", k.String())
 
 	k.Password = "bar"
-	assert.Contains(t, k.String(), "user_set=true", k.String())
-	assert.Contains(t, k.String(), "pass_set=true", k.String())
+	assert.Equal(t, "bootstrapServer=server, groupID=group-id, user_set=true, pass_set=true", k.String())
 }
 
 func TestReadNonExistentFile(t *testing.T) {
-	config, err := readFileToConfig(filepath.Join(t.TempDir(), "213213231312"))
+	_, err := readFileToConfig(filepath.Join(t.TempDir(), "213213231312"))
 	assert.ErrorContains(t, err, "no such file or directory")
-	assert.Nil(t, config)
 }
 
 func TestOutputSourceValid(t *testing.T) {
@@ -75,8 +69,7 @@ func TestOutputSourceValid(t *testing.T) {
 
 	defer file.Close()
 
-	_, err = io.WriteString(file, fmt.Sprintf(
-		`
+	_, err = io.WriteString(file, fmt.Sprintf(`
 outputSource: snowflake
 flushIntervalSeconds: 15
 bufferRows: 10
@@ -85,7 +78,7 @@ bufferRows: 10
 	assert.Nil(t, err)
 
 	config, err := readFileToConfig(randomFile)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	assert.Equal(t, config.FlushIntervalSeconds, 15)
 	assert.Equal(t, int(config.BufferRows), 10)
@@ -98,7 +91,7 @@ bufferRows: 10
 		assert.Equal(t, "customer", tc.Database)
 	}
 
-	assert.Nil(t, config.Validate())
+	assert.NoError(t, config.Validate())
 
 	// Now let's unset Kafka.
 	config.Kafka.GroupID = ""
@@ -107,7 +100,7 @@ bufferRows: 10
 
 	// Now if it's Reader, then it's fine.
 	config.Queue = constants.Reader
-	assert.Nil(t, config.Validate())
+	assert.NoError(t, config.Validate())
 }
 
 func TestOutputSourceInvalid(t *testing.T) {
@@ -115,18 +108,17 @@ func TestOutputSourceInvalid(t *testing.T) {
 	defer os.Remove(randomFile)
 
 	file, err := os.Create(randomFile)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	defer file.Close()
 
-	_, err = io.WriteString(file,
-		`
+	_, err = io.WriteString(file, `
 outputSource: none
 `)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	config, err := readFileToConfig(randomFile)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	validErr := config.Validate()
 	assert.ErrorContains(t, validErr, "invalid destination")
@@ -137,15 +129,15 @@ func TestConfig_Validate_ErrorTopicConfigInvalid(t *testing.T) {
 	defer os.Remove(randomFile)
 
 	file, err := os.Create(randomFile)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	defer file.Close()
 
 	_, err = io.WriteString(file, `outputSource: snowflake`)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	config, err := readFileToConfig(randomFile)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	assert.ErrorContains(t, config.Validate(), "kafka config is nil")
 
@@ -160,10 +152,10 @@ kafka:
   - { db: customer, tableName: customer, schema: public, topic: customer, cdcFormat: debezium.mongodb}
 `)
 
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	config, err = readFileToConfig(randomFile)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.ErrorContains(t, config.Validate(), "failed to validate topic config")
 }
 
@@ -172,15 +164,15 @@ func TestConfig_Validate_ErrorKafkaInvalid(t *testing.T) {
 	defer os.Remove(randomFile)
 
 	file, err := os.Create(randomFile)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	defer file.Close()
 
 	_, err = io.WriteString(file, `outputSource: snowflake`)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	config, err := readFileToConfig(randomFile)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.ErrorContains(t, config.Validate(), "kafka config is nil")
 
 	_, err = io.WriteString(file, `
@@ -195,10 +187,10 @@ kafka:
   - { db: customer, tableName: customer55, schema: public, topic: customer55, cdcFormat: debezium.mongodb, cdcKeyFormat: org.apache.kafka.connect.storage.StringConverter, dropDeletedColumns: false, softDelete: true}
 `)
 
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	config, err = readFileToConfig(randomFile)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	assert.Equal(t, config.FlushIntervalSeconds, defaultFlushTimeSeconds)
 	assert.Equal(t, int(config.BufferRows), defaultBufferPoolSize)
@@ -219,7 +211,6 @@ kafka:
 			assert.Equal(t, tc.SoftDelete, true)
 		}
 	}
-
 }
 
 func TestReadSentryDSNAndTelemetry(t *testing.T) {
@@ -227,7 +218,7 @@ func TestReadSentryDSNAndTelemetry(t *testing.T) {
 	defer os.Remove(randomFile)
 
 	file, err := os.Create(randomFile)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	defer file.Close()
 
@@ -247,10 +238,10 @@ telemetry:
    tags:
     - env:bar
 `)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	config, err := readFileToConfig(randomFile)
-	assert.Nil(t, err, "failed to read config file")
+	assert.NoError(t, err, "failed to read config file")
 	assert.Equal(t, config.Reporting.Sentry.DSN, "abc123", config)
 	assert.Equal(t, string(config.Telemetry.Metrics.Provider), "datadog")
 	assert.Equal(t, config.Telemetry.Metrics.Settings, map[string]any{
@@ -267,15 +258,14 @@ func TestReadFileNotYAML(t *testing.T) {
 	defer os.Remove(randomFile)
 
 	file, err := os.Create(randomFile)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	defer file.Close()
 
 	_, err = io.WriteString(file, "foo foo")
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
-	config, err := readFileToConfig(randomFile)
-	assert.Nil(t, config)
+	_, err = readFileToConfig(randomFile)
 	assert.ErrorContains(t, err, "yaml: unmarshal errors", "failed to read config file, because it's not proper yaml.")
 }
 
@@ -284,7 +274,7 @@ func TestReadFileToConfig_Snowflake(t *testing.T) {
 	defer os.Remove(randomFile)
 
 	file, err := os.Create(randomFile)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	defer file.Close()
 
@@ -303,8 +293,7 @@ func TestReadFileToConfig_Snowflake(t *testing.T) {
 		application       = "foo"
 	)
 
-	_, err = io.WriteString(file, fmt.Sprintf(
-		`
+	_, err = io.WriteString(file, fmt.Sprintf(`
 kafka:
  bootstrapServer: %s
  groupID: %s
@@ -328,12 +317,10 @@ reporting:
 
 `, bootstrapServer, groupID, username, password, snowflakeAccount,
 		snowflakeUser, snowflakePassword, warehouse, region, application, sentryDSN))
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
-	// Now read it!
 	config, err := readFileToConfig(randomFile)
-	assert.Nil(t, err)
-	assert.NotNil(t, config)
+	assert.NoError(t, err)
 
 	assert.True(t, config.Kafka.EnableAWSMSKIAM)
 	assert.Equal(t, username, config.Kafka.Username)
@@ -379,7 +366,7 @@ func TestReadFileToConfig_BigQuery(t *testing.T) {
 	defer os.Remove(randomFile)
 
 	file, err := os.Create(randomFile)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	defer file.Close()
 
@@ -394,8 +381,7 @@ func TestReadFileToConfig_BigQuery(t *testing.T) {
 		projectID         = "artie"
 	)
 
-	_, err = io.WriteString(file, fmt.Sprintf(
-		`
+	_, err = io.WriteString(file, fmt.Sprintf(`
 kafka:
  bootstrapServer: %s
  groupID: %s
@@ -410,11 +396,11 @@ bigquery:
  defaultDataset: %s
  projectID: %s
 `, bootstrapServer, groupID, true, username, password, pathToCredentials, dataset, projectID))
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	// Now read it!
 	config, err := readFileToConfig(randomFile)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.NotNil(t, config)
 
 	// Verify BigQuery config
@@ -448,7 +434,7 @@ func TestConfig_Validate(t *testing.T) {
 
 	tc.Load()
 	kafka.TopicConfigs = append(kafka.TopicConfigs, &tc)
-	assert.Nil(t, cfg.Validate())
+	assert.NoError(t, cfg.Validate())
 
 	tcs, err := cfg.TopicConfigs()
 	assert.NoError(t, err)
@@ -460,7 +446,7 @@ func TestConfig_Validate(t *testing.T) {
 	for _, destKind := range []constants.DestinationKind{constants.Snowflake, constants.BigQuery} {
 		cfg.Output = destKind
 		cfg.BufferRows = defaultBufferPoolSize + 1
-		assert.Nil(t, cfg.Validate())
+		assert.NoError(t, cfg.Validate())
 	}
 	{
 		// Invalid flush settings
@@ -479,7 +465,7 @@ func TestConfig_Validate(t *testing.T) {
 
 	cfg.BufferRows = 500
 	cfg.FlushIntervalSeconds = 600
-	assert.Nil(t, cfg.Validate())
+	assert.NoError(t, cfg.Validate())
 
 	{
 		// S3
