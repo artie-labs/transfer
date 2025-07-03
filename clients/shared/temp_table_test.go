@@ -10,6 +10,7 @@ import (
 
 	"github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -35,7 +36,7 @@ func TestWriteTemporaryTableFile(t *testing.T) {
 			"last_name":   fmt.Sprintf("Last%d", i),
 			"description": "the mini aussie",
 		}
-		tableData.InsertRow(key, rowData, false)
+		tableData.InsertRow(key, rowData, constants.Create)
 	}
 
 	// Create a table identifier using Snowflake dialect

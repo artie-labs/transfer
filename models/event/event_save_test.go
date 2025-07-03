@@ -290,15 +290,16 @@ func (e *EventsTestSuite) TestEventSaveTestDeleteFlag() {
 			constants.DeleteColumnMarker:        true,
 			constants.OnlySetDeleteColumnMarker: true,
 		},
-		Deleted: true,
+		Operation: constants.Delete,
 	}
 
 	kafkaMsg := kafka.Message{}
 	_, _, err := event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
 	assert.NoError(e.T(), err)
 	assert.False(e.T(), e.db.GetOrCreateTableData("foo").ContainOtherOperations())
+	assert.True(e.T(), e.db.GetOrCreateTableData("foo").ContainsHardDeletes())
 
-	event.Deleted = false
+	event.Operation = constants.Create
 	_, _, err = event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
 	assert.NoError(e.T(), err)
 	assert.True(e.T(), e.db.GetOrCreateTableData("foo").ContainOtherOperations())

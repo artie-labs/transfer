@@ -41,12 +41,10 @@ type MultiStepMergeSettings struct {
 type TableData struct {
 	mode            config.Mode
 	inMemoryColumns *columns.Columns // list of columns
-
 	// rowsData is used for replication
 	rowsData map[string]Row // pk -> { col -> val }
 	// rows is used for history mode, since it's append only.
-	rows []Row
-
+	rows        []Row
 	primaryKeys []string
 
 	topicConfig kafkalib.TopicConfig
@@ -56,7 +54,11 @@ type TableData struct {
 
 	// This is used for the automatic schema detection
 	LatestCDCTs time.Time
-	approxSize  int
+	// [rowsToDiscount] - This is used to discount the number of rows during a merge assertion check
+	// This is only incremented if the initial row was created and deleted all within the same flush cycle.
+	// Which would mean that this row would not exist in the destination
+	rowsToDiscount int
+	approxSize     int
 	// containOtherOperations - this means the `TableData` object contains other events that arises from CREATE, UPDATE, REPLICATION
 	// if this value is false, that means it is only deletes. Which means we should not drop columns
 	containOtherOperations bool
@@ -85,6 +87,7 @@ func (t *TableData) WipeData() {
 	t.rowsData = make(map[string]Row)
 	t.rows = []Row{}
 	t.approxSize = 0
+	t.rowsToDiscount = 0
 	t.ResetTempTableSuffix()
 }
 
@@ -168,8 +171,9 @@ func NewTableData(inMemoryColumns *columns.Columns, mode config.Mode, primaryKey
 // InsertRow creates a single entrypoint for how rows get added to TableData
 // This is important to avoid concurrent r/w, but also the ability for us to add or decrement row size by keeping a running total
 // With this, we are able to reduce the latency by 500x+ on a 5k row table. See event_bench_test.go vs. size_bench_test.go
-func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
-	newRow := NewRow(rowData)
+func (t *TableData) InsertRow(pk string, rowData map[string]any, op constants.Operation) {
+	delete := op == constants.Delete
+	newRow := NewRow(rowData, op)
 	if t.mode == config.History {
 		t.rows = append(t.rows, newRow)
 		t.approxSize += newRow.GetApproxSize()
@@ -177,7 +181,8 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 	}
 
 	var prevRowSize int
-	if prevRow, ok := t.rowsData[pk]; ok {
+	prevRow, ok := t.rowsData[pk]
+	if ok {
 		prevRowSize = prevRow.GetApproxSize()
 		if delete {
 			// If the row was deleted, preserve the previous values that we have in memory
@@ -196,14 +201,13 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 					rowData[key] = prevVal
 				}
 			}
-
 		}
 	}
 
-	newRowSize := size.GetApproxSize(rowData)
 	// If prevRow doesn't exist, it'll be 0, which is a no-op.
+	newRowSize := size.GetApproxSize(rowData)
 	t.approxSize += newRowSize - prevRowSize
-	t.rowsData[pk] = NewRow(rowData)
+	t.rowsData[pk] = NewRow(rowData, op)
 	if !delete {
 		t.containOtherOperations = true
 	} else if delete && !t.topicConfig.SoftDelete {

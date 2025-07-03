@@ -31,7 +31,7 @@ func (mt *MergeTest) generateInitialData(numRows int) error {
 	for i := 0; i < numRows; i++ {
 		pkValueString := fmt.Sprintf("%d", i)
 		rowData := mt.framework.GenerateRowDataForMerge(i, false)
-		mt.framework.GetTableData().InsertRow(pkValueString, rowData, false)
+		mt.framework.GetTableData().InsertRow(pkValueString, rowData, constants.Create)
 	}
 
 	if _, err := mt.framework.GetDestination().Merge(mt.framework.GetContext(), mt.framework.GetTableData()); err != nil {
@@ -48,7 +48,7 @@ func (mt *MergeTest) updateExistingData(numRows int) error {
 		rowData := mt.framework.GenerateRowDataForMerge(i, false)
 		// Modify the value to indicate an update
 		rowData["value"] = float64(i) * 2.0
-		mt.framework.GetTableData().InsertRow(pkValueString, rowData, false)
+		mt.framework.GetTableData().InsertRow(pkValueString, rowData, constants.Update)
 	}
 
 	if _, err := mt.framework.GetDestination().Merge(mt.framework.GetContext(), mt.framework.GetTableData()); err != nil {
@@ -63,7 +63,7 @@ func (mt *MergeTest) deleteData(numRows int) error {
 	for i := 0; i < numRows; i++ {
 		pkValueString := fmt.Sprintf("%d", i)
 		rowData := mt.framework.GenerateRowDataForMerge(i, true)
-		mt.framework.GetTableData().InsertRow(pkValueString, rowData, true)
+		mt.framework.GetTableData().InsertRow(pkValueString, rowData, constants.Delete)
 	}
 
 	if _, err := mt.framework.GetDestination().Merge(mt.framework.GetContext(), mt.framework.GetTableData()); err != nil {

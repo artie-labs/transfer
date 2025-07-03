@@ -105,7 +105,7 @@ func TestInsertRow_Toast(t *testing.T) {
 		// Wipe the table data per test run.
 		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "foo")
 		for _, rowData := range testCase.rowsDataToUpdate {
-			td.InsertRow(testCase.primaryKey, rowData, false)
+			td.InsertRow(testCase.primaryKey, rowData, constants.Create)
 		}
 
 		var actualSize int
@@ -123,7 +123,7 @@ func TestTableData_InsertRow(t *testing.T) {
 	assert.Equal(t, 0, int(td.NumberOfRows()))
 
 	// Now insert the right way.
-	td.InsertRow("foo", map[string]any{"foo": "bar"}, false)
+	td.InsertRow("foo", map[string]any{"foo": "bar"}, constants.Create)
 
 	assert.Equal(t, 1, int(td.NumberOfRows()))
 }
@@ -148,13 +148,13 @@ func TestTableData_InsertRowApproxSize(t *testing.T) {
 					"true": false,
 				},
 			},
-		}, false)
+		}, constants.Create)
 	}
 
 	var updateCount int
 	for updateKey := range td.rowsData {
 		updateCount += 1
-		td.InsertRow(updateKey, map[string]any{"foo": "foo", "bar": "bar"}, false)
+		td.InsertRow(updateKey, map[string]any{"foo": "foo", "bar": "bar"}, constants.Create)
 		if updateCount > numUpdateRows {
 			break
 		}
@@ -163,7 +163,7 @@ func TestTableData_InsertRowApproxSize(t *testing.T) {
 	var deleteCount int
 	for deleteKey := range td.rowsData {
 		deleteCount += 1
-		td.InsertRow(deleteKey, map[string]any{"__artie_deleted": true}, true)
+		td.InsertRow(deleteKey, map[string]any{"__artie_deleted": true}, constants.Delete)
 		if deleteCount > numDeleteRows {
 			break
 		}

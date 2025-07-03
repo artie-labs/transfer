@@ -28,7 +28,7 @@ type Event struct {
 
 	OptionalSchema map[string]typing.KindDetails
 	Columns        *columns.Columns
-	Deleted        bool
+	Operation      constants.Operation
 
 	// private metadata:
 	primaryKeys []string
@@ -187,7 +187,7 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 		OptionalSchema: optionalSchema,
 		Columns:        cols,
 		Data:           transformData(evtData, tc),
-		Deleted:        event.DeletePayload(),
+		Operation:      event.Operation(),
 	}
 
 	return _event, nil
@@ -354,7 +354,7 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 		return false, "", fmt.Errorf("failed to retrieve primary key value: %w", err)
 	}
 
-	td.InsertRow(pkValueString, e.Data, e.Deleted)
+	td.InsertRow(pkValueString, e.Data, e.Operation)
 	// If the message is Kafka, then we only need the latest one
 	if message.Kind() == artie.Kafka {
 		td.PartitionsToLastMessage[message.Partition()] = message
