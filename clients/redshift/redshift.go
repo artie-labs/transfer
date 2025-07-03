@@ -33,6 +33,10 @@ type Store struct {
 	db.Store
 }
 
+func (s Store) GetConfig() config.Config {
+	return s.config
+}
+
 func (s *Store) BuildCredentialsClause(ctx context.Context) (string, error) {
 	if s._awsCredentials == nil {
 		return s.credentialsClause, nil
@@ -120,7 +124,12 @@ func (s *Store) SweepTemporaryTables(ctx context.Context) error {
 func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
 	stagingTableID := shared.TempTableID(tableID)
 	dedupeQueries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt)
-	return destination.ExecContextStatements(ctx, s, dedupeQueries)
+
+	if _, err := destination.ExecContextStatements(ctx, s, dedupeQueries); err != nil {
+		return fmt.Errorf("failed to dedupe: %w", err)
+	}
+
+	return nil
 }
 
 func LoadRedshift(ctx context.Context, cfg config.Config, _store *db.Store) (*Store, error) {

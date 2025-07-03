@@ -29,6 +29,10 @@ type Store struct {
 	location *time.Location
 }
 
+func (s Store) GetConfig() config.Config {
+	return s.config
+}
+
 func (s Store) Validate() error {
 	if err := s.config.S3.Validate(); err != nil {
 		return fmt.Errorf("failed to validate settings: %w", err)

@@ -54,6 +54,9 @@ type SharedDestinationSettings struct {
 
 	// Timestamp Settings
 	SharedTimestampSettings SharedTimestampSettings `yaml:"sharedTimestampSettings"`
+
+	// [EnableMergeAssertion] - This will enable the merge assertion checks for the destination.
+	EnableMergeAssertion bool `yaml:"enableMergeAssertion,omitempty"`
 }
 
 type SharedTimestampSettings struct {
