@@ -94,7 +94,7 @@ func WriteParquetFiles(tableData *optimization.TableData, filePath string, locat
 
 	pw.CompressionType = parquet.CompressionCodec_GZIP
 	for _, row := range tableData.Rows() {
-		var csvRows []any
+		var csvValues []any
 		for _, col := range cols {
 			value, _ := row.GetValue(col.Name())
 			parsedValue, err := parquetutil.ParseValue(value, col.KindDetails, location)
@@ -102,10 +102,10 @@ func WriteParquetFiles(tableData *optimization.TableData, filePath string, locat
 				return fmt.Errorf("failed to parse value, err: %w, value: %v, column: %q", err, value, col.Name())
 			}
 
-			csvRows = append(csvRows, parsedValue)
+			csvValues = append(csvValues, parsedValue)
 		}
 
-		if err = pw.Write(csvRows); err != nil {
+		if err = pw.Write(csvValues); err != nil {
 			return fmt.Errorf("failed to write row: %w", err)
 		}
 	}
