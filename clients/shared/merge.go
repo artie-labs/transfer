@@ -166,19 +166,21 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 		return fmt.Errorf("failed to execute merge statements: %w", err)
 	}
 
-	var totalRowsAffected int64
-	for _, result := range results {
-		rowsAffected, err := result.RowsAffected()
-		if err != nil {
-			return fmt.Errorf("failed to get rows affected: %w", err)
+	if dest.GetConfig().SharedDestinationSettings.EnableMergeAssertion {
+		var totalRowsAffected int64
+		for _, result := range results {
+			rowsAffected, err := result.RowsAffected()
+			if err != nil {
+				return fmt.Errorf("failed to get rows affected: %w", err)
+			}
+
+			totalRowsAffected += rowsAffected
 		}
 
-		totalRowsAffected += rowsAffected
-	}
-
-	// [totalRowsAffected] may be higher if the table contains duplicate rows.
-	if rows := tableData.NumberOfRows(); rows > uint(totalRowsAffected) {
-		return fmt.Errorf("expected %d rows to be affected, got %d", rows, totalRowsAffected)
+		// [totalRowsAffected] may be higher if the table contains duplicate rows.
+		if rows := tableData.NumberOfRows(); rows > uint(totalRowsAffected) {
+			return fmt.Errorf("expected %d rows to be affected, got %d", rows, totalRowsAffected)
+		}
 	}
 
 	return nil
