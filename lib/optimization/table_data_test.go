@@ -208,7 +208,6 @@ func TestTableData_InsertRowSoftDelete(t *testing.T) {
 	assert.Equal(t, "dana2", td.Rows()[0].GetData()["name"])
 	assert.Equal(t, true, td.Rows()[0].GetData()[constants.DeleteColumnMarker])
 	assert.Equal(t, false, td.Rows()[0].GetData()[constants.OnlySetDeleteColumnMarker])
-
 	{
 		// If deleting a row we don't have in memory, OnlySetDeleteColumnMarker should stay true
 		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{SoftDelete: true}, "foo")
@@ -219,7 +218,6 @@ func TestTableData_InsertRowSoftDelete(t *testing.T) {
 		td.InsertRow("123", map[string]any{"id": "123", constants.DeleteColumnMarker: true, constants.OnlySetDeleteColumnMarker: true}, true)
 		assert.Equal(t, true, td.Rows()[0].GetData()[constants.OnlySetDeleteColumnMarker])
 	}
-
 	{
 		// If a row is created and deleted, then another row with the same primary key is created, the previous values should not be used
 		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{SoftDelete: true}, "foo")

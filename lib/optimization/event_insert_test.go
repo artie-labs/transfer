@@ -110,11 +110,11 @@ func TestInsertRow_Toast(t *testing.T) {
 
 		var actualSize int
 		for _, rowData := range td.Rows() {
-			actualSize += size.GetApproxSize(rowData)
+			actualSize += size.GetApproxSize(rowData.GetData())
 		}
 
-		assert.Equal(t, td.approxSize, actualSize, testCase.name)                                   // Check size calculation is accurate
-		assert.Equal(t, td.rowsData[testCase.primaryKey], testCase.expectedFinalRow, testCase.name) // Check data accuracy
+		assert.Equal(t, td.approxSize, actualSize, testCase.name)                                             // Check size calculation is accurate
+		assert.Equal(t, td.rowsData[testCase.primaryKey].GetData(), testCase.expectedFinalRow, testCase.name) // Check data accuracy
 	}
 }
 
@@ -171,7 +171,7 @@ func TestTableData_InsertRowApproxSize(t *testing.T) {
 
 	var actualSize int
 	for _, rowData := range td.rowsData {
-		actualSize += size.GetApproxSize(rowData)
+		actualSize += size.GetApproxSize(rowData.GetData())
 	}
 
 	assert.Equal(t, td.approxSize, actualSize)

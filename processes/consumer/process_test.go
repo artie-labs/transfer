@@ -176,13 +176,15 @@ func TestProcessMessageFailures(t *testing.T) {
 
 	var rowData map[string]any
 	for _, row := range td.Rows() {
-		if row["_id"] == "1004" {
-			rowData = row
+		if id, ok := row.GetValue("_id"); ok {
+			if id == "1004" {
+				rowData = row.GetData()
+			}
 		}
 	}
 	{
-		rowValue, isOk := rowData[constants.DeleteColumnMarker]
-		assert.True(t, isOk)
+		rowValue, ok := rowData[constants.DeleteColumnMarker]
+		assert.True(t, ok)
 		assert.False(t, rowValue.(bool))
 	}
 	{
