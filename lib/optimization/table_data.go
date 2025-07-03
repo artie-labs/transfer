@@ -168,8 +168,9 @@ func NewTableData(inMemoryColumns *columns.Columns, mode config.Mode, primaryKey
 // InsertRow creates a single entrypoint for how rows get added to TableData
 // This is important to avoid concurrent r/w, but also the ability for us to add or decrement row size by keeping a running total
 // With this, we are able to reduce the latency by 500x+ on a 5k row table. See event_bench_test.go vs. size_bench_test.go
-func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
-	newRow := NewRow(rowData)
+func (t *TableData) InsertRow(pk string, rowData map[string]any, op constants.Operation) {
+	delete := op == constants.Delete
+	newRow := NewRow(rowData, op)
 	if t.mode == config.History {
 		t.rows = append(t.rows, newRow)
 		t.approxSize += newRow.GetApproxSize()
@@ -177,7 +178,8 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 	}
 
 	var prevRowSize int
-	if prevRow, ok := t.rowsData[pk]; ok {
+	prevRow, ok := t.rowsData[pk]
+	if ok {
 		prevRowSize = prevRow.GetApproxSize()
 		if delete {
 			// If the row was deleted, preserve the previous values that we have in memory
@@ -196,14 +198,14 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 					rowData[key] = prevVal
 				}
 			}
-
 		}
+		newRowSize := size.GetApproxSize(rowData)
+		t.approxSize += newRowSize - prevRowSize
 	}
 
-	newRowSize := size.GetApproxSize(rowData)
 	// If prevRow doesn't exist, it'll be 0, which is a no-op.
-	t.approxSize += newRowSize - prevRowSize
-	t.rowsData[pk] = NewRow(rowData)
+
+	t.rowsData[pk] = NewRow(rowData, op)
 	if !delete {
 		t.containOtherOperations = true
 	} else if delete && !t.topicConfig.SoftDelete {

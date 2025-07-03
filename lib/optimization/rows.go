@@ -1,14 +1,28 @@
 package optimization
 
-import "github.com/artie-labs/transfer/lib/size"
+import (
+	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/size"
+)
 
 type Row struct {
-	data map[string]any
+	initialOp constants.Operation
+	currentOp constants.Operation
+	data      map[string]any
 }
 
-func NewRow(data map[string]any) Row {
+func NewRow(data map[string]any, op constants.Operation) Row {
 	return Row{
-		data: data,
+		data:      data,
+		initialOp: op,
+	}
+}
+
+func (r Row) BuildRow(data map[string]any, op constants.Operation) Row {
+	return Row{
+		data:      data,
+		initialOp: r.initialOp,
+		currentOp: op,
 	}
 }
 
