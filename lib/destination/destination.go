@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -30,6 +31,8 @@ type Destination interface {
 }
 
 type Baseline interface {
+	GetConfig() config.Config
+
 	Merge(ctx context.Context, tableData *optimization.TableData) (commitTransaction bool, err error)
 	Append(ctx context.Context, tableData *optimization.TableData, useTempTable bool) error
 	IsRetryableError(err error) bool

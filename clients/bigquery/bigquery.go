@@ -46,6 +46,10 @@ type Store struct {
 	db.Store
 }
 
+func (s Store) GetConfig() config.Config {
+	return s.config
+}
+
 func (s *Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error {
 	if !tableID.AllowToDrop() {
 		return fmt.Errorf("table %q is not allowed to be dropped", tableID.FullyQualifiedName())

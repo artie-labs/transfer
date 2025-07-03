@@ -33,6 +33,10 @@ type Store struct {
 	db.Store
 }
 
+func (s Store) GetConfig() config.Config {
+	return s.config
+}
+
 func (s *Store) BuildCredentialsClause(ctx context.Context) (string, error) {
 	if s._awsCredentials == nil {
 		return s.credentialsClause, nil

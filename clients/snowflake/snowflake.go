@@ -29,6 +29,10 @@ type Store struct {
 	_awsS3Client awslib.S3Client
 }
 
+func (s Store) GetConfig() config.Config {
+	return s.config
+}
+
 func (s *Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, table string) sql.TableIdentifier {
 	return dialect.NewTableIdentifier(databaseAndSchema.Database, databaseAndSchema.Schema, table)
 }

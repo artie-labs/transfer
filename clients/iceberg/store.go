@@ -32,6 +32,10 @@ type Store struct {
 	location         *time.Location
 }
 
+func (s Store) GetConfig() config.Config {
+	return s.config
+}
+
 func (s Store) GetApacheLivyClient() *apachelivy.Client {
 	return s.apacheLivyClient
 }
