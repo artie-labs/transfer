@@ -11,8 +11,7 @@ import (
 func TestJSON_Convert(t *testing.T) {
 	{
 		// Wrong data type
-		value, err := JSON{}.Convert(123)
-		assert.NoError(t, err)
+		_, err := JSON{}.Convert(123)
 		assert.ErrorContains(t, err, "expected string, got int")
 	}
 	{
