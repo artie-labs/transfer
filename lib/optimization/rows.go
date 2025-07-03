@@ -1,5 +1,7 @@
 package optimization
 
+import "github.com/artie-labs/transfer/lib/size"
+
 type Row struct {
 	data map[string]any
 }
@@ -21,4 +23,8 @@ func (r Row) GetData() map[string]any {
 
 func (r *Row) SetValue(key string, value any) {
 	r.data[key] = value
+}
+
+func (r Row) GetApproxSize() int {
+	return size.GetApproxSize(r.GetData())
 }

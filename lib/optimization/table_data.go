@@ -172,13 +172,13 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 	newRow := NewRow(rowData)
 	if t.mode == config.History {
 		t.rows = append(t.rows, newRow)
-		t.approxSize += size.GetApproxSize(newRow.GetData())
+		t.approxSize += newRow.GetApproxSize()
 		return
 	}
 
 	var prevRowSize int
 	if prevRow, ok := t.rowsData[pk]; ok {
-		prevRowSize = size.GetApproxSize(prevRow.GetData())
+		prevRowSize = prevRow.GetApproxSize()
 		if delete {
 			// If the row was deleted, preserve the previous values that we have in memory
 			rowData = prevRow.GetData()
