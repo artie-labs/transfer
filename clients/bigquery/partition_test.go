@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/stretchr/testify/assert"
 )
@@ -12,7 +13,7 @@ import (
 func buildRows(data []map[string]any) []optimization.Row {
 	var rows []optimization.Row
 	for _, row := range data {
-		rows = append(rows, optimization.NewRow(row))
+		rows = append(rows, optimization.NewRow(row, constants.Create))
 	}
 	return rows
 }

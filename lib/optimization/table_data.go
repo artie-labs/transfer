@@ -199,12 +199,11 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, op constants.Op
 				}
 			}
 		}
-		newRowSize := size.GetApproxSize(rowData)
-		t.approxSize += newRowSize - prevRowSize
 	}
 
 	// If prevRow doesn't exist, it'll be 0, which is a no-op.
-
+	newRowSize := size.GetApproxSize(rowData)
+	t.approxSize += newRowSize - prevRowSize
 	t.rowsData[pk] = NewRow(rowData, op)
 	if !delete {
 		t.containOtherOperations = true

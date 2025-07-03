@@ -148,7 +148,7 @@ func generateTableData(rows int) (dialect.TableIdentifier, *optimization.TableDa
 			"dusty":      "the mini aussie",
 		}
 
-		td.InsertRow(key, rowData, false)
+		td.InsertRow(key, rowData, constants.Create)
 	}
 
 	return dialect.NewTableIdentifier("database", "schema", randomTableName), td

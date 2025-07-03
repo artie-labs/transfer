@@ -32,7 +32,7 @@ func (at *AppendTest) generateTestData(numRows int, appendEvery int) error {
 			pkValue := i*numRows + j
 			pkValueString := fmt.Sprintf("%d", pkValue)
 			rowData := at.framework.GenerateRowData(pkValue)
-			at.framework.GetTableData().InsertRow(pkValueString, rowData, false)
+			at.framework.GetTableData().InsertRow(pkValueString, rowData, constants.Create)
 		}
 
 		if err := at.framework.GetBaseline().Append(at.framework.GetContext(), at.framework.GetTableData(), false); err != nil {

@@ -28,7 +28,7 @@ import (
 func buildBaseRow(data map[string]any) optimization.Row {
 	data[constants.DeleteColumnMarker] = false
 	data[constants.OnlySetDeleteColumnMarker] = false
-	return optimization.NewRow(data)
+	return optimization.NewRow(data, constants.Create)
 }
 
 func (s *SnowflakeTestSuite) identifierFor(tableData *optimization.TableData) sql.TableIdentifier {
@@ -94,7 +94,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 	assert.Equal(s.T(), "foo", tableData.Name())
 
 	for pk, row := range rowsData {
-		tableData.InsertRow(pk, row, false)
+		tableData.InsertRow(pk, row, constants.Create)
 	}
 
 	anotherColToKindDetailsMap := map[string]typing.KindDetails{
@@ -172,7 +172,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 	tableData := optimization.NewTableData(&cols, config.Replication, []string{"id"}, topicConfig, "foo")
 	tableData.ResetTempTableSuffix()
 	for pk, row := range rowsData {
-		tableData.InsertRow(pk, row, false)
+		tableData.InsertRow(pk, row, constants.Create)
 	}
 
 	s.stageStore.configMap.AddTable(s.identifierFor(tableData), types.NewDestinationTableConfig(cols.GetColumns(), true))
@@ -234,7 +234,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	tableData := optimization.NewTableData(&cols, config.Replication, []string{"id"}, topicConfig, tblName)
 	tableData.ResetTempTableSuffix()
 	for pk, row := range rowsData {
-		tableData.InsertRow(pk, row.GetData(), false)
+		tableData.InsertRow(pk, row.GetData(), constants.Create)
 	}
 
 	tableID := s.identifierFor(tableData)
@@ -301,7 +301,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	tableData := optimization.NewTableData(&cols, config.Replication, []string{"id"}, topicConfig, "foo")
 	tableData.ResetTempTableSuffix()
 	for pk, row := range rowsData {
-		tableData.InsertRow(pk, row.GetData(), false)
+		tableData.InsertRow(pk, row.GetData(), constants.Create)
 	}
 
 	snowflakeColToKindDetailsMap := maputil.NewOrderedMap[typing.KindDetails](true)
@@ -359,7 +359,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 
 		rowData := row.GetData()
 		rowData["new"] = "123"
-		tableData.InsertRow(fmt.Sprintf("pk-%v", pk), rowData, false)
+		tableData.InsertRow(fmt.Sprintf("pk-%v", pk), rowData, constants.Update)
 		tableData.SetInMemoryColumns(&sflkCols)
 		inMemColumns := tableData.ReadOnlyInMemoryCols()
 		// Since sflkColumns overwrote the format, let's set it correctly again.
