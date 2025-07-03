@@ -265,7 +265,11 @@ func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primary
 
 	defer func() { _ = ddl.DropTemporaryTable(ctx, s, stagingTableID, false) }()
 
-	return destination.ExecContextStatements(ctx, s, dedupeQueries)
+	if _, err := destination.ExecContextStatements(ctx, s, dedupeQueries); err != nil {
+		return fmt.Errorf("failed to dedupe: %w", err)
+	}
+
+	return nil
 }
 
 func (s *Store) SweepTemporaryTables(_ context.Context) error {
