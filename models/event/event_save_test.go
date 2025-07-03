@@ -42,7 +42,7 @@ func (e *EventsTestSuite) TestSaveEvent() {
 
 	kafkaMsg := kafka.Message{}
 	_, _, err := event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
-	assert.Nil(e.T(), err)
+	assert.NoError(e.T(), err)
 
 	optimization := e.db.GetOrCreateTableData("foo")
 	// Check the in-memory DB columns.
@@ -97,7 +97,7 @@ func (e *EventsTestSuite) TestEvent_SaveCasing() {
 
 	kafkaMsg := kafka.Message{}
 	_, _, err := event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
-	assert.Nil(e.T(), err)
+	assert.NoError(e.T(), err)
 
 	td := e.db.GetOrCreateTableData("foo")
 	var rowData map[string]any
@@ -138,7 +138,7 @@ func (e *EventsTestSuite) TestEventSaveOptionalSchema() {
 
 	kafkaMsg := kafka.Message{}
 	_, _, err := event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
-	assert.Nil(e.T(), err)
+	assert.NoError(e.T(), err)
 
 	td := e.db.GetOrCreateTableData("foo")
 	{
@@ -244,7 +244,7 @@ func (e *EventsTestSuite) TestEventSaveColumns() {
 
 	kafkaMsg := kafka.Message{}
 	_, _, err := event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
-	assert.Nil(e.T(), err)
+	assert.NoError(e.T(), err)
 
 	td := e.db.GetOrCreateTableData("foo")
 	{
@@ -293,7 +293,7 @@ func (e *EventsTestSuite) TestEventSaveTestDeleteFlag() {
 
 	kafkaMsg := kafka.Message{}
 	_, _, err := event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
-	assert.Nil(e.T(), err)
+	assert.NoError(e.T(), err)
 	assert.False(e.T(), e.db.GetOrCreateTableData("foo").ContainOtherOperations())
 
 	event.Deleted = false

@@ -83,7 +83,7 @@ func (r *RelationTestSuite) TestPostgresEvent() {
 }
 `
 	evt, err := r.Debezium.GetEventFromBytes([]byte(payload))
-	assert.Nil(r.T(), err)
+	assert.NoError(r.T(), err)
 	assert.False(r.T(), evt.DeletePayload())
 
 	evtData, err := evt.GetData(kafkalib.TopicConfig{IncludeDatabaseUpdatedAt: true})
@@ -194,7 +194,7 @@ func (r *RelationTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 }
 `
 	evt, err := r.Debezium.GetEventFromBytes([]byte(payload))
-	assert.Nil(r.T(), err)
+	assert.NoError(r.T(), err)
 	assert.False(r.T(), evt.DeletePayload())
 
 	evtData, err := evt.GetData(kafkalib.TopicConfig{})

@@ -36,7 +36,7 @@ func (e *EventsTestSuite) TestEvent_Validate() {
 			},
 			mode: config.History,
 		}
-		assert.Nil(e.T(), _evt.Validate())
+		assert.NoError(e.T(), _evt.Validate())
 	}
 	{
 		_evt := Event{
@@ -59,7 +59,7 @@ func (e *EventsTestSuite) TestEvent_Validate() {
 				constants.OnlySetDeleteColumnMarker: true,
 			},
 		}
-		assert.Nil(e.T(), _evt.Validate())
+		assert.NoError(e.T(), _evt.Validate())
 	}
 }
 
