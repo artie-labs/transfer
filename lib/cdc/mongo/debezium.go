@@ -82,8 +82,8 @@ func (Debezium) GetPrimaryKey(key []byte, tc kafkalib.TopicConfig) (map[string]a
 		return nil, err
 	}
 
-	value, isOk := kvMap["id"]
-	if isOk {
+	value, ok := kvMap["id"]
+	if ok {
 		// Debezium will write MongoDB's primary key `_id` as `id` in the partition key, so we are renaming it back to `_id`
 		kvMap["_id"] = value
 		delete(kvMap, "id")

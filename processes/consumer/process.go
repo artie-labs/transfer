@@ -36,8 +36,8 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 		metricsClient.Timing("process.message", time.Since(st), tags)
 	}()
 
-	topicConfig, isOk := p.TopicToConfigFormatMap.GetTopicFmt(p.Msg.Topic())
-	if !isOk {
+	topicConfig, ok := p.TopicToConfigFormatMap.GetTopicFmt(p.Msg.Topic())
+	if !ok {
 		tags["what"] = "failed_topic_lookup"
 		return "", fmt.Errorf("failed to get topic name: %q", p.Msg.Topic())
 	}

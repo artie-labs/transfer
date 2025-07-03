@@ -132,7 +132,7 @@ func (c *Columns) UpsertColumn(colName string, arg UpsertColumnArg) error {
 		return fmt.Errorf("column name is empty")
 	}
 
-	if col, isOk := c.GetColumn(colName); isOk {
+	if col, ok := c.GetColumn(colName); ok {
 		if arg.ToastCol != nil {
 			col.ToastColumn = *arg.ToastCol
 		}
@@ -192,7 +192,7 @@ func (c *Columns) AddColumn(col Column) {
 		return
 	}
 
-	if _, isOk := c.GetColumn(col.name); isOk {
+	if _, ok := c.GetColumn(col.name); ok {
 		// Column exists.
 		return
 	}

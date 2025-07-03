@@ -259,7 +259,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 // MongoDB will return the native objects back such as `map[string]any{"hello": "world"}`
 // Relational will return a string representation of the struct such as `{"hello": "world"}`
 func encodeStructToJSONString(value any) (string, error) {
-	if stringValue, isOk := value.(string); isOk {
+	if stringValue, ok := value.(string); ok {
 		if strings.Contains(stringValue, constants.ToastUnavailableValuePlaceholder) {
 			return fmt.Sprintf(`{"key":"%s"}`, constants.ToastUnavailableValuePlaceholder), nil
 		}

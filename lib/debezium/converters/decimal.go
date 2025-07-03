@@ -161,8 +161,8 @@ func (v VariableDecimal) ToKindDetails() typing.KindDetails {
 }
 
 func (v VariableDecimal) Convert(value any) (any, error) {
-	valueStruct, isOk := value.(map[string]any)
-	if !isOk {
+	valueStruct, ok := value.(map[string]any)
+	if !ok {
 		return nil, fmt.Errorf("value is not map[string]any type")
 	}
 
@@ -171,8 +171,8 @@ func (v VariableDecimal) Convert(value any) (any, error) {
 		return nil, err
 	}
 
-	val, isOk := valueStruct["value"]
-	if !isOk {
+	val, ok := valueStruct["value"]
+	if !ok {
 		return nil, fmt.Errorf("encoded value does not exist")
 	}
 

@@ -164,8 +164,8 @@ func (s *SchemaEventPayload) GetData(tc kafkalib.TopicConfig) (map[string]any, e
 func (s *SchemaEventPayload) parseAndMutateMapInPlace(retMap map[string]any, kind debezium.FieldLabelKind) (map[string]any, error) {
 	if schemaObject := s.Schema.GetSchemaFromLabel(kind); schemaObject != nil {
 		for _, field := range schemaObject.Fields {
-			fieldVal, isOk := retMap[field.FieldName]
-			if !isOk {
+			fieldVal, ok := retMap[field.FieldName]
+			if !ok {
 				continue
 			}
 

@@ -38,18 +38,18 @@ func (GeometryPoint) ToKindDetails() typing.KindDetails {
 // Convert takes in a map[string]any and returns a GeoJSON string. This function does not use WKB or SRID and leverages X, Y.
 // https://debezium.io/documentation/reference/stable/connectors/postgresql.html#:~:text=io.debezium.data.geometry.Point
 func (GeometryPoint) Convert(value any) (any, error) {
-	valMap, isOk := value.(map[string]any)
-	if !isOk {
+	valMap, ok := value.(map[string]any)
+	if !ok {
 		return "", fmt.Errorf("value is not map[string]any type")
 	}
 
-	x, isOk := valMap["x"]
-	if !isOk {
+	x, ok := valMap["x"]
+	if !ok {
 		return "", fmt.Errorf("x coordinate does not exist")
 	}
 
-	y, isOk := valMap["y"]
-	if !isOk {
+	y, ok := valMap["y"]
+	if !ok {
 		return "", fmt.Errorf("y coordinate does not exist")
 	}
 
@@ -77,13 +77,13 @@ func (Geometry) ToKindDetails() typing.KindDetails {
 }
 
 func (Geometry) Convert(value any) (any, error) {
-	valMap, isOk := value.(map[string]any)
-	if !isOk {
+	valMap, ok := value.(map[string]any)
+	if !ok {
 		return "", fmt.Errorf("value is not map[string]any type")
 	}
 
-	wkbVal, isOk := valMap["wkb"]
-	if !isOk {
+	wkbVal, ok := valMap["wkb"]
+	if !ok {
 		return "", fmt.Errorf("wkb does not exist")
 	}
 

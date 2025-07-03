@@ -12,8 +12,8 @@ import (
 type JSON struct{}
 
 func (JSON) Convert(value any) (any, error) {
-	valueString, isOk := value.(string)
-	if !isOk {
+	valueString, ok := value.(string)
+	if !ok {
 		return nil, fmt.Errorf("expected string, got %T", value)
 	}
 

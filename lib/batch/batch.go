@@ -10,8 +10,8 @@ type KeyFunction interface {
 }
 
 func hasKeyFunction[T any](item T) (KeyFunction, bool) {
-	if castedItem, isOk := any(item).(KeyFunction); isOk {
-		return castedItem, isOk
+	if castedItem, ok := any(item).(KeyFunction); ok {
+		return castedItem, ok
 	}
 
 	return nil, false
@@ -35,7 +35,7 @@ func BySize[T any](in []T, maxSizeBytes int, failIfRowExceedsMaxSizeBytes bool, 
 				return fmt.Errorf("item %d is larger (%d bytes) than maxSizeBytes (%d bytes)", i, len(bytes), maxSizeBytes)
 			} else {
 				logFields := []any{slog.Int("index", i), slog.Int("bytes", len(bytes))}
-				if stringItem, isOk := hasKeyFunction[T](item); isOk {
+				if stringItem, ok := hasKeyFunction[T](item); ok {
 					logFields = append(logFields, slog.String("key", stringItem.Key()))
 				}
 

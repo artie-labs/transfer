@@ -31,7 +31,7 @@ func Diff(sourceColumns []Column, targetColumns []Column) DiffResults {
 	targ := buildColumnsMap(targetColumns)
 
 	for _, colName := range src.Keys() {
-		if _, isOk := targ.Get(colName); isOk {
+		if _, ok := targ.Get(colName); ok {
 			targ.Remove(colName)
 			src.Remove(colName)
 		}

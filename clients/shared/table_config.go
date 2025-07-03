@@ -84,8 +84,8 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DestinationTableConfig, error)
 
 		row := make(map[string]string)
 		for idx, val := range values {
-			interfaceVal, isOk := val.(*interface{})
-			if !isOk || interfaceVal == nil {
+			interfaceVal, ok := val.(*interface{})
+			if !ok || interfaceVal == nil {
 				return nil, errors.New("invalid value")
 			}
 
@@ -125,7 +125,7 @@ func (g GetTableCfgArgs) buildColumnFromRow(row map[string]string) (columns.Colu
 	switch strategy {
 	case sql.Backfill:
 		// We need to check to make sure the comment is not an empty string
-		if comment, isOk := row[g.ColumnNameForComment]; isOk && comment != "" {
+		if comment, ok := row[g.ColumnNameForComment]; ok && comment != "" {
 			var _colComment constants.ColComment
 			if err = json.Unmarshal([]byte(comment), &_colComment); err != nil {
 				// This may happen if the company is using column comments.
@@ -139,7 +139,7 @@ func (g GetTableCfgArgs) buildColumnFromRow(row map[string]string) (columns.Colu
 			}
 		}
 	case sql.Native:
-		if value, isOk := row["default_value"]; isOk && value != "" {
+		if value, ok := row["default_value"]; ok && value != "" {
 			col.SetBackfilled(true)
 		}
 	default:

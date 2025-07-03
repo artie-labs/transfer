@@ -138,8 +138,8 @@ func (d *DestinationTableConfig) ShouldDeleteColumn(colName string, cdcTime time
 	}
 
 	colsToDelete := d.ReadOnlyColumnsToDelete()
-	ts, isOk := colsToDelete[colName]
-	if isOk {
+	ts, ok := colsToDelete[colName]
+	if ok {
 		// If the CDC time is greater than this timestamp, then we should delete it.
 		return cdcTime.After(ts)
 	}

@@ -3,8 +3,8 @@ package typing
 import "fmt"
 
 func AssertType[T any](val any) (T, error) {
-	castedVal, isOk := val.(T)
-	if !isOk {
+	castedVal, ok := val.(T)
+	if !ok {
 		var zero T
 		return zero, fmt.Errorf("expected type %T, got %T", zero, val)
 	}

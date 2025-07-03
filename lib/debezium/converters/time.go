@@ -16,8 +16,8 @@ func (t Time) ToKindDetails() typing.KindDetails {
 }
 
 func (t Time) Convert(val any) (any, error) {
-	valInt64, isOk := val.(int64)
-	if !isOk {
+	valInt64, ok := val.(int64)
+	if !ok {
 		return nil, fmt.Errorf("expected int64 got '%v' with type %T", val, val)
 	}
 
@@ -64,8 +64,8 @@ func (z ZonedTimestamp) ToKindDetails() typing.KindDetails {
 }
 
 func (z ZonedTimestamp) Convert(value any) (any, error) {
-	valString, isOk := value.(string)
-	if !isOk {
+	valString, ok := value.(string)
+	if !ok {
 		return nil, fmt.Errorf("expected string got '%v' with type %T", value, value)
 	}
 
@@ -104,8 +104,8 @@ func (t TimeWithTimezone) ToKindDetails() typing.KindDetails {
 }
 
 func (t TimeWithTimezone) Convert(value any) (any, error) {
-	val, isOk := value.(string)
-	if !isOk {
+	val, ok := value.(string)
+	if !ok {
 		return nil, fmt.Errorf("expected string got '%v' with type %T", value, value)
 	}
 

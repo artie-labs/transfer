@@ -108,8 +108,8 @@ func parsePartitionKeyStruct(keyBytes []byte) (map[string]any, error) {
 		return nil, fmt.Errorf("key is nil")
 	}
 
-	_, isOk := pkStruct["payload"]
-	if !isOk {
+	_, ok := pkStruct["payload"]
+	if !ok {
 		// pkStruct does not have schema enabled
 		return sanitizePayload(pkStruct), nil
 	}

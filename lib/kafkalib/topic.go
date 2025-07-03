@@ -103,8 +103,8 @@ func (t TopicConfig) ShouldSkip(op string) bool {
 		panic("opsToSkipMap is nil, Load() was never called")
 	}
 
-	_, isOk := t.opsToSkipMap[op]
-	return isOk
+	_, ok := t.opsToSkipMap[op]
+	return ok
 }
 
 func (t TopicConfig) String() string {
