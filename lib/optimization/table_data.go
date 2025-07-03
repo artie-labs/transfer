@@ -90,8 +90,8 @@ func (t *TableData) IncrementMultiStepMergeFlushCount() {
 }
 
 func (t *TableData) WipeData() {
-	t.rowsData = make(map[string]map[string]any)
-	t.rows = []map[string]any{}
+	t.rowsData = make(map[string]Row)
+	t.rows = []Row{}
 	t.approxSize = 0
 	t.ResetTempTableSuffix()
 }
@@ -154,7 +154,7 @@ func NewTableData(inMemoryColumns *columns.Columns, mode config.Mode, primaryKey
 	td := TableData{
 		mode:            mode,
 		inMemoryColumns: inMemoryColumns,
-		rowsData:        map[string]map[string]any{},
+		rowsData:        map[string]Row{},
 		primaryKeys:     primaryKeys,
 		topicConfig:     topicConfig,
 		// temporaryTableSuffix is being set in `ResetTempTableSuffix`
