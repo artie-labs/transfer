@@ -21,10 +21,6 @@ func (r Row) GetData() map[string]any {
 	return r.data
 }
 
-func (r *Row) SetValue(key string, value any) {
-	r.data[key] = value
-}
-
 func (r Row) GetApproxSize() int {
 	return size.GetApproxSize(r.GetData())
 }
