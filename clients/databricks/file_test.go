@@ -39,7 +39,7 @@ func TestNewFile(t *testing.T) {
 	{
 		// Valid
 		file, err := NewFile(map[string]any{"name": "name", "path": "path"})
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, "name", file.name)
 		assert.Equal(t, "path", file.FilePath())
 	}

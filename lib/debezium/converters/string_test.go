@@ -15,7 +15,7 @@ func TestStringPassthrough_Convert(t *testing.T) {
 	{
 		// String
 		value, err := StringPassthrough{}.Convert("test")
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, "test", value)
 	}
 }

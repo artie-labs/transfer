@@ -65,7 +65,7 @@ func TestOutputSourceValid(t *testing.T) {
 	defer os.Remove(randomFile)
 
 	file, err := os.Create(randomFile)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	defer file.Close()
 
@@ -75,7 +75,7 @@ flushIntervalSeconds: 15
 bufferRows: 10
 %s
 `, validKafkaTopic))
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	config, err := readFileToConfig(randomFile)
 	assert.NoError(t, err)
