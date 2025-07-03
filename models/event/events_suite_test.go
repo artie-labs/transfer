@@ -3,15 +3,11 @@ package event
 import (
 	"testing"
 
-	"github.com/artie-labs/transfer/lib/typing/columns"
-
-	"github.com/artie-labs/transfer/lib/config/constants"
-
-	"github.com/artie-labs/transfer/lib/mocks"
-
-	"github.com/artie-labs/transfer/models"
-
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/mocks"
+	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/artie-labs/transfer/models"
 
 	"github.com/stretchr/testify/suite"
 )
