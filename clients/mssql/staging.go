@@ -40,18 +40,19 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 
 	defer stmt.Close()
 
-	for _, value := range tableData.Rows() {
-		var row []any
+	for _, row := range tableData.Rows() {
+		var parsedValues []any
 		for _, col := range cols {
-			castedValue, castErr := parseValue(value[col.Name()], col)
-			if castErr != nil {
-				return castErr
+			value, _ := row.GetValue(col.Name())
+			parsedValue, err := parseValue(value, col)
+			if err != nil {
+				return fmt.Errorf("failed to parse value: %w", err)
 			}
 
-			row = append(row, castedValue)
+			parsedValues = append(parsedValues, parsedValue)
 		}
 
-		if _, err = stmt.ExecContext(ctx, row...); err != nil {
+		if _, err = stmt.ExecContext(ctx, parsedValues...); err != nil {
 			return fmt.Errorf("failed to copy row: %w", err)
 		}
 	}

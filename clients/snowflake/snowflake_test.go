@@ -25,6 +25,12 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
+func buildBaseRow(data map[string]any) optimization.Row {
+	data[constants.DeleteColumnMarker] = false
+	data[constants.OnlySetDeleteColumnMarker] = false
+	return optimization.NewRow(data)
+}
+
 func (s *SnowflakeTestSuite) identifierFor(tableData *optimization.TableData) sql.TableIdentifier {
 	return s.stageStore.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name())
 }
@@ -209,13 +215,13 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 		cols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
 
-	rowsData := make(map[string]map[string]any)
+	rowsData := make(map[string]optimization.Row)
 	for i := range 5 {
-		rowsData[fmt.Sprintf("pk-%d", i)] = map[string]any{
+		rowsData[fmt.Sprintf("pk-%d", i)] = buildBaseRow(map[string]any{
 			"id":         i,
 			"created_at": time.Now().Format(time.RFC3339Nano),
 			"name":       fmt.Sprintf("Robin-%d", i),
-		}
+		})
 	}
 
 	tblName := "orders"
@@ -228,7 +234,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	tableData := optimization.NewTableData(&cols, config.Replication, []string{"id"}, topicConfig, tblName)
 	tableData.ResetTempTableSuffix()
 	for pk, row := range rowsData {
-		tableData.InsertRow(pk, row, false)
+		tableData.InsertRow(pk, row.GetData(), false)
 	}
 
 	tableID := s.identifierFor(tableData)
@@ -271,13 +277,13 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 		Schema:    "public",
 	}
 
-	rowsData := make(map[string]map[string]any)
+	rowsData := make(map[string]optimization.Row)
 	for i := range 5 {
-		rowsData[fmt.Sprintf("pk-%d", i)] = map[string]any{
+		rowsData[fmt.Sprintf("pk-%d", i)] = buildBaseRow(map[string]any{
 			"id":         i,
 			"created_at": time.Now().Format(time.RFC3339Nano),
 			"name":       fmt.Sprintf("Robin-%d", i),
-		}
+		})
 	}
 
 	colToKindDetailsMap := maputil.NewOrderedMap[typing.KindDetails](true)
@@ -295,7 +301,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	tableData := optimization.NewTableData(&cols, config.Replication, []string{"id"}, topicConfig, "foo")
 	tableData.ResetTempTableSuffix()
 	for pk, row := range rowsData {
-		tableData.InsertRow(pk, row, false)
+		tableData.InsertRow(pk, row.GetData(), false)
 	}
 
 	snowflakeColToKindDetailsMap := maputil.NewOrderedMap[typing.KindDetails](true)
@@ -348,7 +354,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 
 	// Now try to execute merge where 1 of the rows have the column now
 	for _, row := range tableData.Rows() {
-		row["new"] = "123"
+		row.SetValue("new", "123")
 		tableData.SetInMemoryColumns(&sflkCols)
 
 		inMemColumns := tableData.ReadOnlyInMemoryCols()

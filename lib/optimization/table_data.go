@@ -43,9 +43,9 @@ type TableData struct {
 	inMemoryColumns *columns.Columns // list of columns
 
 	// rowsData is used for replication
-	rowsData map[string]map[string]any // pk -> { col -> val }
+	rowsData map[string]Row // pk -> { col -> val }
 	// rows is used for history mode, since it's append only.
-	rows []map[string]any
+	rows []Row
 
 	primaryKeys []string
 
@@ -82,8 +82,8 @@ func (t *TableData) IncrementMultiStepMergeFlushCount() {
 }
 
 func (t *TableData) WipeData() {
-	t.rowsData = make(map[string]map[string]any)
-	t.rows = []map[string]any{}
+	t.rowsData = make(map[string]Row)
+	t.rows = []Row{}
 	t.approxSize = 0
 	t.ResetTempTableSuffix()
 }
@@ -146,7 +146,7 @@ func NewTableData(inMemoryColumns *columns.Columns, mode config.Mode, primaryKey
 	td := TableData{
 		mode:            mode,
 		inMemoryColumns: inMemoryColumns,
-		rowsData:        map[string]map[string]any{},
+		rowsData:        map[string]Row{},
 		primaryKeys:     primaryKeys,
 		topicConfig:     topicConfig,
 		// temporaryTableSuffix is being set in `ResetTempTableSuffix`
@@ -169,25 +169,26 @@ func NewTableData(inMemoryColumns *columns.Columns, mode config.Mode, primaryKey
 // This is important to avoid concurrent r/w, but also the ability for us to add or decrement row size by keeping a running total
 // With this, we are able to reduce the latency by 500x+ on a 5k row table. See event_bench_test.go vs. size_bench_test.go
 func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
+	newRow := NewRow(rowData)
 	if t.mode == config.History {
-		t.rows = append(t.rows, rowData)
-		t.approxSize += size.GetApproxSize(rowData)
+		t.rows = append(t.rows, newRow)
+		t.approxSize += newRow.GetApproxSize()
 		return
 	}
 
 	var prevRowSize int
-	if prevRow, isOk := t.rowsData[pk]; isOk {
-		prevRowSize = size.GetApproxSize(prevRow)
+	if prevRow, ok := t.rowsData[pk]; ok {
+		prevRowSize = prevRow.GetApproxSize()
 		if delete {
 			// If the row was deleted, preserve the previous values that we have in memory
-			rowData = prevRow
+			rowData = prevRow.GetData()
 			rowData[constants.DeleteColumnMarker] = true
 		} else {
 			for key, val := range rowData {
 				if val == constants.ToastUnavailableValuePlaceholder {
 					// Copy it from prevRow.
-					prevVal, isOk := prevRow[key]
-					if !isOk {
+					prevVal, ok := prevRow.GetValue(key)
+					if !ok {
 						continue
 					}
 
@@ -202,7 +203,7 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 	newRowSize := size.GetApproxSize(rowData)
 	// If prevRow doesn't exist, it'll be 0, which is a no-op.
 	t.approxSize += newRowSize - prevRowSize
-	t.rowsData[pk] = rowData
+	t.rowsData[pk] = NewRow(rowData)
 
 	if !delete {
 		t.containOtherOperations = true
@@ -213,17 +214,15 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 	}
 }
 
-// Rows returns a read only slice of tableData's rows or rowsData depending on mode
-func (t *TableData) Rows() []map[string]any {
-	var rows []map[string]any
-
+func (t *TableData) Rows() []Row {
 	if t.Mode() == config.History {
 		// History mode, the data is stored under `rows`
-		rows = append(rows, t.rows...)
-	} else {
-		for _, row := range t.rowsData {
-			rows = append(rows, row)
-		}
+		return t.rows
+	}
+
+	var rows []Row
+	for _, row := range t.rowsData {
+		rows = append(rows, row)
 	}
 
 	return rows

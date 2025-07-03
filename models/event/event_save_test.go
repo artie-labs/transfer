@@ -102,8 +102,10 @@ func (e *EventsTestSuite) TestEvent_SaveCasing() {
 	td := e.db.GetOrCreateTableData("foo")
 	var rowData map[string]any
 	for _, row := range td.Rows() {
-		if row["id"] == "123" {
-			rowData = row
+		if id, ok := row.GetValue("id"); ok {
+			if id == "123" {
+				rowData = row.GetData()
+			}
 		}
 	}
 
