@@ -40,18 +40,23 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 
 	defer stmt.Close()
 
-	for _, value := range tableData.Rows() {
-		var row []any
+	for _, row := range tableData.Rows() {
+		var sqlRow []any
 		for _, col := range cols {
-			castedValue, castErr := parseValue(value[col.Name()], col)
+			value, ok := row.Get(col.Name())
+			if !ok {
+				return fmt.Errorf("value not found for column: %q", col.Name())
+			}
+
+			castedValue, castErr := parseValue(value, col)
 			if castErr != nil {
 				return castErr
 			}
 
-			row = append(row, castedValue)
+			sqlRow = append(sqlRow, castedValue)
 		}
 
-		if _, err = stmt.ExecContext(ctx, row...); err != nil {
+		if _, err = stmt.ExecContext(ctx, sqlRow...); err != nil {
 			return fmt.Errorf("failed to copy row: %w", err)
 		}
 	}

@@ -51,7 +51,7 @@ func main() {
 		"created_at":     "2024-03-20T10:00:00.111Z",
 		"created_at_ntz": "2024-03-20T10:00:00.111",
 		"score":          decimal.NewDecimalWithPrecision(numbers.MustParseDecimal("-97.410511"), 10),
-	}, false)
+	}, "u", false)
 	tableData.InsertRow("2", map[string]any{
 		"id":             2,
 		"name":           "Jane Smith",
@@ -59,7 +59,7 @@ func main() {
 		"created_at":     "2024-03-20T11:00:00.555Z",
 		"created_at_ntz": "2024-03-20T11:00:00.444",
 		"score":          decimal.NewDecimalWithPrecision(numbers.MustParseDecimal("99.410511"), 10),
-	}, false)
+	}, "u", false)
 
 	// Create output directory if it doesn't exist
 	outputDir := "output"
