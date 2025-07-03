@@ -16,6 +16,14 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
+type Row struct {
+	data map[string]any
+}
+
+func NewRow(data map[string]any) Row {
+	return Row{data: data}
+}
+
 func (m MultiStepMergeSettings) IsFirstFlush() bool {
 	return m.flushCount == 0
 }
@@ -43,9 +51,9 @@ type TableData struct {
 	inMemoryColumns *columns.Columns // list of columns
 
 	// rowsData is used for replication
-	rowsData map[string]map[string]any // pk -> { col -> val }
+	rowsData map[string]Row
 	// rows is used for history mode, since it's append only.
-	rows []map[string]any
+	rows []Row
 
 	primaryKeys []string
 
@@ -215,17 +223,15 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 
 // Rows returns a read only slice of tableData's rows or rowsData depending on mode
 func (t *TableData) Rows() []map[string]any {
-	var rows []map[string]any
-
 	if t.Mode() == config.History {
 		// History mode, the data is stored under `rows`
-		rows = append(rows, t.rows...)
-	} else {
-		for _, row := range t.rowsData {
-			rows = append(rows, row)
-		}
+		return t.rows
 	}
 
+	var rows []map[string]any
+	for _, row := range t.rowsData {
+		rows = append(rows, row)
+	}
 	return rows
 }
 
