@@ -66,8 +66,8 @@ const Datadog ExporterKind = "datadog"
 type ColumnOperation string
 
 const (
-	Add    ColumnOperation = "add"
-	Delete ColumnOperation = "drop"
+	AddColumn  ColumnOperation = "add"
+	DropColumn ColumnOperation = "drop"
 )
 
 type QueueKind string
@@ -127,4 +127,13 @@ type TableAlias string
 const (
 	StagingAlias TableAlias = "stg"
 	TargetAlias  TableAlias = "tgt"
+)
+
+type Operation string
+
+const (
+	Create   Operation = "c"
+	Update   Operation = "u"
+	Delete   Operation = "d"
+	Backfill Operation = "r"
 )

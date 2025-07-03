@@ -3,6 +3,7 @@ package cdc
 import (
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -16,7 +17,7 @@ type Format interface {
 
 type Event interface {
 	GetExecutionTime() time.Time
-	Operation() string
+	Operation() constants.Operation
 	DeletePayload() bool
 	GetTableName() string
 	GetFullTableName() string

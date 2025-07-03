@@ -1,6 +1,7 @@
 package mongo
 
 import (
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/debezium"
 )
 
@@ -14,8 +15,8 @@ type Payload struct {
 	Before *string `json:"before"`
 	After  *string `json:"after"`
 
-	Source    Source `json:"source"`
-	Operation string `json:"op"`
+	Source    Source              `json:"source"`
+	Operation constants.Operation `json:"op"`
 
 	// These maps are used to store the before and after JSONE as a map, since `before` and `after` come in as a JSONE string.
 	beforeMap map[string]any

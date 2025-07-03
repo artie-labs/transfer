@@ -139,7 +139,7 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 	}
 
 	if tc.IncludeArtieOperation {
-		evtData[constants.OperationColumnMarker] = event.Operation()
+		evtData[constants.OperationColumnMarker] = string(event.Operation())
 	}
 
 	if tc.IncludeSourceMetadata {

@@ -92,12 +92,12 @@ func (Debezium) GetPrimaryKey(key []byte, tc kafkalib.TopicConfig) (map[string]a
 	return kvMap, nil
 }
 
-func (s *SchemaEventPayload) Operation() string {
+func (s *SchemaEventPayload) Operation() constants.Operation {
 	return s.Payload.Operation
 }
 
 func (s *SchemaEventPayload) DeletePayload() bool {
-	return s.Payload.Operation == "d"
+	return s.Payload.Operation == constants.Delete
 }
 
 func (s *SchemaEventPayload) GetExecutionTime() time.Time {
@@ -148,7 +148,7 @@ func (s *SchemaEventPayload) GetData(tc kafkalib.TopicConfig) (map[string]any, e
 	var retMap map[string]any
 
 	switch s.Operation() {
-	case "d":
+	case constants.Delete:
 		// This is a delete event, so mark it as deleted.
 		// And we need to reconstruct the data bit since it will be empty.
 		// We _can_ rely on *before* since even without running replicate identity, it will still copy over
@@ -164,7 +164,7 @@ func (s *SchemaEventPayload) GetData(tc kafkalib.TopicConfig) (map[string]any, e
 		// If previous values for the other columns are in memory (not flushed yet), [TableData.InsertRow] will handle
 		// filling them in and setting this to false.
 		retMap[constants.OnlySetDeleteColumnMarker] = true
-	case "r", "u", "c":
+	case constants.Create, constants.Update, constants.Backfill:
 		retMap = s.Payload.afterMap
 		retMap[constants.DeleteColumnMarker] = false
 		retMap[constants.OnlySetDeleteColumnMarker] = false
