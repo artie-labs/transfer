@@ -165,7 +165,7 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 		}
 
 		// If this is already set, it's a no-op.
-		evtData[constants.OperationColumnMarker] = event.Operation()
+		evtData[constants.OperationColumnMarker] = string(event.Operation())
 
 		// We don't need the deletion markers either.
 		delete(evtData, constants.DeleteColumnMarker)
