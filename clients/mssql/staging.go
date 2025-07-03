@@ -43,11 +43,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	for _, row := range tableData.Rows() {
 		var parsedRows []any
 		for _, col := range cols {
-			value, ok := row.GetValue(col.Name())
-			if !ok {
-				return fmt.Errorf("value not found for column: %q", col.Name())
-			}
-
+			value, _ := row.GetValue(col.Name())
 			parsedValue, err := parseValue(value, col)
 			if err != nil {
 				return fmt.Errorf("failed to parse value: %w", err)

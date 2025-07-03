@@ -96,11 +96,7 @@ func WriteParquetFiles(tableData *optimization.TableData, filePath string, locat
 	for _, row := range tableData.Rows() {
 		var csvRows []any
 		for _, col := range cols {
-			value, ok := row.GetValue(col.Name())
-			if !ok {
-				return fmt.Errorf("failed to get value, column: %q", col.Name())
-			}
-
+			value, _ := row.GetValue(col.Name())
 			parsedValue, err := parquetutil.ParseValue(value, col.KindDetails, location)
 			if err != nil {
 				return fmt.Errorf("failed to parse value, err: %w, value: %v, column: %q", err, value, col.Name())

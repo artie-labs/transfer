@@ -80,11 +80,7 @@ func (t TemporaryDataFile) WriteTemporaryTableFile(tableData *optimization.Table
 	for _, row := range tableData.Rows() {
 		var csvRows []string
 		for _, col := range columns {
-			value, ok := row.GetValue(col.Name())
-			if !ok {
-				return File{}, AdditionalOutput{}, fmt.Errorf("value not found for column: %q", col.Name())
-			}
-
+			value, _ := row.GetValue(col.Name())
 			result, castErr := valueConverter(value, col.KindDetails, sharedDestinationSettings)
 			if castErr != nil {
 				return File{}, AdditionalOutput{}, castErr
