@@ -14,13 +14,13 @@ func TestTableData_Complete(t *testing.T) {
 	tableName := "table"
 
 	// TableData does not exist
-	_, isOk := db.TableData()[tableName]
-	assert.False(t, isOk)
+	_, ok := db.TableData()[tableName]
+	assert.False(t, ok)
 
 	td := db.GetOrCreateTableData(tableName)
 	assert.True(t, td.Empty())
-	_, isOk = db.TableData()[tableName]
-	assert.True(t, isOk)
+	_, ok = db.TableData()[tableName]
+	assert.True(t, ok)
 
 	// Add the td struct
 	td.SetTableData(&optimization.TableData{})

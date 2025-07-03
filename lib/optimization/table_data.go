@@ -204,7 +204,6 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 	// If prevRow doesn't exist, it'll be 0, which is a no-op.
 	t.approxSize += newRowSize - prevRowSize
 	t.rowsData[pk] = NewRow(rowData)
-
 	if !delete {
 		t.containOtherOperations = true
 	} else if delete && !t.topicConfig.SoftDelete {

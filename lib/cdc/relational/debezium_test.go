@@ -27,8 +27,8 @@ func (r *RelationTestSuite) TestGetPrimaryKey() {
 	pkMap, err := r.GetPrimaryKey([]byte(valString), validTc)
 	assert.NoError(r.T(), err)
 
-	val, isOk := pkMap["id"]
-	assert.True(r.T(), isOk)
+	val, ok := pkMap["id"]
+	assert.True(r.T(), ok)
 	assert.Equal(r.T(), val, float64(47))
 	assert.Equal(r.T(), err, nil)
 }
@@ -36,8 +36,8 @@ func (r *RelationTestSuite) TestGetPrimaryKey() {
 func (r *RelationTestSuite) TestGetPrimaryKeyUUID() {
 	valString := `{"uuid": "ca0cefe9-45cf-44fa-a2ab-ec5e7e5522a3"}`
 	pkMap, err := r.GetPrimaryKey([]byte(valString), validTc)
-	val, isOk := pkMap["uuid"]
-	assert.True(r.T(), isOk)
+	val, ok := pkMap["uuid"]
+	assert.True(r.T(), ok)
 	assert.Equal(r.T(), val, "ca0cefe9-45cf-44fa-a2ab-ec5e7e5522a3")
 	assert.Equal(r.T(), err, nil)
 }
@@ -533,11 +533,11 @@ func (r *RelationTestSuite) TestGetEventFromBytes_MySQL() {
 	assert.NoError(r.T(), err)
 
 	// Should have no Artie updated or database updated fields
-	_, isOk := evtData[constants.UpdateColumnMarker]
-	assert.False(r.T(), isOk)
+	_, ok := evtData[constants.UpdateColumnMarker]
+	assert.False(r.T(), ok)
 
-	_, isOk = evtData[constants.DatabaseUpdatedColumnMarker]
-	assert.False(r.T(), isOk)
+	_, ok = evtData[constants.DatabaseUpdatedColumnMarker]
+	assert.False(r.T(), ok)
 
 	evtData, err = evt.GetData(kafkalib.TopicConfig{IncludeDatabaseUpdatedAt: true, IncludeArtieUpdatedAt: true})
 	assert.NoError(r.T(), err)
@@ -552,16 +552,16 @@ func (r *RelationTestSuite) TestGetEventFromBytes_MySQL() {
 	assert.NoError(r.T(), err)
 	assert.NotNil(r.T(), cols)
 
-	col, isOk := cols.GetColumn("abcdef")
-	assert.True(r.T(), isOk)
+	col, ok := cols.GetColumn("abcdef")
+	assert.True(r.T(), ok)
 	assert.Equal(r.T(), "abcdef", col.Name())
 	for key := range evtData {
 		if strings.Contains(key, constants.ArtiePrefix) {
 			continue
 		}
 
-		col, isOk = cols.GetColumn(strings.ToLower(key))
-		assert.Equal(r.T(), true, isOk, key)
+		col, ok = cols.GetColumn(strings.ToLower(key))
+		assert.Equal(r.T(), true, ok, key)
 		assert.Equal(r.T(), typing.Invalid, col.KindDetails, fmt.Sprintf("colName: %v, evtData key: %v", col.Name(), key))
 	}
 }

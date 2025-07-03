@@ -115,14 +115,14 @@ func TestJSONEToMap(t *testing.T) {
 	}
 	{
 		// Date
-		ts, isOk := result["order_date"].(time.Time)
-		assert.True(t, isOk)
+		ts, ok := result["order_date"].(time.Time)
+		assert.True(t, ok)
 		assert.Equal(t, time.Date(2016, time.February, 21, 0, 0, 0, 0, time.UTC), ts)
 	}
 	{
 		// Timestamp
-		ts, isOk := result["test_timestamp"]
-		assert.True(t, isOk)
+		ts, ok := result["test_timestamp"]
+		assert.True(t, ok)
 		assert.Equal(t, time.Date(2023, time.March, 16, 1, 18, 37, 0, time.UTC), ts)
 		assert.Equal(t, "2023-03-16T01:18:37Z", ts.(time.Time).Format(time.RFC3339Nano))
 	}
@@ -221,8 +221,8 @@ func TestBsonValueToGoValue(t *testing.T) {
 			result, err := bsonValueToGoValue(dateTime)
 			assert.NoError(t, err)
 
-			ts, isOk := result.(time.Time)
-			assert.True(t, isOk)
+			ts, ok := result.(time.Time)
+			assert.True(t, ok)
 			assert.Equal(t, time.Date(2021, time.January, 1, 0, 0, 0, 0, time.UTC), ts)
 			assert.Equal(t, "2021-01-01T00:00:00Z", ts.Format(time.RFC3339Nano))
 		}

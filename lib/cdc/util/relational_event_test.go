@@ -61,16 +61,16 @@ func TestSource_GetOptionalSchema(t *testing.T) {
 	optionalSchema, err := schemaEventPayload.GetOptionalSchema()
 	assert.NoError(t, err)
 
-	value, isOk := optionalSchema["last_modified"]
-	assert.True(t, isOk)
+	value, ok := optionalSchema["last_modified"]
+	assert.True(t, ok)
 	assert.Equal(t, value, typing.String)
 
 	cols, err := schemaEventPayload.GetColumns()
 	assert.NoError(t, err)
 	assert.Equal(t, 6, len(cols.GetColumns()))
 
-	col, isOk := cols.GetColumn("boolean_column")
-	assert.True(t, isOk)
+	col, ok := cols.GetColumn("boolean_column")
+	assert.True(t, ok)
 	assert.Equal(t, false, col.DefaultValue())
 
 	for _, _col := range cols.GetColumns() {
@@ -117,15 +117,15 @@ func TestGetDataTestInsert(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, len(after), len(evtData), "has deletion flag")
 
-	deletionFlag, isOk := evtData[constants.DeleteColumnMarker]
-	assert.True(t, isOk)
-	assert.False(t, deletionFlag.(bool))
-	deletionOnlyFlag, isOk := evtData[constants.OnlySetDeleteColumnMarker]
-	assert.True(t, isOk)
-	assert.False(t, deletionOnlyFlag.(bool))
+	deleteFlag, ok := evtData[constants.DeleteColumnMarker]
+	assert.True(t, ok)
+	assert.False(t, deleteFlag.(bool))
+	deleteOnlyFlag, ok := evtData[constants.OnlySetDeleteColumnMarker]
+	assert.True(t, ok)
+	assert.False(t, deleteOnlyFlag.(bool))
 
-	_, isOk = evtData[constants.UpdateColumnMarker]
-	assert.False(t, isOk)
+	_, ok = evtData[constants.UpdateColumnMarker]
+	assert.False(t, ok)
 
 	delete(evtData, constants.DeleteColumnMarker)
 	delete(evtData, constants.OnlySetDeleteColumnMarker)
@@ -134,8 +134,8 @@ func TestGetDataTestInsert(t *testing.T) {
 	evtData, err = schemaEventPayload.GetData(kafkalib.TopicConfig{IncludeArtieUpdatedAt: true})
 	assert.NoError(t, err)
 
-	_, isOk = evtData[constants.UpdateColumnMarker]
-	assert.True(t, isOk)
+	_, ok = evtData[constants.UpdateColumnMarker]
+	assert.True(t, ok)
 }
 
 func TestGetData_TestDelete(t *testing.T) {
@@ -157,8 +157,8 @@ func TestGetData_TestDelete(t *testing.T) {
 		data, err := schemaEventPayload.GetData(tc)
 		assert.NoError(t, err)
 		for expectedKey, expectedValue := range expectedKeyValues {
-			value, isOk := data[expectedKey]
-			assert.True(t, isOk)
+			value, ok := data[expectedKey]
+			assert.True(t, ok)
 			assert.Equal(t, expectedValue, value)
 		}
 	}
@@ -170,8 +170,8 @@ func TestGetData_TestDelete(t *testing.T) {
 		data, err := schemaEventPayload.GetData(tc)
 		assert.NoError(t, err)
 		for expectedKey, expectedValue := range expectedKeyValues {
-			value, isOk := data[expectedKey]
-			assert.True(t, isOk)
+			value, ok := data[expectedKey]
+			assert.True(t, ok)
 			assert.Equal(t, expectedValue, value)
 		}
 	}
@@ -210,15 +210,15 @@ func TestGetDataTestUpdate(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, len(after), len(evtData), "has deletion flag")
 
-	deletionFlag, isOk := evtData[constants.DeleteColumnMarker]
-	assert.True(t, isOk)
-	assert.False(t, deletionFlag.(bool))
-	deletionOnlyFlag, isOk := evtData[constants.OnlySetDeleteColumnMarker]
-	assert.True(t, isOk)
-	assert.False(t, deletionOnlyFlag.(bool))
+	deleteFlag, ok := evtData[constants.DeleteColumnMarker]
+	assert.True(t, ok)
+	assert.False(t, deleteFlag.(bool))
+	deleteOnlyFlag, ok := evtData[constants.OnlySetDeleteColumnMarker]
+	assert.True(t, ok)
+	assert.False(t, deleteOnlyFlag.(bool))
 
-	_, isOk = evtData[constants.UpdateColumnMarker]
-	assert.False(t, isOk)
+	_, ok = evtData[constants.UpdateColumnMarker]
+	assert.False(t, ok)
 
 	delete(evtData, constants.DeleteColumnMarker)
 	delete(evtData, constants.OnlySetDeleteColumnMarker)
@@ -227,8 +227,8 @@ func TestGetDataTestUpdate(t *testing.T) {
 	evtData, err = schemaEventPayload.GetData(kafkalib.TopicConfig{IncludeArtieUpdatedAt: true})
 	assert.NoError(t, err)
 
-	_, isOk = evtData[constants.UpdateColumnMarker]
-	assert.True(t, isOk)
+	_, ok = evtData[constants.UpdateColumnMarker]
+	assert.True(t, ok)
 }
 
 func TestSchemaEventPayload_ParseAndMutateMapInPlace(t *testing.T) {

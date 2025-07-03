@@ -17,24 +17,24 @@ func TestOrderedMap(t *testing.T) {
 
 		{
 			// Query for FOO
-			foo, isOk := o.Get("foo")
-			assert.True(t, isOk)
+			foo, ok := o.Get("foo")
+			assert.True(t, ok)
 			assert.Equal(t, 1, foo)
 
-			_, isOk = o.Get("FOO")
-			assert.False(t, isOk)
+			_, ok = o.Get("FOO")
+			assert.False(t, ok)
 		}
 
-		bar, isOk := o.Get("bar")
-		assert.True(t, isOk)
+		bar, ok := o.Get("bar")
+		assert.True(t, ok)
 		assert.Equal(t, 2, bar)
 
-		baz, isOk := o.Get("baz")
-		assert.True(t, isOk)
+		baz, ok := o.Get("baz")
+		assert.True(t, ok)
 		assert.Equal(t, 3, baz)
 
-		_, isOk = o.Get("qux")
-		assert.False(t, isOk)
+		_, ok = o.Get("qux")
+		assert.False(t, ok)
 
 		// Try removing a non-existent entry
 		assert.False(t, o.Remove("this does not exist"))
@@ -42,8 +42,8 @@ func TestOrderedMap(t *testing.T) {
 		assert.True(t, o.Remove("bar"))
 		// Now try to remove it again
 		assert.False(t, o.Remove("bar"))
-		_, isOk = o.Get("bar")
-		assert.False(t, isOk)
+		_, ok = o.Get("bar")
+		assert.False(t, ok)
 		assert.Len(t, o.Keys(), 2)
 
 		for _, expectedKey := range []string{"foo", "baz"} {
@@ -65,16 +65,16 @@ func TestOrderedMap(t *testing.T) {
 		o.Add("bar", 2)
 		o.Add("BAZ", 3)
 
-		foo, isOk := o.Get("FOO")
-		assert.True(t, isOk)
+		foo, ok := o.Get("FOO")
+		assert.True(t, ok)
 		assert.Equal(t, 1, foo)
 
-		bar, isOk := o.Get("BAR")
-		assert.True(t, isOk)
+		bar, ok := o.Get("BAR")
+		assert.True(t, ok)
 		assert.Equal(t, 2, bar)
 
-		baz, isOk := o.Get("baz")
-		assert.True(t, isOk)
+		baz, ok := o.Get("baz")
+		assert.True(t, ok)
 		assert.Equal(t, 3, baz)
 
 		// Try removing a non-existent entry
@@ -83,8 +83,8 @@ func TestOrderedMap(t *testing.T) {
 		assert.True(t, o.Remove("baR"))
 		// Now try to remove it again
 		assert.False(t, o.Remove("baR"))
-		_, isOk = o.Get("bar")
-		assert.False(t, isOk)
+		_, ok = o.Get("bar")
+		assert.False(t, ok)
 
 		for _, expectedKey := range []string{"foo", "baz"} {
 			var found bool
@@ -107,8 +107,8 @@ func TestOrderedMap(t *testing.T) {
 		}
 
 		assert.Len(t, o.Keys(), 1)
-		foo, isOk := o.Get("foo")
-		assert.True(t, isOk)
+		foo, ok := o.Get("foo")
+		assert.True(t, ok)
 		assert.Equal(t, 99, foo)
 	}
 }

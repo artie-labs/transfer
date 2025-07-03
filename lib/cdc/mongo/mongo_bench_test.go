@@ -24,8 +24,8 @@ func BenchmarkGetPrimaryKey(b *testing.B) {
 		)
 		assert.NoError(b, err)
 
-		pkVal, isOk := pkMap["_id"]
-		assert.True(b, isOk)
+		pkVal, ok := pkMap["_id"]
+		assert.True(b, ok)
 		assert.Equal(b, pkVal, newObjectID)
 	}
 }
