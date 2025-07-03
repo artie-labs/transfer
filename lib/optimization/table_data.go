@@ -41,12 +41,10 @@ type MultiStepMergeSettings struct {
 type TableData struct {
 	mode            config.Mode
 	inMemoryColumns *columns.Columns // list of columns
-
 	// rowsData is used for replication
 	rowsData map[string]Row // pk -> { col -> val }
 	// rows is used for history mode, since it's append only.
-	rows []Row
-
+	rows        []Row
 	primaryKeys []string
 
 	topicConfig kafkalib.TopicConfig
@@ -56,7 +54,11 @@ type TableData struct {
 
 	// This is used for the automatic schema detection
 	LatestCDCTs time.Time
-	approxSize  int
+	// [rowsToDiscount] - This is used to discount the number of rows during a merge assertion check
+	// This is only incremented if the initial row was created and deleted all within the same flush cycle.
+	// Which would mean that this row would not exist in the destination
+	rowsToDiscount int
+	approxSize     int
 	// containOtherOperations - this means the `TableData` object contains other events that arises from CREATE, UPDATE, REPLICATION
 	// if this value is false, that means it is only deletes. Which means we should not drop columns
 	containOtherOperations bool
@@ -85,6 +87,7 @@ func (t *TableData) WipeData() {
 	t.rowsData = make(map[string]Row)
 	t.rows = []Row{}
 	t.approxSize = 0
+	t.rowsToDiscount = 0
 	t.ResetTempTableSuffix()
 }
 
