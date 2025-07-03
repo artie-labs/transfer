@@ -120,7 +120,7 @@ func TestTableData_ContainsHardDeletes(t *testing.T) {
 		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{SoftDelete: true}, "foo")
 		assert.Equal(t, 0, int(td.NumberOfRows()))
 
-		td.InsertRow("123", map[string]any{"id": "123"}, constants.Create)
+		td.InsertRow("123", map[string]any{"id": "123"}, constants.Delete)
 		assert.Equal(t, 1, int(td.NumberOfRows()))
 		assert.False(t, td.ContainsHardDeletes())
 	}
