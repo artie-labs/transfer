@@ -70,7 +70,7 @@ func (d *DestinationTableConfig) MutateInMemoryColumns(columnOp constants.Column
 	d.Lock()
 	defer d.Unlock()
 	switch columnOp {
-	case constants.Add:
+	case constants.AddColumn:
 		for _, col := range cols {
 			d.columns.AddColumn(col)
 			// Delete from the permissions table, if exists.
@@ -79,7 +79,7 @@ func (d *DestinationTableConfig) MutateInMemoryColumns(columnOp constants.Column
 
 		// If we're adding columns, then the table should have either been created or already exists.
 		d.createTable = false
-	case constants.Delete:
+	case constants.DropColumn:
 		for _, col := range cols {
 			// Delete from the permissions and in-memory table
 			d.columns.DeleteColumn(col.Name())

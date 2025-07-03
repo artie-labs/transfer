@@ -19,10 +19,10 @@ type SchemaEventPayload struct {
 }
 
 type Payload struct {
-	Before    map[string]any `json:"before"`
-	After     map[string]any `json:"after"`
-	Source    Source         `json:"source"`
-	Operation string         `json:"op"`
+	Before    map[string]any      `json:"before"`
+	After     map[string]any      `json:"after"`
+	Source    Source              `json:"source"`
+	Operation constants.Operation `json:"op"`
 }
 
 type Source struct {
@@ -81,12 +81,12 @@ func (s *SchemaEventPayload) GetColumns() (*columns.Columns, error) {
 	return &cols, nil
 }
 
-func (s *SchemaEventPayload) Operation() string {
+func (s *SchemaEventPayload) Operation() constants.Operation {
 	return s.Payload.Operation
 }
 
 func (s *SchemaEventPayload) DeletePayload() bool {
-	return s.Payload.Operation == "d"
+	return s.Payload.Operation == constants.Delete
 }
 
 func (s *SchemaEventPayload) GetExecutionTime() time.Time {
@@ -118,7 +118,7 @@ func (s *SchemaEventPayload) GetData(tc kafkalib.TopicConfig) (map[string]any, e
 	var err error
 	var retMap map[string]any
 	switch s.Operation() {
-	case "d":
+	case constants.Delete:
 		if len(s.Payload.Before) > 0 {
 			retMap, err = s.parseAndMutateMapInPlace(s.Payload.Before, debezium.Before)
 			if err != nil {
@@ -136,7 +136,7 @@ func (s *SchemaEventPayload) GetData(tc kafkalib.TopicConfig) (map[string]any, e
 		// If previous values for the other columns are in memory (not flushed yet), [TableData.InsertRow] will handle
 		// filling them in and setting this to false.
 		retMap[constants.OnlySetDeleteColumnMarker] = true
-	case "r", "u", "c":
+	case constants.Create, constants.Update, constants.Backfill:
 		retMap, err = s.parseAndMutateMapInPlace(s.Payload.After, debezium.After)
 		if err != nil {
 			return nil, err
