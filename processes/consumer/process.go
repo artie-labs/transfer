@@ -57,7 +57,7 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 		return "", fmt.Errorf("cannot unmarshall event: %w", err)
 	}
 
-	tags["op"] = _event.Operation()
+	tags["op"] = string(_event.Operation())
 	evt, err := event.ToMemoryEvent(_event, pkMap, topicConfig.tc, cfg.Mode)
 	if err != nil {
 		tags["what"] = "to_mem_event_err"
@@ -66,7 +66,7 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 
 	// Table name is only available after event has been cast
 	tags["table"] = evt.Table
-	if topicConfig.tc.ShouldSkip(_event.Operation()) {
+	if topicConfig.tc.ShouldSkip(string(_event.Operation())) {
 		// Check to see if we should skip first
 		// This way, we can emit a specific tag to be more clear
 		tags["skipped"] = "yes"
