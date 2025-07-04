@@ -36,7 +36,7 @@ func TestWriteTemporaryTableFile(t *testing.T) {
 			"last_name":   fmt.Sprintf("Last%d", i),
 			"description": "the mini aussie",
 		}
-		assert.NoError(t, tableData.InsertRow(key, rowData, time.Time{}, false))
+		assert.NoError(t, tableData.InsertRow(key, rowData, time.Now(), false))
 	}
 
 	// Create a table identifier using Snowflake dialect

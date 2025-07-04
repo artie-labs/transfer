@@ -12,7 +12,7 @@ import (
 func buildRows(data []map[string]any) []optimization.Row {
 	var rows []optimization.Row
 	for _, row := range data {
-		rows = append(rows, optimization.NewRow(row, time.Time{}))
+		rows = append(rows, optimization.NewRow(row, time.Now()))
 	}
 	return rows
 }
