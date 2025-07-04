@@ -18,12 +18,12 @@ func (m Message) GetMessage() kafka.Message {
 	return m.message
 }
 
-func (m Message) LogFields() []any {
+func BuildLogFields(msg kafka.Message) []any {
 	return []any{
-		slog.String("topic", m.message.Topic),
-		slog.Int64("offset", m.message.Offset),
-		slog.String("key", string(m.message.Key)),
-		slog.String("value", string(m.message.Value)),
+		slog.String("topic", msg.Topic),
+		slog.Int64("offset", msg.Offset),
+		slog.String("key", string(msg.Key)),
+		slog.String("value", string(msg.Value)),
 	}
 }
 

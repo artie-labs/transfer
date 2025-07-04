@@ -86,13 +86,13 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 			for {
 				kafkaMsg, err := kafkaConsumer.FetchMessage(ctx)
 				if err != nil {
-					slog.With(artie.NewMessage(kafkaMsg).LogFields()...).Warn("Failed to read kafka message", slog.Any("err", err))
+					slog.With(artie.BuildLogFields(kafkaMsg)...).Warn("Failed to read kafka message", slog.Any("err", err))
 					time.Sleep(500 * time.Millisecond)
 					continue
 				}
 
 				if len(kafkaMsg.Value) == 0 {
-					slog.Debug("Found a tombstone message, skipping...", artie.NewMessage(kafkaMsg).LogFields()...)
+					slog.Debug("Found a tombstone message, skipping...", artie.BuildLogFields(kafkaMsg)...)
 					continue
 				}
 
