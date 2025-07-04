@@ -168,12 +168,12 @@ func NewTableData(inMemoryColumns *columns.Columns, mode config.Mode, primaryKey
 // InsertRow creates a single entrypoint for how rows get added to TableData
 // This is important to avoid concurrent r/w, but also the ability for us to add or decrement row size by keeping a running total
 // With this, we are able to reduce the latency by 500x+ on a 5k row table. See event_bench_test.go vs. size_bench_test.go
-func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
-	newRow := NewRow(rowData)
+func (t *TableData) InsertRow(pk string, rowData map[string]any, ts time.Time, delete bool) error {
+	newRow := NewRow(rowData, ts)
 	if t.mode == config.History {
 		t.rows = append(t.rows, newRow)
 		t.approxSize += newRow.GetApproxSize()
-		return
+		return nil
 	}
 
 	var prevRowSize int
@@ -197,13 +197,16 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 				}
 			}
 
+			if prevRow.ts.After(ts) {
+				return fmt.Errorf("previous row timestamp %s is after new row timestamp %s", prevRow.ts, ts)
+			}
 		}
 	}
 
 	newRowSize := size.GetApproxSize(rowData)
 	// If prevRow doesn't exist, it'll be 0, which is a no-op.
 	t.approxSize += newRowSize - prevRowSize
-	t.rowsData[pk] = NewRow(rowData)
+	t.rowsData[pk] = NewRow(rowData, ts)
 	if !delete {
 		t.containOtherOperations = true
 	} else if delete && !t.topicConfig.SoftDelete {
@@ -211,6 +214,8 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 		// We know because we have a delete operation and this topic is not configured to do soft deletes.
 		t.containsHardDeletes = true
 	}
+
+	return nil
 }
 
 func (t *TableData) Rows() []Row {
