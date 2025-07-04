@@ -355,10 +355,7 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 	}
 
 	td.InsertRow(pkValueString, e.Data, e.Deleted)
-	// If the message is Kafka, then we only need the latest one
-	if message.Kind() == artie.Kafka {
-		td.PartitionsToLastMessage[message.Partition()] = message
-	}
+	td.PartitionsToLastMessage[message.Partition()] = message
 
 	td.LatestCDCTs = e.executionTime
 	flush, flushReason := td.ShouldFlush(cfg)

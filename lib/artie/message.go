@@ -11,13 +11,6 @@ import (
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 )
 
-type Kind int
-
-const (
-	Invalid Kind = iota
-	Kafka
-)
-
 type Message struct {
 	message kafka.Message
 }
@@ -37,10 +30,6 @@ func (m Message) LogFields() []any {
 
 func NewMessage(msg kafka.Message) Message {
 	return Message{message: msg}
-}
-
-func (m Message) Kind() Kind {
-	return Kafka
 }
 
 // EmitRowLag will diff against the partition's high watermark and the message's offset
