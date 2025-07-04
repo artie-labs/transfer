@@ -12,7 +12,6 @@ import (
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/cryptography"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/stringutil"
@@ -36,70 +35,6 @@ type Event struct {
 	// When the database event was executed
 	executionTime time.Time
 	mode          config.Mode
-}
-
-func transformData(data map[string]any, tc kafkalib.TopicConfig) map[string]any {
-	for _, columnToHash := range tc.ColumnsToHash {
-		if value, ok := data[columnToHash]; ok {
-			data[columnToHash] = cryptography.HashValue(value)
-		}
-	}
-
-	// Exclude certain columns
-	for _, col := range tc.ColumnsToExclude {
-		delete(data, col)
-	}
-
-	// If column inclusion is specified, then we need to include only the specified columns
-	if len(tc.ColumnsToInclude) > 0 {
-		filteredData := make(map[string]any)
-		for _, col := range tc.ColumnsToInclude {
-			if value, ok := data[col]; ok {
-				filteredData[col] = value
-			}
-		}
-
-		// Include Artie columns
-		for _, col := range constants.ArtieColumns {
-			if value, ok := data[col]; ok {
-				filteredData[col] = value
-			}
-		}
-
-		return filteredData
-	}
-
-	return data
-}
-
-func buildFilteredColumns(event cdc.Event, tc kafkalib.TopicConfig) (*columns.Columns, error) {
-	cols, err := event.GetColumns()
-	if err != nil {
-		return nil, err
-	}
-
-	for _, col := range tc.ColumnsToExclude {
-		cols.DeleteColumn(col)
-	}
-
-	if len(tc.ColumnsToInclude) > 0 {
-		var filteredColumns columns.Columns
-		for _, col := range tc.ColumnsToInclude {
-			if existingColumn, ok := cols.GetColumn(col); ok {
-				filteredColumns.AddColumn(existingColumn)
-			}
-		}
-
-		for _, col := range constants.ArtieColumns {
-			if existingColumn, ok := cols.GetColumn(col); ok {
-				filteredColumns.AddColumn(existingColumn)
-			}
-		}
-
-		return &filteredColumns, nil
-	}
-
-	return cols, nil
 }
 
 func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfig, cfgMode config.Mode) (Event, error) {
@@ -194,7 +129,7 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 }
 
 // EmitExecutionTimeLag - This will check against the current time and the event execution time and emit the lag.
-func (e *Event) EmitExecutionTimeLag(metricsClient base.Client) {
+func (e Event) EmitExecutionTimeLag(metricsClient base.Client) {
 	metricsClient.GaugeWithSample(
 		"row.execution_time_lag",
 		float64(time.Since(e.executionTime).Milliseconds()),
@@ -204,7 +139,7 @@ func (e *Event) EmitExecutionTimeLag(metricsClient base.Client) {
 		}, 0.5)
 }
 
-func (e *Event) Validate() error {
+func (e Event) Validate() error {
 	// Does it have a PK or table set?
 	if stringutil.Empty(e.Table) {
 		return fmt.Errorf("table name is empty")
@@ -231,12 +166,12 @@ func (e *Event) Validate() error {
 	return nil
 }
 
-func (e *Event) GetPrimaryKeys() []string {
+func (e Event) GetPrimaryKeys() []string {
 	return e.primaryKeys
 }
 
 // PrimaryKeyValue - as per above, this needs to return a deterministic k/v string.
-func (e *Event) PrimaryKeyValue() (string, error) {
+func (e Event) PrimaryKeyValue() (string, error) {
 	var key string
 	for _, pk := range e.GetPrimaryKeys() {
 		escapedPrimaryKey := columns.EscapeName(pk)
@@ -253,7 +188,7 @@ func (e *Event) PrimaryKeyValue() (string, error) {
 
 // Save will save the event into our in memory event
 // It will return (flush bool, flushReason string, err error)
-func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkalib.TopicConfig, message artie.Message) (bool, string, error) {
+func (e Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkalib.TopicConfig, message artie.Message) (bool, string, error) {
 	if err := e.Validate(); err != nil {
 		return false, "", fmt.Errorf("event validation failed: %w", err)
 	}
