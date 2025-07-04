@@ -262,6 +262,7 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 	td := inMemDB.GetOrCreateTableData(e.Table)
 	td.Lock()
 	defer td.Unlock()
+
 	if td.Empty() {
 		cols := &columns.Columns{}
 		if e.Columns != nil {
@@ -275,6 +276,13 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 			for _, col := range e.Columns.GetColumns() {
 				td.AddInMemoryCol(col)
 			}
+		}
+	}
+
+	if msg, ok := td.PartitionsToLastMessage[message.Partition()]; ok {
+		if msg.KafkaMsg.Offset > message.KafkaMsg.Offset {
+			// This means that we already processed this message.
+			return false, "", nil
 		}
 	}
 
@@ -354,7 +362,10 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 		return false, "", fmt.Errorf("failed to retrieve primary key value: %w", err)
 	}
 
-	td.InsertRow(pkValueString, e.Data, e.Deleted)
+	if err = td.InsertRow(pkValueString, e.Data, e.executionTime, e.Deleted); err != nil {
+		return false, "", fmt.Errorf("failed to insert row: %w", err)
+	}
+
 	// If the message is Kafka, then we only need the latest one
 	if message.Kind() == artie.Kafka {
 		td.PartitionsToLastMessage[message.Partition()] = message

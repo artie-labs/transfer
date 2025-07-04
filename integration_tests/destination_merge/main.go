@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"time"
 
 	"github.com/artie-labs/transfer/clients/iceberg"
 	"github.com/artie-labs/transfer/integration_tests/shared"
@@ -31,7 +32,9 @@ func (mt *MergeTest) generateInitialData(numRows int) error {
 	for i := 0; i < numRows; i++ {
 		pkValueString := fmt.Sprintf("%d", i)
 		rowData := mt.framework.GenerateRowDataForMerge(i, false)
-		mt.framework.GetTableData().InsertRow(pkValueString, rowData, false)
+		if err := mt.framework.GetTableData().InsertRow(pkValueString, rowData, time.Time{}, false); err != nil {
+			return fmt.Errorf("failed to insert row: %w", err)
+		}
 	}
 
 	if _, err := mt.framework.GetDestination().Merge(mt.framework.GetContext(), mt.framework.GetTableData()); err != nil {
@@ -48,7 +51,9 @@ func (mt *MergeTest) updateExistingData(numRows int) error {
 		rowData := mt.framework.GenerateRowDataForMerge(i, false)
 		// Modify the value to indicate an update
 		rowData["value"] = float64(i) * 2.0
-		mt.framework.GetTableData().InsertRow(pkValueString, rowData, false)
+		if err := mt.framework.GetTableData().InsertRow(pkValueString, rowData, time.Now(), false); err != nil {
+			return fmt.Errorf("failed to insert row: %w", err)
+		}
 	}
 
 	if _, err := mt.framework.GetDestination().Merge(mt.framework.GetContext(), mt.framework.GetTableData()); err != nil {
@@ -63,7 +68,9 @@ func (mt *MergeTest) deleteData(numRows int) error {
 	for i := 0; i < numRows; i++ {
 		pkValueString := fmt.Sprintf("%d", i)
 		rowData := mt.framework.GenerateRowDataForMerge(i, true)
-		mt.framework.GetTableData().InsertRow(pkValueString, rowData, true)
+		if err := mt.framework.GetTableData().InsertRow(pkValueString, rowData, time.Now(), true); err != nil {
+			return fmt.Errorf("failed to insert row: %w", err)
+		}
 	}
 
 	if _, err := mt.framework.GetDestination().Merge(mt.framework.GetContext(), mt.framework.GetTableData()); err != nil {

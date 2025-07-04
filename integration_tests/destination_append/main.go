@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"time"
 
 	"github.com/artie-labs/transfer/clients/iceberg"
 	"github.com/artie-labs/transfer/integration_tests/shared"
@@ -32,7 +33,9 @@ func (at *AppendTest) generateTestData(numRows int, appendEvery int) error {
 			pkValue := i*numRows + j
 			pkValueString := fmt.Sprintf("%d", pkValue)
 			rowData := at.framework.GenerateRowData(pkValue)
-			at.framework.GetTableData().InsertRow(pkValueString, rowData, false)
+			if err := at.framework.GetTableData().InsertRow(pkValueString, rowData, time.Now(), false); err != nil {
+				return fmt.Errorf("failed to insert row: %w", err)
+			}
 		}
 
 		if err := at.framework.GetBaseline().Append(at.framework.GetContext(), at.framework.GetTableData(), false); err != nil {
