@@ -29,7 +29,7 @@ func (e *EventsTestSuite) TestSaveEvent() {
 	anotherLowerCol := "dusty__the__mini__aussie"
 
 	event := Event{
-		Table:       "foo",
+		table:       "foo",
 		primaryKeys: []string{"id"},
 		Data: map[string]any{
 			"id":                                "123",
@@ -60,7 +60,7 @@ func (e *EventsTestSuite) TestSaveEvent() {
 	assert.Equal(e.T(), 2, found, optimization.ReadOnlyInMemoryCols)
 	badColumn := "other"
 	edgeCaseEvent := Event{
-		Table:       "foo",
+		table:       "foo",
 		primaryKeys: []string{"id"},
 		Data: map[string]any{
 			"id":                                "12344",
@@ -84,7 +84,7 @@ func (e *EventsTestSuite) TestSaveEvent() {
 
 func (e *EventsTestSuite) TestEvent_SaveCasing() {
 	event := Event{
-		Table:       "foo",
+		table:       "foo",
 		primaryKeys: []string{"id"},
 		Data: map[string]any{
 			"id":                                "123",
@@ -118,7 +118,7 @@ func (e *EventsTestSuite) TestEvent_SaveCasing() {
 
 func (e *EventsTestSuite) TestEventSaveOptionalSchema() {
 	event := Event{
-		Table:       "foo",
+		table:       "foo",
 		primaryKeys: []string{"id"},
 		Data: map[string]any{
 			"id":                                "123",
@@ -175,7 +175,7 @@ func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 	}
 
 	evt := Event{
-		Table:   "non_existent",
+		table:   "non_existent",
 		Columns: &cols,
 		Data: map[string]any{
 			"col_1":                             "123",
@@ -231,7 +231,7 @@ func (e *EventsTestSuite) TestEventSaveColumns() {
 	cols.AddColumn(columns.NewColumn("anotherCOL", typing.Invalid))
 	cols.AddColumn(columns.NewColumn("created_at_date_string", typing.Invalid))
 	event := Event{
-		Table:       "foo",
+		table:       "foo",
 		Columns:     &cols,
 		primaryKeys: []string{"id"},
 		Data: map[string]any{
@@ -283,7 +283,7 @@ func (e *EventsTestSuite) TestEventSaveColumns() {
 
 func (e *EventsTestSuite) TestEventSaveTestDeleteFlag() {
 	event := Event{
-		Table:       "foo",
+		table:       "foo",
 		primaryKeys: []string{"id"},
 		Data: map[string]any{
 			"id":                                "123",

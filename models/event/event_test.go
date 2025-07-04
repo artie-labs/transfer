@@ -19,16 +19,16 @@ var idMap = map[string]any{
 
 func (e *EventsTestSuite) TestEvent_Validate() {
 	{
-		_evt := Event{Table: "foo"}
+		_evt := Event{table: "foo"}
 		assert.ErrorContains(e.T(), _evt.Validate(), "primary keys are empty")
 	}
 	{
-		_evt := Event{Table: "foo", primaryKeys: []string{"id"}}
+		_evt := Event{table: "foo", primaryKeys: []string{"id"}}
 		assert.ErrorContains(e.T(), _evt.Validate(), "event has no data")
 	}
 	{
 		_evt := Event{
-			Table:       "foo",
+			table:       "foo",
 			primaryKeys: []string{"id"},
 			Data: map[string]any{
 				"id":  123,
@@ -40,7 +40,7 @@ func (e *EventsTestSuite) TestEvent_Validate() {
 	}
 	{
 		_evt := Event{
-			Table:       "foo",
+			table:       "foo",
 			primaryKeys: []string{"id"},
 			Data: map[string]any{
 				"id":  123,
@@ -51,7 +51,7 @@ func (e *EventsTestSuite) TestEvent_Validate() {
 	}
 	{
 		_evt := Event{
-			Table:       "foo",
+			table:       "foo",
 			primaryKeys: []string{"id"},
 			Data: map[string]any{
 				"id":                                123,
@@ -181,24 +181,24 @@ func (e *EventsTestSuite) TestEvent_TableName() {
 		// Don't pass in tableName.
 		evt, err := ToMemoryEvent(e.fakeEvent, idMap, kafkalib.TopicConfig{}, config.Replication)
 		assert.NoError(e.T(), err)
-		assert.Equal(e.T(), e.fakeEvent.GetTableName(), evt.Table)
+		assert.Equal(e.T(), e.fakeEvent.GetTableName(), evt.GetTable())
 	}
 	{
 		// Now pass it in, it should override.
 		evt, err := ToMemoryEvent(e.fakeEvent, idMap, kafkalib.TopicConfig{TableName: "orders"}, config.Replication)
 		assert.NoError(e.T(), err)
-		assert.Equal(e.T(), "orders", evt.Table)
+		assert.Equal(e.T(), "orders", evt.GetTable())
 	}
 	{
 		// Now, if it's history mode...
 		evt, err := ToMemoryEvent(e.fakeEvent, idMap, kafkalib.TopicConfig{TableName: "orders"}, config.History)
 		assert.NoError(e.T(), err)
-		assert.Equal(e.T(), "orders__history", evt.Table)
+		assert.Equal(e.T(), "orders__history", evt.GetTable())
 
 		// Table already has history suffix, so it won't add extra.
 		evt, err = ToMemoryEvent(e.fakeEvent, idMap, kafkalib.TopicConfig{TableName: "dusty__history"}, config.History)
 		assert.NoError(e.T(), err)
-		assert.Equal(e.T(), "dusty__history", evt.Table)
+		assert.Equal(e.T(), "dusty__history", evt.GetTable())
 	}
 }
 
@@ -237,7 +237,7 @@ func (e *EventsTestSuite) TestEvent_Columns() {
 
 func (e *EventsTestSuite) TestEventPrimaryKeys() {
 	evt := &Event{
-		Table:       "foo",
+		table:       "foo",
 		primaryKeys: []string{"id", "id1", "id2", "id3", "id4"},
 	}
 

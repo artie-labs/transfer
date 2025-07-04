@@ -23,7 +23,7 @@ import (
 )
 
 type Event struct {
-	Table string
+	table string
 	Data  map[string]any // json serialized column data
 
 	OptionalSchema map[string]typing.KindDetails
@@ -36,6 +36,10 @@ type Event struct {
 	// When the database event was executed
 	executionTime time.Time
 	mode          config.Mode
+}
+
+func (e Event) GetTable() string {
+	return e.table
 }
 
 func transformData(data map[string]any, tc kafkalib.TopicConfig) map[string]any {
@@ -183,7 +187,7 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 		mode:          cfgMode,
 		// [primaryKeys] needs to be sorted so that we have a deterministic way to identify a row in our in-memory db.
 		primaryKeys:    pks,
-		Table:          tblName,
+		table:          tblName,
 		OptionalSchema: optionalSchema,
 		Columns:        cols,
 		Data:           transformData(evtData, tc),
@@ -200,13 +204,13 @@ func (e *Event) EmitExecutionTimeLag(metricsClient base.Client) {
 		float64(time.Since(e.executionTime).Milliseconds()),
 		map[string]string{
 			"mode":  e.mode.String(),
-			"table": e.Table,
+			"table": e.table,
 		}, 0.5)
 }
 
 func (e *Event) Validate() error {
 	// Does it have a PK or table set?
-	if stringutil.Empty(e.Table) {
+	if stringutil.Empty(e.table) {
 		return fmt.Errorf("table name is empty")
 	}
 
@@ -259,7 +263,7 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 	}
 
 	// Does the table exist?
-	td := inMemDB.GetOrCreateTableData(e.Table)
+	td := inMemDB.GetOrCreateTableData(e.table)
 	td.Lock()
 	defer td.Unlock()
 	if td.Empty() {
@@ -268,7 +272,7 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 			cols = e.Columns
 		}
 
-		td.SetTableData(optimization.NewTableData(cols, cfg.Mode, e.GetPrimaryKeys(), tc, e.Table))
+		td.SetTableData(optimization.NewTableData(cols, cfg.Mode, e.GetPrimaryKeys(), tc, e.table))
 	} else {
 		if e.Columns != nil {
 			// Iterate over this again just in case.
