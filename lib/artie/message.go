@@ -19,45 +19,32 @@ const (
 )
 
 type Message struct {
-	KafkaMsg *kafka.Message
+	message kafka.Message
 }
 
-func KafkaMsgLogFields(msg kafka.Message) []any {
+func (m Message) LogFields() []any {
 	return []any{
-		slog.String("topic", msg.Topic),
-		slog.Int64("offset", msg.Offset),
-		slog.String("key", string(msg.Key)),
-		slog.String("value", string(msg.Value)),
+		slog.String("topic", m.message.Topic),
+		slog.Int64("offset", m.message.Offset),
+		slog.String("key", string(m.message.Key)),
+		slog.String("value", string(m.message.Value)),
 	}
 }
 
-func NewMessage(kafkaMsg *kafka.Message, topic string) Message {
-	var msg Message
-	if kafkaMsg != nil {
-		msg.KafkaMsg = kafkaMsg
-	}
-
-	return msg
+func NewMessage(msg kafka.Message) Message {
+	return Message{message: msg}
 }
 
-func (m *Message) Kind() Kind {
-	if m.KafkaMsg != nil {
-		return Kafka
-	}
-
-	return Invalid
+func (m Message) Kind() Kind {
+	return Kafka
 }
 
 // EmitRowLag will diff against the partition's high watermark and the message's offset
 // This function is only available for Kafka since Kafka has the concept of offsets and watermarks.
-func (m *Message) EmitRowLag(metricsClient base.Client, mode config.Mode, groupID, table string) {
-	if m.KafkaMsg == nil {
-		return
-	}
-
+func (m Message) EmitRowLag(metricsClient base.Client, mode config.Mode, groupID, table string) {
 	metricsClient.GaugeWithSample(
 		"row.lag",
-		float64(m.KafkaMsg.HighWaterMark-m.KafkaMsg.Offset),
+		float64(m.message.HighWaterMark-m.message.Offset),
 		map[string]string{
 			"mode":    mode.String(),
 			"groupID": groupID,
@@ -66,7 +53,7 @@ func (m *Message) EmitRowLag(metricsClient base.Client, mode config.Mode, groupI
 		0.5)
 }
 
-func (m *Message) EmitIngestionLag(metricsClient base.Client, mode config.Mode, groupID, table string) {
+func (m Message) EmitIngestionLag(metricsClient base.Client, mode config.Mode, groupID, table string) {
 	metricsClient.Timing("ingestion.lag", time.Since(m.PublishTime()), map[string]string{
 		"mode":    mode.String(),
 		"groupID": groupID,
@@ -74,42 +61,22 @@ func (m *Message) EmitIngestionLag(metricsClient base.Client, mode config.Mode, 
 	})
 }
 
-func (m *Message) PublishTime() time.Time {
-	if m.KafkaMsg != nil {
-		return m.KafkaMsg.Time
-	}
-
-	return time.Time{}
+func (m Message) PublishTime() time.Time {
+	return m.message.Time
 }
 
-func (m *Message) Topic() string {
-	if m.KafkaMsg != nil {
-		return m.KafkaMsg.Topic
-	}
-
-	return ""
+func (m Message) Topic() string {
+	return m.message.Topic
 }
 
-func (m *Message) Partition() string {
-	if m.KafkaMsg != nil {
-		return fmt.Sprint(m.KafkaMsg.Partition)
-	}
-
-	return ""
+func (m Message) Partition() string {
+	return fmt.Sprint(m.message.Partition)
 }
 
-func (m *Message) Key() []byte {
-	if m.KafkaMsg != nil {
-		return m.KafkaMsg.Key
-	}
-
-	return nil
+func (m Message) Key() []byte {
+	return m.message.Key
 }
 
-func (m *Message) Value() []byte {
-	if m.KafkaMsg != nil {
-		return m.KafkaMsg.Value
-	}
-
-	return nil
+func (m Message) Value() []byte {
+	return m.message.Value
 }
