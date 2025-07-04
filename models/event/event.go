@@ -262,6 +262,14 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 	td := inMemDB.GetOrCreateTableData(e.Table)
 	td.Lock()
 	defer td.Unlock()
+
+	if msg, ok := td.PartitionsToLastMessage[message.Partition()]; ok {
+		if msg.KafkaMsg.Offset > message.KafkaMsg.Offset {
+			// This means that we already processed this message.
+			return false, "", nil
+		}
+	}
+
 	if td.Empty() {
 		cols := &columns.Columns{}
 		if e.Columns != nil {
