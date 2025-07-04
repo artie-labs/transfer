@@ -52,7 +52,7 @@ type TableData struct {
 	topicConfig kafkalib.TopicConfig
 	// Partition to the latest offset(s).
 	// For Kafka, we only need the last message to commit the offset
-	PartitionsToLastMessage map[string]artie.Message
+	PartitionsToLastMessage map[int]artie.Message
 
 	// This is used for the automatic schema detection
 	LatestCDCTs time.Time
@@ -151,7 +151,7 @@ func NewTableData(inMemoryColumns *columns.Columns, mode config.Mode, primaryKey
 		topicConfig:     topicConfig,
 		// temporaryTableSuffix is being set in `ResetTempTableSuffix`
 		temporaryTableSuffix:    "",
-		PartitionsToLastMessage: map[string]artie.Message{},
+		PartitionsToLastMessage: map[int]artie.Message{},
 		name:                    name,
 	}
 

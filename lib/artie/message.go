@@ -1,7 +1,6 @@
 package artie
 
 import (
-	"fmt"
 	"log/slog"
 	"time"
 
@@ -62,8 +61,8 @@ func (m Message) Topic() string {
 	return m.message.Topic
 }
 
-func (m Message) Partition() string {
-	return fmt.Sprint(m.message.Partition)
+func (m Message) Partition() int {
+	return m.message.Partition
 }
 
 func (m Message) Key() []byte {
