@@ -45,7 +45,8 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 	tags["database"] = topicConfig.tc.Database
 	tags["schema"] = topicConfig.tc.Schema
 
-	pkMap, err := topicConfig.GetPrimaryKey(p.Msg.Key(), topicConfig.tc)
+	key := p.Msg.Key()
+	pkMap, err := topicConfig.GetPrimaryKey(key, topicConfig.tc)
 	if err != nil {
 		tags["what"] = "marshall_pk_err"
 		return "", fmt.Errorf("cannot unmarshall key %s: %w", string(p.Msg.Key()), err)
@@ -63,6 +64,8 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 		tags["what"] = "to_mem_event_err"
 		return "", fmt.Errorf("cannot convert to memory event: %w", err)
 	}
+
+	fmt.Println("key", string(key), "offset", p.Msg.KafkaMsg.Offset, "timestamp", "evt timestamp", evt.GetExecutionTime())
 
 	// Table name is only available after event has been cast
 	tags["table"] = evt.Table

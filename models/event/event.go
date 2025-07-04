@@ -38,6 +38,10 @@ type Event struct {
 	mode          config.Mode
 }
 
+func (e Event) GetExecutionTime() time.Time {
+	return e.executionTime
+}
+
 func transformData(data map[string]any, tc kafkalib.TopicConfig) map[string]any {
 	for _, columnToHash := range tc.ColumnsToHash {
 		if value, ok := data[columnToHash]; ok {
