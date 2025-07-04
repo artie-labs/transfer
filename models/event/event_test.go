@@ -30,7 +30,7 @@ func (e *EventsTestSuite) TestEvent_Validate() {
 		_evt := Event{
 			table:       "foo",
 			primaryKeys: []string{"id"},
-			Data: map[string]any{
+			data: map[string]any{
 				"id":  123,
 				"foo": "bar",
 			},
@@ -42,7 +42,7 @@ func (e *EventsTestSuite) TestEvent_Validate() {
 		_evt := Event{
 			table:       "foo",
 			primaryKeys: []string{"id"},
-			Data: map[string]any{
+			data: map[string]any{
 				"id":  123,
 				"foo": "bar",
 			},
@@ -53,7 +53,7 @@ func (e *EventsTestSuite) TestEvent_Validate() {
 		_evt := Event{
 			table:       "foo",
 			primaryKeys: []string{"id"},
-			Data: map[string]any{
+			data: map[string]any{
 				"id":                                123,
 				constants.DeleteColumnMarker:        true,
 				constants.OnlySetDeleteColumnMarker: true,
@@ -207,8 +207,8 @@ func (e *EventsTestSuite) TestEvent_Columns() {
 		evt, err := ToMemoryEvent(e.fakeEvent, map[string]any{"id": 123}, kafkalib.TopicConfig{}, config.Replication)
 		assert.NoError(e.T(), err)
 
-		assert.Equal(e.T(), 1, len(evt.Columns.GetColumns()))
-		_, ok := evt.Columns.GetColumn("id")
+		assert.Equal(e.T(), 1, len(evt.columns.GetColumns()))
+		_, ok := evt.columns.GetColumn("id")
 		assert.True(e.T(), ok)
 	}
 	{
@@ -216,11 +216,11 @@ func (e *EventsTestSuite) TestEvent_Columns() {
 		evt, err := ToMemoryEvent(e.fakeEvent, map[string]any{"id": 123, "CAPITAL": "foo"}, kafkalib.TopicConfig{}, config.Replication)
 		assert.NoError(e.T(), err)
 
-		assert.Equal(e.T(), 2, len(evt.Columns.GetColumns()))
-		_, ok := evt.Columns.GetColumn("id")
+		assert.Equal(e.T(), 2, len(evt.columns.GetColumns()))
+		_, ok := evt.columns.GetColumn("id")
 		assert.True(e.T(), ok)
 
-		_, ok = evt.Columns.GetColumn("capital")
+		_, ok = evt.columns.GetColumn("capital")
 		assert.True(e.T(), ok)
 	}
 	{
@@ -228,9 +228,9 @@ func (e *EventsTestSuite) TestEvent_Columns() {
 		evt, err := ToMemoryEvent(e.fakeEvent, map[string]any{"id": 123}, kafkalib.TopicConfig{}, config.History)
 		assert.NoError(e.T(), err)
 
-		_, ok := evt.Data[constants.DeleteColumnMarker]
+		_, ok := evt.data[constants.DeleteColumnMarker]
 		assert.False(e.T(), ok)
-		_, ok = evt.Data[constants.OnlySetDeleteColumnMarker]
+		_, ok = evt.data[constants.OnlySetDeleteColumnMarker]
 		assert.False(e.T(), ok)
 	}
 }
