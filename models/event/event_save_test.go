@@ -41,7 +41,7 @@ func (e *EventsTestSuite) TestSaveEvent() {
 	}
 
 	kafkaMsg := kafka.Message{}
-	_, _, err := event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
+	_, _, err := event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafkaMsg))
 	assert.NoError(e.T(), err)
 
 	optimization := e.db.GetOrCreateTableData("foo")
@@ -73,7 +73,7 @@ func (e *EventsTestSuite) TestSaveEvent() {
 	}
 
 	newKafkaMsg := kafka.Message{}
-	_, _, err = edgeCaseEvent.Save(e.cfg, e.db, topicConfig, artie.NewMessage(&newKafkaMsg, newKafkaMsg.Topic))
+	_, _, err = edgeCaseEvent.Save(e.cfg, e.db, topicConfig, artie.NewMessage(newKafkaMsg))
 	assert.NoError(e.T(), err)
 
 	td := e.db.GetOrCreateTableData("foo")
@@ -96,7 +96,7 @@ func (e *EventsTestSuite) TestEvent_SaveCasing() {
 	}
 
 	kafkaMsg := kafka.Message{}
-	_, _, err := event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
+	_, _, err := event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafkaMsg))
 	assert.NoError(e.T(), err)
 
 	td := e.db.GetOrCreateTableData("foo")
@@ -139,7 +139,7 @@ func (e *EventsTestSuite) TestEventSaveOptionalSchema() {
 	}
 
 	kafkaMsg := kafka.Message{}
-	_, _, err := event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
+	_, _, err := event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafkaMsg))
 	assert.NoError(e.T(), err)
 
 	td := e.db.GetOrCreateTableData("foo")
@@ -186,7 +186,7 @@ func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 	}
 
 	kafkaMsg := kafka.Message{}
-	_, _, err := evt.Save(e.cfg, e.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
+	_, _, err := evt.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafkaMsg))
 	assert.NoError(e.T(), err)
 
 	td := e.db.GetOrCreateTableData("non_existent")
@@ -245,7 +245,7 @@ func (e *EventsTestSuite) TestEventSaveColumns() {
 	}
 
 	kafkaMsg := kafka.Message{}
-	_, _, err := event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
+	_, _, err := event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafkaMsg))
 	assert.NoError(e.T(), err)
 
 	td := e.db.GetOrCreateTableData("foo")
@@ -294,12 +294,12 @@ func (e *EventsTestSuite) TestEventSaveTestDeleteFlag() {
 	}
 
 	kafkaMsg := kafka.Message{}
-	_, _, err := event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
+	_, _, err := event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafkaMsg))
 	assert.NoError(e.T(), err)
 	assert.False(e.T(), e.db.GetOrCreateTableData("foo").ContainOtherOperations())
 
 	event.Deleted = false
-	_, _, err = event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(&kafkaMsg, kafkaMsg.Topic))
+	_, _, err = event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafkaMsg))
 	assert.NoError(e.T(), err)
 	assert.True(e.T(), e.db.GetOrCreateTableData("foo").ContainOtherOperations())
 }

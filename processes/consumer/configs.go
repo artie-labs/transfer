@@ -41,11 +41,11 @@ type TopicConfigFormatter struct {
 
 func commitOffset(ctx context.Context, topic string, partitionsToOffset map[string]artie.Message) error {
 	for _, msg := range partitionsToOffset {
-		if err := topicToConsumer.Get(topic).CommitMessages(ctx, msg.message); err != nil {
+		if err := topicToConsumer.Get(topic).CommitMessages(ctx, msg.GetMessage()); err != nil {
 			return err
 		}
 
-		slog.Info("Successfully committed Kafka offset", slog.String("topic", topic), slog.Int("partition", msg.message.Partition), slog.Int64("offset", msg.message.Offset))
+		slog.Info("Successfully committed Kafka offset", slog.String("topic", topic), slog.String("partition", msg.Partition()), slog.Int64("offset", msg.GetMessage().Offset))
 	}
 
 	return nil

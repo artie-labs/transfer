@@ -10,14 +10,14 @@ import (
 const keyString = "Struct{id=12}"
 
 func TestNewMessage(t *testing.T) {
-	kafkaMsg := &kafka.Message{
+	kafkaMsg := kafka.Message{
 		Topic:     "test_topic",
 		Partition: 5,
 		Key:       []byte(keyString),
 		Value:     []byte("kafka_value"),
 	}
 
-	msg := NewMessage(kafkaMsg, "")
+	msg := NewMessage(kafkaMsg)
 	assert.Equal(t, "test_topic", msg.Topic())
 	assert.Equal(t, "5", msg.Partition())
 	assert.Equal(t, keyString, string(msg.Key()))
