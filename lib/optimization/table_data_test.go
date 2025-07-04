@@ -3,6 +3,7 @@ package optimization
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -94,9 +95,9 @@ func TestTableData_ShouldFlushRowLength(t *testing.T) {
 		assert.False(t, shouldFlush)
 		assert.Empty(t, flushReason)
 
-		td.InsertRow(fmt.Sprint(i), map[string]any{
+		assert.NoError(t, td.InsertRow(fmt.Sprint(i), map[string]any{
 			"foo": "bar",
-		}, false)
+		}, time.Now(), false))
 	}
 
 	shouldFlush, flushReason := td.ShouldFlush(cfg)
@@ -110,7 +111,7 @@ func TestTableData_ContainsHardDeletes(t *testing.T) {
 		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "foo")
 		assert.Equal(t, 0, int(td.NumberOfRows()))
 
-		td.InsertRow("123", map[string]any{"id": "123"}, true)
+		assert.NoError(t, td.InsertRow("123", map[string]any{"id": "123"}, time.Now(), true))
 		assert.Equal(t, 1, int(td.NumberOfRows()))
 
 		assert.True(t, td.ContainsHardDeletes())
@@ -120,7 +121,7 @@ func TestTableData_ContainsHardDeletes(t *testing.T) {
 		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{SoftDelete: true}, "foo")
 		assert.Equal(t, 0, int(td.NumberOfRows()))
 
-		td.InsertRow("123", map[string]any{"id": "123"}, true)
+		assert.NoError(t, td.InsertRow("123", map[string]any{"id": "123"}, time.Now(), true))
 		assert.Equal(t, 1, int(td.NumberOfRows()))
 		assert.False(t, td.ContainsHardDeletes())
 	}
@@ -138,7 +139,7 @@ func TestTableData_ShouldFlushRowSize(t *testing.T) {
 		shouldFlush, flushReason := td.ShouldFlush(cfg)
 		assert.False(t, shouldFlush)
 		assert.Empty(t, flushReason)
-		td.InsertRow(fmt.Sprint(i), map[string]any{
+		assert.NoError(t, td.InsertRow(fmt.Sprint(i), map[string]any{
 			"foo":   "bar",
 			"array": []string{"foo", "bar", "dusty", "the aussie", "robin", "jacqueline", "charlie"},
 			"true":  true,
@@ -146,10 +147,10 @@ func TestTableData_ShouldFlushRowSize(t *testing.T) {
 			"nested": map[string]any{
 				"foo": "bar",
 			},
-		}, false)
+		}, time.Now(), false))
 	}
 
-	td.InsertRow("33333", map[string]any{
+	assert.NoError(t, td.InsertRow("33333", map[string]any{
 		"foo":   "bar",
 		"array": []string{"foo", "bar", "dusty", "the aussie", "robin", "jacqueline", "charlie"},
 		"true":  true,
@@ -159,7 +160,7 @@ func TestTableData_ShouldFlushRowSize(t *testing.T) {
 			"bar": "xyz",
 			"123": "9222213213j1i31j3k21j321k3j1k31jk31213123213213121322j31k2",
 		},
-	}, false)
+	}, time.Now(), false))
 
 	shouldFlush, flushReason := td.ShouldFlush(cfg)
 	assert.True(t, shouldFlush)
@@ -172,12 +173,12 @@ func TestTableData_InsertRowIntegrity(t *testing.T) {
 	assert.False(t, td.ContainOtherOperations())
 
 	for i := 0; i < 100; i++ {
-		td.InsertRow("123", map[string]any{"id": "123"}, true)
+		assert.NoError(t, td.InsertRow("123", map[string]any{"id": "123"}, time.Now(), true))
 		assert.False(t, td.ContainOtherOperations())
 	}
 
 	for i := 0; i < 100; i++ {
-		td.InsertRow("123", map[string]any{"id": "123"}, false)
+		assert.NoError(t, td.InsertRow("123", map[string]any{"id": "123"}, time.Now(), false))
 		assert.True(t, td.ContainOtherOperations())
 	}
 }
@@ -186,15 +187,15 @@ func TestTableData_InsertRowSoftDelete(t *testing.T) {
 	td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{SoftDelete: true}, "foo")
 	assert.Equal(t, 0, int(td.NumberOfRows()))
 
-	td.InsertRow("123", map[string]any{"id": "123", "name": "dana", constants.DeleteColumnMarker: false, constants.OnlySetDeleteColumnMarker: false}, false)
+	assert.NoError(t, td.InsertRow("123", map[string]any{"id": "123", "name": "dana", constants.DeleteColumnMarker: false, constants.OnlySetDeleteColumnMarker: false}, time.Now(), false))
 	assert.Equal(t, 1, int(td.NumberOfRows()))
 	assert.Equal(t, "dana", td.Rows()[0].GetData()["name"])
 
-	td.InsertRow("123", map[string]any{"id": "123", "name": "dana2", constants.DeleteColumnMarker: false, constants.OnlySetDeleteColumnMarker: false}, false)
+	assert.NoError(t, td.InsertRow("123", map[string]any{"id": "123", "name": "dana2", constants.DeleteColumnMarker: false, constants.OnlySetDeleteColumnMarker: false}, time.Now(), false))
 	assert.Equal(t, 1, int(td.NumberOfRows()))
 	assert.Equal(t, "dana2", td.Rows()[0].GetData()["name"])
 
-	td.InsertRow("123", map[string]any{"id": "123", constants.DeleteColumnMarker: true, constants.OnlySetDeleteColumnMarker: true}, true)
+	assert.NoError(t, td.InsertRow("123", map[string]any{"id": "123", constants.DeleteColumnMarker: true, constants.OnlySetDeleteColumnMarker: true}, time.Now(), true))
 	assert.Equal(t, 1, int(td.NumberOfRows()))
 	// The previous value should be preserved, along with the delete marker
 	assert.Equal(t, "dana2", td.Rows()[0].GetData()["name"])
@@ -203,7 +204,7 @@ func TestTableData_InsertRowSoftDelete(t *testing.T) {
 	assert.Equal(t, false, td.Rows()[0].GetData()[constants.OnlySetDeleteColumnMarker])
 
 	// Ensure two deletes in a row are handled idempotently (in case the delete event is sent twice)
-	td.InsertRow("123", map[string]any{"id": "123", constants.DeleteColumnMarker: true, constants.OnlySetDeleteColumnMarker: true}, true)
+	assert.NoError(t, td.InsertRow("123", map[string]any{"id": "123", constants.DeleteColumnMarker: true, constants.OnlySetDeleteColumnMarker: true}, time.Now(), true))
 	assert.Equal(t, 1, int(td.NumberOfRows()))
 	assert.Equal(t, "dana2", td.Rows()[0].GetData()["name"])
 	assert.Equal(t, true, td.Rows()[0].GetData()[constants.DeleteColumnMarker])
@@ -212,19 +213,19 @@ func TestTableData_InsertRowSoftDelete(t *testing.T) {
 		// If deleting a row we don't have in memory, OnlySetDeleteColumnMarker should stay true
 		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{SoftDelete: true}, "foo")
 		assert.Equal(t, 0, int(td.NumberOfRows()))
-		td.InsertRow("123", map[string]any{"id": "123", constants.DeleteColumnMarker: true, constants.OnlySetDeleteColumnMarker: true}, true)
+		assert.NoError(t, td.InsertRow("123", map[string]any{"id": "123", constants.DeleteColumnMarker: true, constants.OnlySetDeleteColumnMarker: true}, time.Now(), true))
 		assert.Equal(t, true, td.Rows()[0].GetData()[constants.OnlySetDeleteColumnMarker])
 		// Two deletes in a row; OnlySetDeleteColumnMarker should still be true because we don't have the other values in memory
-		td.InsertRow("123", map[string]any{"id": "123", constants.DeleteColumnMarker: true, constants.OnlySetDeleteColumnMarker: true}, true)
+		assert.NoError(t, td.InsertRow("123", map[string]any{"id": "123", constants.DeleteColumnMarker: true, constants.OnlySetDeleteColumnMarker: true}, time.Now(), true))
 		assert.Equal(t, true, td.Rows()[0].GetData()[constants.OnlySetDeleteColumnMarker])
 	}
 	{
 		// If a row is created and deleted, then another row with the same primary key is created, the previous values should not be used
 		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{SoftDelete: true}, "foo")
 		assert.Equal(t, 0, int(td.NumberOfRows()))
-		td.InsertRow("123", map[string]any{"id": "123", "name": "dana", "foo": "abc", constants.DeleteColumnMarker: false, constants.OnlySetDeleteColumnMarker: false}, false)
-		td.InsertRow("123", map[string]any{"id": "123", constants.DeleteColumnMarker: true, constants.OnlySetDeleteColumnMarker: true}, true)
-		td.InsertRow("123", map[string]any{"id": "123", "name": "dana-new", constants.DeleteColumnMarker: false, constants.OnlySetDeleteColumnMarker: false}, false)
+		assert.NoError(t, td.InsertRow("123", map[string]any{"id": "123", "name": "dana", "foo": "abc", constants.DeleteColumnMarker: false, constants.OnlySetDeleteColumnMarker: false}, time.Now(), false))
+		assert.NoError(t, td.InsertRow("123", map[string]any{"id": "123", constants.DeleteColumnMarker: true, constants.OnlySetDeleteColumnMarker: true}, time.Now(), true))
+		assert.NoError(t, td.InsertRow("123", map[string]any{"id": "123", "name": "dana-new", constants.DeleteColumnMarker: false, constants.OnlySetDeleteColumnMarker: false}, time.Now(), false))
 		assert.Equal(t, "dana-new", td.Rows()[0].GetData()["name"])
 		assert.Nil(t, td.Rows()[0].GetData()["foo"])
 		assert.Equal(t, false, td.Rows()[0].GetData()[constants.DeleteColumnMarker])

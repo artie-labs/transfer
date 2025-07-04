@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/config"
@@ -35,7 +36,7 @@ func TestWriteTemporaryTableFile(t *testing.T) {
 			"last_name":   fmt.Sprintf("Last%d", i),
 			"description": "the mini aussie",
 		}
-		tableData.InsertRow(key, rowData, false)
+		assert.NoError(t, tableData.InsertRow(key, rowData, time.Time{}, false))
 	}
 
 	// Create a table identifier using Snowflake dialect

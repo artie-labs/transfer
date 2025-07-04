@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -131,7 +133,7 @@ func (s *SnowflakeTestSuite) TestBackfillColumn() {
 }
 
 // generateTableData - returns tableName and tableData
-func generateTableData(rows int) (dialect.TableIdentifier, *optimization.TableData) {
+func generateTableData(t *testing.T, rows int) (dialect.TableIdentifier, *optimization.TableData) {
 	randomTableName := fmt.Sprintf("temp_%s_%s", constants.ArtiePrefix, stringutil.Random(10))
 	cols := &columns.Columns{}
 	for _, col := range []string{"user_id", "first_name", "last_name", "dusty"} {
@@ -148,14 +150,14 @@ func generateTableData(rows int) (dialect.TableIdentifier, *optimization.TableDa
 			"dusty":      "the mini aussie",
 		}
 
-		td.InsertRow(key, rowData, false)
+		assert.NoError(t, td.InsertRow(key, rowData, time.Now(), false))
 	}
 
 	return dialect.NewTableIdentifier("database", "schema", randomTableName), td
 }
 
 func (s *SnowflakeTestSuite) TestPrepareTempTable() {
-	tempTableID, tableData := generateTableData(10)
+	tempTableID, tableData := generateTableData(s.T(), 10)
 	s.stageStore.GetConfigMap().AddTable(tempTableID, types.NewDestinationTableConfig(nil, true))
 	snowflakeTableConfig := s.stageStore.GetConfigMap().GetTableConfig(tempTableID)
 

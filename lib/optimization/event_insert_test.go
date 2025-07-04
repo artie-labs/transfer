@@ -3,6 +3,7 @@ package optimization
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/artie-labs/transfer/lib/config"
 
@@ -105,7 +106,7 @@ func TestInsertRow_Toast(t *testing.T) {
 		// Wipe the table data per test run.
 		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "foo")
 		for _, rowData := range testCase.rowsDataToUpdate {
-			td.InsertRow(testCase.primaryKey, rowData, false)
+			assert.NoError(t, td.InsertRow(testCase.primaryKey, rowData, time.Now(), false))
 		}
 
 		var actualSize int
@@ -123,7 +124,7 @@ func TestTableData_InsertRow(t *testing.T) {
 	assert.Equal(t, 0, int(td.NumberOfRows()))
 
 	// Now insert the right way.
-	td.InsertRow("foo", map[string]any{"foo": "bar"}, false)
+	assert.NoError(t, td.InsertRow("foo", map[string]any{"foo": "bar"}, time.Now(), false))
 
 	assert.Equal(t, 1, int(td.NumberOfRows()))
 }
@@ -138,7 +139,7 @@ func TestTableData_InsertRowApproxSize(t *testing.T) {
 	numDeleteRows := 250
 
 	for i := 0; i < numInsertRows; i++ {
-		td.InsertRow(fmt.Sprint(i), map[string]any{
+		assert.NoError(t, td.InsertRow(fmt.Sprint(i), map[string]any{
 			"foo":     "bar",
 			"array":   []int{1, 2, 3, 4, 5},
 			"boolean": true,
@@ -148,13 +149,13 @@ func TestTableData_InsertRowApproxSize(t *testing.T) {
 					"true": false,
 				},
 			},
-		}, false)
+		}, time.Now(), false))
 	}
 
 	var updateCount int
 	for updateKey := range td.rowsData {
 		updateCount += 1
-		td.InsertRow(updateKey, map[string]any{"foo": "foo", "bar": "bar"}, false)
+		assert.NoError(t, td.InsertRow(updateKey, map[string]any{"foo": "foo", "bar": "bar"}, time.Now(), false))
 		if updateCount > numUpdateRows {
 			break
 		}
@@ -163,7 +164,7 @@ func TestTableData_InsertRowApproxSize(t *testing.T) {
 	var deleteCount int
 	for deleteKey := range td.rowsData {
 		deleteCount += 1
-		td.InsertRow(deleteKey, map[string]any{"__artie_deleted": true}, true)
+		assert.NoError(t, td.InsertRow(deleteKey, map[string]any{"__artie_deleted": true}, time.Now(), true))
 		if deleteCount > numDeleteRows {
 			break
 		}
