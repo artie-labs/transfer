@@ -22,6 +22,10 @@ type Message struct {
 	message kafka.Message
 }
 
+func (m Message) GetMessage() kafka.Message {
+	return m.message
+}
+
 func (m Message) LogFields() []any {
 	return []any{
 		slog.String("topic", m.message.Topic),
