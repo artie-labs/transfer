@@ -65,12 +65,12 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 	}
 
 	// Table name is only available after event has been cast
-	tags["table"] = evt.Table
+	tags["table"] = evt.GetTable()
 	if topicConfig.tc.ShouldSkip(string(_event.Operation())) {
 		// Check to see if we should skip first
 		// This way, we can emit a specific tag to be more clear
 		tags["skipped"] = "yes"
-		return evt.Table, nil
+		return evt.GetTable(), nil
 	}
 
 	if cfg.Reporting.EmitExecutionTime {
@@ -86,13 +86,13 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 	if shouldFlush {
 		err = Flush(ctx, inMemDB, dest, metricsClient, Args{
 			Reason:        flushReason,
-			SpecificTable: evt.Table,
+			SpecificTable: evt.GetTable(),
 		})
 		if err != nil {
 			tags["what"] = "flush_fail"
 		}
-		return evt.Table, err
+		return evt.GetTable(), err
 	}
 
-	return evt.Table, nil
+	return evt.GetTable(), nil
 }
