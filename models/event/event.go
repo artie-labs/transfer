@@ -264,6 +264,14 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 	defer td.Unlock()
 
 	if msg, ok := td.PartitionsToLastMessage[message.Partition()]; ok {
+		if msg.KafkaMsg == nil {
+			fmt.Println("msg.KafkaMsg is nil")
+		}
+
+		if message.KafkaMsg == nil {
+			fmt.Println("message.KafkaMsg is nil")
+		}
+
 		if msg.KafkaMsg.Offset > message.KafkaMsg.Offset {
 			// This means that we already processed this message.
 			return false, "", nil
