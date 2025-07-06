@@ -32,7 +32,6 @@ func NewMessage(msg kafka.Message) Message {
 }
 
 // EmitRowLag will diff against the partition's high watermark and the message's offset
-// This function is only available for Kafka since Kafka has the concept of offsets and watermarks.
 func (m Message) EmitRowLag(metricsClient base.Client, mode config.Mode, groupID, table string) {
 	metricsClient.GaugeWithSample(
 		"row.lag",
