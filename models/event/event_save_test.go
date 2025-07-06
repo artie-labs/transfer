@@ -29,9 +29,9 @@ func (e *EventsTestSuite) TestSaveEvent() {
 	anotherLowerCol := "dusty__the__mini__aussie"
 
 	event := Event{
-		Table:       "foo",
+		table:       "foo",
 		primaryKeys: []string{"id"},
-		Data: map[string]any{
+		data: map[string]any{
 			"id":                                "123",
 			constants.DeleteColumnMarker:        true,
 			constants.OnlySetDeleteColumnMarker: true,
@@ -60,9 +60,9 @@ func (e *EventsTestSuite) TestSaveEvent() {
 	assert.Equal(e.T(), 2, found, optimization.ReadOnlyInMemoryCols)
 	badColumn := "other"
 	edgeCaseEvent := Event{
-		Table:       "foo",
+		table:       "foo",
 		primaryKeys: []string{"id"},
-		Data: map[string]any{
+		data: map[string]any{
 			"id":                                "12344",
 			constants.DeleteColumnMarker:        true,
 			constants.OnlySetDeleteColumnMarker: true,
@@ -84,9 +84,9 @@ func (e *EventsTestSuite) TestSaveEvent() {
 
 func (e *EventsTestSuite) TestEvent_SaveCasing() {
 	event := Event{
-		Table:       "foo",
+		table:       "foo",
 		primaryKeys: []string{"id"},
-		Data: map[string]any{
+		data: map[string]any{
 			"id":                                "123",
 			constants.DeleteColumnMarker:        true,
 			constants.OnlySetDeleteColumnMarker: true,
@@ -118,9 +118,9 @@ func (e *EventsTestSuite) TestEvent_SaveCasing() {
 
 func (e *EventsTestSuite) TestEventSaveOptionalSchema() {
 	event := Event{
-		Table:       "foo",
+		table:       "foo",
 		primaryKeys: []string{"id"},
-		Data: map[string]any{
+		data: map[string]any{
 			"id":                                "123",
 			constants.DeleteColumnMarker:        true,
 			constants.OnlySetDeleteColumnMarker: true,
@@ -131,7 +131,7 @@ func (e *EventsTestSuite) TestEventSaveOptionalSchema() {
 			"json_object_string":                `{"foo": "bar"}`,
 			"json_object_no_schema":             `{"foo": "bar"}`,
 		},
-		OptionalSchema: map[string]typing.KindDetails{
+		optionalSchema: map[string]typing.KindDetails{
 			// Explicitly casting this as a string.
 			"created_at_date_string": typing.String,
 			"json_object_string":     typing.String,
@@ -175,9 +175,9 @@ func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 	}
 
 	evt := Event{
-		Table:   "non_existent",
-		Columns: &cols,
-		Data: map[string]any{
+		table:   "non_existent",
+		columns: &cols,
+		data: map[string]any{
 			"col_1":                             "123",
 			constants.DeleteColumnMarker:        true,
 			constants.OnlySetDeleteColumnMarker: true,
@@ -214,15 +214,15 @@ func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 	}
 
 	// Now let's add more keys.
-	evt.Columns.AddColumn(columns.NewColumn("foo", typing.Invalid))
+	evt.columns.AddColumn(columns.NewColumn("foo", typing.Invalid))
 	var index int
-	for idx, col := range evt.Columns.GetColumns() {
+	for idx, col := range evt.columns.GetColumns() {
 		if col.Name() == "foo" {
 			index = idx
 		}
 	}
 
-	assert.Equal(e.T(), len(evt.Columns.GetColumns())-1, index, "new column inserted to the end")
+	assert.Equal(e.T(), len(evt.columns.GetColumns())-1, index, "new column inserted to the end")
 }
 
 func (e *EventsTestSuite) TestEventSaveColumns() {
@@ -231,10 +231,10 @@ func (e *EventsTestSuite) TestEventSaveColumns() {
 	cols.AddColumn(columns.NewColumn("anotherCOL", typing.Invalid))
 	cols.AddColumn(columns.NewColumn("created_at_date_string", typing.Invalid))
 	event := Event{
-		Table:       "foo",
-		Columns:     &cols,
+		table:       "foo",
+		columns:     &cols,
 		primaryKeys: []string{"id"},
-		Data: map[string]any{
+		data: map[string]any{
 			"id":                                "123",
 			constants.DeleteColumnMarker:        true,
 			constants.OnlySetDeleteColumnMarker: true,
@@ -283,14 +283,14 @@ func (e *EventsTestSuite) TestEventSaveColumns() {
 
 func (e *EventsTestSuite) TestEventSaveTestDeleteFlag() {
 	event := Event{
-		Table:       "foo",
+		table:       "foo",
 		primaryKeys: []string{"id"},
-		Data: map[string]any{
+		data: map[string]any{
 			"id":                                "123",
 			constants.DeleteColumnMarker:        true,
 			constants.OnlySetDeleteColumnMarker: true,
 		},
-		Deleted: true,
+		deleted: true,
 	}
 
 	kafkaMsg := kafka.Message{}
@@ -298,7 +298,7 @@ func (e *EventsTestSuite) TestEventSaveTestDeleteFlag() {
 	assert.NoError(e.T(), err)
 	assert.False(e.T(), e.db.GetOrCreateTableData("foo").ContainOtherOperations())
 
-	event.Deleted = false
+	event.deleted = false
 	_, _, err = event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafkaMsg))
 	assert.NoError(e.T(), err)
 	assert.True(e.T(), e.db.GetOrCreateTableData("foo").ContainOtherOperations())
