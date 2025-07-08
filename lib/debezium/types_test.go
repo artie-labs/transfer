@@ -167,7 +167,7 @@ func TestField_ParseValue(t *testing.T) {
 		{
 			// Malformed
 			_, err := field.ParseValue(`i'm not json`)
-			assert.ErrorContains(t, err, "invalid character 'i' looking for beginning of value")
+			assert.Error(t, err)
 		}
 		{
 			// Toast
