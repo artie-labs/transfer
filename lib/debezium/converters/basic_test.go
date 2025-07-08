@@ -114,7 +114,7 @@ func TestArray_Convert(t *testing.T) {
 		{
 			// Invalid json
 			_, err := NewArray(JSON{}.Convert).Convert([]any{"hello"})
-			assert.ErrorContains(t, err, "invalid character 'h' looking for beginning of value")
+			assert.Error(t, err)
 		}
 		{
 			// Invalid data type

@@ -1,8 +1,9 @@
 package relational
 
 import (
-	"encoding/json"
 	"fmt"
+
+	jsoniter "github.com/json-iterator/go"
 
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/cdc/util"
@@ -10,6 +11,8 @@ import (
 	"github.com/artie-labs/transfer/lib/debezium"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 )
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 type Debezium struct{}
 

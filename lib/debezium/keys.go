@@ -1,15 +1,18 @@
 package debezium
 
 import (
-	"encoding/json"
 	"fmt"
 	"slices"
 	"strings"
+
+	jsoniter "github.com/json-iterator/go"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 const (
 	stringPrefix = "Struct{"

@@ -1,8 +1,8 @@
 package jsonutil
 
-import (
-	"encoding/json"
-)
+import jsoniter "github.com/json-iterator/go"
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func UnmarshalPayload(val string) (any, error) {
 	// There are edge cases for when this may happen

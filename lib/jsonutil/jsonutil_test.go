@@ -10,7 +10,7 @@ func TestUnmarshalPayload(t *testing.T) {
 	{
 		// Invalid JSON string
 		_, err := UnmarshalPayload("hello")
-		assert.ErrorContains(t, err, "invalid character 'h' looking for beginning of value")
+		assert.Error(t, err)
 	}
 	{
 		// Empty JSON string edge case
