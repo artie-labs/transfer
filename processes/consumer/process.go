@@ -48,13 +48,13 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 	pkMap, err := topicConfig.GetPrimaryKey(p.Msg.Key(), topicConfig.tc)
 	if err != nil {
 		tags["what"] = "marshall_pk_err"
-		return "", fmt.Errorf("cannot unmarshall key %q at offset: %d: %w", string(p.Msg.Key()), p.Msg.Offset(), err)
+		return "", fmt.Errorf("cannot unmarshall key %q [%s]: %w", string(p.Msg.Key()), p.Msg.KafkaInfo(), err)
 	}
 
 	_event, err := topicConfig.GetEventFromBytes(p.Msg.Value())
 	if err != nil {
 		tags["what"] = "marshall_value_err"
-		return "", fmt.Errorf("cannot unmarshall event at offset: %d: %w", p.Msg.Offset(), err)
+		return "", fmt.Errorf("cannot unmarshall event [%s]: %w", p.Msg.KafkaInfo(), err)
 	}
 
 	tags["op"] = string(_event.Operation())

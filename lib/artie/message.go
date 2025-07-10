@@ -1,6 +1,7 @@
 package artie
 
 import (
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -74,4 +75,8 @@ func (m Message) Value() []byte {
 
 func (m Message) Offset() int64 {
 	return m.message.Offset
+}
+
+func (m Message) KafkaInfo() string {
+	return fmt.Sprintf("Topic: %q, Partition: %d, Offset: %d", m.message.Topic, m.message.Partition, m.message.Offset)
 }
