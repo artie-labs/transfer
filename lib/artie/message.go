@@ -71,3 +71,7 @@ func (m Message) Key() []byte {
 func (m Message) Value() []byte {
 	return m.message.Value
 }
+
+func (m Message) Offset() int64 {
+	return m.message.Offset
+}
