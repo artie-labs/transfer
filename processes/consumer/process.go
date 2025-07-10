@@ -44,13 +44,14 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 
 	tags["database"] = topicConfig.tc.Database
 	tags["schema"] = topicConfig.tc.Schema
-	if cfg.Kafka.SkipNullKeys && p.Msg.Key() == nil {
-		tags["what"] = "skip_null_key"
-		return "", nil
-	}
 
 	pkMap, err := topicConfig.GetPrimaryKey(p.Msg.Key(), topicConfig.tc)
 	if err != nil {
+		if cfg.Kafka.SkipNullKeys && len(p.Msg.Key()) == 0 {
+			tags["what"] = "skip_null_key"
+			return "", nil
+		}
+
 		tags["what"] = "marshall_pk_err"
 		return "", fmt.Errorf("cannot unmarshall key %q [%s]: %w", string(p.Msg.Key()), p.Msg.KafkaInfo(), err)
 	}
