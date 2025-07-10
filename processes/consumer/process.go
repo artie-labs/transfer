@@ -44,6 +44,10 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 
 	tags["database"] = topicConfig.tc.Database
 	tags["schema"] = topicConfig.tc.Schema
+	if cfg.Kafka.SkipNullKeys && p.Msg.Key() == nil {
+		tags["what"] = "skip_null_key"
+		return "", nil
+	}
 
 	pkMap, err := topicConfig.GetPrimaryKey(p.Msg.Key(), topicConfig.tc)
 	if err != nil {
