@@ -47,14 +47,19 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 
 	pkMap, err := topicConfig.GetPrimaryKey(p.Msg.Key(), topicConfig.tc)
 	if err != nil {
+		if cfg.Kafka.SkipNullKeys && len(p.Msg.Key()) == 0 {
+			tags["what"] = "skip_null_key"
+			return "", nil
+		}
+
 		tags["what"] = "marshall_pk_err"
-		return "", fmt.Errorf("cannot unmarshall key %s: %w", string(p.Msg.Key()), err)
+		return "", fmt.Errorf("cannot unmarshall key %q [%s]: %w", string(p.Msg.Key()), p.Msg.KafkaInfo(), err)
 	}
 
 	_event, err := topicConfig.GetEventFromBytes(p.Msg.Value())
 	if err != nil {
 		tags["what"] = "marshall_value_err"
-		return "", fmt.Errorf("cannot unmarshall event: %w", err)
+		return "", fmt.Errorf("cannot unmarshall event [%s]: %w", p.Msg.KafkaInfo(), err)
 	}
 
 	tags["op"] = string(_event.Operation())
