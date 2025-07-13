@@ -194,6 +194,16 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 	return _event, nil
 }
 
+// GetData - This will return the data for the event.
+func (e Event) GetData() map[string]any {
+	return e.data
+}
+
+// SetData - This will set the data for the event. This is used by Reader.
+func (e *Event) SetData(key string, value any) {
+	e.data[key] = value
+}
+
 // EmitExecutionTimeLag - This will check against the current time and the event execution time and emit the lag.
 func (e *Event) EmitExecutionTimeLag(metricsClient base.Client) {
 	metricsClient.GaugeWithSample(
