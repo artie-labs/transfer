@@ -119,7 +119,7 @@ func flush(ctx context.Context, dest destination.Baseline, _tableData *models.Ta
 	}
 
 	if err != nil {
-		return "merge_fail", fmt.Errorf("failed to flush: %w", err)
+		return "merge_fail", fmt.Errorf("failed to flush %q: %w", _tableName, err)
 	}
 
 	if commitTransaction {
