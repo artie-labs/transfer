@@ -22,7 +22,7 @@ func (d Date) Convert(value any) (any, error) {
 
 	date := time.UnixMilli(0).In(time.UTC).AddDate(0, 0, int(valueInt64))
 	if date.Year() > 9999 {
-		slog.Warn("Date exceeds 9999 year", slog.Int("year", date.Year()))
+		slog.Warn("Date exceeds 9999 year, setting this to null", slog.Int("year", date.Year()))
 		return nil, nil
 	}
 
