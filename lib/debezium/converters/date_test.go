@@ -22,4 +22,10 @@ func TestDate_Convert(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "2023-03-13", val.(string))
 	}
+	{
+		// Invalid date (year exceeds 9999)
+		val, err := Date{}.Convert(int64(10_000_000))
+		assert.NoError(t, err)
+		assert.Nil(t, val)
+	}
 }
