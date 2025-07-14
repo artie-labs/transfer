@@ -83,7 +83,7 @@ func (t TemporaryDataFile) WriteTemporaryTableFile(tableData *optimization.Table
 			value, _ := row.GetValue(col.Name())
 			result, castErr := valueConverter(value, col.KindDetails, sharedDestinationSettings)
 			if castErr != nil {
-				return File{}, AdditionalOutput{}, castErr
+				return File{}, AdditionalOutput{}, fmt.Errorf("failed to cast value %q: %w", col.Name(), castErr)
 			}
 
 			if result.NewLength > 0 {
