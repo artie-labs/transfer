@@ -98,11 +98,17 @@ func (s *SchemaEventPayload) GetTableName() string {
 }
 
 func (s *SchemaEventPayload) GetFullTableName() string {
+	fullTableName := s.Payload.Source.Table
+
 	if s.Payload.Source.Schema != "" {
-		return s.Payload.Source.Schema + "." + s.Payload.Source.Table
+		fullTableName = s.Payload.Source.Schema + "." + fullTableName
 	}
 
-	return s.Payload.Source.Table
+	if s.Payload.Source.Database != "" {
+		fullTableName = s.Payload.Source.Database + "." + fullTableName
+	}
+
+	return fullTableName
 }
 
 func (s *SchemaEventPayload) GetSourceMetadata() (string, error) {

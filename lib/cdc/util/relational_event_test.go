@@ -260,3 +260,57 @@ func TestSchemaEventPayload_ParseAndMutateMapInPlace(t *testing.T) {
 	assert.Equal(t, mapToPassIn, returnedMap)
 	assert.Equal(t, int64(123), mapToPassIn["id"])
 }
+
+func TestSchemaEventPayload_GetFullTableName(t *testing.T) {
+	{
+		// Just table name
+		schemaEventPayload := SchemaEventPayload{
+			Payload: Payload{
+				Source: Source{
+					Table: "test_table",
+				},
+			},
+		}
+		assert.Equal(t, "test_table", schemaEventPayload.GetFullTableName())
+	}
+
+	{
+		// Schema and table name
+		schemaEventPayload := SchemaEventPayload{
+			Payload: Payload{
+				Source: Source{
+					Table:  "test_table",
+					Schema: "test_schema",
+				},
+			},
+		}
+		assert.Equal(t, "test_schema.test_table", schemaEventPayload.GetFullTableName())
+	}
+
+	{
+		// Database and table name
+		schemaEventPayload := SchemaEventPayload{
+			Payload: Payload{
+				Source: Source{
+					Table:    "test_table",
+					Database: "test_database",
+				},
+			},
+		}
+		assert.Equal(t, "test_database.test_table", schemaEventPayload.GetFullTableName())
+	}
+
+	{
+		// Database, schema, and table name
+		schemaEventPayload := SchemaEventPayload{
+			Payload: Payload{
+				Source: Source{
+					Table:    "test_table",
+					Schema:   "test_schema",
+					Database: "test_database",
+				},
+			},
+		}
+		assert.Equal(t, "test_database.test_schema.test_table", schemaEventPayload.GetFullTableName())
+	}
+}
