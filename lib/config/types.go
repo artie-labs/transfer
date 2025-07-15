@@ -29,6 +29,7 @@ type Kafka struct {
 	Password        string `yaml:"password,omitempty"`
 	EnableAWSMSKIAM bool   `yaml:"enableAWSMKSIAM,omitempty"`
 	DisableTLS      bool   `yaml:"disableTLS,omitempty"`
+	SkipNullKeys    bool   `yaml:"skipNullKeys,omitempty"`
 }
 
 type SharedDestinationColumnSettings struct {
