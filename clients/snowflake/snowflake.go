@@ -183,7 +183,7 @@ func (s *Store) ensureExternalStageExists(ctx context.Context) error {
 					s.config.Snowflake.ExternalStage.CredentialsClause,
 				)
 				if _, err := s.ExecContext(ctx, createStageQuery); err != nil {
-					return fmt.Errorf("failed to create external stage: %w", err)
+					return fmt.Errorf("failed to create external stage %q: %w", createStageQuery, err)
 				}
 			} else {
 				return fmt.Errorf("failed to describe external stage: %w", err)
