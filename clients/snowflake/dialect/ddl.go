@@ -43,8 +43,14 @@ func (SnowflakeDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (st
 }
 
 func (SnowflakeDialect) BuildCreateStageQuery(dbName string, schemaName string, stageName string, bucket string, credentialsClause string) string {
-	return fmt.Sprintf(`CREATE OR REPLACE STAGE %s.%s.%s URL = 's3://%s' CREDENTIALS = ( %s ) FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='%s' EMPTY_FIELD_AS_NULL=FALSE)`,
-		dbName, schemaName, stageName, bucket, credentialsClause, constants.NullValuePlaceholder)
+	base := fmt.Sprintf(`CREATE OR REPLACE STAGE %s.%s.%s URL = 's3://%s' FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='%s' EMPTY_FIELD_AS_NULL=FALSE)`,
+		dbName, schemaName, stageName, bucket, constants.NullValuePlaceholder)
+
+	if credentialsClause != "" {
+		return fmt.Sprintf(`%s CREDENTIALS = ( %s )`, base, credentialsClause)
+	}
+
+	return base
 }
 
 func (SnowflakeDialect) BuildDescribeStageQuery(dbName string, schemaName string, stageName string) string {
