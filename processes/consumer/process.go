@@ -86,7 +86,7 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 	if shouldFlush {
 		err = Flush(ctx, inMemDB, dest, metricsClient, Args{
 			Reason:          flushReason,
-			SpecificTableID: evt.GetTable(),
+			SpecificTableID: evt.GetTableID(),
 		})
 		if err != nil {
 			tags["what"] = "flush_fail"
