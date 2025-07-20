@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/artie-labs/transfer/lib/artie"
+	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
@@ -19,9 +20,9 @@ type processArgs struct {
 	TopicToConfigFormatMap *TcFmtMap
 }
 
-func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client) (string, error) {
+func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client) (cdc.TableID, error) {
 	if p.TopicToConfigFormatMap == nil {
-		return "", fmt.Errorf("failed to process, topicConfig is nil")
+		return cdc.TableID{}, fmt.Errorf("failed to process, topicConfig is nil")
 	}
 
 	tags := map[string]string{
@@ -39,7 +40,7 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 	topicConfig, ok := p.TopicToConfigFormatMap.GetTopicFmt(p.Msg.Topic())
 	if !ok {
 		tags["what"] = "failed_topic_lookup"
-		return "", fmt.Errorf("failed to get topic name: %q", p.Msg.Topic())
+		return cdc.TableID{}, fmt.Errorf("failed to get topic name: %q", p.Msg.Topic())
 	}
 
 	tags["database"] = topicConfig.tc.Database
@@ -48,20 +49,20 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 	pkMap, err := topicConfig.GetPrimaryKey(p.Msg.Key(), topicConfig.tc)
 	if err != nil {
 		tags["what"] = "marshall_pk_err"
-		return "", fmt.Errorf("cannot unmarshall key %s: %w", string(p.Msg.Key()), err)
+		return cdc.TableID{}, fmt.Errorf("cannot unmarshall key %s: %w", string(p.Msg.Key()), err)
 	}
 
 	_event, err := topicConfig.GetEventFromBytes(p.Msg.Value())
 	if err != nil {
 		tags["what"] = "marshall_value_err"
-		return "", fmt.Errorf("cannot unmarshall event: %w", err)
+		return cdc.TableID{}, fmt.Errorf("cannot unmarshall event: %w", err)
 	}
 
 	tags["op"] = string(_event.Operation())
 	evt, err := event.ToMemoryEvent(_event, pkMap, topicConfig.tc, cfg.Mode)
 	if err != nil {
 		tags["what"] = "to_mem_event_err"
-		return "", fmt.Errorf("cannot convert to memory event: %w", err)
+		return cdc.TableID{}, fmt.Errorf("cannot convert to memory event: %w", err)
 	}
 
 	// Table name is only available after event has been cast
@@ -70,7 +71,7 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 		// Check to see if we should skip first
 		// This way, we can emit a specific tag to be more clear
 		tags["skipped"] = "yes"
-		return evt.GetTable(), nil
+		return evt.GetTableID(), nil
 	}
 
 	if cfg.Reporting.EmitExecutionTime {
@@ -80,7 +81,7 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 	shouldFlush, flushReason, err := evt.Save(cfg, inMemDB, topicConfig.tc, p.Msg)
 	if err != nil {
 		tags["what"] = "save_fail"
-		return "", fmt.Errorf("event failed to save: %w", err)
+		return cdc.TableID{}, fmt.Errorf("event failed to save: %w", err)
 	}
 
 	if shouldFlush {
@@ -91,8 +92,8 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 		if err != nil {
 			tags["what"] = "flush_fail"
 		}
-		return evt.GetTable(), err
+		return evt.GetTableID(), err
 	}
 
-	return evt.GetTable(), nil
+	return evt.GetTableID(), nil
 }

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/artie-labs/transfer/lib/artie"
+	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/cdc/mongo"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -15,6 +16,13 @@ import (
 	"github.com/artie-labs/transfer/models"
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
+)
+
+var (
+	db      = "lemonade"
+	schema  = "public"
+	table   = "orders"
+	tableID = cdc.NewTableID(schema, table)
 )
 
 func TestProcessMessageFailures(t *testing.T) {
@@ -53,12 +61,6 @@ func TestProcessMessageFailures(t *testing.T) {
 	assert.Empty(t, tableName)
 
 	var mgo mongo.Debezium
-	const (
-		db     = "lemonade"
-		schema = "public"
-		table  = "orders"
-	)
-
 	tcFmtMap := NewTcFmtMap()
 	tcFmtMap.Add(msg.Topic(), TopicConfigFormatter{
 		tc: kafkalib.TopicConfig{
@@ -168,11 +170,11 @@ func TestProcessMessageFailures(t *testing.T) {
 		TopicToConfigFormatMap: tcFmtMap,
 	}
 
-	tableName, err = args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{})
+	actualTableID, err := args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{})
 	assert.NoError(t, err)
-	assert.Equal(t, table, tableName)
+	assert.Equal(t, tableID, actualTableID)
 
-	td := memoryDB.GetOrCreateTableData(table)
+	td := memoryDB.GetOrCreateTableData(tableID)
 	// Check that there are corresponding row(s) in the memory DB
 	assert.Len(t, td.Rows(), 1)
 
@@ -335,12 +337,12 @@ func TestProcessMessageSkip(t *testing.T) {
 			TopicToConfigFormatMap: tcFmtMap,
 		}
 
-		td := memoryDB.GetOrCreateTableData(table)
+		td := memoryDB.GetOrCreateTableData(tableID)
 		assert.Equal(t, 0, int(td.NumberOfRows()))
 
-		tableName, err := args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{})
+		actualTableID, err := args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{})
 		assert.NoError(t, err)
-		assert.Equal(t, table, tableName)
+		assert.Equal(t, tableID, actualTableID)
 		// Because it got skipped.
 		assert.Equal(t, 0, int(td.NumberOfRows()))
 	}
