@@ -4,6 +4,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/optimization"
 )
 
@@ -45,38 +46,38 @@ func (t *TableData) SetTableData(td *optimization.TableData) {
 }
 
 type DatabaseData struct {
-	tableData map[string]*TableData
+	tableData map[cdc.TableID]*TableData
 	sync.RWMutex
 }
 
 func NewMemoryDB() *DatabaseData {
-	tableData := make(map[string]*TableData)
+	tableData := make(map[cdc.TableID]*TableData)
 	return &DatabaseData{
 		tableData: tableData,
 	}
 }
 
-func (d *DatabaseData) GetOrCreateTableData(tableName string) *TableData {
+func (d *DatabaseData) GetOrCreateTableData(tableID cdc.TableID) *TableData {
 	d.Lock()
 	defer d.Unlock()
 
-	table, exists := d.tableData[tableName]
+	table, exists := d.tableData[tableID]
 	if !exists {
 		table = &TableData{
 			Mutex: sync.Mutex{},
 		}
-		d.tableData[tableName] = table
+		d.tableData[tableID] = table
 	}
 
 	return table
 }
 
-func (d *DatabaseData) ClearTableConfig(tableName string) {
+func (d *DatabaseData) ClearTableConfig(tableID cdc.TableID) {
 	d.Lock()
 	defer d.Unlock()
-	d.tableData[tableName].Wipe()
+	d.tableData[tableID].Wipe()
 }
 
-func (d *DatabaseData) TableData() map[string]*TableData {
+func (d *DatabaseData) TableData() map[cdc.TableID]*TableData {
 	return d.tableData
 }

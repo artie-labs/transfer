@@ -1,6 +1,7 @@
 package cdc
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -26,4 +27,24 @@ type Event interface {
 	GetOptionalSchema() (map[string]typing.KindDetails, error)
 	// GetColumns will inspect the envelope's payload right now and return.
 	GetColumns() (*columns.Columns, error)
+}
+
+type TableID struct {
+	Schema string
+	Table  string
+}
+
+func NewTableID(schema, table string) TableID {
+	return TableID{
+		Schema: schema,
+		Table:  table,
+	}
+}
+
+func (t TableID) IsEmpty() bool {
+	return t.Schema == "" && t.Table == ""
+}
+
+func (t TableID) String() string {
+	return fmt.Sprintf("%s.%s", t.Schema, t.Table)
 }
