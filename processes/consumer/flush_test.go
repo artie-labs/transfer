@@ -109,7 +109,7 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 					"cat":                               "dog",
 				}, nil)
 
-				evt, err := event.ToMemoryEvent(mockEvent, map[string]any{"id": fmt.Sprintf("pk-%d", i)}, kafkalib.TopicConfig{}, config.Replication)
+				evt, err := event.ToMemoryEvent(mockEvent, map[string]any{"id": fmt.Sprintf("pk-%d", i)}, kafkalib.TopicConfig{Schema: tableID.Schema}, config.Replication)
 				assert.NoError(f.T(), err)
 
 				kafkaMsg := kafka.Message{Partition: 1, Offset: int64(i)}
