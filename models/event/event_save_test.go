@@ -173,25 +173,26 @@ func (e *EventsTestSuite) TestEventSaveOptionalSchema() {
 
 func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 	var cols columns.Columns
-	for i := 0; i < 50; i++ {
+	for i := range 50 {
 		cols.AddColumn(columns.NewColumn(fmt.Sprintf("col_%d", i), typing.Invalid))
 	}
 
-	evt := Event{
-		table:   "non_existent",
-		columns: &cols,
-		data: map[string]any{
-			"col_1":                             "123",
-			constants.DeleteColumnMarker:        true,
-			constants.OnlySetDeleteColumnMarker: true,
-		},
-		primaryKeys: []string{"col_1"},
-	}
-	expectedTableID := cdc.NewTableID(topicConfig.Schema, "non_existent")
-	_, _, err := evt.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafka.Message{}))
+	mockEvent := &mocks.FakeEvent{}
+	mockEvent.GetTableNameReturns(topicConfig.TableName)
+	mockEvent.GetDataReturns(map[string]any{
+		"col_1":                             "123",
+		constants.DeleteColumnMarker:        true,
+		constants.OnlySetDeleteColumnMarker: true,
+	}, nil)
+	mockEvent.GetColumnsReturns(&cols, nil)
+
+	evt, err := ToMemoryEvent(mockEvent, map[string]any{"col_1": "123"}, topicConfig, config.Replication)
 	assert.NoError(e.T(), err)
 
-	td := e.db.GetOrCreateTableData(expectedTableID)
+	_, _, err = evt.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafka.Message{}))
+	assert.NoError(e.T(), err)
+
+	td := e.db.GetOrCreateTableData(evt.GetTableID())
 	var prevKey string
 	for _, col := range td.ReadOnlyInMemoryCols().GetColumns() {
 		if col.Name() == constants.DeleteColumnMarker || col.Name() == constants.OnlySetDeleteColumnMarker {
@@ -199,7 +200,6 @@ func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 		}
 
 		columnNamePart := strings.Split(col.Name(), "_")[1]
-
 		if prevKey == "" {
 			prevKey = columnNamePart
 			continue
