@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/cdc"
+	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/artie"
@@ -118,32 +120,32 @@ func (e *EventsTestSuite) TestEvent_SaveCasing() {
 }
 
 func (e *EventsTestSuite) TestEventSaveOptionalSchema() {
-	event := Event{
-		table:       "foo",
-		primaryKeys: []string{"id"},
-		data: map[string]any{
-			"id":                                "123",
-			constants.DeleteColumnMarker:        true,
-			constants.OnlySetDeleteColumnMarker: true,
-			"randomCol":                         "dusty",
-			"anotherCOL":                        13.37,
-			"created_at_date_string":            "2023-01-01",
-			"created_at_date_no_schema":         "2023-01-01",
-			"json_object_string":                `{"foo": "bar"}`,
-			"json_object_no_schema":             `{"foo": "bar"}`,
-		},
-		optionalSchema: map[string]typing.KindDetails{
-			// Explicitly casting this as a string.
-			"created_at_date_string": typing.String,
-			"json_object_string":     typing.String,
-		},
-	}
+	mockEvent := &mocks.FakeEvent{}
+	mockEvent.GetTableNameReturns(topicConfig.TableName)
+	mockEvent.GetDataReturns(map[string]any{
+		"id":                                "123",
+		constants.DeleteColumnMarker:        true,
+		constants.OnlySetDeleteColumnMarker: true,
+		"randomCol":                         "dusty",
+		"anotherCOL":                        13.37,
+		"created_at_date_string":            "2023-01-01",
+		"created_at_date_no_schema":         "2023-01-01",
+		"json_object_string":                `{"foo": "bar"}`,
+		"json_object_no_schema":             `{"foo": "bar"}`,
+	}, nil)
+	mockEvent.GetOptionalSchemaReturns(map[string]typing.KindDetails{
+		"created_at_date_string": typing.String,
+		"json_object_string":     typing.String,
+	}, nil)
 
-	expectedTableID := cdc.NewTableID(topicConfig.Schema, "foo")
-	_, _, err := event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafka.Message{}))
+	event, err := ToMemoryEvent(mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication)
 	assert.NoError(e.T(), err)
 
-	td := e.db.GetOrCreateTableData(expectedTableID)
+	kafkaMsg := kafka.Message{}
+	_, _, err = event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafkaMsg))
+	assert.NoError(e.T(), err)
+
+	td := e.db.GetOrCreateTableData(event.GetTableID())
 	{
 		// Optional schema w/ string
 		column, ok := td.ReadOnlyInMemoryCols().GetColumn("created_at_date_string")
