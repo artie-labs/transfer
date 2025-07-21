@@ -64,6 +64,10 @@ func (m Message) Partition() int {
 	return m.message.Partition
 }
 
+func (m Message) Offset() int64 {
+	return m.message.Offset
+}
+
 func (m Message) Key() []byte {
 	return m.message.Key
 }
