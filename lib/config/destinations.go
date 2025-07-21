@@ -24,6 +24,10 @@ func (b *BigQuery) DSN() string {
 	return dsn
 }
 
+func (p Postgres) DSN() string {
+	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s", p.Username, p.Password, p.Host, p.Port, p.Database)
+}
+
 func (m MSSQL) DSN() string {
 	query := url.Values{}
 	query.Add("database", m.Database)
