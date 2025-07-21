@@ -256,6 +256,7 @@ func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {
 		cfg.Iceberg.SessionHeartbeatTimeoutInSecond,
 		cfg.Iceberg.SessionDriverMemory,
 		cfg.Iceberg.SessionExecutorMemory,
+		cfg.Iceberg.SessionName,
 	)
 	if err != nil {
 		return Store{}, err

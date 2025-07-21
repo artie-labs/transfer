@@ -33,6 +33,7 @@ type Client struct {
 	sessionHeartbeatTimeoutInSecond int
 	sessionDriverMemory             string
 	sessionExecutorMemory           string
+	sessionName                     string
 
 	lastChecked time.Time
 }
@@ -183,7 +184,7 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body []byte
 	return doRequestResponse{body: out, httpStatus: resp.StatusCode}, nil
 }
 
-func NewClient(ctx context.Context, url string, config map[string]any, jars []string, heartbeatTimeoutInSecond int, driverMemory, executorMemory string) (*Client, error) {
+func NewClient(ctx context.Context, url string, config map[string]any, jars []string, heartbeatTimeoutInSecond int, driverMemory, executorMemory string, sessionName string) (*Client, error) {
 	client := &Client{
 		url:                             url,
 		httpClient:                      &http.Client{},
@@ -192,6 +193,7 @@ func NewClient(ctx context.Context, url string, config map[string]any, jars []st
 		sessionHeartbeatTimeoutInSecond: cmp.Or(heartbeatTimeoutInSecond, defaultHeartbeatTimeoutInSecond),
 		sessionDriverMemory:             driverMemory,
 		sessionExecutorMemory:           executorMemory,
+		sessionName:                     sessionName,
 	}
 
 	return client, nil
