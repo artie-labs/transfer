@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/retry"
@@ -16,12 +17,11 @@ import (
 )
 
 type Args struct {
-	// If cooldown is passed in, we'll skip the flush if the table has been recently flushed
+	// [coolDown] - Is used to skip the flush if the table has been recently flushed.
 	CoolDown *time.Duration
-	// If specificTable is not passed in, we'll just flush everything.
-	SpecificTable string
-
-	// Reason (reason for the flush)
+	// [specificTableID] - Is used to flush a specific table. If this is not set, we'll flush everything.
+	SpecificTableID cdc.TableID
+	// [reason] - Is used to track the reason for the flush.
 	Reason string
 }
 
@@ -38,27 +38,27 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 	allTables := inMemDB.TableData()
 	inMemDB.RUnlock()
 
-	if args.SpecificTable != "" {
-		if _, ok := allTables[args.SpecificTable]; !ok {
+	if !args.SpecificTableID.IsEmpty() {
+		if _, ok := allTables[args.SpecificTableID]; !ok {
 			// Should never happen
-			return fmt.Errorf("table %q does not exist in the in-memory database", args.SpecificTable)
+			return fmt.Errorf("table %q does not exist in the in-memory database", args.SpecificTableID)
 		}
 	}
 
 	// Flush will take everything in memory and call the destination to create temp tables.
 	var wg sync.WaitGroup
-	for tableName, tableData := range allTables {
-		if args.SpecificTable != "" && tableName != args.SpecificTable {
+	for tableID, tableData := range allTables {
+		if !args.SpecificTableID.IsEmpty() && tableID != args.SpecificTableID {
 			// If the table is specified within args and the table does not match the database, skip this flush.
 			continue
 		}
 
 		wg.Add(1)
-		go func(_tableName string, _tableData *models.TableData) {
+		go func(_tableID cdc.TableID, _tableData *models.TableData) {
 			defer wg.Done()
 
 			if args.CoolDown != nil && _tableData.ShouldSkipFlush(*args.CoolDown) {
-				slog.Debug("Skipping flush because we are currently in a flush cooldown", slog.String("tableName", _tableName))
+				slog.Debug("Skipping flush because we are currently in a flush cooldown", slog.String("tableID", _tableID.String()))
 				return
 			}
 
@@ -82,30 +82,30 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 			start := time.Now()
 			tags := map[string]string{
 				"mode":     _tableData.Mode().String(),
-				"table":    _tableName,
+				"table":    _tableID.Table,
 				"database": _tableData.TopicConfig().Database,
 				"schema":   _tableData.TopicConfig().Schema,
 				"reason":   args.Reason,
 			}
 
 			what, err := retry.WithRetriesAndResult(retryCfg, func(_ int, _ error) (string, error) {
-				return flush(ctx, dest, _tableData, tableName, action, inMemDB.ClearTableConfig)
+				return flush(ctx, dest, _tableData, _tableID, action, inMemDB.ClearTableConfig)
 			})
 
 			if err != nil {
-				slog.Error(fmt.Sprintf("Failed to %s", action), slog.Any("err", err), slog.String("tableName", _tableName))
+				slog.Error(fmt.Sprintf("Failed to %s", action), slog.Any("err", err), slog.String("tableID", _tableID.String()))
 			}
 
 			tags["what"] = what
 			metricsClient.Timing("flush", time.Since(start), tags)
-		}(tableName, tableData)
+		}(tableID, tableData)
 	}
 
 	wg.Wait()
 	return nil
 }
 
-func flush(ctx context.Context, dest destination.Baseline, _tableData *models.TableData, _tableName string, action string, clearTableConfig func(string)) (string, error) {
+func flush(ctx context.Context, dest destination.Baseline, _tableData *models.TableData, _tableID cdc.TableID, action string, clearTableConfig func(cdc.TableID)) (string, error) {
 	// This is added so that we have a new temporary table suffix for each merge / append.
 	_tableData.ResetTempTableSuffix()
 
@@ -119,7 +119,7 @@ func flush(ctx context.Context, dest destination.Baseline, _tableData *models.Ta
 	}
 
 	if err != nil {
-		return "merge_fail", fmt.Errorf("failed to flush %q: %w", _tableName, err)
+		return "merge_fail", fmt.Errorf("failed to flush %q: %w", _tableID.String(), err)
 	}
 
 	if commitTransaction {
@@ -127,10 +127,10 @@ func flush(ctx context.Context, dest destination.Baseline, _tableData *models.Ta
 			return "commit_fail", fmt.Errorf("failed to commit kafka offset: %w", err)
 		}
 
-		slog.Info(fmt.Sprintf("%s success, clearing memory...", stringutil.CapitalizeFirstLetter(action)), slog.String("tableName", _tableName))
-		clearTableConfig(_tableName)
+		slog.Info(fmt.Sprintf("%s success, clearing memory...", stringutil.CapitalizeFirstLetter(action)), slog.String("tableID", _tableID.String()))
+		clearTableConfig(_tableID)
 	} else {
-		slog.Info(fmt.Sprintf("%s success, not committing offset yet", stringutil.CapitalizeFirstLetter(action)), slog.String("tableName", _tableName))
+		slog.Info(fmt.Sprintf("%s success, not committing offset yet", stringutil.CapitalizeFirstLetter(action)), slog.String("tableID", _tableID.String()))
 	}
 
 	return "success", nil

@@ -103,13 +103,13 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 					TopicToConfigFormatMap: tcFmtMap,
 				}
 
-				tableName, processErr := args.process(ctx, cfg, inMemDB, dest, metricsClient)
-				if processErr != nil {
-					logger.Fatal("Failed to process message", slog.Any("err", processErr), slog.String("topic", kafkaMsg.Topic))
+				tableID, err := args.process(ctx, cfg, inMemDB, dest, metricsClient)
+				if err != nil {
+					logger.Fatal("Failed to process message", slog.Any("err", err), slog.String("topic", kafkaMsg.Topic))
 				}
 
-				msg.EmitIngestionLag(metricsClient, cfg.Mode, kafkaConsumer.Config().GroupID, tableName)
-				msg.EmitRowLag(metricsClient, cfg.Mode, kafkaConsumer.Config().GroupID, tableName)
+				msg.EmitIngestionLag(metricsClient, cfg.Mode, kafkaConsumer.Config().GroupID, tableID.Table)
+				msg.EmitRowLag(metricsClient, cfg.Mode, kafkaConsumer.Config().GroupID, tableID.Table)
 			}
 		}(topic)
 	}

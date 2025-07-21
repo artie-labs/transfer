@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
 	"github.com/artie-labs/transfer/lib/artie"
@@ -28,23 +30,23 @@ func (e *EventsTestSuite) TestSaveEvent() {
 	anotherCol := "DuStY tHE MINI aussie"
 	anotherLowerCol := "dusty__the__mini__aussie"
 
-	event := Event{
-		table:       "foo",
-		primaryKeys: []string{"id"},
-		data: map[string]any{
-			"id":                                "123",
-			constants.DeleteColumnMarker:        true,
-			constants.OnlySetDeleteColumnMarker: true,
-			expectedCol:                         "dusty",
-			anotherCol:                          13.37,
-		},
-	}
+	mockEvent := &mocks.FakeEvent{}
+	mockEvent.GetTableNameReturns(topicConfig.TableName)
+	mockEvent.GetDataReturns(map[string]any{
+		"id":                                "123",
+		constants.DeleteColumnMarker:        true,
+		constants.OnlySetDeleteColumnMarker: true,
+		expectedCol:                         "dusty",
+		anotherCol:                          13.37,
+	}, nil)
 
-	kafkaMsg := kafka.Message{}
-	_, _, err := event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafkaMsg))
+	event, err := ToMemoryEvent(mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication)
 	assert.NoError(e.T(), err)
 
-	optimization := e.db.GetOrCreateTableData("foo")
+	_, _, err = event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafka.Message{}))
+	assert.NoError(e.T(), err)
+
+	optimization := e.db.GetOrCreateTableData(event.GetTableID())
 	// Check the in-memory DB columns.
 	var found int
 	for _, col := range optimization.ReadOnlyInMemoryCols().GetColumns() {
@@ -72,34 +74,33 @@ func (e *EventsTestSuite) TestSaveEvent() {
 		},
 	}
 
-	newKafkaMsg := kafka.Message{}
-	_, _, err = edgeCaseEvent.Save(e.cfg, e.db, topicConfig, artie.NewMessage(newKafkaMsg))
+	_, _, err = edgeCaseEvent.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafka.Message{}))
 	assert.NoError(e.T(), err)
 
-	td := e.db.GetOrCreateTableData("foo")
+	td := e.db.GetOrCreateTableData(edgeCaseEvent.GetTableID())
 	inMemCol, ok := td.ReadOnlyInMemoryCols().GetColumn(badColumn)
 	assert.True(e.T(), ok)
 	assert.Equal(e.T(), typing.Invalid, inMemCol.KindDetails)
 }
 
 func (e *EventsTestSuite) TestEvent_SaveCasing() {
-	event := Event{
-		table:       "foo",
-		primaryKeys: []string{"id"},
-		data: map[string]any{
-			"id":                                "123",
-			constants.DeleteColumnMarker:        true,
-			constants.OnlySetDeleteColumnMarker: true,
-			"randomCol":                         "dusty",
-			"anotherCOL":                        13.37,
-		},
-	}
+	mockEvent := &mocks.FakeEvent{}
+	mockEvent.GetTableNameReturns(topicConfig.TableName)
+	mockEvent.GetDataReturns(map[string]any{
+		"id":                                "123",
+		constants.DeleteColumnMarker:        true,
+		constants.OnlySetDeleteColumnMarker: true,
+		"randomCol":                         "dusty",
+		"anotherCOL":                        13.37,
+	}, nil)
 
-	kafkaMsg := kafka.Message{}
-	_, _, err := event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafkaMsg))
+	event, err := ToMemoryEvent(mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication)
 	assert.NoError(e.T(), err)
 
-	td := e.db.GetOrCreateTableData("foo")
+	_, _, err = event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafka.Message{}))
+	assert.NoError(e.T(), err)
+
+	td := e.db.GetOrCreateTableData(event.GetTableID())
 	var rowData map[string]any
 	for _, row := range td.Rows() {
 		if id, ok := row.GetValue("id"); ok {
@@ -117,32 +118,32 @@ func (e *EventsTestSuite) TestEvent_SaveCasing() {
 }
 
 func (e *EventsTestSuite) TestEventSaveOptionalSchema() {
-	event := Event{
-		table:       "foo",
-		primaryKeys: []string{"id"},
-		data: map[string]any{
-			"id":                                "123",
-			constants.DeleteColumnMarker:        true,
-			constants.OnlySetDeleteColumnMarker: true,
-			"randomCol":                         "dusty",
-			"anotherCOL":                        13.37,
-			"created_at_date_string":            "2023-01-01",
-			"created_at_date_no_schema":         "2023-01-01",
-			"json_object_string":                `{"foo": "bar"}`,
-			"json_object_no_schema":             `{"foo": "bar"}`,
-		},
-		optionalSchema: map[string]typing.KindDetails{
-			// Explicitly casting this as a string.
-			"created_at_date_string": typing.String,
-			"json_object_string":     typing.String,
-		},
-	}
+	mockEvent := &mocks.FakeEvent{}
+	mockEvent.GetTableNameReturns(topicConfig.TableName)
+	mockEvent.GetDataReturns(map[string]any{
+		"id":                                "123",
+		constants.DeleteColumnMarker:        true,
+		constants.OnlySetDeleteColumnMarker: true,
+		"randomCol":                         "dusty",
+		"anotherCOL":                        13.37,
+		"created_at_date_string":            "2023-01-01",
+		"created_at_date_no_schema":         "2023-01-01",
+		"json_object_string":                `{"foo": "bar"}`,
+		"json_object_no_schema":             `{"foo": "bar"}`,
+	}, nil)
+	mockEvent.GetOptionalSchemaReturns(map[string]typing.KindDetails{
+		"created_at_date_string": typing.String,
+		"json_object_string":     typing.String,
+	}, nil)
 
-	kafkaMsg := kafka.Message{}
-	_, _, err := event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafkaMsg))
+	event, err := ToMemoryEvent(mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication)
 	assert.NoError(e.T(), err)
 
-	td := e.db.GetOrCreateTableData("foo")
+	kafkaMsg := kafka.Message{}
+	_, _, err = event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafkaMsg))
+	assert.NoError(e.T(), err)
+
+	td := e.db.GetOrCreateTableData(event.GetTableID())
 	{
 		// Optional schema w/ string
 		column, ok := td.ReadOnlyInMemoryCols().GetColumn("created_at_date_string")
@@ -170,26 +171,26 @@ func (e *EventsTestSuite) TestEventSaveOptionalSchema() {
 
 func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 	var cols columns.Columns
-	for i := 0; i < 50; i++ {
+	for i := range 50 {
 		cols.AddColumn(columns.NewColumn(fmt.Sprintf("col_%d", i), typing.Invalid))
 	}
 
-	evt := Event{
-		table:   "non_existent",
-		columns: &cols,
-		data: map[string]any{
-			"col_1":                             "123",
-			constants.DeleteColumnMarker:        true,
-			constants.OnlySetDeleteColumnMarker: true,
-		},
-		primaryKeys: []string{"col_1"},
-	}
+	mockEvent := &mocks.FakeEvent{}
+	mockEvent.GetTableNameReturns(topicConfig.TableName)
+	mockEvent.GetDataReturns(map[string]any{
+		"col_1":                             "123",
+		constants.DeleteColumnMarker:        true,
+		constants.OnlySetDeleteColumnMarker: true,
+	}, nil)
+	mockEvent.GetColumnsReturns(&cols, nil)
 
-	kafkaMsg := kafka.Message{}
-	_, _, err := evt.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafkaMsg))
+	evt, err := ToMemoryEvent(mockEvent, map[string]any{"col_1": "123"}, topicConfig, config.Replication)
 	assert.NoError(e.T(), err)
 
-	td := e.db.GetOrCreateTableData("non_existent")
+	_, _, err = evt.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafka.Message{}))
+	assert.NoError(e.T(), err)
+
+	td := e.db.GetOrCreateTableData(evt.GetTableID())
 	var prevKey string
 	for _, col := range td.ReadOnlyInMemoryCols().GetColumns() {
 		if col.Name() == constants.DeleteColumnMarker || col.Name() == constants.OnlySetDeleteColumnMarker {
@@ -197,7 +198,6 @@ func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 		}
 
 		columnNamePart := strings.Split(col.Name(), "_")[1]
-
 		if prevKey == "" {
 			prevKey = columnNamePart
 			continue
@@ -230,25 +230,26 @@ func (e *EventsTestSuite) TestEventSaveColumns() {
 	cols.AddColumn(columns.NewColumn("randomCol", typing.Invalid))
 	cols.AddColumn(columns.NewColumn("anotherCOL", typing.Invalid))
 	cols.AddColumn(columns.NewColumn("created_at_date_string", typing.Invalid))
-	event := Event{
-		table:       "foo",
-		columns:     &cols,
-		primaryKeys: []string{"id"},
-		data: map[string]any{
-			"id":                                "123",
-			constants.DeleteColumnMarker:        true,
-			constants.OnlySetDeleteColumnMarker: true,
-			"randomCol":                         "dusty",
-			"anotherCOL":                        13.37,
-			"created_at_date_string":            "2023-01-01",
-		},
-	}
 
-	kafkaMsg := kafka.Message{}
-	_, _, err := event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafkaMsg))
+	mockEvent := &mocks.FakeEvent{}
+	mockEvent.GetTableNameReturns(topicConfig.TableName)
+	mockEvent.GetColumnsReturns(&cols, nil)
+	mockEvent.GetDataReturns(map[string]any{
+		"id":                                "123",
+		constants.DeleteColumnMarker:        true,
+		constants.OnlySetDeleteColumnMarker: true,
+		"randomCol":                         "dusty",
+		"anotherCOL":                        13.37,
+		"created_at_date_string":            "2023-01-01",
+	}, nil)
+
+	event, err := ToMemoryEvent(mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication)
 	assert.NoError(e.T(), err)
 
-	td := e.db.GetOrCreateTableData("foo")
+	_, _, err = event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafka.Message{}))
+	assert.NoError(e.T(), err)
+
+	td := e.db.GetOrCreateTableData(event.GetTableID())
 	{
 		// String
 		column, ok := td.ReadOnlyInMemoryCols().GetColumn("randomcol")
@@ -282,24 +283,24 @@ func (e *EventsTestSuite) TestEventSaveColumns() {
 }
 
 func (e *EventsTestSuite) TestEventSaveTestDeleteFlag() {
-	event := Event{
-		table:       "foo",
-		primaryKeys: []string{"id"},
-		data: map[string]any{
-			"id":                                "123",
-			constants.DeleteColumnMarker:        true,
-			constants.OnlySetDeleteColumnMarker: true,
-		},
-		deleted: true,
-	}
+	mockEvent := &mocks.FakeEvent{}
+	mockEvent.GetTableNameReturns(topicConfig.TableName)
+	mockEvent.DeletePayloadReturns(true)
+	mockEvent.GetDataReturns(map[string]any{
+		"id":                                "123",
+		constants.DeleteColumnMarker:        true,
+		constants.OnlySetDeleteColumnMarker: true,
+	}, nil)
 
-	kafkaMsg := kafka.Message{}
-	_, _, err := event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafkaMsg))
+	event, err := ToMemoryEvent(mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication)
 	assert.NoError(e.T(), err)
-	assert.False(e.T(), e.db.GetOrCreateTableData("foo").ContainOtherOperations())
+	_, _, err = event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafka.Message{}))
+	assert.NoError(e.T(), err)
+	assert.False(e.T(), e.db.GetOrCreateTableData(event.GetTableID()).ContainOtherOperations())
+	assert.True(e.T(), e.db.GetOrCreateTableData(event.GetTableID()).ContainsHardDeletes())
 
 	event.deleted = false
-	_, _, err = event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafkaMsg))
+	_, _, err = event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafka.Message{}))
 	assert.NoError(e.T(), err)
-	assert.True(e.T(), e.db.GetOrCreateTableData("foo").ContainOtherOperations())
+	assert.True(e.T(), e.db.GetOrCreateTableData(event.GetTableID()).ContainOtherOperations())
 }
