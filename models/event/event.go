@@ -24,6 +24,7 @@ import (
 
 type Event struct {
 	table          string
+	tableID        cdc.TableID
 	data           map[string]any // json serialized column data
 	optionalSchema map[string]typing.KindDetails
 	columns        *columns.Columns
@@ -33,6 +34,10 @@ type Event struct {
 	// [executionTime] - The database timestamp for when the event was created.
 	executionTime time.Time
 	mode          config.Mode
+}
+
+func (e Event) GetTableID() cdc.TableID {
+	return e.tableID
 }
 
 func (e Event) GetTable() string {
@@ -185,6 +190,7 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 		// [primaryKeys] needs to be sorted so that we have a deterministic way to identify a row in our in-memory db.
 		primaryKeys:    pks,
 		table:          tblName,
+		tableID:        cdc.NewTableID(tc.Schema, tblName),
 		optionalSchema: optionalSchema,
 		columns:        cols,
 		data:           transformData(evtData, tc),
@@ -270,7 +276,7 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 	}
 
 	// Does the table exist?
-	td := inMemDB.GetOrCreateTableData(e.table)
+	td := inMemDB.GetOrCreateTableData(e.tableID)
 	td.Lock()
 	defer td.Unlock()
 	if td.Empty() {
