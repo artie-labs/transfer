@@ -59,6 +59,7 @@ func (c *Client) newSession(ctx context.Context, kind SessionKind, blockUntilRea
 		HeartbeatTimeoutInSecond: c.sessionHeartbeatTimeoutInSecond,
 		DriverMemory:             c.sessionDriverMemory,
 		ExecutorMemory:           c.sessionExecutorMemory,
+		Name:                     c.sessionName,
 	}
 
 	body, err := json.Marshal(request)
