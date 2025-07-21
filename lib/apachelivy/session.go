@@ -52,6 +52,10 @@ func (c *Client) ensureSession(ctx context.Context, forceCheck bool) error {
 }
 
 func (c *Client) FindOrCreateSession(ctx context.Context, kind SessionKind, blockUntilReady bool) error {
+	return c.newSession(ctx, kind, blockUntilReady)
+}
+
+func (c *Client) newSession(ctx context.Context, kind SessionKind, blockUntilReady bool) error {
 	sessions, err := c.ListSessions(ctx)
 	if err != nil {
 		return err
@@ -64,10 +68,6 @@ func (c *Client) FindOrCreateSession(ctx context.Context, kind SessionKind, bloc
 		}
 	}
 
-	return c.newSession(ctx, kind, blockUntilReady)
-}
-
-func (c *Client) newSession(ctx context.Context, kind SessionKind, blockUntilReady bool) error {
 	request := CreateSessionRequest{
 		Kind:                     string(kind),
 		Jars:                     c.sessionJars,
