@@ -84,6 +84,7 @@ const (
 	BigQuery   DestinationKind = "bigquery"
 	Databricks DestinationKind = "databricks"
 	MSSQL      DestinationKind = "mssql"
+	Postgres   DestinationKind = "postgres"
 	Redshift   DestinationKind = "redshift"
 	S3         DestinationKind = "s3"
 	Snowflake  DestinationKind = "snowflake"

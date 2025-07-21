@@ -8,6 +8,7 @@ import (
 	"github.com/artie-labs/transfer/clients/databricks"
 	"github.com/artie-labs/transfer/clients/iceberg"
 	"github.com/artie-labs/transfer/clients/mssql"
+	"github.com/artie-labs/transfer/clients/postgres"
 	"github.com/artie-labs/transfer/clients/redshift"
 	"github.com/artie-labs/transfer/clients/s3"
 	"github.com/artie-labs/transfer/clients/snowflake"
@@ -51,6 +52,8 @@ func LoadDestination(ctx context.Context, cfg config.Config, store *db.Store) (d
 		return databricks.LoadStore(cfg)
 	case constants.MSSQL:
 		return mssql.LoadStore(cfg)
+	case constants.Postgres:
+		return postgres.LoadStore(cfg)
 	case constants.Redshift:
 		return redshift.LoadRedshift(ctx, cfg, store)
 	}
