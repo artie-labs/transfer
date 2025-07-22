@@ -50,8 +50,7 @@ func (PostgresDialect) BuildDropTableQuery(tableID sql.TableIdentifier) string {
 }
 
 func (PostgresDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) string {
-	// TODO: To implement
-	return ""
+	return fmt.Sprintf("TRUNCATE TABLE %s", tableID.FullyQualifiedName())
 }
 
 func (PostgresDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string {

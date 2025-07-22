@@ -90,6 +90,34 @@ func testTable(ctx context.Context, store *postgres.Store, pgDialect dialect.Pos
 		return fmt.Errorf("failed to query table: %w", err)
 	}
 
+	// Now let's insert some rows so we can test truncate.
+	if _, err := store.ExecContext(ctx, fmt.Sprintf(`INSERT INTO %s (pk, col) VALUES (1, 'test')`, testTableName)); err != nil {
+		return fmt.Errorf("failed to insert row: %w", err)
+	}
+
+	rowCount, err := getRowCount(ctx, store, testTableName)
+	if err != nil {
+		return fmt.Errorf("failed to verify rows: %w", err)
+	}
+
+	if rowCount == 0 {
+		return fmt.Errorf("expected some rows, got none")
+	}
+
+	// Now let's truncate the table.
+	if _, err := store.ExecContext(ctx, pgDialect.BuildTruncateTableQuery(testTableID)); err != nil {
+		return fmt.Errorf("failed to truncate table: %w", err)
+	}
+
+	rowCount, err = getRowCount(ctx, store, testTableName)
+	if err != nil {
+		return fmt.Errorf("failed to verify rows: %w", err)
+	}
+
+	if rowCount != 0 {
+		return fmt.Errorf("expected 0 rows, got %d", rowCount)
+	}
+
 	// Now let's drop the table.
 	if _, err := store.ExecContext(ctx, pgDialect.BuildDropTableQuery(testTableID)); err != nil {
 		return fmt.Errorf("failed to drop table: %w", err)
@@ -101,4 +129,13 @@ func testTable(ctx context.Context, store *postgres.Store, pgDialect dialect.Pos
 	}
 
 	return nil
+}
+
+func getRowCount(ctx context.Context, store db.Store, testTableName string) (int, error) {
+	var rowCount int
+	if err := store.QueryRowContext(ctx, fmt.Sprintf(`SELECT COUNT(*) FROM %s`, testTableName)).Scan(&rowCount); err != nil {
+		return 0, fmt.Errorf("failed to query table: %w", err)
+	}
+
+	return rowCount, nil
 }
