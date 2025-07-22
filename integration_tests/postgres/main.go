@@ -2,11 +2,13 @@ package postgres
 
 import (
 	"cmp"
+	"context"
 	"log"
 	"os"
 
+	"github.com/artie-labs/transfer/clients/postgres"
+	"github.com/artie-labs/transfer/integration_tests/postgres/checks"
 	"github.com/artie-labs/transfer/lib/config"
-	"gorm.io/driver/postgres"
 )
 
 func main() {
@@ -18,14 +20,14 @@ func main() {
 		Database: "postgres",
 	}
 
-	store, err := postgres.New(cfg)
+	store, err := postgres.LoadStore(config.Config{Postgres: &cfg})
 	if err != nil {
 		log.Fatalf("failed to create postgres client: %v", err)
 	}
 
-	db, err := store.DB()
-	if err != nil {
-		log.Fatalf("failed to get postgres client: %v", err)
-	}
+	ctx := context.Background()
 
+	if err := checks.TestDialect(ctx, store.Store, store.Dialect()); err != nil {
+		log.Fatalf("failed to test dialect: %v", err)
+	}
 }
