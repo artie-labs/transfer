@@ -27,8 +27,6 @@ func TestDialect(ctx context.Context, store db.Store, _dialect sql.Dialect) erro
 		return fmt.Errorf("expected error when querying non-existent table, got nil")
 	}
 
-	fmt.Println("###", err)
-
 	if !pgDialect.IsTableDoesNotExistErr(err) {
 		return fmt.Errorf("expected table does not exist error, got %v", err)
 	}
@@ -37,13 +35,12 @@ func TestDialect(ctx context.Context, store db.Store, _dialect sql.Dialect) erro
 }
 
 func testQuoteIdentifier(ctx context.Context, store db.Store, pgDialect dialect.PostgresDialect) error {
+	expectedRows := 5
 	// Test quote identifiers.
 	testTableName := fmt.Sprintf("test_%s", strings.ToLower(stringutil.Random(5)))
 	if _, err := store.ExecContext(ctx, fmt.Sprintf(`CREATE TABLE %s (pk int PRIMARY KEY, "EscapedCol" text)`, testTableName)); err != nil {
 		return fmt.Errorf("failed to create table: %w", err)
 	}
-
-	expectedRows := 5
 
 	// Now let's insert some rows
 	for i := range expectedRows {

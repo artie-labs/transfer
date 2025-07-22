@@ -22,20 +22,7 @@ func (PostgresDialect) EscapeStruct(value string) string {
 	return sql.QuoteLiteral(value)
 }
 
-func (PostgresDialect) IsColumnAlreadyExistsErr(err error) bool {
-	if err == nil {
-		fmt.Println("or here?")
-		return false
-	}
-
-	if pgErr, ok := err.(*pgconn.PgError); ok {
-		fmt.Println(pgErr)
-		fmt.Println("here???")
-		return pgErr.Code == "42P01"
-	}
-
-	fmt.Println("### here ", err)
-
+func (PostgresDialect) IsColumnAlreadyExistsErr(_ error) bool {
 	return false
 }
 
