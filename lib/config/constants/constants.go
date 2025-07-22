@@ -5,6 +5,10 @@ import (
 )
 
 const (
+	// Environment variables:
+	// [KafkaHWMEnvVar] - If set, we will have an additional Kafka high watermark check to prevent duplicate messages.
+	KafkaHWMEnvVar = "KAFKA_HWM"
+
 	NullValuePlaceholder             = "__artie_null_value"
 	ToastUnavailableValuePlaceholder = "__debezium_unavailable_value"
 

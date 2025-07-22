@@ -3,6 +3,7 @@ package environ
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -19,4 +20,12 @@ func MustGetEnv(envVars ...string) error {
 	}
 
 	return nil
+}
+
+func GetBoolEnv(key string) (bool, error) {
+	if val := os.Getenv(key); val != "" {
+		return strconv.ParseBool(val)
+	}
+
+	return false, nil
 }
