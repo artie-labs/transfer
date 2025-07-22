@@ -5,13 +5,15 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/artie-labs/transfer/clients/postgres"
 	"github.com/artie-labs/transfer/clients/postgres/dialect"
 	"github.com/artie-labs/transfer/lib/db"
+	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
-func TestDialect(ctx context.Context, store db.Store, _dialect sql.Dialect) error {
+func TestDialect(ctx context.Context, store *postgres.Store, _dialect sql.Dialect) error {
 	pgDialect, ok := _dialect.(dialect.PostgresDialect)
 	if !ok {
 		return fmt.Errorf("dialect is not a postgres dialect")
@@ -21,14 +23,9 @@ func TestDialect(ctx context.Context, store db.Store, _dialect sql.Dialect) erro
 		return fmt.Errorf("failed to test quote identifier: %w", err)
 	}
 
-	// Try to query for a table and it doesn't exist.
-	_, err := store.QueryContext(ctx, `SELECT * FROM non_existent_table`)
-	if err == nil {
-		return fmt.Errorf("expected error when querying non-existent table, got nil")
-	}
-
-	if !pgDialect.IsTableDoesNotExistErr(err) {
-		return fmt.Errorf("expected table does not exist error, got %v", err)
+	// Test table
+	if err := testTable(ctx, store, pgDialect); err != nil {
+		return fmt.Errorf("failed to test table: %w", err)
 	}
 
 	return nil
@@ -71,6 +68,31 @@ func testQuoteIdentifier(ctx context.Context, store db.Store, pgDialect dialect.
 
 	if len(expectedValues) != expectedRows {
 		return fmt.Errorf("expected %d rows, got %d", expectedRows, len(expectedValues))
+	}
+
+	return nil
+}
+
+func testTable(ctx context.Context, store *postgres.Store, pgDialect dialect.PostgresDialect) error {
+	testTableName := fmt.Sprintf("test_%s", strings.ToLower(stringutil.Random(5)))
+	testTableID := store.IdentifierFor(kafkalib.DatabaseAndSchemaPair{Schema: "public"}, testTableName)
+	_, err := store.QueryContext(ctx, fmt.Sprintf(`SELECT * FROM %s`, testTableName))
+	if err == nil {
+		return fmt.Errorf("expected error when querying non-existent table, got nil")
+	}
+
+	if !pgDialect.IsTableDoesNotExistErr(err) {
+		return fmt.Errorf("expected table does not exist error, got %v", err)
+	}
+
+	// Now let's create the table and it should then exist.
+	if _, err := store.ExecContext(ctx, pgDialect.BuildCreateTableQuery(testTableID, false, []string{"pk int PRIMARY KEY", "col text"})); err != nil {
+		return fmt.Errorf("failed to create table: %w", err)
+	}
+
+	// Now let's query the table and it should exist.
+	if _, err = store.QueryContext(ctx, fmt.Sprintf(`SELECT * FROM %s`, testTableName)); err != nil {
+		return fmt.Errorf("failed to query table: %w", err)
 	}
 
 	return nil

@@ -28,7 +28,7 @@ func main() {
 
 	ctx := context.Background()
 
-	if err := checks.TestDialect(ctx, store.Store, store.Dialect()); err != nil {
+	if err := checks.TestDialect(ctx, store, store.Dialect()); err != nil {
 		log.Fatalf("failed to test dialect: %v", err)
 	}
 
