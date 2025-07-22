@@ -1,6 +1,8 @@
 name: Integration tests
 
 on: [push]
+permissions:
+    contents: read
 jobs:
     Postgres:
         runs-on: ubuntu-24.04
