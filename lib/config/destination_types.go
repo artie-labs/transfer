@@ -25,6 +25,14 @@ type Databricks struct {
 	Volume              string `yaml:"volume"`
 }
 
+type Postgres struct {
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+	Database string `yaml:"database"`
+}
+
 type MSSQL struct {
 	Host     string `yaml:"host"`
 	Port     int    `yaml:"port"`
