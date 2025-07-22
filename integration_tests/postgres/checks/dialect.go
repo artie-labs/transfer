@@ -89,47 +89,50 @@ func testTable(ctx context.Context, store *postgres.Store, pgDialect dialect.Pos
 	if _, err := store.QueryContext(ctx, fmt.Sprintf(`SELECT * FROM %s`, testTableName)); err != nil {
 		return fmt.Errorf("failed to query table: %w", err)
 	}
+	{
+		// Now let's insert some rows so we can test truncate.
+		if _, err := store.ExecContext(ctx, fmt.Sprintf(`INSERT INTO %s (pk, col) VALUES (1, 'test')`, testTableName)); err != nil {
+			return fmt.Errorf("failed to insert row: %w", err)
+		}
 
-	// Now let's insert some rows so we can test truncate.
-	if _, err := store.ExecContext(ctx, fmt.Sprintf(`INSERT INTO %s (pk, col) VALUES (1, 'test')`, testTableName)); err != nil {
-		return fmt.Errorf("failed to insert row: %w", err)
+		rowCount, err := getRowCount(ctx, store, testTableName)
+		if err != nil {
+			return fmt.Errorf("failed to verify rows: %w", err)
+		}
+
+		if rowCount == 0 {
+			return fmt.Errorf("expected some rows, got none")
+		}
+
 	}
+	{
+		// Now let's truncate the table and there shouldn't be any rows.
+		if _, err := store.ExecContext(ctx, pgDialect.BuildTruncateTableQuery(testTableID)); err != nil {
+			return fmt.Errorf("failed to truncate table: %w", err)
+		}
 
-	rowCount, err := getRowCount(ctx, store, testTableName)
-	if err != nil {
-		return fmt.Errorf("failed to verify rows: %w", err)
-	}
+		rowCount, err := getRowCount(ctx, store, testTableName)
+		if err != nil {
+			return fmt.Errorf("failed to verify rows: %w", err)
+		}
 
-	if rowCount == 0 {
-		return fmt.Errorf("expected some rows, got none")
-	}
-
-	// Now let's truncate the table.
-	if _, err := store.ExecContext(ctx, pgDialect.BuildTruncateTableQuery(testTableID)); err != nil {
-		return fmt.Errorf("failed to truncate table: %w", err)
-	}
-
-	rowCount, err = getRowCount(ctx, store, testTableName)
-	if err != nil {
-		return fmt.Errorf("failed to verify rows: %w", err)
-	}
-
-	if rowCount != 0 {
-		return fmt.Errorf("expected 0 rows, got %d", rowCount)
-	}
-
-	// Now let's drop the table and run this in a loop because it's idempotent.
-	for range 3 {
-		if _, err := store.ExecContext(ctx, pgDialect.BuildDropTableQuery(testTableID)); err != nil {
-			return fmt.Errorf("failed to drop table: %w", err)
+		if rowCount != 0 {
+			return fmt.Errorf("expected 0 rows, got %d", rowCount)
 		}
 	}
+	{
+		// Now let's drop the table and run this in a loop because it's idempotent.
+		for range 3 {
+			if _, err := store.ExecContext(ctx, pgDialect.BuildDropTableQuery(testTableID)); err != nil {
+				return fmt.Errorf("failed to drop table: %w", err)
+			}
+		}
 
-	// Now let's query and the table should not exist anymore.
-	if _, err := store.QueryContext(ctx, fmt.Sprintf(`SELECT * FROM %s`, testTableName)); !pgDialect.IsTableDoesNotExistErr(err) {
-		return fmt.Errorf("expected table does not exist error, got %w", err)
+		// Now let's query and the table should not exist anymore.
+		if _, err := store.QueryContext(ctx, fmt.Sprintf(`SELECT * FROM %s`, testTableName)); !pgDialect.IsTableDoesNotExistErr(err) {
+			return fmt.Errorf("expected table does not exist error, got %w", err)
+		}
 	}
-
 	return nil
 }
 
