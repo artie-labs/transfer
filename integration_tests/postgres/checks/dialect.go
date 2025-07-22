@@ -12,6 +12,14 @@ import (
 )
 
 func TestDialect(ctx context.Context, store db.Store, _dialect sql.Dialect) error {
+	if err := testQuoteIdentifier(ctx, store, _dialect); err != nil {
+		return fmt.Errorf("failed to test quote identifier: %w", err)
+	}
+
+	return nil
+}
+
+func testQuoteIdentifier(ctx context.Context, store db.Store, _dialect sql.Dialect) error {
 	pgDialect, ok := _dialect.(dialect.PostgresDialect)
 	if !ok {
 		return fmt.Errorf("dialect is not a postgres dialect")
