@@ -76,13 +76,8 @@ func testQuoteIdentifier(ctx context.Context, store db.Store, pgDialect dialect.
 func testTable(ctx context.Context, store *postgres.Store, pgDialect dialect.PostgresDialect) error {
 	testTableName := fmt.Sprintf("test_%s", strings.ToLower(stringutil.Random(5)))
 	testTableID := store.IdentifierFor(kafkalib.DatabaseAndSchemaPair{Schema: "public"}, testTableName)
-	_, err := store.QueryContext(ctx, fmt.Sprintf(`SELECT * FROM %s`, testTableName))
-	if err == nil {
+	if _, err := store.QueryContext(ctx, fmt.Sprintf(`SELECT * FROM %s`, testTableName)); !pgDialect.IsTableDoesNotExistErr(err) {
 		return fmt.Errorf("expected error when querying non-existent table, got nil")
-	}
-
-	if !pgDialect.IsTableDoesNotExistErr(err) {
-		return fmt.Errorf("expected table does not exist error, got %v", err)
 	}
 
 	// Now let's create the table and it should then exist.
@@ -91,8 +86,18 @@ func testTable(ctx context.Context, store *postgres.Store, pgDialect dialect.Pos
 	}
 
 	// Now let's query the table and it should exist.
-	if _, err = store.QueryContext(ctx, fmt.Sprintf(`SELECT * FROM %s`, testTableName)); err != nil {
+	if _, err := store.QueryContext(ctx, fmt.Sprintf(`SELECT * FROM %s`, testTableName)); err != nil {
 		return fmt.Errorf("failed to query table: %w", err)
+	}
+
+	// Now let's drop the table.
+	if _, err := store.ExecContext(ctx, pgDialect.BuildDropTableQuery(testTableID)); err != nil {
+		return fmt.Errorf("failed to drop table: %w", err)
+	}
+
+	// Now let's query and the table should not exist anymore.
+	if _, err := store.QueryContext(ctx, fmt.Sprintf(`SELECT * FROM %s`, testTableName)); !pgDialect.IsTableDoesNotExistErr(err) {
+		return fmt.Errorf("expected table does not exist error, got %w", err)
 	}
 
 	return nil
