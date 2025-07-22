@@ -1,0 +1,31 @@
+name: Integration tests
+
+on: [push]
+permissions:
+    contents: read
+jobs:
+    Postgres:
+        runs-on: ubuntu-24.04
+        container: golang:1.24
+        services:
+            postgres:
+                image: postgis/postgis:16-3.4-alpine
+                env:
+                    POSTGRES_PASSWORD: postgres
+                options: >-
+                    --health-cmd pg_isready
+                    --health-interval 10s
+                    --health-timeout 5s
+                    --health-retries 5
+        steps:
+            - uses: actions/checkout@v4
+            - name: Set up Go
+              uses: ubicloud/setup-go@v5
+              with:
+                  go-version-file: go.mod
+            - name: Download dependencies
+              run: |
+                  git config --global url.https://${{ secrets.GIT_PERSONAL_ACCESS_TOKEN }}@github.com/.insteadOf https://github.com/
+                  go mod download
+            - name: Run integration test
+              run: PG_HOST=postgres make postgres-itest

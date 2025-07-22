@@ -102,3 +102,7 @@ dest-itest-types:
 	go run integration_tests/destination_types/main.go --config .personal/integration_tests/redshift.yaml
 	go run integration_tests/destination_types/main.go --config .personal/integration_tests/mssql.yaml
 	go run integration_tests/destination_types/main.go --config .personal/integration_tests/snowflake.yaml
+
+.PHONY: postgres-itest
+postgres-itest:
+	go run integration_tests/postgres/main.go
