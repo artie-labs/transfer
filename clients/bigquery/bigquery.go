@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"strconv"
 	"strings"
 
 	"cloud.google.com/go/bigquery"
@@ -37,8 +36,6 @@ const (
 )
 
 type Store struct {
-	// If [auditRows] is enabled, we will perform an additional query to ensure that the number of rows in the temporary table matches the expected number of rows.
-	auditRows bool
 	configMap *types.DestinationTableConfigMap
 	config    config.Config
 	bqClient  *bigquery.Client
@@ -312,17 +309,8 @@ func LoadBigQuery(ctx context.Context, cfg config.Config, _store *db.Store) (*St
 		return nil, err
 	}
 
-	var auditRows bool
-	if val := os.Getenv("BQ_AUDIT_ROWS"); val != "" {
-		auditRows, err = strconv.ParseBool(val)
-		if err != nil {
-			logger.Panic("Failed to parse BQ_AUDIT_ROWS", slog.Any("err", err))
-		}
-	}
-
 	return &Store{
 		bqClient:  bqClient,
-		auditRows: auditRows,
 		configMap: &types.DestinationTableConfigMap{},
 		config:    cfg,
 		Store:     store,
