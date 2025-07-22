@@ -79,46 +79,17 @@ func (s *Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, 
 }
 
 func (s *Store) SweepTemporaryTables(ctx context.Context) error {
-	tcs, err := s.config.TopicConfigs()
-	if err != nil {
-		return err
-	}
-
-	// TODO: Implement PostgreSQL-specific sweep query
-	// For now, use a placeholder that won't find any tables
-	buildSweepQuery := func(dbName string, schemaName string) (string, []any) {
-		// TODO: Implement proper PostgreSQL sweep query for temporary tables
-		return "SELECT schemaname, tablename FROM pg_tables WHERE false", nil
-	}
-
-	return shared.Sweep(ctx, s, tcs, buildSweepQuery)
+	return fmt.Errorf("not implemented")
 }
 
 func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
-	// TODO: Implement PostgreSQL-specific dedupe logic
 	return fmt.Errorf("dedupe not implemented for PostgreSQL")
 }
 
 func (s *Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
-	return shared.GetTableCfgArgs{
-		Destination:           s,
-		TableID:               tableID,
-		ConfigMap:             s.configMap,
-		ColumnNameForName:     "column_name",
-		ColumnNameForDataType: "data_type",
-		ColumnNameForComment:  "column_comment",
-		DropDeletedColumns:    dropDeletedColumns,
-	}.GetTableConfig()
+	return nil, fmt.Errorf("not implemented")
 }
 
 func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
-	if createTempTable {
-		if err := shared.CreateTempTable(ctx, s, tableData, tableConfig, opts.ColumnSettings, tempTableID); err != nil {
-			return err
-		}
-	}
-
-	// TODO: Implement PostgreSQL-specific data loading into temporary table
-	// This would typically involve generating INSERT statements or using COPY FROM
-	return fmt.Errorf("PrepareTemporaryTable not fully implemented for PostgreSQL")
+	return fmt.Errorf("not implemented")
 }
