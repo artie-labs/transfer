@@ -103,7 +103,6 @@ func testTable(ctx context.Context, store *postgres.Store, pgDialect dialect.Pos
 		if rowCount == 0 {
 			return fmt.Errorf("expected some rows, got none")
 		}
-
 	}
 	{
 		// Now let's truncate the table and there shouldn't be any rows.
