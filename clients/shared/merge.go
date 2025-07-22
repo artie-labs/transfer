@@ -110,7 +110,7 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 		}
 
 		if backfillErr != nil {
-			return fmt.Errorf("failed to backfill col: %s, default value: %v, err: %w", col.Name(), col.DefaultValue(), backfillErr)
+			return fmt.Errorf("failed to backfill col: %q, kind: %q, default value: %v, err: %w", col.Name(), col.KindDetails.Kind, col.DefaultValue(), backfillErr)
 		}
 	}
 
