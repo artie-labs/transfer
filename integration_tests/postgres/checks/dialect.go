@@ -12,19 +12,31 @@ import (
 )
 
 func TestDialect(ctx context.Context, store db.Store, _dialect sql.Dialect) error {
-	if err := testQuoteIdentifier(ctx, store, _dialect); err != nil {
-		return fmt.Errorf("failed to test quote identifier: %w", err)
-	}
-
-	return nil
-}
-
-func testQuoteIdentifier(ctx context.Context, store db.Store, _dialect sql.Dialect) error {
 	pgDialect, ok := _dialect.(dialect.PostgresDialect)
 	if !ok {
 		return fmt.Errorf("dialect is not a postgres dialect")
 	}
 
+	if err := testQuoteIdentifier(ctx, store, pgDialect); err != nil {
+		return fmt.Errorf("failed to test quote identifier: %w", err)
+	}
+
+	// Try to query for a table and it doesn't exist.
+	_, err := store.QueryContext(ctx, `SELECT * FROM non_existent_table`)
+	if err == nil {
+		return fmt.Errorf("expected error when querying non-existent table, got nil")
+	}
+
+	fmt.Println("###", err)
+
+	if !pgDialect.IsTableDoesNotExistErr(err) {
+		return fmt.Errorf("expected table does not exist error, got %v", err)
+	}
+
+	return nil
+}
+
+func testQuoteIdentifier(ctx context.Context, store db.Store, pgDialect dialect.PostgresDialect) error {
 	// Test quote identifiers.
 	testTableName := fmt.Sprintf("test_%s", strings.ToLower(stringutil.Random(5)))
 	if _, err := store.ExecContext(ctx, fmt.Sprintf(`CREATE TABLE %s (pk int PRIMARY KEY, "EscapedCol" text)`, testTableName)); err != nil {

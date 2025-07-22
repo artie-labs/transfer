@@ -9,6 +9,7 @@ import (
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type PostgresDialect struct{}
@@ -22,12 +23,32 @@ func (PostgresDialect) EscapeStruct(value string) string {
 }
 
 func (PostgresDialect) IsColumnAlreadyExistsErr(err error) bool {
-	// TODO: To implement
+	if err == nil {
+		fmt.Println("or here?")
+		return false
+	}
+
+	if pgErr, ok := err.(*pgconn.PgError); ok {
+		fmt.Println(pgErr)
+		fmt.Println("here???")
+		return pgErr.Code == "42P01"
+	}
+
+	fmt.Println("### here ", err)
+
 	return false
 }
 
 func (PostgresDialect) IsTableDoesNotExistErr(err error) bool {
-	// TODO: To implement
+	if err == nil {
+		return false
+	}
+
+	if pgErr, ok := err.(*pgconn.PgError); ok {
+		// https://www.postgresql.org/docs/current/errcodes-appendix.html#:~:text=undefined_function-,42P01,-undefined_table
+		return pgErr.Code == "42P01"
+	}
+
 	return false
 }
 
