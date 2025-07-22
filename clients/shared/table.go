@@ -68,7 +68,6 @@ func AlterTableAddColumns(ctx context.Context, dest destination.Destination, tc 
 	for _, sqlPart := range sqlParts {
 		slog.Info("[DDL] Executing query", slog.String("query", sqlPart))
 		if _, err = dest.ExecContext(ctx, sqlPart); err != nil {
-			fmt.Println(err)
 			if !dest.Dialect().IsColumnAlreadyExistsErr(err) {
 				return fmt.Errorf("failed to alter table: %w", err)
 			}
