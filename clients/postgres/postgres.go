@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	_ "github.com/jackc/pgx/v5/stdlib"
+
 	"github.com/artie-labs/transfer/clients/postgres/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
@@ -22,7 +24,7 @@ type Store struct {
 }
 
 func LoadStore(cfg config.Config) (*Store, error) {
-	store, err := db.Open("postgres", cfg.Postgres.DSN())
+	store, err := db.Open("pgx", cfg.Postgres.DSN())
 	if err != nil {
 		return nil, err
 	}

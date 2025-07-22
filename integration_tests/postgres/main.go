@@ -1,9 +1,10 @@
-package postgres
+package main
 
 import (
 	"cmp"
 	"context"
 	"log"
+	"log/slog"
 	"os"
 
 	"github.com/artie-labs/transfer/clients/postgres"
@@ -30,4 +31,6 @@ func main() {
 	if err := checks.TestDialect(ctx, store.Store, store.Dialect()); err != nil {
 		log.Fatalf("failed to test dialect: %v", err)
 	}
+
+	slog.Info("Postgres integration tests all passed! 🎉")
 }
