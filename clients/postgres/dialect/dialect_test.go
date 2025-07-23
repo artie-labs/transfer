@@ -14,7 +14,12 @@ func TestKindForDataType(t *testing.T) {
 		"numeric(5, 2)": typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(5, 2)),
 		"numeric(5, 0)": typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(5, 0)),
 		"numeric(5)":    typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(5, 0)),
+		// String data types:
+		"character varying(5)": {Kind: typing.String.Kind, OptionalStringPrecision: typing.ToPtr(int32(5))},
+		"character(5)":         {Kind: typing.String.Kind, OptionalStringPrecision: typing.ToPtr(int32(5))},
+		"text":                 typing.String,
 	}
+
 	for dataType, expectedKind := range expectedTypeToKindMap {
 		kind, err := PostgresDialect{}.KindForDataType(dataType)
 		assert.NoError(t, err)
