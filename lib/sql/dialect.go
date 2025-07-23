@@ -29,7 +29,7 @@ type TableIdentifier interface {
 type Dialect interface {
 	QuoteIdentifier(identifier string) string
 	EscapeStruct(value string) string
-	DataTypeForKind(kd typing.KindDetails, isPk bool, settings config.SharedDestinationColumnSettings) string
+	DataTypeForKind(kd typing.KindDetails, isPk bool, settings config.SharedDestinationColumnSettings) (string, error)
 	KindForDataType(_type string) (typing.KindDetails, error)
 	IsColumnAlreadyExistsErr(err error) bool
 	IsTableDoesNotExistErr(err error) bool
