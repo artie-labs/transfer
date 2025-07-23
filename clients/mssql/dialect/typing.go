@@ -10,18 +10,18 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func (MSSQLDialect) DataTypeForKind(kindDetails typing.KindDetails, isPk bool, _ config.SharedDestinationColumnSettings) string {
+func (MSSQLDialect) DataTypeForKind(kindDetails typing.KindDetails, isPk bool, _ config.SharedDestinationColumnSettings) (string, error) {
 	// Primary keys cannot exceed 900 chars in length.
 	// https://learn.microsoft.com/en-us/sql/relational-databases/tables/primary-and-foreign-key-constraints?view=sql-server-ver16#PKeys
 	const maxVarCharLengthForPrimaryKey = 900
 
 	switch kindDetails.Kind {
 	case typing.Float.Kind:
-		return "float"
+		return "float", nil
 	case typing.Integer.Kind:
-		return "bigint"
+		return "bigint", nil
 	case typing.Struct.Kind, typing.Array.Kind:
-		return "NVARCHAR(MAX)"
+		return "NVARCHAR(MAX)", nil
 	case typing.String.Kind:
 		if kindDetails.OptionalStringPrecision != nil {
 			precision := *kindDetails.OptionalStringPrecision
@@ -29,30 +29,30 @@ func (MSSQLDialect) DataTypeForKind(kindDetails typing.KindDetails, isPk bool, _
 				precision = min(maxVarCharLengthForPrimaryKey, precision)
 			}
 
-			return fmt.Sprintf("VARCHAR(%d)", precision)
+			return fmt.Sprintf("VARCHAR(%d)", precision), nil
 		}
 
 		if isPk {
-			return fmt.Sprintf("VARCHAR(%d)", maxVarCharLengthForPrimaryKey)
+			return fmt.Sprintf("VARCHAR(%d)", maxVarCharLengthForPrimaryKey), nil
 		}
 
-		return "VARCHAR(MAX)"
+		return "VARCHAR(MAX)", nil
 	case typing.Boolean.Kind:
-		return "BIT"
+		return "BIT", nil
 	case typing.Date.Kind:
-		return "DATE"
+		return "DATE", nil
 	case typing.Time.Kind:
-		return "TIME"
+		return "TIME", nil
 	case typing.TimestampNTZ.Kind:
 		// Using datetime2 because it's the recommendation, and it provides more precision: https://stackoverflow.com/a/1884088
-		return "datetime2"
+		return "datetime2", nil
 	case typing.TimestampTZ.Kind:
-		return "datetimeoffset"
+		return "datetimeoffset", nil
 	case typing.EDecimal.Kind:
-		return kindDetails.ExtendedDecimalDetails.MsSQLKind()
+		return kindDetails.ExtendedDecimalDetails.MsSQLKind(), nil
 	}
 
-	return kindDetails.Kind
+	return kindDetails.Kind, nil
 }
 
 func (MSSQLDialect) KindForDataType(rawType string) (typing.KindDetails, error) {

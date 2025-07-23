@@ -51,7 +51,12 @@ func (s Store) describeTable(ctx context.Context, tableID sql.TableIdentifier) (
 }
 
 func (s Store) CreateTable(ctx context.Context, tableID sql.TableIdentifier, tableConfig *types.DestinationTableConfig, cols []columns.Column) error {
-	if err := s.apacheLivyClient.ExecContext(ctx, s.Dialect().BuildCreateTableQuery(tableID, false, s.buildColumnParts(cols))); err != nil {
+	colParts, err := s.buildColumnParts(cols)
+	if err != nil {
+		return fmt.Errorf("failed to build column parts: %w", err)
+	}
+
+	if err := s.apacheLivyClient.ExecContext(ctx, s.Dialect().BuildCreateTableQuery(tableID, false, colParts)); err != nil {
 		return fmt.Errorf("failed to create table: %w", err)
 	}
 
@@ -63,7 +68,12 @@ func (s Store) CreateTable(ctx context.Context, tableID sql.TableIdentifier, tab
 func (s Store) AlterTableAddColumns(ctx context.Context, tableID sql.TableIdentifier, tableConfig *types.DestinationTableConfig, cols []columns.Column) error {
 	colSQLParts := make([]string, len(cols))
 	for i, col := range cols {
-		colSQLParts[i] = fmt.Sprintf("%s %s", col.Name(), s.Dialect().DataTypeForKind(col.KindDetails, col.PrimaryKey(), config.SharedDestinationColumnSettings{}))
+		dataType, err := s.Dialect().DataTypeForKind(col.KindDetails, col.PrimaryKey(), config.SharedDestinationColumnSettings{})
+		if err != nil {
+			return fmt.Errorf("failed to get data type for column %q: %w", col.Name(), err)
+		}
+
+		colSQLParts[i] = fmt.Sprintf("%s %s", col.Name(), dataType)
 	}
 
 	for _, part := range colSQLParts {

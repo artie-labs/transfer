@@ -9,51 +9,32 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
+func buildInteger(optionalKind typing.OptionalIntegerKind) typing.KindDetails {
+	kd := typing.Integer
+	kd.OptionalIntegerKind = typing.ToPtr(optionalKind)
+	return kd
+}
+
 func TestRedshiftDialect_DataTypeForKind(t *testing.T) {
-	{
-		// String
-		{
-			assert.Equal(t, "VARCHAR(MAX)", RedshiftDialect{}.DataTypeForKind(typing.String, true, config.SharedDestinationColumnSettings{}))
-		}
-		{
-			assert.Equal(t, "VARCHAR(12345)", RedshiftDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: typing.ToPtr(int32(12345))}, false, config.SharedDestinationColumnSettings{}))
-		}
+	expectedKindDetailsToValueMap := map[typing.KindDetails]string{
+		// String:
+		typing.String: "VARCHAR(MAX)",
+		typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: typing.ToPtr(int32(12345))}: "VARCHAR(12345)",
+		// Integers:
+		buildInteger(typing.SmallIntegerKind): "INT2",
+		buildInteger(typing.IntegerKind):      "INT4",
+		buildInteger(typing.BigIntegerKind):   "INT8",
+		buildInteger(typing.NotSpecifiedKind): "INT8",
+		typing.Integer:                        "INT8",
+		// Timestamps:
+		typing.TimestampTZ:  "TIMESTAMP WITH TIME ZONE",
+		typing.TimestampNTZ: "TIMESTAMP WITHOUT TIME ZONE",
 	}
-	{
-		// Integers
-		{
-			// Small int
-			assert.Equal(t, "INT2", RedshiftDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.SmallIntegerKind)}, false, config.SharedDestinationColumnSettings{}))
-		}
-		{
-			// Integer
-			assert.Equal(t, "INT4", RedshiftDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.IntegerKind)}, false, config.SharedDestinationColumnSettings{}))
-		}
-		{
-			// Big integer
-			assert.Equal(t, "INT8", RedshiftDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.BigIntegerKind)}, false, config.SharedDestinationColumnSettings{}))
-		}
-		{
-			// Not specified
-			{
-				// Literal
-				assert.Equal(t, "INT8", RedshiftDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.NotSpecifiedKind)}, false, config.SharedDestinationColumnSettings{}))
-			}
-			{
-				assert.Equal(t, "INT8", RedshiftDialect{}.DataTypeForKind(typing.Integer, false, config.SharedDestinationColumnSettings{}))
-			}
-		}
-	}
-	{
-		// Timestamps
-		{
-			// With timezone
-			assert.Equal(t, "TIMESTAMP WITH TIME ZONE", RedshiftDialect{}.DataTypeForKind(typing.TimestampTZ, false, config.SharedDestinationColumnSettings{}))
-		}
-		{
-			// Without timezone
-			assert.Equal(t, "TIMESTAMP WITHOUT TIME ZONE", RedshiftDialect{}.DataTypeForKind(typing.TimestampNTZ, false, config.SharedDestinationColumnSettings{}))
-		}
+
+	for kd, expected := range expectedKindDetailsToValueMap {
+		actual, err := RedshiftDialect{}.DataTypeForKind(kd, false, config.SharedDestinationColumnSettings{})
+		assert.NoError(t, err)
+		assert.Equal(t, expected, actual)
 	}
 }
 

@@ -32,8 +32,13 @@ func TestMSSQLDialect_DataTypeForKind(t *testing.T) {
 	}
 
 	for idx, tc := range tcs {
-		assert.Equal(t, tc.expected, MSSQLDialect{}.DataTypeForKind(tc.kd, false, config.SharedDestinationColumnSettings{}), idx)
-		assert.Equal(t, tc.expectedIsPk, MSSQLDialect{}.DataTypeForKind(tc.kd, true, config.SharedDestinationColumnSettings{}), idx)
+		actual, err := MSSQLDialect{}.DataTypeForKind(tc.kd, false, config.SharedDestinationColumnSettings{})
+		assert.NoError(t, err)
+		assert.Equal(t, tc.expected, actual, idx)
+
+		actual, err = MSSQLDialect{}.DataTypeForKind(tc.kd, true, config.SharedDestinationColumnSettings{})
+		assert.NoError(t, err)
+		assert.Equal(t, tc.expectedIsPk, actual, idx)
 	}
 }
 
