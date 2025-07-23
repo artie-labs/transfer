@@ -102,9 +102,9 @@ func (PostgresDialect) BuildMergeQueries(
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (PostgresDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, settings config.SharedDestinationColumnSettings) string {
+func (PostgresDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, settings config.SharedDestinationColumnSettings) (string, error) {
 	// TODO: To implement
-	return ""
+	return "", fmt.Errorf("not implemented")
 }
 
 func (PostgresDialect) KindForDataType(_type string) (typing.KindDetails, error) {
