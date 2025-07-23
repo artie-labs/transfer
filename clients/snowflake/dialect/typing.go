@@ -10,27 +10,27 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func (SnowflakeDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, _ config.SharedDestinationColumnSettings) string {
+func (SnowflakeDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, _ config.SharedDestinationColumnSettings) (string, error) {
 	switch kindDetails.Kind {
 	case typing.Struct.Kind:
 		// Snowflake doesn't recognize struct.
 		// Must be either OBJECT or VARIANT. However, VARIANT is more versatile.
-		return "variant"
+		return "variant", nil
 	case typing.Boolean.Kind:
-		return "boolean"
+		return "boolean", nil
 	case typing.Date.Kind:
-		return "date"
+		return "date", nil
 	case typing.Time.Kind:
-		return "time"
+		return "time", nil
 	case typing.TimestampNTZ.Kind:
-		return "timestamp_ntz"
+		return "timestamp_ntz", nil
 	case typing.TimestampTZ.Kind:
-		return "timestamp_tz"
+		return "timestamp_tz", nil
 	case typing.EDecimal.Kind:
-		return kindDetails.ExtendedDecimalDetails.SnowflakeKind()
+		return kindDetails.ExtendedDecimalDetails.SnowflakeKind(), nil
 	}
 
-	return kindDetails.Kind
+	return kindDetails.Kind, nil
 }
 
 // KindForDataType converts a Snowflake type to a KindDetails.
