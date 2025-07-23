@@ -58,9 +58,20 @@ func (c *Client) newSession(ctx context.Context, kind SessionKind, blockUntilRea
 	}
 
 	for _, session := range sessions.Sessions {
-		if session.Name == c.sessionName {
+		// there should only be one session with this name
+		if session.Name == c.sessionName && !session.TerminalState() {
 			c.sessionID = session.ID
 			return nil
+		} else if session.Name == c.sessionName && session.TerminalState() {
+			sleepTime := jitter.Jitter(sleepBaseMs, sleepMaxMs, 0)
+			slog.Warn("Session is in a terminal state, deleting",
+				slog.Int("sessionID", session.ID),
+				slog.String("sessionName", c.sessionName),
+				slog.Duration("sleepTime", sleepTime),
+			)
+			c.DeleteSession(ctx, session.ID)
+			time.Sleep(sleepTime)
+			return c.newSession(ctx, kind, blockUntilReady)
 		}
 	}
 
