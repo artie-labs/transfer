@@ -39,19 +39,18 @@ func (PostgresDialect) IsTableDoesNotExistErr(err error) bool {
 	return false
 }
 
-func (PostgresDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, temporary bool, colSQLParts []string) string {
-	// TODO: To implement
-	return ""
+func (PostgresDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, _ bool, colSQLParts []string) string {
+	// We will create temporary tables in Postgres the exact same way as we do for permanent tables.
+	// This is because temporary tables are session scoped and this will not work for us as we leverage connection pooling.
+	return fmt.Sprintf("CREATE TABLE %s (%s);", tableID.FullyQualifiedName(), strings.Join(colSQLParts, ","))
 }
 
 func (PostgresDialect) BuildDropTableQuery(tableID sql.TableIdentifier) string {
-	// TODO: To implement
-	return ""
+	return fmt.Sprintf("DROP TABLE IF EXISTS %s", tableID.FullyQualifiedName())
 }
 
 func (PostgresDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) string {
-	// TODO: To implement
-	return ""
+	return fmt.Sprintf("TRUNCATE TABLE %s", tableID.FullyQualifiedName())
 }
 
 func (PostgresDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string {
