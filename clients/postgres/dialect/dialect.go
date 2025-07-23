@@ -2,6 +2,7 @@ package dialect
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config"
@@ -108,6 +109,30 @@ func (PostgresDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, setting
 }
 
 func (PostgresDialect) KindForDataType(_type string) (typing.KindDetails, error) {
-	// TODO: To implement
-	return typing.KindDetails{}, fmt.Errorf("not implemented")
+	dataType, parameters, err := sql.ParseDataTypeDefinition(strings.ToLower(_type))
+	if err != nil {
+		return typing.Invalid, err
+	}
+
+	switch dataType {
+	case "numeric":
+		// TODO: Handle variable numeric types.
+		return typing.ParseNumeric(parameters)
+	case "character varying", "character":
+		if len(parameters) != 1 {
+			return typing.Invalid, fmt.Errorf("expected 1 parameter for character varying, got %d, value: %q", len(parameters), _type)
+		}
+
+		precision, err := strconv.ParseInt(parameters[0], 10, 32)
+		if err != nil {
+			return typing.Invalid, fmt.Errorf("failed to parse string precision: %q, err: %w", parameters[0], err)
+		}
+
+		return typing.KindDetails{
+			Kind:                    typing.String.Kind,
+			OptionalStringPrecision: typing.ToPtr(int32(precision)),
+		}, nil
+	default:
+		return typing.Invalid, fmt.Errorf("unsupported data type: %q", _type)
+	}
 }
