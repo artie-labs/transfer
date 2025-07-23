@@ -107,6 +107,7 @@ func (PostgresDialect) BuildMergeQueries(
 var kindDetailsMap = map[typing.KindDetails]string{
 	typing.Float:   "double precision",
 	typing.Boolean: "boolean",
+	typing.Struct:  "jsonb",
 }
 
 func (PostgresDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, settings config.SharedDestinationColumnSettings) (string, error) {
@@ -143,7 +144,8 @@ var dataTypeMap = map[string]typing.KindDetails{
 	"timestamp with time zone":    typing.TimestampTZ,
 	"timestamp without time zone": typing.TimestampNTZ,
 	// Other data types:
-	"json": typing.Struct,
+	"json":  typing.Struct,
+	"jsonb": typing.Struct,
 }
 
 func (PostgresDialect) KindForDataType(_type string) (typing.KindDetails, error) {
