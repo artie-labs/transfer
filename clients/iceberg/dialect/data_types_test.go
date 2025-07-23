@@ -10,67 +10,44 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
 
+func toInteger(optionalKind typing.OptionalIntegerKind) typing.KindDetails {
+	kd := typing.Integer
+	kd.OptionalIntegerKind = typing.ToPtr(optionalKind)
+	return kd
+}
+
 func TestIcebergDialect_DataTypeForKind(t *testing.T) {
 	_dialect := IcebergDialect{}
-
-	// Boolean
-	assert.Equal(t, "BOOLEAN", _dialect.DataTypeForKind(typing.Boolean, false, config.SharedDestinationColumnSettings{}))
-
-	{
-		// String and related data types
-		for _, kd := range []typing.KindDetails{typing.String, typing.Time, typing.Array, typing.Struct} {
-			assert.Equal(t, "STRING", _dialect.DataTypeForKind(kd, false, config.SharedDestinationColumnSettings{}))
-		}
-	}
-	{
-		// Float
-		assert.Equal(t, "DOUBLE", _dialect.DataTypeForKind(typing.Float, false, config.SharedDestinationColumnSettings{}))
-
-		// EDecimal
-		{
-			// DECIMAL(5, 2)
-			kd := typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(5, 2))
-			assert.Equal(t, "DECIMAL(5, 2)", _dialect.DataTypeForKind(kd, false, config.SharedDestinationColumnSettings{}))
-		}
-		{
-			// DECIMAL(39, 2) - Exceeds the max precision, so it will become a string.
-			kd := typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(39, 2))
-			assert.Equal(t, "STRING", _dialect.DataTypeForKind(kd, false, config.SharedDestinationColumnSettings{}))
-		}
-
-		// Integers
-		{
-			// Not specified
-			assert.Equal(t, "LONG", _dialect.DataTypeForKind(typing.Integer, false, config.SharedDestinationColumnSettings{}))
-		}
-		{
-			// SmallIntegerKind
-			kd := typing.Integer
-			kd.OptionalIntegerKind = typing.ToPtr(typing.SmallIntegerKind)
-			assert.Equal(t, "INTEGER", _dialect.DataTypeForKind(kd, false, config.SharedDestinationColumnSettings{}))
-		}
-		{
-			// IntegerKind
-			kd := typing.Integer
-			kd.OptionalIntegerKind = typing.ToPtr(typing.IntegerKind)
-			assert.Equal(t, "INTEGER", _dialect.DataTypeForKind(kd, false, config.SharedDestinationColumnSettings{}))
-		}
-		{
-			// BigIntegerKind
-			kd := typing.Integer
-			kd.OptionalIntegerKind = typing.ToPtr(typing.BigIntegerKind)
-			assert.Equal(t, "LONG", _dialect.DataTypeForKind(kd, false, config.SharedDestinationColumnSettings{}))
-		}
+	kindDetailsToValueMap := map[typing.KindDetails]string{
+		// Boolean:
+		typing.Boolean: "BOOLEAN",
+		// String and related data types:
+		typing.String: "STRING",
+		typing.Time:   "STRING",
+		typing.Array:  "STRING",
+		typing.Struct: "STRING",
+		// Float:
+		typing.Float: "DOUBLE",
+		// Decimals:
+		typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(5, 2)): "DECIMAL(5, 2)",
+		// Exceeds the max precision, so it'll become a string.
+		typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(39, 2)): "STRING",
+		// Integers:
+		typing.Integer:                     "LONG",
+		toInteger(typing.SmallIntegerKind): "INTEGER",
+		toInteger(typing.IntegerKind):      "INTEGER",
+		toInteger(typing.BigIntegerKind):   "LONG",
+		// Date and timestamp data types:
+		typing.Date:         "DATE",
+		typing.TimestampNTZ: "TIMESTAMP_NTZ",
+		typing.TimestampTZ:  "TIMESTAMP",
 	}
 
-	// Date
-	assert.Equal(t, "DATE", _dialect.DataTypeForKind(typing.Date, false, config.SharedDestinationColumnSettings{}))
-
-	// TimestampNTZ
-	assert.Equal(t, "TIMESTAMP_NTZ", _dialect.DataTypeForKind(typing.TimestampNTZ, false, config.SharedDestinationColumnSettings{}))
-
-	// TimestampTZ
-	assert.Equal(t, "TIMESTAMP", _dialect.DataTypeForKind(typing.TimestampTZ, false, config.SharedDestinationColumnSettings{}))
+	for kd, expected := range kindDetailsToValueMap {
+		actual, err := _dialect.DataTypeForKind(kd, false, config.SharedDestinationColumnSettings{})
+		assert.NoError(t, err)
+		assert.Equal(t, expected, actual)
+	}
 }
 
 func TestIcebergDialect_KindForDataType(t *testing.T) {
