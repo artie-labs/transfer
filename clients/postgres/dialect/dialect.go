@@ -168,26 +168,6 @@ var dataTypeMap = map[string]typing.KindDetails{
 	"jsonb": typing.Struct,
 }
 
-var dataTypeMap = map[string]typing.KindDetails{
-	"boolean": typing.Boolean,
-	"text":    typing.String,
-	// Numbers:
-	"smallint":         typing.BuildIntegerKind(typing.SmallIntegerKind),
-	"integer":          typing.BuildIntegerKind(typing.IntegerKind),
-	"bigint":           typing.BuildIntegerKind(typing.BigIntegerKind),
-	"float":            typing.Float,
-	"real":             typing.Float,
-	"double":           typing.Float,
-	"double precision": typing.Float,
-	// Date and timestamp data types:
-	"date":                        typing.Date,
-	"time":                        typing.Time,
-	"timestamp with time zone":    typing.TimestampTZ,
-	"timestamp without time zone": typing.TimestampNTZ,
-	// Other data types:
-	"json": typing.Struct,
-}
-
 func (PostgresDialect) KindForDataType(_type string) (typing.KindDetails, error) {
 	dataType := strings.ToLower(_type)
 	if strings.HasPrefix(dataType, "timestamp") {
