@@ -10,6 +10,7 @@ import (
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
@@ -125,7 +126,11 @@ func (PostgresDialect) KindForDataType(_type string) (typing.KindDetails, error)
 
 	switch dataType {
 	case "numeric":
-		// TODO: Handle variable numeric types.
+		// This means that this is a variable numeric type.
+		if len(parameters) == 0 {
+			return typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale)), nil
+		}
+
 		return typing.ParseNumeric(parameters)
 	case "character varying", "character":
 		if len(parameters) != 1 {
