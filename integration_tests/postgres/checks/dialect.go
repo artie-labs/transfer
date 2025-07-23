@@ -183,14 +183,10 @@ func testAddColumn(ctx context.Context, store *postgres.Store, pgDialect dialect
 		}
 	}
 
-	// Verify column exists by querying the table schema
 	var columnExists bool
-	if err := store.QueryRowContext(ctx, `
-        SELECT EXISTS (
-            SELECT 1 FROM information_schema.columns 
-            WHERE table_name = $1 AND column_name = $2 AND table_schema = 'public'
-        )
-    `, testTableName, colName).Scan(&columnExists); err != nil {
+	if err := store.QueryRowContext(ctx,
+		`SELECT EXISTS ( SELECT 1 FROM information_schema.columns WHERE table_name = $1 AND column_name = $2 AND table_schema = 'public')`,
+		testTableName, colName).Scan(&columnExists); err != nil {
 		return fmt.Errorf("failed to check if column exists: %w", err)
 	}
 
@@ -209,14 +205,10 @@ func testDropColumn(ctx context.Context, store *postgres.Store, pgDialect dialec
 		}
 	}
 
-	// Verify column no longer exists
 	var columnExists bool
-	if err := store.QueryRowContext(ctx, `
-        SELECT EXISTS (
-            SELECT 1 FROM information_schema.columns 
-            WHERE table_name = $1 AND column_name = $2 AND table_schema = 'public'
-        )
-    `, testTableName, colName).Scan(&columnExists); err != nil {
+	if err := store.QueryRowContext(ctx,
+		`SELECT EXISTS ( SELECT 1 FROM information_schema.columns WHERE table_name = $1 AND column_name = $2 AND table_schema = 'public')`,
+		testTableName, colName).Scan(&columnExists); err != nil {
 		return fmt.Errorf("failed to check if column exists: %w", err)
 	}
 
