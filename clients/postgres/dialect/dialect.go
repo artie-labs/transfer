@@ -111,6 +111,7 @@ func (PostgresDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, setting
 
 var dataTypeMap = map[string]typing.KindDetails{
 	"boolean": typing.Boolean,
+	"text":    typing.String,
 }
 
 func (PostgresDialect) KindForDataType(_type string) (typing.KindDetails, error) {
