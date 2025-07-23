@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/artie-labs/reader/lib/rdbms/column"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -119,6 +118,7 @@ var dataTypeMap = map[string]typing.KindDetails{
 	"bigint":           typing.BuildIntegerKind(typing.BigIntegerKind),
 	"float":            typing.Float,
 	"real":             typing.Float,
+	"double":           typing.Float,
 	"double precision": typing.Float,
 	// Date and timestamp data types:
 	"date":                        typing.Date,
@@ -130,14 +130,14 @@ var dataTypeMap = map[string]typing.KindDetails{
 }
 
 func (PostgresDialect) KindForDataType(_type string) (typing.KindDetails, error) {
-	dataType, parameters, err := sql.ParseDataTypeDefinition(strings.ToLower(_type))
-	if err != nil {
-		return typing.Invalid, err
+	dataType := strings.ToLower(_type)
+	if strings.HasPrefix(dataType, "timestamp") {
+		dataType, _ = StripPrecision(dataType)
 	}
 
-	if strings.HasPrefix(dataType, "timestamp") {
-		// Strip precision
-		dataType, _ = column.StripPrecision(dataType)
+	dataType, parameters, err := sql.ParseDataTypeDefinition(dataType)
+	if err != nil {
+		return typing.Invalid, err
 	}
 
 	// Check the lookup table first.

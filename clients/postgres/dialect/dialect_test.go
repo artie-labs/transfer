@@ -30,19 +30,19 @@ func TestKindForDataType(t *testing.T) {
 		// Boolean:
 		"boolean": typing.Boolean,
 		// Date and timestamp data types:
-		"date":                            typing.Date,
-		"time":                            typing.Time,
-		"timestamp with time zone":        typing.TimestampTZ,
-		"timestamp (5) with time zone":    typing.TimestampTZ,
-		"timestamp without time zone":     typing.TimestampNTZ,
-		"timestamp (4) without time zone": typing.TimestampNTZ,
+		"date":                           typing.Date,
+		"time":                           typing.Time,
+		"timestamp with time zone":       typing.TimestampTZ,
+		"timestamp(5) with time zone":    typing.TimestampTZ,
+		"timestamp without time zone":    typing.TimestampNTZ,
+		"timestamp(4) without time zone": typing.TimestampNTZ,
 		// Other data types:
 		"json": typing.Struct,
 	}
 
 	for dataType, expectedKind := range expectedTypeToKindMap {
 		kind, err := PostgresDialect{}.KindForDataType(dataType)
-		assert.NoError(t, err)
+		assert.NoError(t, err, dataType)
 		assert.Equal(t, expectedKind, kind)
 	}
 }
