@@ -104,20 +104,26 @@ func (PostgresDialect) BuildMergeQueries(
 	return nil, fmt.Errorf("not implemented")
 }
 
+var kindDetailsMap = map[typing.KindDetails]string{
+	typing.Float:   "double precision",
+	typing.Boolean: "boolean",
+}
+
 func (PostgresDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, settings config.SharedDestinationColumnSettings) (string, error) {
+	if kind, ok := kindDetailsMap[kd]; ok {
+		return kind, nil
+	}
+
 	switch kd.Kind {
-	case typing.Float.Kind:
-		return "double precision", nil
 	// TODO: Handle ints:
 	case typing.EDecimal.Kind:
 		if kd.ExtendedDecimalDetails == nil {
 			return "", fmt.Errorf("expected extended decimal details to be set for %q", kd.Kind)
 		}
-
 		return kd.ExtendedDecimalDetails.PostgresKind(), nil
+	default:
+		return "", fmt.Errorf("unsupported kind: %q", kd.Kind)
 	}
-	// TODO: To implement
-	return "", fmt.Errorf("not implemented")
 }
 
 var dataTypeMap = map[string]typing.KindDetails{
