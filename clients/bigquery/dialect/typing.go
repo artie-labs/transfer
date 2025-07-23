@@ -10,44 +10,44 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
 
-func (BigQueryDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, settings config.SharedDestinationColumnSettings) string {
+func (BigQueryDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, settings config.SharedDestinationColumnSettings) (string, error) {
 	// Doesn't look like we need to do any special type mapping.
 	switch kindDetails.Kind {
 	case typing.Float.Kind:
-		return "float64"
+		return "float64", nil
 	case typing.Array.Kind:
 		// This is because BigQuery requires typing within the element of an array
 		// IMO, a string type is the least controversial data type (others being bool, number, struct).
 		// With String, we can always type cast the child elements.
 		// BQ does this because 2d+ arrays are not allowed. See: https://cloud.google.com/bigquery/docs/reference/standard-sql/data-types#array_type
-		return "array<string>"
+		return "array<string>", nil
 	case typing.Struct.Kind:
 		// Struct is a tighter version of JSON that requires type casting like Struct<int64>
-		return "json"
+		return "json", nil
 	case typing.Date.Kind:
-		return "date"
+		return "date", nil
 	case typing.Time.Kind:
-		return "time"
+		return "time", nil
 	case typing.TimestampNTZ.Kind:
-		return "datetime"
+		return "datetime", nil
 	case typing.TimestampTZ.Kind:
 		// https://cloud.google.com/bigquery/docs/reference/standard-sql/data-types#datetime_type
 		// We should be using TIMESTAMP since it's an absolute point in time.
-		return "timestamp"
+		return "timestamp", nil
 	case typing.EDecimal.Kind:
 		// [kindDetails.ExtendedDecimalDetails] may be nil if the target data type is a variable numeric or bignumeric.
 		if kindDetails.ExtendedDecimalDetails == nil {
 			if settings.BigNumericForVariableNumeric() {
-				return "bignumeric"
+				return "bignumeric", nil
 			} else {
-				return "numeric"
+				return "numeric", nil
 			}
 		}
 
-		return kindDetails.ExtendedDecimalDetails.BigQueryKind(settings.BigNumericForVariableNumeric())
+		return kindDetails.ExtendedDecimalDetails.BigQueryKind(settings.BigNumericForVariableNumeric()), nil
 	}
 
-	return kindDetails.Kind
+	return kindDetails.Kind, nil
 }
 
 func (BigQueryDialect) KindForDataType(rawBqType string) (typing.KindDetails, error) {
