@@ -30,10 +30,11 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 	tc := d.snowflakeStagesStore.GetConfigMap().GetTableConfig(tableID)
 	assert.NoError(d.T(), shared.AlterTableAddColumns(d.T().Context(), d.snowflakeStagesStore, tc, config.SharedDestinationColumnSettings{}, tableID, cols))
 	for i := 0; i < len(cols); i++ {
+		dataType, err := d.snowflakeStagesStore.Dialect().DataTypeForKind(cols[i].KindDetails, false, config.SharedDestinationColumnSettings{})
+		assert.NoError(d.T(), err)
+
 		_, execQuery, _ := d.fakeSnowflakeStagesStore.ExecContextArgsForCall(i)
-		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s ADD COLUMN IF NOT EXISTS %s %s", `"SHOP"."PUBLIC"."COMPLEX_COLUMNS"`,
-			d.snowflakeStagesStore.Dialect().QuoteIdentifier(cols[i].Name()),
-			d.snowflakeStagesStore.Dialect().DataTypeForKind(cols[i].KindDetails, false, config.SharedDestinationColumnSettings{})), execQuery)
+		assert.Equal(d.T(), fmt.Sprintf("ALTER TABLE %s ADD COLUMN IF NOT EXISTS %s %s", `"SHOP"."PUBLIC"."COMPLEX_COLUMNS"`, d.snowflakeStagesStore.Dialect().QuoteIdentifier(cols[i].Name()), dataType), execQuery)
 	}
 
 	assert.Equal(d.T(), len(cols), d.fakeSnowflakeStagesStore.ExecContextCallCount(), "called SFLK the same amt to create cols")
