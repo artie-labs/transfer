@@ -108,8 +108,13 @@ func (PostgresDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, setting
 	switch kd.Kind {
 	case typing.Float.Kind:
 		return "double precision", nil
-	case typing.Integer.Kind:
+	// TODO: Handle ints:
+	case typing.EDecimal.Kind:
+		if kd.ExtendedDecimalDetails == nil {
+			return "", fmt.Errorf("expected extended decimal details to be set for %q", kd.Kind)
+		}
 
+		return kd.ExtendedDecimalDetails.PostgresKind(), nil
 	}
 	// TODO: To implement
 	return "", fmt.Errorf("not implemented")
