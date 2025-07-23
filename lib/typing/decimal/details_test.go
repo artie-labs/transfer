@@ -93,3 +93,16 @@ func TestDecimalDetailsKind(t *testing.T) {
 		assert.False(t, d.NotSet(), testCase.Name)
 	}
 }
+
+func TestDetails_PostgresKind(t *testing.T) {
+	detailsToValueMap := map[Details]string{
+		NewDetails(PrecisionNotSpecified, DefaultScale): "NUMERIC",
+		NewDetails(10, 2):  "NUMERIC(10, 2)",
+		NewDetails(10, 0):  "NUMERIC(10, 0)",
+		NewDetails(47, 20): "NUMERIC(47, 20)",
+	}
+
+	for details, expectedValue := range detailsToValueMap {
+		assert.Equal(t, expectedValue, details.PostgresKind())
+	}
+}

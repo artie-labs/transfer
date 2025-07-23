@@ -105,6 +105,12 @@ func (PostgresDialect) BuildMergeQueries(
 }
 
 func (PostgresDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, settings config.SharedDestinationColumnSettings) (string, error) {
+	switch kd.Kind {
+	case typing.Float.Kind:
+		return "double precision", nil
+	case typing.Integer.Kind:
+
+	}
 	// TODO: To implement
 	return "", fmt.Errorf("not implemented")
 }
