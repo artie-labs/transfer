@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/jitter"
@@ -58,7 +59,7 @@ func (c *Client) newSession(ctx context.Context, kind SessionKind, blockUntilRea
 	}
 
 	for _, session := range sessions.Sessions {
-		// there should only be one session with this name
+		// there can only be one session with this name - Livy enforces this
 		if session.Name == c.sessionName && !session.TerminalState() {
 			c.sessionID = session.ID
 			return nil
@@ -68,6 +69,7 @@ func (c *Client) newSession(ctx context.Context, kind SessionKind, blockUntilRea
 				slog.Int("sessionID", session.ID),
 				slog.String("sessionName", c.sessionName),
 				slog.Duration("sleepTime", sleepTime),
+				slog.String("logs", strings.Join(session.Logs, "\n")),
 			)
 			c.DeleteSession(ctx, session.ID)
 			time.Sleep(sleepTime)

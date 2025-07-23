@@ -54,6 +54,7 @@ type GetSessionResponse struct {
 	State SessionState `json:"state"`
 	Kind  string       `json:"kind"`
 	Name  string       `json:"name"`
+	Logs  []string     `json:"log"` // limited by Livy to last 10 lines
 }
 
 func (g GetSessionResponse) TerminalState() bool {
