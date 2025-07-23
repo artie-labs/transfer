@@ -78,13 +78,11 @@ func (PostgresDialect) GetDefaultValueStrategy() sql.DefaultValueStrategy {
 }
 
 func (PostgresDialect) BuildAddColumnQuery(tableID sql.TableIdentifier, sqlPart string) string {
-	// TODO: To implement
-	return ""
+	return fmt.Sprintf("ALTER TABLE %s ADD COLUMN IF NOT EXISTS %s", tableID.FullyQualifiedName(), sqlPart)
 }
 
 func (PostgresDialect) BuildDropColumnQuery(tableID sql.TableIdentifier, colName string) string {
-	// TODO: To implement
-	return ""
+	return fmt.Sprintf("ALTER TABLE %s DROP COLUMN IF EXISTS %s", tableID.FullyQualifiedName(), colName)
 }
 
 func (PostgresDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string {

@@ -28,6 +28,11 @@ func TestDialect(ctx context.Context, store *postgres.Store, _dialect sql.Dialec
 		return fmt.Errorf("failed to test table: %w", err)
 	}
 
+	// Test ADD COLUMN and DROP COLUMN
+	if err := testAddDropColumn(ctx, store, pgDialect); err != nil {
+		return fmt.Errorf("failed to test add/drop column: %w", err)
+	}
+
 	return nil
 }
 
@@ -142,4 +147,74 @@ func getRowCount(ctx context.Context, store db.Store, testTableName string) (int
 	}
 
 	return rowCount, nil
+}
+
+func testAddDropColumn(ctx context.Context, store *postgres.Store, pgDialect dialect.PostgresDialect) error {
+	testTableName := fmt.Sprintf("test_col_%s", strings.ToLower(stringutil.Random(5)))
+	testTableID := store.IdentifierFor(kafkalib.DatabaseAndSchemaPair{Schema: "public"}, testTableName)
+
+	// Create a test table first
+	createTableSQL := pgDialect.BuildCreateTableQuery(testTableID, false, []string{"pk int PRIMARY KEY", "col1 text"})
+	if _, err := store.ExecContext(ctx, createTableSQL); err != nil {
+		return fmt.Errorf("failed to create test table: %w", err)
+	}
+
+	colName := "new_column"
+
+	// Test ADD COLUMN functionality
+	if err := testAddColumn(ctx, store, pgDialect, testTableID, testTableName, colName); err != nil {
+		return fmt.Errorf("failed to test add column: %w", err)
+	}
+
+	// Test DROP COLUMN functionality
+	if err := testDropColumn(ctx, store, pgDialect, testTableID, testTableName, colName); err != nil {
+		return fmt.Errorf("failed to test drop column: %w", err)
+	}
+
+	return nil
+}
+
+func testAddColumn(ctx context.Context, store *postgres.Store, pgDialect dialect.PostgresDialect, testTableID sql.TableIdentifier, testTableName string, colName string) error {
+	sqlPart := fmt.Sprintf("%s varchar(100) DEFAULT 'test_value'", colName)
+	// Add the column in a loop to test idempotency.
+	for range 3 {
+		if _, err := store.ExecContext(ctx, pgDialect.BuildAddColumnQuery(testTableID, sqlPart)); err != nil {
+			return fmt.Errorf("failed to add column: %w", err)
+		}
+	}
+
+	var columnExists bool
+	if err := store.QueryRowContext(ctx,
+		`SELECT EXISTS ( SELECT 1 FROM information_schema.columns WHERE table_name = $1 AND column_name = $2 AND table_schema = 'public')`,
+		testTableName, colName).Scan(&columnExists); err != nil {
+		return fmt.Errorf("failed to check if column exists: %w", err)
+	}
+
+	if !columnExists {
+		return fmt.Errorf("expected column %q to exist, got none", colName)
+	}
+
+	return nil
+}
+
+func testDropColumn(ctx context.Context, store *postgres.Store, pgDialect dialect.PostgresDialect, testTableID sql.TableIdentifier, testTableName string, colName string) error {
+	// Drop column in a loop to test idempotency.
+	for range 3 {
+		if _, err := store.ExecContext(ctx, pgDialect.BuildDropColumnQuery(testTableID, colName)); err != nil {
+			return fmt.Errorf("failed to drop column: %w", err)
+		}
+	}
+
+	var columnExists bool
+	if err := store.QueryRowContext(ctx,
+		`SELECT EXISTS ( SELECT 1 FROM information_schema.columns WHERE table_name = $1 AND column_name = $2 AND table_schema = 'public')`,
+		testTableName, colName).Scan(&columnExists); err != nil {
+		return fmt.Errorf("failed to check if column exists: %w", err)
+	}
+
+	if columnExists {
+		return fmt.Errorf("expected column %q to be dropped, got none", colName)
+	}
+
+	return nil
 }
