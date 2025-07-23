@@ -2,6 +2,7 @@ package dialect
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config"
@@ -9,6 +10,7 @@ import (
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
@@ -107,7 +109,78 @@ func (PostgresDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, setting
 	return "", fmt.Errorf("not implemented")
 }
 
+var dataTypeMap = map[string]typing.KindDetails{
+	"boolean": typing.Boolean,
+	"text":    typing.String,
+	// Numbers:
+	"smallint":         typing.BuildIntegerKind(typing.SmallIntegerKind),
+	"integer":          typing.BuildIntegerKind(typing.IntegerKind),
+	"bigint":           typing.BuildIntegerKind(typing.BigIntegerKind),
+	"float":            typing.Float,
+	"real":             typing.Float,
+	"double":           typing.Float,
+	"double precision": typing.Float,
+	// Date and timestamp data types:
+	"date":                        typing.Date,
+	"time":                        typing.Time,
+	"timestamp with time zone":    typing.TimestampTZ,
+	"timestamp without time zone": typing.TimestampNTZ,
+	// Other data types:
+	"json": typing.Struct,
+}
+
 func (PostgresDialect) KindForDataType(_type string) (typing.KindDetails, error) {
-	// TODO: To implement
-	return typing.KindDetails{}, fmt.Errorf("not implemented")
+	dataType := strings.ToLower(_type)
+	if strings.HasPrefix(dataType, "timestamp") {
+		dataType, _ = StripPrecision(dataType)
+	}
+
+	dataType, parameters, err := sql.ParseDataTypeDefinition(dataType)
+	if err != nil {
+		return typing.Invalid, err
+	}
+
+	// Check the lookup table first.
+	if kind, ok := dataTypeMap[dataType]; ok {
+		return kind, nil
+	}
+
+	switch dataType {
+	case "numeric":
+		// This means that this is a variable numeric type.
+		if len(parameters) == 0 {
+			return typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale)), nil
+		}
+
+		return typing.ParseNumeric(parameters)
+	case "character varying", "character":
+		if len(parameters) != 1 {
+			return typing.Invalid, fmt.Errorf("expected 1 parameter for character varying, got %d, value: %q", len(parameters), _type)
+		}
+
+		precision, err := strconv.ParseInt(parameters[0], 10, 32)
+		if err != nil {
+			return typing.Invalid, fmt.Errorf("failed to parse string precision: %q, err: %w", parameters[0], err)
+		}
+
+		return typing.KindDetails{
+			Kind:                    typing.String.Kind,
+			OptionalStringPrecision: typing.ToPtr(int32(precision)),
+		}, nil
+	default:
+		return typing.Invalid, fmt.Errorf("unsupported data type: %q", _type)
+	}
+}
+
+func StripPrecision(s string) (string, string) {
+	var metadata string
+	// Extract precision if present
+	if idx := strings.Index(s, "("); idx != -1 {
+		if endIdx := strings.Index(s[idx:], ")"); endIdx != -1 {
+			metadata = s[idx+1 : idx+endIdx]
+			// Strip out the precision part
+			s = s[:idx] + s[idx+endIdx+1:]
+		}
+	}
+	return s, metadata
 }
