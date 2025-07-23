@@ -9,36 +9,36 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func (DatabricksDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, _ config.SharedDestinationColumnSettings) string {
+func (DatabricksDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, _ config.SharedDestinationColumnSettings) (string, error) {
 	switch kindDetails.Kind {
 	case typing.Float.Kind:
-		return "DOUBLE"
+		return "DOUBLE", nil
 	case typing.Integer.Kind:
-		return "BIGINT"
+		return "BIGINT", nil
 	case typing.Struct.Kind:
-		return "STRING"
+		return "STRING", nil
 	case typing.Array.Kind:
 		// Databricks requires arrays to be typed. As such, we're going to use an array of strings.
-		return "ARRAY<string>"
+		return "ARRAY<string>", nil
 	case typing.String.Kind:
-		return "STRING"
+		return "STRING", nil
 	case typing.Boolean.Kind:
-		return "BOOLEAN"
+		return "BOOLEAN", nil
 	case typing.Date.Kind:
-		return "DATE"
+		return "DATE", nil
 	case typing.Time.Kind:
-		return "STRING"
+		return "STRING", nil
 	case typing.TimestampNTZ.Kind:
 		// This is currently in public preview, to use this, the customer will need to enable [timestampNtz] in their delta tables.
 		// Ref: https://docs.databricks.com/en/sql/language-manual/data-types/timestamp-ntz-type.html
-		return "TIMESTAMP_NTZ"
+		return "TIMESTAMP_NTZ", nil
 	case typing.TimestampTZ.Kind:
-		return "TIMESTAMP"
+		return "TIMESTAMP", nil
 	case typing.EDecimal.Kind:
-		return kindDetails.ExtendedDecimalDetails.DatabricksKind()
+		return kindDetails.ExtendedDecimalDetails.DatabricksKind(), nil
 	}
 
-	return kindDetails.Kind
+	return kindDetails.Kind, nil
 }
 
 func (DatabricksDialect) KindForDataType(rawType string) (typing.KindDetails, error) {

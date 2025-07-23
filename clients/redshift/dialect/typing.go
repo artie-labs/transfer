@@ -10,54 +10,54 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func (RedshiftDialect) DataTypeForKind(kd typing.KindDetails, _ bool, _ config.SharedDestinationColumnSettings) string {
+func (RedshiftDialect) DataTypeForKind(kd typing.KindDetails, _ bool, _ config.SharedDestinationColumnSettings) (string, error) {
 	switch kd.Kind {
 	case typing.Integer.Kind:
 		if kd.OptionalIntegerKind != nil {
 			switch *kd.OptionalIntegerKind {
 			case typing.SmallIntegerKind:
-				return "INT2"
+				return "INT2", nil
 			case typing.IntegerKind:
-				return "INT4"
+				return "INT4", nil
 			case typing.NotSpecifiedKind, typing.BigIntegerKind:
 				fallthrough
 			default:
 				// By default, we are using a larger data type to avoid the possibility of an integer overflow.
-				return "INT8"
+				return "INT8", nil
 			}
 		}
 
-		return "INT8"
+		return "INT8", nil
 	case typing.Struct.Kind:
-		return "SUPER"
+		return "SUPER", nil
 	case typing.Array.Kind:
 		// Redshift does not have a built-in JSON type (which means we'll cast STRUCT and ARRAY kinds as TEXT).
 		// As a result, Artie will store this in JSON string and customers will need to extract this data out via SQL.
 		// Columns that are automatically created by Artie are created as VARCHAR(MAX).
 		// Rationale: https://github.com/artie-labs/transfer/pull/173
-		return "VARCHAR(MAX)"
+		return "VARCHAR(MAX)", nil
 	case typing.String.Kind:
 		if kd.OptionalStringPrecision != nil {
-			return fmt.Sprintf("VARCHAR(%d)", *kd.OptionalStringPrecision)
+			return fmt.Sprintf("VARCHAR(%d)", *kd.OptionalStringPrecision), nil
 		}
 
-		return "VARCHAR(MAX)"
+		return "VARCHAR(MAX)", nil
 	case typing.Boolean.Kind:
 		// We need to append `NULL` to let Redshift know that NULL is an acceptable data type.
-		return "BOOLEAN NULL"
+		return "BOOLEAN NULL", nil
 	case typing.Date.Kind:
-		return "DATE"
+		return "DATE", nil
 	case typing.Time.Kind:
-		return "TIME"
+		return "TIME", nil
 	case typing.TimestampNTZ.Kind:
-		return "TIMESTAMP WITHOUT TIME ZONE"
+		return "TIMESTAMP WITHOUT TIME ZONE", nil
 	case typing.TimestampTZ.Kind:
-		return "TIMESTAMP WITH TIME ZONE"
+		return "TIMESTAMP WITH TIME ZONE", nil
 	case typing.EDecimal.Kind:
-		return kd.ExtendedDecimalDetails.RedshiftKind()
+		return kd.ExtendedDecimalDetails.RedshiftKind(), nil
 	}
 
-	return kd.Kind
+	return kd.Kind, nil
 }
 
 func (RedshiftDialect) KindForDataType(rawType string) (typing.KindDetails, error) {

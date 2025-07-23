@@ -36,7 +36,12 @@ func BuildCreateTableSQL(settings config.SharedDestinationColumnSettings, dialec
 			primaryKeys = append(primaryKeys, colName)
 		}
 
-		parts = append(parts, fmt.Sprintf("%s %s", colName, dialect.DataTypeForKind(col.KindDetails, col.PrimaryKey(), settings)))
+		dataType, err := dialect.DataTypeForKind(col.KindDetails, col.PrimaryKey(), settings)
+		if err != nil {
+			return "", fmt.Errorf("failed to get data type for column %q: %w", col.Name(), err)
+		}
+
+		parts = append(parts, fmt.Sprintf("%s %s", colName, dataType))
 	}
 
 	if len(primaryKeys) > 0 {
@@ -80,7 +85,12 @@ func BuildAlterTableAddColumns(settings config.SharedDestinationColumnSettings, 
 			return nil, fmt.Errorf("received an invalid column %q", col.Name())
 		}
 
-		sqlPart := fmt.Sprintf("%s %s", dialect.QuoteIdentifier(col.Name()), dialect.DataTypeForKind(col.KindDetails, col.PrimaryKey(), settings))
+		dataType, err := dialect.DataTypeForKind(col.KindDetails, col.PrimaryKey(), settings)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get data type for column %q: %w", col.Name(), err)
+		}
+
+		sqlPart := fmt.Sprintf("%s %s", dialect.QuoteIdentifier(col.Name()), dataType)
 		parts = append(parts, dialect.BuildAddColumnQuery(tableID, sqlPart))
 	}
 

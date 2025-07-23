@@ -10,14 +10,24 @@ import (
 )
 
 func TestSnowflakeDialect_DataTypeForKind(t *testing.T) {
-	{
-		// String
-		{
-			assert.Equal(t, "string", SnowflakeDialect{}.DataTypeForKind(typing.String, false, config.SharedDestinationColumnSettings{}))
-		}
-		{
-			assert.Equal(t, "string", SnowflakeDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: typing.ToPtr(int32(12345))}, false, config.SharedDestinationColumnSettings{}))
-		}
+	expectedKindDetailsToValueMap := map[typing.KindDetails]string{
+		// Strings:
+		typing.String: "string",
+		{Kind: typing.String.Kind, OptionalStringPrecision: typing.ToPtr(int32(12345))}: "string",
+		// Boolean:
+		typing.Boolean: "boolean",
+		// Struct:
+		typing.Struct: "variant",
+		// Date and timestamp data types:
+		typing.Date:        "date",
+		typing.Time:        "time",
+		typing.TimestampTZ: "timestamp_tz",
+	}
+
+	for kd, expected := range expectedKindDetailsToValueMap {
+		actual, err := SnowflakeDialect{}.DataTypeForKind(kd, false, config.SharedDestinationColumnSettings{})
+		assert.NoError(t, err)
+		assert.Equal(t, expected, actual)
 	}
 }
 
@@ -172,22 +182,5 @@ func TestSnowflakeDialect_KindForDataType_DateTime(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, typing.TimestampNTZ, kd, expectedDateTime)
 		}
-	}
-}
-
-func TestSnowflakeDialect_KindForDataType_NoDataLoss(t *testing.T) {
-	kindDetails := []typing.KindDetails{
-		typing.TimestampTZ,
-		typing.Time,
-		typing.Date,
-		typing.String,
-		typing.Boolean,
-		typing.Struct,
-	}
-
-	for _, kindDetail := range kindDetails {
-		kd, err := SnowflakeDialect{}.KindForDataType(SnowflakeDialect{}.DataTypeForKind(kindDetail, false, config.SharedDestinationColumnSettings{}))
-		assert.NoError(t, err)
-		assert.Equal(t, kindDetail, kd)
 	}
 }

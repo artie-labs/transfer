@@ -12,13 +12,20 @@ import (
 func TestBigQueryDialect_DataTypeForKind(t *testing.T) {
 	{
 		// String
-		assert.Equal(t, "string", BigQueryDialect{}.DataTypeForKind(typing.String, false, config.SharedDestinationColumnSettings{}))
-		assert.Equal(t, "string", BigQueryDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: typing.ToPtr(int32(12345))}, true, config.SharedDestinationColumnSettings{}))
+		actual, err := BigQueryDialect{}.DataTypeForKind(typing.String, false, config.SharedDestinationColumnSettings{})
+		assert.NoError(t, err)
+		assert.Equal(t, "string", actual)
+
+		actual, err = BigQueryDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: typing.ToPtr(int32(12345))}, true, config.SharedDestinationColumnSettings{})
+		assert.NoError(t, err)
+		assert.Equal(t, "string", actual)
 	}
 	{
 		// NUMERIC
 		// Precision and scale are not specified
-		assert.Equal(t, "numeric", BigQueryDialect{}.DataTypeForKind(typing.EDecimal, false, config.SharedDestinationColumnSettings{}))
+		actual, err := BigQueryDialect{}.DataTypeForKind(typing.EDecimal, false, config.SharedDestinationColumnSettings{})
+		assert.NoError(t, err)
+		assert.Equal(t, "numeric", actual)
 	}
 }
 
@@ -33,7 +40,10 @@ func TestBigQueryDialect_KindForDataType_NoDataLoss(t *testing.T) {
 	}
 
 	for _, kindDetail := range kindDetails {
-		kd, err := BigQueryDialect{}.KindForDataType(BigQueryDialect{}.DataTypeForKind(kindDetail, false, config.SharedDestinationColumnSettings{}))
+		actual, err := BigQueryDialect{}.DataTypeForKind(kindDetail, false, config.SharedDestinationColumnSettings{})
+		assert.NoError(t, err)
+
+		kd, err := BigQueryDialect{}.KindForDataType(actual)
 		assert.NoError(t, err)
 		assert.Equal(t, kindDetail, kd)
 	}
