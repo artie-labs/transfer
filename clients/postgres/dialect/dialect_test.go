@@ -18,6 +18,8 @@ func TestKindForDataType(t *testing.T) {
 		"character varying(5)": {Kind: typing.String.Kind, OptionalStringPrecision: typing.ToPtr(int32(5))},
 		"character(5)":         {Kind: typing.String.Kind, OptionalStringPrecision: typing.ToPtr(int32(5))},
 		"text":                 typing.String,
+		// Boolean:
+		"boolean": typing.Boolean,
 	}
 
 	for dataType, expectedKind := range expectedTypeToKindMap {
