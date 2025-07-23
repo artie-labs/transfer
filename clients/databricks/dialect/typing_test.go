@@ -12,38 +12,29 @@ import (
 
 func TestDatabricksDialect_DataTypeForKind(t *testing.T) {
 	kindDetailsToExpectedMap := map[typing.KindDetails]string{
-		typing.Float:        "DOUBLE",
-		typing.Integer:      "BIGINT",
-		typing.Struct:       "STRING",
-		typing.Array:        "ARRAY<string>",
-		typing.String:       "STRING",
-		typing.Boolean:      "BOOLEAN",
+		// Strings:
+		typing.Struct: "STRING",
+		typing.String: "STRING",
+		// Booleans:
+		typing.Boolean: "BOOLEAN",
+		// Numbers:
+		typing.Float:   "DOUBLE",
+		typing.Integer: "BIGINT",
+		{Kind: typing.EDecimal.Kind, ExtendedDecimalDetails: typing.ToPtr(decimal.NewDetails(10, 2))}: "DECIMAL(10, 2)",
+		{Kind: typing.EDecimal.Kind, ExtendedDecimalDetails: typing.ToPtr(decimal.NewDetails(40, 2))}: "STRING",
+		// Arrays:
+		typing.Array: "ARRAY<string>",
+		// Date and timestamp data types:
 		typing.Date:         "DATE",
 		typing.TimestampTZ:  "TIMESTAMP",
 		typing.TimestampNTZ: "TIMESTAMP_NTZ",
 		typing.Time:         "STRING",
-		typing.EDecimal:     "DECIMAL(10, 2)",
 	}
 
 	for kind, expected := range kindDetailsToExpectedMap {
 		actual, err := DatabricksDialect{}.DataTypeForKind(kind, false, config.SharedDestinationColumnSettings{})
 		assert.NoError(t, err)
 		assert.Equal(t, expected, actual)
-	}
-	{
-		// Decimals
-		{
-			// Below 38 precision
-			actual, err := DatabricksDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.EDecimal.Kind, ExtendedDecimalDetails: typing.ToPtr(decimal.NewDetails(10, 2))}, false, config.SharedDestinationColumnSettings{})
-			assert.NoError(t, err)
-			assert.Equal(t, "DECIMAL(10, 2)", actual)
-		}
-		{
-			// Above 38 precision
-			actual, err := DatabricksDialect{}.DataTypeForKind(typing.KindDetails{Kind: typing.EDecimal.Kind, ExtendedDecimalDetails: typing.ToPtr(decimal.NewDetails(40, 2))}, false, config.SharedDestinationColumnSettings{})
-			assert.NoError(t, err)
-			assert.Equal(t, "STRING", actual)
-		}
 	}
 }
 
