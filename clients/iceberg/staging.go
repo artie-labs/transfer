@@ -35,18 +35,23 @@ func (s Store) castColValStaging(colVal any, colKind typing.KindDetails, cfg con
 	return shared.ValueConvertResponse{Value: value}, nil
 }
 
-func (s Store) buildColumnParts(columns []columns.Column) []string {
+func (s Store) buildColumnParts(columns []columns.Column) ([]string, error) {
 	var colParts []string
 	for _, col := range columns {
+		dataType, err := s.Dialect().DataTypeForKind(col.KindDetails, col.PrimaryKey(), config.SharedDestinationColumnSettings{})
+		if err != nil {
+			return nil, fmt.Errorf("failed to get data type for column %q: %w", col.Name(), err)
+		}
+
 		colPart := fmt.Sprintf("%s %s",
 			s.Dialect().BuildIdentifier(col.Name()),
-			s.Dialect().DataTypeForKind(col.KindDetails, col.PrimaryKey(), config.SharedDestinationColumnSettings{}),
+			dataType,
 		)
 
 		colParts = append(colParts, colPart)
 	}
 
-	return colParts
+	return colParts, nil
 }
 
 func (s Store) uploadToS3(ctx context.Context, fp string) (string, error) {
@@ -89,8 +94,13 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 		return fmt.Errorf("failed to upload to s3: %w", err)
 	}
 
+	colParts, err := s.buildColumnParts(tableData.ReadOnlyInMemoryCols().ValidColumns())
+	if err != nil {
+		return fmt.Errorf("failed to build column parts: %w", err)
+	}
+
 	// Load the data into a temporary view
-	command := s.Dialect().BuildCreateTemporaryView(tempTableID.EscapedTable(), s.buildColumnParts(tableData.ReadOnlyInMemoryCols().ValidColumns()), s3URI)
+	command := s.Dialect().BuildCreateTemporaryView(tempTableID.EscapedTable(), colParts, s3URI)
 	if err := s.apacheLivyClient.ExecContext(ctx, command); err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
 	}

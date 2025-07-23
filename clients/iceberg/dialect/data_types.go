@@ -10,7 +10,6 @@ import (
 )
 
 // Ref: https://iceberg.apache.org/docs/latest/spark-getting-started/#iceberg-type-to-spark-type
-
 func (IcebergDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, _ config.SharedDestinationColumnSettings) (string, error) {
 	switch kindDetails.Kind {
 	case typing.Boolean.Kind:
