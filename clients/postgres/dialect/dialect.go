@@ -117,8 +117,28 @@ func (PostgresDialect) BuildMergeQueries(
 }
 
 func (PostgresDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, settings config.SharedDestinationColumnSettings) string {
-	// TODO: To implement
-	return ""
+	switch kd.Kind {
+	case typing.Float.Kind:
+		return "double precision"
+	case typing.Integer.Kind:
+		if kd.OptionalIntegerKind == nil {
+			return "integer"
+		}
+
+		switch *kd.OptionalIntegerKind {
+		case typing.SmallIntegerKind:
+			return "smallint"
+		case typing.IntegerKind:
+			return "integer"
+		case typing.BigIntegerKind:
+			return "bigint"
+		}
+	case typing.String.Kind:
+		return "text"
+	case typing.Boolean.Kind:
+		return "boolean"
+	case typing.Date.Kind:
+	}
 }
 
 func (PostgresDialect) KindForDataType(_type string) (typing.KindDetails, error) {
