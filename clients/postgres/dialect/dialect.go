@@ -118,6 +118,11 @@ func (PostgresDialect) KindForDataType(_type string) (typing.KindDetails, error)
 		return typing.Invalid, err
 	}
 
+	// Check the lookup table first.
+	if kind, ok := dataTypeMap[dataType]; ok {
+		return kind, nil
+	}
+
 	switch dataType {
 	case "numeric":
 		// TODO: Handle variable numeric types.
