@@ -24,7 +24,8 @@ func TestBuildColumnParts(t *testing.T) {
 			"name STRING",
 			"is_active BOOLEAN",
 		}
-		result := store.buildColumnParts(columns)
+		result, err := store.buildColumnParts(columns)
+		assert.NoError(t, err)
 		assert.Equal(t, expected, result, "Basic column types should be properly formatted")
 	}
 	{
@@ -41,7 +42,8 @@ func TestBuildColumnParts(t *testing.T) {
 			"user_id LONG",
 			"email STRING",
 		}
-		result := store.buildColumnParts(columns)
+		result, err := store.buildColumnParts(columns)
+		assert.NoError(t, err)
 		assert.Equal(t, expected, result, "Primary key columns should be properly formatted")
 	}
 	{
@@ -56,14 +58,16 @@ func TestBuildColumnParts(t *testing.T) {
 			"tags STRING",
 			"created_at TIMESTAMP_NTZ",
 		}
-		result := store.buildColumnParts(columns)
+		result, err := store.buildColumnParts(columns)
+		assert.NoError(t, err)
 		assert.Equal(t, expected, result, "Complex types should be properly formatted")
 	}
 	{
 		// Empty columns
 		columns := []columns.Column{}
 		expected := []string(nil)
-		result := store.buildColumnParts(columns)
+		result, err := store.buildColumnParts(columns)
+		assert.NoError(t, err)
 		assert.Equal(t, expected, result, "Empty columns should return empty slice")
 	}
 	{
@@ -76,7 +80,8 @@ func TestBuildColumnParts(t *testing.T) {
 			"user.name STRING",
 			"order_id LONG",
 		}
-		result := store.buildColumnParts(columns)
+		result, err := store.buildColumnParts(columns)
+		assert.NoError(t, err)
 		assert.Equal(t, expected, result, "Special characters in column names should be properly quoted")
 	}
 	{
@@ -89,7 +94,8 @@ func TestBuildColumnParts(t *testing.T) {
 			"userid LONG",
 			"firstname STRING",
 		}
-		result := store.buildColumnParts(columns)
+		result, err := store.buildColumnParts(columns)
+		assert.NoError(t, err)
 		assert.Equal(t, expected, result, "Mixed case column names should be preserved")
 	}
 	{
@@ -102,12 +108,14 @@ func TestBuildColumnParts(t *testing.T) {
 			"123_id LONG",
 			"456_name STRING",
 		}
-		result := store.buildColumnParts(columns)
+		result, err := store.buildColumnParts(columns)
+		assert.NoError(t, err)
 		assert.Equal(t, expected, result, "Numeric column names should be properly quoted")
 	}
 	{
 		// Nil columns slice
-		result := store.buildColumnParts(nil)
+		result, err := store.buildColumnParts(nil)
+		assert.NoError(t, err)
 		assert.Empty(t, result, "Nil columns should return empty slice")
 	}
 	{
@@ -116,7 +124,8 @@ func TestBuildColumnParts(t *testing.T) {
 			columns.NewColumn("", typing.String),
 		}
 		expected := []string{" STRING"}
-		result := store.buildColumnParts(columns)
+		result, err := store.buildColumnParts(columns)
+		assert.NoError(t, err)
 		assert.Equal(t, expected, result, "Empty column name should be properly quoted")
 	}
 	{
@@ -126,7 +135,8 @@ func TestBuildColumnParts(t *testing.T) {
 			columns.NewColumn(longName, typing.String),
 		}
 		expected := []string{fmt.Sprintf("%s STRING", longName)}
-		result := store.buildColumnParts(columns)
+		result, err := store.buildColumnParts(columns)
+		assert.NoError(t, err)
 		assert.Equal(t, expected, result, "Long column name should be properly quoted")
 	}
 }
