@@ -94,6 +94,29 @@ func testTable(ctx context.Context, store *postgres.Store, pgDialect dialect.Pos
 	if _, err := store.QueryContext(ctx, fmt.Sprintf(`SELECT * FROM %s`, testTableName)); err != nil {
 		return fmt.Errorf("failed to query table: %w", err)
 	}
+
+	{
+		// Now let's describe the table and we should see two columns
+		describeTableQuery, args, err := pgDialect.BuildDescribeTableQuery(testTableID)
+		if err != nil {
+			return fmt.Errorf("failed to describe table: %w", err)
+		}
+
+		sqlRows, err := store.QueryContext(ctx, describeTableQuery, args...)
+		if err != nil {
+			return fmt.Errorf("failed to query table: %w", err)
+		}
+
+		rows, err := sql.RowsToObjects(sqlRows)
+		if err != nil {
+			return fmt.Errorf("failed to convert rows to objects: %w", err)
+		}
+
+		if len(rows) != 2 {
+			return fmt.Errorf("expected 2 rows, got %d", len(rows))
+		}
+	}
+
 	{
 		// Now let's insert some rows so we can test truncate.
 		if _, err := store.ExecContext(ctx, fmt.Sprintf(`INSERT INTO %s (pk, col) VALUES (1, 'test')`, testTableName)); err != nil {
