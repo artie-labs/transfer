@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/artie-labs/reader/lib/rdbms/column"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -110,20 +111,33 @@ func (PostgresDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, setting
 }
 
 var dataTypeMap = map[string]typing.KindDetails{
-	"boolean":          typing.Boolean,
-	"text":             typing.String,
+	"boolean": typing.Boolean,
+	"text":    typing.String,
+	// Numbers:
 	"smallint":         typing.BuildIntegerKind(typing.SmallIntegerKind),
 	"integer":          typing.BuildIntegerKind(typing.IntegerKind),
 	"bigint":           typing.BuildIntegerKind(typing.BigIntegerKind),
 	"float":            typing.Float,
 	"real":             typing.Float,
 	"double precision": typing.Float,
+	// Date and timestamp data types:
+	"date":                        typing.Date,
+	"time":                        typing.Time,
+	"timestamp with time zone":    typing.TimestampTZ,
+	"timestamp without time zone": typing.TimestampNTZ,
+	// Other data types:
+	"json": typing.Struct,
 }
 
 func (PostgresDialect) KindForDataType(_type string) (typing.KindDetails, error) {
 	dataType, parameters, err := sql.ParseDataTypeDefinition(strings.ToLower(_type))
 	if err != nil {
 		return typing.Invalid, err
+	}
+
+	if strings.HasPrefix(dataType, "timestamp") {
+		// Strip precision
+		dataType, _ = column.StripPrecision(dataType)
 	}
 
 	// Check the lookup table first.
@@ -156,4 +170,17 @@ func (PostgresDialect) KindForDataType(_type string) (typing.KindDetails, error)
 	default:
 		return typing.Invalid, fmt.Errorf("unsupported data type: %q", _type)
 	}
+}
+
+func StripPrecision(s string) (string, string) {
+	var metadata string
+	// Extract precision if present
+	if idx := strings.Index(s, "("); idx != -1 {
+		if endIdx := strings.Index(s[idx:], ")"); endIdx != -1 {
+			metadata = s[idx+1 : idx+endIdx]
+			// Strip out the precision part
+			s = s[:idx] + s[idx+endIdx+1:]
+		}
+	}
+	return s, metadata
 }

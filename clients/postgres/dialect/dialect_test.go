@@ -29,11 +29,56 @@ func TestKindForDataType(t *testing.T) {
 		"text":                 typing.String,
 		// Boolean:
 		"boolean": typing.Boolean,
+		// Date and timestamp data types:
+		"date":                            typing.Date,
+		"time":                            typing.Time,
+		"timestamp with time zone":        typing.TimestampTZ,
+		"timestamp (5) with time zone":    typing.TimestampTZ,
+		"timestamp without time zone":     typing.TimestampNTZ,
+		"timestamp (4) without time zone": typing.TimestampNTZ,
+		// Other data types:
+		"json": typing.Struct,
 	}
 
 	for dataType, expectedKind := range expectedTypeToKindMap {
 		kind, err := PostgresDialect{}.KindForDataType(dataType)
 		assert.NoError(t, err)
 		assert.Equal(t, expectedKind, kind)
+	}
+}
+func TestStripPrecision(t *testing.T) {
+	{
+		// Test with a string that has a precision
+		s := "timestamp(6)"
+		stripped, metadata := StripPrecision(s)
+		assert.Equal(t, "timestamp", stripped)
+		assert.Equal(t, "6", metadata)
+	}
+	{
+		// Test with a string that doesn't have a precision
+		s := "timestamp"
+		stripped, metadata := StripPrecision(s)
+		assert.Equal(t, s, stripped)
+		assert.Empty(t, metadata)
+	}
+	{
+		// Test with a string that has a precision but no parentheses
+		s := "timestamp 6"
+		stripped, metadata := StripPrecision(s)
+		assert.Equal(t, "timestamp 6", stripped)
+		assert.Empty(t, metadata)
+	}
+	{
+		// Test with multiple precisions, it will only strip the first precision
+		s := "timestamp(6) timestamp(3)"
+		stripped, metadata := StripPrecision(s)
+		assert.Equal(t, "timestamp timestamp(3)", stripped)
+		assert.Equal(t, "6", metadata)
+	}
+	{
+		s := "timestamp(6"
+		stripped, metadata := StripPrecision(s)
+		assert.Equal(t, s, stripped)
+		assert.Empty(t, metadata)
 	}
 }
