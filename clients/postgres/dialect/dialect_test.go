@@ -15,7 +15,14 @@ func TestKindForDataType(t *testing.T) {
 		"numeric(5, 0)": typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(5, 0)),
 		"numeric(5)":    typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(5, 0)),
 		// Variable numeric type:
-		"numeric": typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale)),
+		"numeric":          typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale)),
+		"float":            typing.Float,
+		"real":             typing.Float,
+		"double":           typing.Float,
+		"double precision": typing.Float,
+		"smallint":         typing.BuildIntegerKind(typing.SmallIntegerKind),
+		"integer":          typing.BuildIntegerKind(typing.IntegerKind),
+		"bigint":           typing.BuildIntegerKind(typing.BigIntegerKind),
 		// String data types:
 		"character varying(5)": {Kind: typing.String.Kind, OptionalStringPrecision: typing.ToPtr(int32(5))},
 		"character(5)":         {Kind: typing.String.Kind, OptionalStringPrecision: typing.ToPtr(int32(5))},
