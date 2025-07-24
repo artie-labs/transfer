@@ -19,7 +19,7 @@ import (
 
 	"github.com/artie-labs/transfer/lib/awslib"
 	"github.com/artie-labs/transfer/lib/config"
-	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/lib/kafkalib",
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/parquetutil"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -79,10 +79,7 @@ func buildTemporaryFilePath(tableData *optimization.TableData) string {
 // WriteParquetFiles writes the table data to a parquet file at the specified path using Arrow.
 // Returns an error if any step of the writing process fails.
 func WriteParquetFiles(tableData *optimization.TableData, filePath string, location *time.Location) error {
-	cols := tableData.ReadOnlyInMemoryCols().ValidColumns()
-
-	// Build Arrow schema from columns
-	arrowSchema, err := parquetutil.BuildArrowSchemaFromColumns(cols, location)
+	arrowSchema, err := parquetutil.BuildArrowSchemaFromColumns(tableData.ReadOnlyInMemoryCols().ValidColumns(), location)
 	if err != nil {
 		return fmt.Errorf("failed to generate arrow schema: %w", err)
 	}
@@ -92,29 +89,23 @@ func WriteParquetFiles(tableData *optimization.TableData, filePath string, locat
 	if err != nil {
 		return fmt.Errorf("failed to create parquet file: %w", err)
 	}
+
 	defer file.Close()
 
-	// Set up parquet writer properties with compression
-	props := parquet.NewWriterProperties(parquet.WithCompression(compress.Codecs.Gzip))
-
-	// Set up arrow writer properties
-	arrowProps := pqarrow.DefaultWriterProps()
-
 	// Create parquet file writer
-	writer, err := pqarrow.NewFileWriter(arrowSchema, file, props, arrowProps)
+	writer, err := pqarrow.NewFileWriter(arrowSchema, file, parquet.NewWriterProperties(parquet.WithCompression(compress.Codecs.Gzip)), pqarrow.DefaultWriterProps())
 	if err != nil {
 		return fmt.Errorf("failed to create parquet writer: %w", err)
 	}
+
 	defer writer.Close()
 
-	// Create record from table data
 	record, err := buildArrowRecord(arrowSchema, tableData, location)
 	if err != nil {
 		return fmt.Errorf("failed to build arrow record: %w", err)
 	}
 	defer record.Release()
 
-	// Write the record to parquet file
 	if err = writer.Write(record); err != nil {
 		return fmt.Errorf("failed to write record: %w", err)
 	}
@@ -122,13 +113,12 @@ func WriteParquetFiles(tableData *optimization.TableData, filePath string, locat
 	return nil
 }
 
-// buildArrowRecord creates an Arrow record from table data
 func buildArrowRecord(schema *arrow.Schema, tableData *optimization.TableData, location *time.Location) (arrow.Record, error) {
 	pool := memory.NewGoAllocator()
 
-	builders := make([]array.Builder, len(schema.Fields()))
-	for i, field := range schema.Fields() {
-		builders[i] = array.NewBuilder(pool, field.Type)
+	var builders []array.Builder
+	for _, field := range schema.Fields() {
+		builders = append(builders, array.NewBuilder(pool, field.Type))
 	}
 	defer func() {
 		for _, builder := range builders {
