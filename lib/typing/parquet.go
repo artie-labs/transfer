@@ -21,21 +21,20 @@ func (kd KindDetails) ToArrowType(location *time.Location) (arrow.DataType, erro
 	case Boolean.Kind:
 		return arrow.FixedWidthTypes.Boolean, nil
 	case Float.Kind:
-		return arrow.PrimitiveTypes.Float32, nil
+		return arrow.PrimitiveTypes.Float64, nil
 	case Time.Kind:
-		if location == nil {
-			// Default to millisecond precision time (TIME_MILLIS)
-			return arrow.FixedWidthTypes.Time32ms, nil
-		}
 		return arrow.FixedWidthTypes.Time32ms, nil
 	case Date.Kind:
 		return arrow.FixedWidthTypes.Date32, nil
 	case EDecimal.Kind:
+		if kd.ExtendedDecimalDetails == nil {
+			return nil, fmt.Errorf("extended decimal details are not set")
+		}
+
 		if kd.ExtendedDecimalDetails != nil {
 			precision := kd.ExtendedDecimalDetails.Precision()
-			scale := kd.ExtendedDecimalDetails.Scale()
 			if precision <= 38 {
-				return &arrow.Decimal128Type{Precision: precision, Scale: scale}, nil
+				return &arrow.Decimal128Type{Precision: precision, Scale: kd.ExtendedDecimalDetails.Scale()}, nil
 			}
 		}
 		// Default decimal or unsupported precision - use string
@@ -62,7 +61,7 @@ func (kd KindDetails) ToArrowType(location *time.Location) (arrow.DataType, erro
 		}
 		return &arrow.TimestampType{Unit: arrow.Millisecond}, nil
 	default:
-		return arrow.BinaryTypes.String, nil
+		return nil, fmt.Errorf("unsupported kind %q", kd.Kind)
 	}
 }
 
