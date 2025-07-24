@@ -22,11 +22,11 @@ type AppendTest struct {
 
 func NewAppendTest(ctx context.Context, dest destination.Destination, _iceberg *iceberg.Store, topicConfig kafkalib.TopicConfig) *AppendTest {
 	return &AppendTest{
-		framework: shared.NewTestFramework(ctx, dest, _iceberg, topicConfig),
+		framework: shared.NewTestFramework(dest, _iceberg, topicConfig),
 	}
 }
 
-func (at *AppendTest) generateTestData(numRows int, appendEvery int) error {
+func (at *AppendTest) generateTestData(ctx context.Context, numRows int, appendEvery int) error {
 	for i := 0; i < appendEvery; i++ {
 		for j := 0; j < numRows; j++ {
 			pkValue := i*numRows + j
@@ -35,7 +35,7 @@ func (at *AppendTest) generateTestData(numRows int, appendEvery int) error {
 			at.framework.GetTableData().InsertRow(pkValueString, rowData, false)
 		}
 
-		if err := at.framework.GetBaseline().Append(at.framework.GetContext(), at.framework.GetTableData(), false); err != nil {
+		if err := at.framework.GetBaseline().Append(ctx, at.framework.GetTableData(), false); err != nil {
 			return fmt.Errorf("failed to append data: %w", err)
 		}
 
@@ -45,8 +45,8 @@ func (at *AppendTest) generateTestData(numRows int, appendEvery int) error {
 	return nil
 }
 
-func (at *AppendTest) Run() error {
-	if err := at.framework.Cleanup(at.framework.GetTableID()); err != nil {
+func (at *AppendTest) Run(ctx context.Context) error {
+	if err := at.framework.Cleanup(ctx, at.framework.GetTableID()); err != nil {
 		return fmt.Errorf("failed to cleanup table: %w", err)
 	}
 
@@ -54,19 +54,19 @@ func (at *AppendTest) Run() error {
 
 	appendRows := 200
 	appendEvery := 50
-	if err := at.generateTestData(appendRows, appendEvery); err != nil {
+	if err := at.generateTestData(ctx, appendRows, appendEvery); err != nil {
 		return fmt.Errorf("failed to generate test data: %w", err)
 	}
 
-	if err := at.framework.VerifyRowCount(appendRows * appendEvery); err != nil {
+	if err := at.framework.VerifyRowCount(ctx, appendRows*appendEvery); err != nil {
 		return fmt.Errorf("failed to verify row count: %w", err)
 	}
 
-	if err := at.framework.VerifyDataContent(appendRows * appendEvery); err != nil {
+	if err := at.framework.VerifyDataContent(ctx, appendRows*appendEvery); err != nil {
 		return fmt.Errorf("failed to verify data content: %w", err)
 	}
 
-	return at.framework.Cleanup(at.framework.GetTableID())
+	return at.framework.Cleanup(ctx, at.framework.GetTableID())
 }
 
 func main() {
@@ -107,7 +107,7 @@ func main() {
 	}
 
 	test := NewAppendTest(ctx, dest, _iceberg, *tc[0])
-	if err = test.Run(); err != nil {
+	if err = test.Run(ctx); err != nil {
 		logger.Fatal("Test failed", slog.Any("err", err))
 	}
 

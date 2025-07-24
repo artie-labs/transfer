@@ -20,7 +20,6 @@ import (
 )
 
 type TestFramework struct {
-	ctx         context.Context
 	tableID     sql.TableIdentifier
 	tableData   *optimization.TableData
 	topicConfig kafkalib.TopicConfig
@@ -47,7 +46,7 @@ func (t TestFramework) MSSQL() bool {
 	return ok
 }
 
-func NewTestFramework(ctx context.Context, dest destination.Destination, _iceberg *iceberg.Store, topicConfig kafkalib.TopicConfig) *TestFramework {
+func NewTestFramework(dest destination.Destination, _iceberg *iceberg.Store, topicConfig kafkalib.TopicConfig) *TestFramework {
 	var tableID sql.TableIdentifier
 	if _iceberg != nil {
 		tableID = _iceberg.IdentifierFor(topicConfig.BuildDatabaseAndSchemaPair(), topicConfig.TableName)
@@ -56,7 +55,6 @@ func NewTestFramework(ctx context.Context, dest destination.Destination, _iceber
 	}
 
 	return &TestFramework{
-		ctx:         ctx,
 		dest:        dest,
 		iceberg:     _iceberg,
 		tableID:     tableID,
@@ -135,29 +133,29 @@ func (tf *TestFramework) GenerateRowData(pkValue int) map[string]any {
 	return row
 }
 
-func (tf *TestFramework) VerifyRowCount(expected int) error {
+func (tf *TestFramework) VerifyRowCount(ctx context.Context, expected int) error {
 	if tf.iceberg != nil {
-		return tf.verifyRowCountIceberg(expected)
+		return tf.verifyRowCountIceberg(ctx, expected)
 	}
 
-	return tf.verifyRowCountDestination(expected)
+	return tf.verifyRowCountDestination(ctx, expected)
 }
 
 func (tf *TestFramework) VerifyDataContent(ctx context.Context, rowCount int) error {
 	if tf.iceberg != nil {
-		return tf.verifyDataContentIceberg(rowCount)
+		return tf.verifyDataContentIceberg(ctx, rowCount)
 	}
 
 	return tf.verifyDataContentDestination(ctx, rowCount)
 }
 
-func (tf *TestFramework) Cleanup(tableID sql.TableIdentifier) error {
+func (tf *TestFramework) Cleanup(ctx context.Context, tableID sql.TableIdentifier) error {
 	dropTableID := tableID.WithDisableDropProtection(true)
 	if tf.iceberg != nil {
-		return tf.iceberg.DropTable(tf.ctx, dropTableID)
+		return tf.iceberg.DropTable(ctx, dropTableID)
 	}
 
-	return tf.dest.DropTable(tf.ctx, dropTableID)
+	return tf.dest.DropTable(ctx, dropTableID)
 }
 
 func (tf *TestFramework) GetTableData() *optimization.TableData {
@@ -178,10 +176,6 @@ func (tf *TestFramework) GetBaseline() destination.Baseline {
 	}
 
 	return tf.dest
-}
-
-func (tf *TestFramework) GetContext() context.Context {
-	return tf.ctx
 }
 
 // These destinations return array as array<string>.
