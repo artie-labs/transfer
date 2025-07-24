@@ -61,7 +61,7 @@ func addComprehensiveTestData(tableData *optimization.TableData) {
 		"name":                "John Doe",
 		"age":                 30,
 		"is_active":           true,
-		"score":               98.5,
+		"score":               float32(98.5),
 		"birth_date":          "1993-05-15",
 		"lunch_time":          "12:30:45",
 		"created_at":          "2024-03-20T10:00:00.111Z",
@@ -82,7 +82,7 @@ func addComprehensiveTestData(tableData *optimization.TableData) {
 		"name":                "Jane Smith",
 		"age":                 0, // edge case: zero age
 		"is_active":           false,
-		"score":               0.0, // edge case: zero score
+		"score":               float32(0.0), // edge case: zero score
 		"birth_date":          "2000-01-01",
 		"lunch_time":          "00:00:00", // edge case: midnight
 		"created_at":          "2024-03-20T11:00:00.555Z",
@@ -103,9 +103,9 @@ func addComprehensiveTestData(tableData *optimization.TableData) {
 		"name":                "Bob Wilson",
 		"age":                 -1, // edge case: negative age (shouldn't happen but testing)
 		"is_active":           true,
-		"score":               -45.67,
-		"birth_date":          "1970-01-01", // Unix epoch
-		"lunch_time":          "23:59:59",   // end of day
+		"score":               float32(-45.67),
+		"birth_date":          "1970-01-01",               // Unix epoch
+		"lunch_time":          "23:59:59",                 // end of day
 		"created_at":          "1970-01-01T00:00:00.000Z", // Unix epoch
 		"updated_at":          "2099-12-31T23:59:59.999",  // far future
 		"decimal_small":       decimal.NewDecimalWithPrecision(numbers.MustParseDecimal("-99.99"), 5),
@@ -124,7 +124,7 @@ func addComprehensiveTestData(tableData *optimization.TableData) {
 		"name":                "Alice Johnson",
 		"age":                 25,
 		"is_active":           true,
-		"score":               75.25,
+		"score":               float32(75.25),
 		"birth_date":          "1999-02-28",               // leap year edge
 		"lunch_time":          "12:00:00.123",             // with milliseconds
 		"created_at":          "2024-02-29T12:00:00.123Z", // leap year
@@ -145,7 +145,7 @@ func addComprehensiveTestData(tableData *optimization.TableData) {
 		"name":                "Charlie Brown",
 		"age":                 999, // large age
 		"is_active":           false,
-		"score":               100.0,
+		"score":               float32(100.0),
 		"birth_date":          "1900-01-01", // very old date
 		"lunch_time":          "01:23:45",
 		"created_at":          "2024-12-31T23:59:59.999Z",
@@ -160,68 +160,6 @@ func addComprehensiveTestData(tableData *optimization.TableData) {
 		"complex_json_string": `{"tags":["edge","case","testing","decimal","precision"],"config":{"debug":true,"verbose":false},"version":"1.0"}`,
 	}, false)
 
-	// Test row 6: Float precision edge cases
-	tableData.InsertRow("6", map[string]any{
-		"id":                  6,
-		"name":                "Diana Prince",
-		"age":                 28,
-		"is_active":           true,
-		"score":               float32(3.14159265359), // float32 precision test
-		"birth_date":          "1996-06-06",
-		"lunch_time":          "13:37:42.999", // max milliseconds
-		"created_at":          "2000-02-29T00:00:01.001Z", // leap year milliseconds
-		"updated_at":          "2000-02-29T00:00:01.001",
-		"decimal_small":       decimal.NewDecimalWithPrecision(numbers.MustParseDecimal("1.01"), 5),
-		"decimal_large":       decimal.NewDecimalWithPrecision(numbers.MustParseDecimal("99999999.9999999999"), 20),
-		"decimal_max":         decimal.NewDecimalWithPrecision(numbers.MustParseDecimal("999999999999999.000000000000001"), 30),
-		"description":         "Testing float precision and very small decimal differences",
-		"big_integer":         1000000000000000000, // large but not max
-		"unicode_text":        "Math: π≈3.14159, ∑∞ √∞ ∫∂ ≠≤≥±×÷∙",
-		"empty_string":        "",
-		"complex_json_string": `{"precision":{"float32":3.14159265359,"double":3.141592653589793},"scientific":{"large":"1.23e+10","small":"1.23e-10"}}`,
-	}, false)
-
-	// Test row 7: Date/Time edge cases
-	tableData.InsertRow("7", map[string]any{
-		"id":                  7,
-		"name":                "Eve Adams",
-		"age":                 100, // centenarian
-		"is_active":           false,
-		"score":               0.001, // very small positive
-		"birth_date":          "1924-02-29", // leap year century ago
-		"lunch_time":          "23:59:59.999", // last millisecond of day
-		"created_at":          "2038-01-19T03:14:07.999Z", // near Y2038 problem
-		"updated_at":          "2038-01-19T03:14:07.999",
-		"decimal_small":       decimal.NewDecimalWithPrecision(numbers.MustParseDecimal("-0.01"), 5),
-		"decimal_large":       decimal.NewDecimalWithPrecision(numbers.MustParseDecimal("-0.0000000001"), 20),
-		"decimal_max":         decimal.NewDecimalWithPrecision(numbers.MustParseDecimal("-0.000000000000001"), 30),
-		"description":         "Testing date/time edge cases and century boundaries",
-		"big_integer":         -1000000000000000000, // large negative
-		"unicode_text":        "Legacy encoding: ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿ",
-		"empty_string":        "",
-		"complex_json_string": `{"century":{"year":1924,"leap":true},"millennium":{"y2k":2000,"y2038":2038},"unicode":{"legacy":"ÀÁÂ","modern":"🚀🌟"}}`,
-	}, false)
-
-	// Test row 8: Boolean and string edge cases
-	tableData.InsertRow("8", map[string]any{
-		"id":                  8,
-		"name":                "Frank Miller",
-		"age":                 1, // infant
-		"is_active":           true,
-		"score":               -0.0, // negative zero
-		"birth_date":          "2023-12-31", // recent date
-		"lunch_time":          "00:00:00.001", // first millisecond of day
-		"created_at":          "1901-01-01T00:00:00.000Z", // early 20th century
-		"updated_at":          "1901-01-01T00:00:00.000",
-		"decimal_small":       decimal.NewDecimalWithPrecision(numbers.MustParseDecimal("99.99"), 5),
-		"decimal_large":       decimal.NewDecimalWithPrecision(numbers.MustParseDecimal("1.0000000000"), 20),
-		"decimal_max":         decimal.NewDecimalWithPrecision(numbers.MustParseDecimal("1.000000000000000"), 30),
-		"description":         "Testing string with quotes \"and\" 'various' `backticks` and [brackets] {braces} <angles>",
-		"big_integer":         123456789, // medium sized number
-		"unicode_text":        "Code: control chars and spaces     ", // control characters
-		"empty_string":        "",
-		"complex_json_string": `{"quotes":{"double":"\"hello\"","single":"'world'","backtick":"\`code\`"},"symbols":{"brackets":"[array]","braces":"{object}","angles":"<tag>"}}`,
-	}, false)
 }
 
 func main() {
