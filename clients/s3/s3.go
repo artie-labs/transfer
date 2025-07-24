@@ -210,58 +210,6 @@ func writeArrowRecordsInBatches(writer *pqarrow.FileWriter, schema *arrow.Schema
 	return nil
 }
 
-// buildArrowRecord creates an Arrow record from table data.
-// Deprecated: Use writeArrowRecordsInBatches for memory-efficient processing.
-// This function is kept for backward compatibility but loads all data into memory at once.
-func buildArrowRecord(schema *arrow.Schema, tableData *optimization.TableData, location *time.Location) (arrow.Record, error) {
-	pool := memory.NewGoAllocator()
-
-	var builders []array.Builder
-	for _, field := range schema.Fields() {
-		builders = append(builders, array.NewBuilder(pool, field.Type))
-	}
-
-	defer func() {
-		for _, builder := range builders {
-			builder.Release()
-		}
-	}()
-
-	cols := tableData.ReadOnlyInMemoryCols().ValidColumns()
-
-	// Process each row
-	for _, row := range tableData.Rows() {
-		for i, col := range cols {
-			value, _ := row.GetValue(col.Name())
-
-			// Parse value for Arrow
-			parsedValue, err := parquetutil.ParseValueForArrow(value, col.KindDetails, location)
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse value for column %q: %w", col.Name(), err)
-			}
-
-			// Convert and append to builder
-			if err := parquetutil.ConvertValueForArrowBuilder(builders[i], parsedValue); err != nil {
-				return nil, fmt.Errorf("failed to append value to builder for column %q: %w", col.Name(), err)
-			}
-		}
-	}
-
-	// Build arrays from builders
-	arrays := make([]arrow.Array, len(builders))
-	for i, builder := range builders {
-		arrays[i] = builder.NewArray()
-	}
-	defer func() {
-		for _, arr := range arrays {
-			arr.Release()
-		}
-	}()
-
-	// Create record
-	return array.NewRecord(schema, arrays, int64(tableData.NumberOfRows())), nil
-}
-
 // Merge - will take tableData, write it into a particular file in the specified format, in these steps:
 // 1. Load a ParquetWriter from a JSON schema (auto-generated)
 // 2. Load the temporary file, under this format: s3://bucket/folderName/fullyQualifiedTableName/YYYY-MM-DD/{{unix_timestamp}}.parquet
