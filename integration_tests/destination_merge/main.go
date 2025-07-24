@@ -21,20 +21,20 @@ type MergeTest struct {
 	framework *shared.TestFramework
 }
 
-func NewMergeTest(ctx context.Context, dest destination.Destination, _iceberg *iceberg.Store, topicConfig kafkalib.TopicConfig) *MergeTest {
+func NewMergeTest(dest destination.Destination, _iceberg *iceberg.Store, topicConfig kafkalib.TopicConfig) *MergeTest {
 	return &MergeTest{
-		framework: shared.NewTestFramework(ctx, dest, _iceberg, topicConfig),
+		framework: shared.NewTestFramework(dest, _iceberg, topicConfig),
 	}
 }
 
-func (mt *MergeTest) generateInitialData(numRows int) error {
+func (mt *MergeTest) generateInitialData(ctx context.Context, numRows int) error {
 	for i := 0; i < numRows; i++ {
 		pkValueString := fmt.Sprintf("%d", i)
 		rowData := mt.framework.GenerateRowDataForMerge(i, false)
 		mt.framework.GetTableData().InsertRow(pkValueString, rowData, false)
 	}
 
-	if _, err := mt.framework.GetDestination().Merge(mt.framework.GetContext(), mt.framework.GetTableData()); err != nil {
+	if _, err := mt.framework.GetDestination().Merge(ctx, mt.framework.GetTableData()); err != nil {
 		return fmt.Errorf("failed to merge initial data: %w", err)
 	}
 
@@ -42,7 +42,7 @@ func (mt *MergeTest) generateInitialData(numRows int) error {
 	return nil
 }
 
-func (mt *MergeTest) updateExistingData(numRows int) error {
+func (mt *MergeTest) updateExistingData(ctx context.Context, numRows int) error {
 	for i := 0; i < numRows; i++ {
 		pkValueString := fmt.Sprintf("%d", i)
 		rowData := mt.framework.GenerateRowDataForMerge(i, false)
@@ -51,7 +51,7 @@ func (mt *MergeTest) updateExistingData(numRows int) error {
 		mt.framework.GetTableData().InsertRow(pkValueString, rowData, false)
 	}
 
-	if _, err := mt.framework.GetDestination().Merge(mt.framework.GetContext(), mt.framework.GetTableData()); err != nil {
+	if _, err := mt.framework.GetDestination().Merge(ctx, mt.framework.GetTableData()); err != nil {
 		return fmt.Errorf("failed to merge updates: %w", err)
 	}
 
@@ -59,14 +59,14 @@ func (mt *MergeTest) updateExistingData(numRows int) error {
 	return nil
 }
 
-func (mt *MergeTest) deleteData(numRows int) error {
+func (mt *MergeTest) deleteData(ctx context.Context, numRows int) error {
 	for i := 0; i < numRows; i++ {
 		pkValueString := fmt.Sprintf("%d", i)
 		rowData := mt.framework.GenerateRowDataForMerge(i, true)
 		mt.framework.GetTableData().InsertRow(pkValueString, rowData, true)
 	}
 
-	if _, err := mt.framework.GetDestination().Merge(mt.framework.GetContext(), mt.framework.GetTableData()); err != nil {
+	if _, err := mt.framework.GetDestination().Merge(ctx, mt.framework.GetTableData()); err != nil {
 		return fmt.Errorf("failed to merge deletes: %w", err)
 	}
 
@@ -74,7 +74,7 @@ func (mt *MergeTest) deleteData(numRows int) error {
 	return nil
 }
 
-func (mt *MergeTest) verifyUpdatedData(numRows int) error {
+func (mt *MergeTest) verifyUpdatedData(ctx context.Context, numRows int) error {
 	query := fmt.Sprintf("SELECT id, name, value, json_data, json_array, json_string, json_boolean, json_number FROM %s ORDER BY id ASC LIMIT %d", mt.framework.GetTableID().FullyQualifiedName(), numRows)
 	if mt.framework.MSSQL() {
 		query = fmt.Sprintf("SELECT TOP %d id, name, value, json_data, json_array, json_string, json_boolean, json_number FROM %s ORDER BY id ASC", numRows, mt.framework.GetTableID().FullyQualifiedName())
@@ -84,7 +84,7 @@ func (mt *MergeTest) verifyUpdatedData(numRows int) error {
 		query = fmt.Sprintf("SELECT id, name, value, TO_JSON_STRING(json_data), TO_JSON_STRING(json_array) FROM %s ORDER BY id ASC LIMIT %d", mt.framework.GetTableID().FullyQualifiedName(), numRows)
 	}
 
-	rows, err := mt.framework.GetDestination().Query(query)
+	rows, err := mt.framework.GetDestination().QueryContext(ctx, query)
 	if err != nil {
 		return fmt.Errorf("failed to query table data: %w", err)
 	}
@@ -110,8 +110,8 @@ func (mt *MergeTest) verifyUpdatedData(numRows int) error {
 	return nil
 }
 
-func (mt *MergeTest) Run() error {
-	if err := mt.framework.Cleanup(mt.framework.GetTableID()); err != nil {
+func (mt *MergeTest) Run(ctx context.Context) error {
+	if err := mt.framework.Cleanup(ctx, mt.framework.GetTableID()); err != nil {
 		return fmt.Errorf("failed to cleanup table: %w", err)
 	}
 
@@ -121,39 +121,39 @@ func (mt *MergeTest) Run() error {
 	})
 
 	numRows := 1000
-	if err := mt.generateInitialData(numRows); err != nil {
+	if err := mt.generateInitialData(ctx, numRows); err != nil {
 		return fmt.Errorf("failed to generate initial data: %w", err)
 	}
 
-	if err := mt.framework.VerifyRowCount(numRows); err != nil {
+	if err := mt.framework.VerifyRowCount(ctx, numRows); err != nil {
 		return fmt.Errorf("failed to verify initial row count: %w", err)
 	}
 
-	if err := mt.framework.VerifyDataContent(numRows); err != nil {
+	if err := mt.framework.VerifyDataContent(ctx, numRows); err != nil {
 		return fmt.Errorf("failed to verify initial data content: %w", err)
 	}
 
 	// Update only 20% of the rows
 	updatedRows := int(float64(numRows) * 0.2)
-	if err := mt.updateExistingData(updatedRows); err != nil {
+	if err := mt.updateExistingData(ctx, updatedRows); err != nil {
 		return fmt.Errorf("failed to update data: %w", err)
 	}
 
-	if err := mt.verifyUpdatedData(updatedRows); err != nil {
+	if err := mt.verifyUpdatedData(ctx, updatedRows); err != nil {
 		return fmt.Errorf("failed to verify updated data: %w", err)
 	}
 
 	// Delete only 20% of the rows
 	rowsToDelete := int(float64(numRows) * 0.2)
-	if err := mt.deleteData(rowsToDelete); err != nil {
+	if err := mt.deleteData(ctx, rowsToDelete); err != nil {
 		return fmt.Errorf("failed to delete data: %w", err)
 	}
 
-	if err := mt.framework.VerifyRowCount(numRows - rowsToDelete); err != nil {
+	if err := mt.framework.VerifyRowCount(ctx, numRows-rowsToDelete); err != nil {
 		return fmt.Errorf("failed to verify final row count: %w", err)
 	}
 
-	return mt.framework.Cleanup(mt.framework.GetTableID())
+	return mt.framework.Cleanup(ctx, mt.framework.GetTableID())
 }
 
 func main() {
@@ -177,8 +177,8 @@ func main() {
 		logger.Fatal("Expected 1 topic config", slog.Int("num_configs", len(tc)))
 	}
 
-	test := NewMergeTest(ctx, dest, nil, *tc[0])
-	if err := test.Run(); err != nil {
+	test := NewMergeTest(dest, nil, *tc[0])
+	if err := test.Run(ctx); err != nil {
 		logger.Fatal("Test failed", slog.Any("err", err))
 	}
 

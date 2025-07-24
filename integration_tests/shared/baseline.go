@@ -1,6 +1,7 @@
 package shared
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -8,8 +9,8 @@ import (
 	"github.com/artie-labs/transfer/lib/apachelivy"
 )
 
-func (tf *TestFramework) verifyRowCountIceberg(expected int) error {
-	resp, err := tf.iceberg.GetApacheLivyClient().QueryContext(tf.ctx, fmt.Sprintf("SELECT COUNT(*) FROM %s", tf.tableID.FullyQualifiedName()))
+func (tf *TestFramework) verifyRowCountIceberg(ctx context.Context, expected int) error {
+	resp, err := tf.iceberg.GetApacheLivyClient().QueryContext(ctx, fmt.Sprintf("SELECT COUNT(*) FROM %s", tf.tableID.FullyQualifiedName()))
 	if err != nil {
 		return fmt.Errorf("failed to query table: %w", err)
 	}
@@ -36,14 +37,14 @@ func (tf *TestFramework) verifyRowCountIceberg(expected int) error {
 	return nil
 }
 
-func (tf *TestFramework) verifyDataContentIceberg(rowCount int) error {
+func (tf *TestFramework) verifyDataContentIceberg(ctx context.Context, rowCount int) error {
 	// Limit this to 1k rows since that's the default limit for Livy.
 	iters := rowCount / 1000
 	totalRows := 0
 	for iter := 0; iter < iters; iter++ {
 		offset := iter * 1000
 		query := fmt.Sprintf("SELECT id, name, value, json_data, json_array, json_string, json_boolean, json_number FROM %s ORDER BY id LIMIT 1000 OFFSET %d", tf.tableID.FullyQualifiedName(), offset)
-		resp, err := tf.iceberg.GetApacheLivyClient().QueryContext(tf.ctx, query)
+		resp, err := tf.iceberg.GetApacheLivyClient().QueryContext(ctx, query)
 		if err != nil {
 			return fmt.Errorf("failed to query table: %w", err)
 		}

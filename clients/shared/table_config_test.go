@@ -29,7 +29,7 @@ func TestGetTableConfig(t *testing.T) {
 		Destination: &mocks.FakeDestination{},
 		TableID:     fakeTableID,
 		ConfigMap:   cm,
-	}.GetTableConfig()
+	}.GetTableConfig(t.Context())
 
 	assert.NoError(t, err)
 	assert.Equal(t, tableCfg, actualTableCfg)

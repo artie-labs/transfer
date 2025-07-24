@@ -21,12 +21,11 @@ type Destination interface {
 	Dedupe(ctx context.Context, tableID sqllib.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error
 	SweepTemporaryTables(ctx context.Context) error
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
-	Query(query string, args ...any) (*sql.Rows, error)
 	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
 	Begin() (*sql.Tx, error)
 
 	// Helper functions for merge
-	GetTableConfig(tableID sqllib.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error)
+	GetTableConfig(ctx context.Context, tableID sqllib.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error)
 	PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, tempTableID sqllib.TableIdentifier, parentTableID sqllib.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error
 }
 
