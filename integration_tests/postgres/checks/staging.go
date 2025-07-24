@@ -20,7 +20,7 @@ func TestStagingTable(ctx context.Context, store *postgres.Store) error {
 	tableID := dialect.NewTableIdentifier("public", fmt.Sprintf("test_%s", strings.ToLower(stringutil.Random(5))))
 
 	var cols columns.Columns
-	cols.AddColumn(columns.NewColumn("id", typing.Integer))
+	cols.AddColumn(columns.NewColumn("id", typing.BuildIntegerKind(typing.IntegerKind)))
 	cols.AddColumn(columns.NewColumn("name", typing.String))
 
 	if err := cols.UpsertColumn("id", columns.UpsertColumnArg{PrimaryKey: typing.ToPtr(true)}); err != nil {

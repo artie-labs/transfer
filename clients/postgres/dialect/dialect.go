@@ -135,7 +135,7 @@ func (PostgresDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, setting
 		case typing.BigIntegerKind:
 			return "bigint", nil
 		default:
-			return "", fmt.Errorf("unexpected integer kind: %q", *kd.OptionalIntegerKind)
+			return "", fmt.Errorf("unexpected integer kind: %d", *kd.OptionalIntegerKind)
 		}
 	case typing.EDecimal.Kind:
 		if kd.ExtendedDecimalDetails == nil {

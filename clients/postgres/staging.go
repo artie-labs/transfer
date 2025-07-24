@@ -11,6 +11,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/stdlib"
 )
 
 type stagingIterator struct {
@@ -69,13 +70,8 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	defer conn.Close()
 
 	err = conn.Raw(func(driverConn any) error {
-		pgxConn, ok := driverConn.(*pgx.Conn)
-		if !ok {
-			return fmt.Errorf("expected pgx.Conn, got %T", driverConn)
-		}
-
+		pgxConn := driverConn.(*stdlib.Conn).Conn() // conn is a *pgx.Conn
 		cols := tableData.ReadOnlyInMemoryCols().ValidColumns()
-
 		stagingIterator, err := s.buildStagingIterator(tableData)
 		if err != nil {
 			return fmt.Errorf("failed to build staging iterator: %w", err)
