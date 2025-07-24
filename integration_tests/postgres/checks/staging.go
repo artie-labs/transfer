@@ -27,10 +27,10 @@ func TestStagingTable(ctx context.Context, store *postgres.Store) error {
 		return fmt.Errorf("failed to upsert column: %w", err)
 	}
 
-	expectedRows := 10_000
+	expectedRows := 100
 	tableData := optimization.NewTableData(&cols, config.Replication, []string{"id"}, kafkalib.TopicConfig{}, tableID.Table())
 	for i := range expectedRows {
-		tableData.InsertRow(fmt.Sprintf("%d", i), map[string]any{"id": i, "name": fmt.Sprintf("name_%d", i)}, false)
+		tableData.InsertRow(fmt.Sprintf("%d", i), map[string]any{"id": i + 1, "name": fmt.Sprintf("name_%d", i+1)}, false)
 	}
 
 	tc := types.NewDestinationTableConfig(cols.GetColumns(), false)

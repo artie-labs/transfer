@@ -47,6 +47,7 @@ func (s *Store) buildStagingIterator(tableData *optimization.TableData) (pgx.Cop
 			rowValues = append(rowValues, parsedValue)
 		}
 
+		fmt.Println("rowValues", rowValues)
 		values = append(values, rowValues)
 	}
 
