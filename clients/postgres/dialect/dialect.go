@@ -68,9 +68,8 @@ func (PostgresDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (str
 	return "", nil, fmt.Errorf("not implemented")
 }
 
-func (PostgresDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
-	// TODO: To implement
-	return ""
+func (p PostgresDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
+	return fmt.Sprintf("COALESCE(%s, '') NOT LIKE '%s'", sql.QuoteTableAliasColumn(tableAlias, column, p), "%"+constants.ToastUnavailableValuePlaceholder+"%")
 }
 
 func (PostgresDialect) GetDefaultValueStrategy() sql.DefaultValueStrategy {
