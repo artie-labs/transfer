@@ -17,6 +17,9 @@ var kindToArrowType = map[string]arrow.DataType{
 	// Number data types:
 	Integer.Kind: arrow.PrimitiveTypes.Int64,
 	Float.Kind:   arrow.PrimitiveTypes.Float64,
+	// Date and time data types:
+	Time.Kind: arrow.FixedWidthTypes.Time32ms,
+	Date.Kind: arrow.FixedWidthTypes.Date32,
 }
 
 // ToArrowType converts a KindDetails to the corresponding Arrow data type
@@ -26,10 +29,6 @@ func (kd KindDetails) ToArrowType(location *time.Location) (arrow.DataType, erro
 	}
 
 	switch kd.Kind {
-	case Time.Kind:
-		return arrow.FixedWidthTypes.Time32ms, nil
-	case Date.Kind:
-		return arrow.FixedWidthTypes.Date32, nil
 	case EDecimal.Kind:
 		if kd.ExtendedDecimalDetails == nil {
 			return nil, fmt.Errorf("extended decimal details are not set")
