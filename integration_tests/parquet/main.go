@@ -188,7 +188,7 @@ func main() {
 
 	// Write the parquet file
 	parquetPath := filepath.Join(outputDir, "comprehensive_test.parquet")
-	if err := s3.WriteParquetFiles(tableData, parquetPath, loc); err != nil {
+	if err := s3.WriteParquetFiles(tableData, parquetPath, loc, 0); err != nil {
 		logger.Fatal("Failed to write parquet file", slog.Any("error", err))
 	}
 
