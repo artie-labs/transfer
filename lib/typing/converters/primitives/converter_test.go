@@ -1,6 +1,7 @@
 package primitives
 
 import (
+	"math"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -49,6 +50,73 @@ func TestInt64Converter_Convert(t *testing.T) {
 		got, err := converter.Convert(float64(123.45))
 		assert.Error(t, err)
 		assert.Equal(t, int64(0), got)
+	}
+	{
+		// Floats
+		{
+			// float64 - valid whole number
+			value, err := converter.Convert(float64(1234))
+			assert.NoError(t, err)
+			assert.Equal(t, int64(1234), value)
+		}
+		{
+			// float64 - negative valid whole number
+			value, err := converter.Convert(float64(-1234))
+			assert.NoError(t, err)
+			assert.Equal(t, int64(-1234), value)
+		}
+		{
+			// float64 - zero
+			value, err := converter.Convert(float64(0))
+			assert.NoError(t, err)
+			assert.Equal(t, int64(0), value)
+		}
+		{
+			// float64 - large valid whole number that can be exactly represented
+			value, err := converter.Convert(float64(1 << 50)) // 2^50 = 1125899906842624, exactly representable as float64
+			assert.NoError(t, err)
+			assert.Equal(t, int64(1<<50), value)
+		}
+		{
+			// float64 - has fractional component
+			_, err := converter.Convert(float64(1234.5))
+			assert.ErrorContains(t, err, "float64 (1234.500000) has fractional component")
+		}
+		{
+			// float64 - small fractional component
+			_, err := converter.Convert(float64(1234.1))
+			assert.ErrorContains(t, err, "float64 (1234.100000) has fractional component")
+		}
+		{
+			// float64 - negative fractional component
+			_, err := converter.Convert(float64(-1234.5))
+			assert.ErrorContains(t, err, "float64 (-1234.500000) has fractional component")
+		}
+		{
+			// float64 - positive overflow
+			_, err := converter.Convert(float64(math.MaxInt64) * 2)
+			assert.ErrorContains(t, err, "overflows int64")
+		}
+		{
+			// float64 - negative overflow
+			_, err := converter.Convert(float64(math.MinInt64) * 2)
+			assert.ErrorContains(t, err, "overflows int64")
+		}
+		{
+			// float64 - positive infinity
+			_, err := converter.Convert(math.Inf(1))
+			assert.ErrorContains(t, err, "overflows int64")
+		}
+		{
+			// float64 - negative infinity
+			_, err := converter.Convert(math.Inf(-1))
+			assert.ErrorContains(t, err, "overflows int64")
+		}
+		{
+			// float64 - NaN
+			_, err := converter.Convert(math.NaN())
+			assert.ErrorContains(t, err, "has fractional component")
+		}
 	}
 }
 

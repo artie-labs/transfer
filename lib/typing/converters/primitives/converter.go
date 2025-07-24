@@ -2,6 +2,7 @@ package primitives
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 )
 
@@ -23,8 +24,20 @@ func (Int64Converter) Convert(value any) (int64, error) {
 		return int64(castValue), nil
 	case int64:
 		return castValue, nil
+	case float64:
+		// We'll check for overflow and make sure there's no precision loss
+		if castValue > math.MaxInt64 || castValue < math.MinInt64 {
+			return 0, fmt.Errorf("value %f overflows int64", castValue)
+		}
+
+		if math.Trunc(castValue) != castValue {
+			return 0, fmt.Errorf("float64 (%f) has fractional component", castValue)
+		}
+
+		return int64(castValue), nil
 	}
-	return 0, fmt.Errorf("expected string/int/int16/int32/int64 got %T with value: %v", value, value)
+
+	return 0, fmt.Errorf("failed to parse int64, unsupported type: %T", value)
 }
 
 type BooleanConverter struct{}
