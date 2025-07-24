@@ -23,7 +23,6 @@ type GetStringConverterOpts struct {
 	TimestampTZLayoutOverride  string
 	TimestampNTZLayoutOverride string
 	UseNewStringMethod         bool
-	Location                   *time.Location
 }
 
 func GetStringConverter(kd typing.KindDetails, opts GetStringConverterOpts) (Converter, error) {
@@ -41,7 +40,7 @@ func GetStringConverter(kd typing.KindDetails, opts GetStringConverterOpts) (Con
 	case typing.Time.Kind:
 		return TimeConverter{}, nil
 	case typing.TimestampNTZ.Kind:
-		return NewTimestampNTZConverter(opts.TimestampNTZLayoutOverride, opts.Location), nil
+		return NewTimestampNTZConverter(opts.TimestampNTZLayoutOverride), nil
 	case typing.TimestampTZ.Kind:
 		return NewTimestampTZConverter(opts.TimestampTZLayoutOverride), nil
 	// Array and struct types
@@ -157,26 +156,20 @@ func (TimeConverter) Convert(value any) (string, error) {
 	return _time.Format(ext.PostgresTimeFormatNoTZ), nil
 }
 
-func NewTimestampNTZConverter(layoutOverride string, location *time.Location) TimestampNTZConverter {
+func NewTimestampNTZConverter(layoutOverride string) TimestampNTZConverter {
 	return TimestampNTZConverter{
 		layoutOverride: layoutOverride,
-		location:       location,
 	}
 }
 
 type TimestampNTZConverter struct {
 	layoutOverride string
-	location       *time.Location
 }
 
 func (t TimestampNTZConverter) Convert(value any) (string, error) {
 	_time, err := ext.ParseTimestampNTZFromAny(value)
 	if err != nil {
 		return "", fmt.Errorf("failed to cast colVal as timestampNTZ, colVal: '%v', err: %w", value, err)
-	}
-
-	if t.location != nil {
-		_time = _time.In(t.location)
 	}
 
 	return _time.Format(cmp.Or(t.layoutOverride, ext.RFC3339NoTZ)), nil
