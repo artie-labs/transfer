@@ -43,8 +43,8 @@ def verify_parquet_file(file_path):
             'score': 98.5,
             'birth_date': date(1993, 5, 15),
             'lunch_time': time(12, 30, 45),  # time values are not timezone-adjusted in parquet
-            'created_at': datetime.fromisoformat("2024-03-20 06:00:00.111"),
-            'updated_at': datetime.fromisoformat("2024-03-20 06:00:00.111"),
+            'created_at': datetime.fromisoformat("2024-03-20 10:00:00.111").replace(tzinfo=timezone.utc),
+            'updated_at': datetime.fromisoformat("2024-03-20 10:00:00.111").replace(tzinfo=timezone.utc),
             'decimal_small': Decimal('123.45'),
             'decimal_large': Decimal('1234567890.1234567890'),
             'decimal_max': Decimal('123456789012345.123456789012345'),
