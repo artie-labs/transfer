@@ -113,9 +113,7 @@ func writeArrowRecordsInBatches(writer *pqarrow.FileWriter, schema *arrow.Schema
 	pool := memory.NewGoAllocator()
 	rows := tableData.Rows()
 	cols := tableData.ReadOnlyInMemoryCols().ValidColumns()
-
 	writer.NewBufferedRowGroup()
-
 	for batch := range slices.Chunk(rows, batchSize) {
 		var builders []array.Builder
 		for _, field := range schema.Fields() {
