@@ -51,19 +51,8 @@ type SharedDestinationSettings struct {
 	ColumnSettings        SharedDestinationColumnSettings `yaml:"columnSettings"`
 	// TODO: Standardize on this method.
 	UseNewStringMethod bool `yaml:"useNewStringMethod"`
-
-	// Timestamp Settings
-	SharedTimestampSettings SharedTimestampSettings `yaml:"sharedTimestampSettings"`
-
 	// [EnableMergeAssertion] - This will enable the merge assertion checks for the destination.
 	EnableMergeAssertion bool `yaml:"enableMergeAssertion,omitempty"`
-}
-
-type SharedTimestampSettings struct {
-	// If [location] is specified, we'll be using that location for all timestamp (without timezone) columns.
-	// The only exception is to Parquet where there's no explicit timestamp with timezone column, so both will use the location.
-	// Note: This only works for Parquet and Iceberg at the moment.
-	Location string `yaml:"location"`
 }
 
 type Reporting struct {
