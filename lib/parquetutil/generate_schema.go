@@ -9,19 +9,18 @@ import (
 
 // BuildArrowSchemaFromColumns creates an Arrow schema from typing columns
 func BuildArrowSchemaFromColumns(columns []columns.Column, location *time.Location) (*arrow.Schema, error) {
-	fields := make([]arrow.Field, len(columns))
-
-	for i, column := range columns {
+	var fields []arrow.Field
+	for _, column := range columns {
 		arrowType, err := column.KindDetails.ToArrowType(location)
 		if err != nil {
 			return nil, err
 		}
 
-		fields[i] = arrow.Field{
+		fields = append(fields, arrow.Field{
 			Name:     column.Name(),
 			Type:     arrowType,
-			Nullable: true, // Most columns are nullable by default
-		}
+			Nullable: true,
+		})
 	}
 
 	return arrow.NewSchema(fields, nil), nil
