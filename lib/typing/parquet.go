@@ -11,15 +11,20 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
 
+var kindToArrowType = map[string]arrow.DataType{
+	String.Kind:  arrow.BinaryTypes.String,
+	Boolean.Kind: arrow.FixedWidthTypes.Boolean,
+}
+
 // ToArrowType converts a KindDetails to the corresponding Arrow data type
 func (kd KindDetails) ToArrowType(location *time.Location) (arrow.DataType, error) {
+	if arrowType, ok := kindToArrowType[kd.Kind]; ok {
+		return arrowType, nil
+	}
+
 	switch kd.Kind {
-	case String.Kind:
-		return arrow.BinaryTypes.String, nil
 	case Integer.Kind:
 		return arrow.PrimitiveTypes.Int64, nil
-	case Boolean.Kind:
-		return arrow.FixedWidthTypes.Boolean, nil
 	case Float.Kind:
 		return arrow.PrimitiveTypes.Float64, nil
 	case Time.Kind:
