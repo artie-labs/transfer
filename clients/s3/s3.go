@@ -79,8 +79,8 @@ func buildTemporaryFilePath(tableData *optimization.TableData) string {
 }
 
 // WriteParquetFiles writes the table data to a parquet file at the specified path using Arrow and returns an error if any step of the writing process fails.
-func WriteParquetFiles(tableData *optimization.TableData, filePath string, location *time.Location) error {
-	arrowSchema, err := parquetutil.BuildArrowSchemaFromColumns(tableData.ReadOnlyInMemoryCols().ValidColumns(), location)
+func WriteParquetFiles(tableData *optimization.TableData, filePath string) error {
+	arrowSchema, err := parquetutil.BuildArrowSchemaFromColumns(tableData.ReadOnlyInMemoryCols().ValidColumns())
 	if err != nil {
 		return fmt.Errorf("failed to generate arrow schema: %w", err)
 	}
@@ -100,7 +100,7 @@ func WriteParquetFiles(tableData *optimization.TableData, filePath string, locat
 	defer writer.Close()
 
 	// Use streaming approach to write data in batches
-	if err := writeArrowRecordsInBatches(writer, arrowSchema, tableData, location, batchSize); err != nil {
+	if err := writeArrowRecordsInBatches(writer, arrowSchema, tableData, batchSize); err != nil {
 		return fmt.Errorf("failed to write records in batches: %w", err)
 	}
 
@@ -108,7 +108,7 @@ func WriteParquetFiles(tableData *optimization.TableData, filePath string, locat
 }
 
 // writeArrowRecordsInBatches processes table data in configurable batch sizes and writes incrementally to reduce memory usage.
-func writeArrowRecordsInBatches(writer *pqarrow.FileWriter, schema *arrow.Schema, tableData *optimization.TableData, location *time.Location, batchSize int) error {
+func writeArrowRecordsInBatches(writer *pqarrow.FileWriter, schema *arrow.Schema, tableData *optimization.TableData, batchSize int) error {
 	pool := memory.NewGoAllocator()
 	rows := tableData.Rows()
 	cols := tableData.ReadOnlyInMemoryCols().ValidColumns()
@@ -125,7 +125,7 @@ func writeArrowRecordsInBatches(writer *pqarrow.FileWriter, schema *arrow.Schema
 				value, _ := row.GetValue(col.Name())
 
 				// Parse value for Arrow
-				parsedValue, err := parquetutil.ParseValueForArrow(value, col.KindDetails, location)
+				parsedValue, err := parquetutil.ParseValueForArrow(value, col.KindDetails)
 				if err != nil {
 					for _, builder := range builders {
 						builder.Release()

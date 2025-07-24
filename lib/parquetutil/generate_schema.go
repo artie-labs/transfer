@@ -1,17 +1,15 @@
 package parquetutil
 
 import (
-	"time"
-
 	"github.com/apache/arrow/go/v17/arrow"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 // BuildArrowSchemaFromColumns creates an Arrow schema from typing columns
-func BuildArrowSchemaFromColumns(columns []columns.Column, location *time.Location) (*arrow.Schema, error) {
+func BuildArrowSchemaFromColumns(columns []columns.Column) (*arrow.Schema, error) {
 	var fields []arrow.Field
 	for _, column := range columns {
-		arrowType, err := column.KindDetails.ToArrowType(location)
+		arrowType, err := column.KindDetails.ToArrowType()
 		if err != nil {
 			return nil, err
 		}

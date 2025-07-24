@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/apache/arrow/go/v17/arrow"
 	"github.com/apache/arrow/go/v17/arrow/decimal128"
@@ -22,7 +23,7 @@ var kindToArrowType = map[string]arrow.DataType{
 }
 
 // ToArrowType converts a KindDetails to the corresponding Arrow data type
-func (kd KindDetails) ToArrowType(location *time.Location) (arrow.DataType, error) {
+func (kd KindDetails) ToArrowType() (arrow.DataType, error) {
 	if arrowType, ok := kindToArrowType[kd.Kind]; ok {
 		return arrowType, nil
 	}
@@ -49,26 +50,16 @@ func (kd KindDetails) ToArrowType(location *time.Location) (arrow.DataType, erro
 		// For now, default to list of strings
 		return arrow.ListOf(arrow.BinaryTypes.String), nil
 	case TimestampTZ.Kind:
-		// When location is provided, store as timezone-naive timestamp (local time components as UTC)
-		// When no location is provided, store as timezone-aware UTC timestamp
-		if location == nil {
-			return arrow.FixedWidthTypes.Timestamp_ms, nil
-		}
-		return &arrow.TimestampType{Unit: arrow.Millisecond}, nil
+		return arrow.FixedWidthTypes.Timestamp_ms, nil
 	case TimestampNTZ.Kind:
-		// For parquet compatibility: when location is provided, store as timezone-naive
-		// When no location is provided, store as timezone-aware UTC (to match test expectations)
-		if location == nil {
-			return arrow.FixedWidthTypes.Timestamp_ms, nil
-		}
-		return &arrow.TimestampType{Unit: arrow.Millisecond}, nil
+		return arrow.FixedWidthTypes.Timestamp_ms, nil
 	default:
 		return nil, fmt.Errorf("unsupported kind %q", kd.Kind)
 	}
 }
 
 // ParseValueForArrow converts a value to the appropriate Arrow-compatible type
-func (kd KindDetails) ParseValueForArrow(value interface{}, location *time.Location) (interface{}, error) {
+func (kd KindDetails) ParseValueForArrow(value interface{}) (interface{}, error) {
 	if value == nil {
 		return nil, nil
 	}
@@ -245,26 +236,10 @@ func (kd KindDetails) ParseValueForArrow(value interface{}, location *time.Locat
 		case string:
 			// Try to parse string as timestamp
 			if timeVal, err := time.Parse(time.RFC3339, v); err == nil {
-				// If location is provided, convert to that timezone and treat local components as UTC
-				if location != nil {
-					localTime := timeVal.In(location)
-					// Extract local time components and create UTC time with those components
-					utcWithLocalComponents := time.Date(localTime.Year(), localTime.Month(), localTime.Day(),
-						localTime.Hour(), localTime.Minute(), localTime.Second(), localTime.Nanosecond(), time.UTC)
-					return utcWithLocalComponents.UnixMilli(), nil
-				}
 				return timeVal.UnixMilli(), nil
 			}
 			// Try alternative formats
 			if timeVal, err := time.Parse("2006-01-02T15:04:05.999", v); err == nil {
-				// If location is provided, convert to that timezone and treat local components as UTC
-				if location != nil {
-					localTime := timeVal.In(location)
-					// Extract local time components and create UTC time with those components
-					utcWithLocalComponents := time.Date(localTime.Year(), localTime.Month(), localTime.Day(),
-						localTime.Hour(), localTime.Minute(), localTime.Second(), localTime.Nanosecond(), time.UTC)
-					return utcWithLocalComponents.UnixMilli(), nil
-				}
 				return timeVal.UnixMilli(), nil
 			}
 			return v, nil
@@ -274,39 +249,15 @@ func (kd KindDetails) ParseValueForArrow(value interface{}, location *time.Locat
 	case TimestampNTZ.Kind:
 		switch v := value.(type) {
 		case time.Time:
-			// For NTZ, if location is provided, convert to that timezone and treat local components as UTC (for parquet compatibility)
-			if location != nil {
-				localTime := v.In(location)
-				// Extract local time components and create UTC time with those components
-				utcWithLocalComponents := time.Date(localTime.Year(), localTime.Month(), localTime.Day(),
-					localTime.Hour(), localTime.Minute(), localTime.Second(), localTime.Nanosecond(), time.UTC)
-				return utcWithLocalComponents.UnixMilli(), nil
-			}
 			// Convert to milliseconds since epoch without timezone adjustment
 			return v.UnixMilli(), nil
 		case string:
 			// Try to parse string as timestamp (NTZ format)
 			if timeVal, err := time.Parse("2006-01-02T15:04:05.999", v); err == nil {
-				// For NTZ, if location is provided, convert to that timezone and treat local components as UTC (for parquet compatibility)
-				if location != nil {
-					localTime := timeVal.In(location)
-					// Extract local time components and create UTC time with those components
-					utcWithLocalComponents := time.Date(localTime.Year(), localTime.Month(), localTime.Day(),
-						localTime.Hour(), localTime.Minute(), localTime.Second(), localTime.Nanosecond(), time.UTC)
-					return utcWithLocalComponents.UnixMilli(), nil
-				}
 				return timeVal.UnixMilli(), nil
 			}
 			// Try with RFC3339 but ignore timezone
 			if timeVal, err := time.Parse(time.RFC3339, v); err == nil {
-				// For NTZ, if location is provided, convert to that timezone and treat local components as UTC (for parquet compatibility)
-				if location != nil {
-					localTime := timeVal.In(location)
-					// Extract local time components and create UTC time with those components
-					utcWithLocalComponents := time.Date(localTime.Year(), localTime.Month(), localTime.Day(),
-						localTime.Hour(), localTime.Minute(), localTime.Second(), localTime.Nanosecond(), time.UTC)
-					return utcWithLocalComponents.UnixMilli(), nil
-				}
 				return timeVal.UnixMilli(), nil
 			}
 			return v, nil

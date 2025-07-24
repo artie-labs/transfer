@@ -2,7 +2,6 @@ package parquetutil
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/apache/arrow/go/v17/arrow"
 	"github.com/apache/arrow/go/v17/arrow/array"
@@ -11,8 +10,8 @@ import (
 )
 
 // ParseValueForArrow converts a raw value to Arrow-compatible format given column details and location
-func ParseValueForArrow(value interface{}, kindDetails typing.KindDetails, location *time.Location) (interface{}, error) {
-	return kindDetails.ParseValueForArrow(value, location)
+func ParseValueForArrow(value interface{}, kindDetails typing.KindDetails) (interface{}, error) {
+	return kindDetails.ParseValueForArrow(value)
 }
 
 // ConvertValueForArrowBuilder converts a parsed value to the appropriate Arrow builder method call
