@@ -2,7 +2,6 @@ package typing
 
 import (
 	"testing"
-	"time"
 
 	"github.com/apache/arrow/go/v17/arrow"
 	"github.com/stretchr/testify/assert"

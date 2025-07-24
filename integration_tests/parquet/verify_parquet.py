@@ -7,7 +7,30 @@ from datetime import datetime, timezone, date, time
 from decimal import Decimal
 import json
 
-def verify_parquet_file(file_path, location):
+def verify_basic_parquet_file(file_path):
+    """
+    Read and verify the contents of a basic parquet file.
+    Returns True if all verifications pass, False otherwise.
+    """
+    df = pd.read_parquet(file_path)
+    
+    # Sort by 'id' to ensure consistent row order
+    df = df.sort_values(by='id').reset_index(drop=True)
+    
+    # Expecting id, name
+    assert list(df.columns) == ['id', 'name'], f"Expected columns ['id', 'name'], got {list(df.columns)}"
+    # Asserting the row count
+    assert len(df) == 10_000, f"Expected 10,000 rows, got {len(df)}"
+
+    # Read the data to make sure it's all 10k
+    for i in range(10_000):
+        assert df.iloc[i]['id'] == i, f"Expected id {i}, got {df.iloc[i]['id']}"
+        assert df.iloc[i]['name'] == f"User {i}", f"Expected name 'User {i}', got {df.iloc[i]['name']}"
+
+    return True
+
+
+def verify_parquet_file(file_path):
     """
     Read and verify the contents of a comprehensive parquet file.
     Returns True if all verifications pass, False otherwise.
@@ -43,8 +66,8 @@ def verify_parquet_file(file_path, location):
             'score': 98.5,
             'birth_date': date(1993, 5, 15),
             'lunch_time': time(12, 30, 45),  # time values are not timezone-adjusted in parquet
-            'created_at': datetime.fromisoformat("2024-03-20 06:00:00.111") if location else datetime.fromisoformat("2024-03-20 10:00:00.111").replace(tzinfo=timezone.utc),
-            'updated_at': datetime.fromisoformat("2024-03-20 06:00:00.111") if location else datetime.fromisoformat("2024-03-20 10:00:00.111").replace(tzinfo=timezone.utc),
+            'created_at': datetime.fromisoformat("2024-03-20 10:00:00.111").replace(tzinfo=timezone.utc),
+            'updated_at': datetime.fromisoformat("2024-03-20 10:00:00.111").replace(tzinfo=timezone.utc),
             'decimal_small': Decimal('123.45'),
             'decimal_large': Decimal('1234567890.1234567890'),
             'decimal_max': Decimal('123456789012345.123456789012345'),
@@ -62,8 +85,8 @@ def verify_parquet_file(file_path, location):
             'score': 0.0,
             'birth_date': date(2000, 1, 1),
             'lunch_time': time(0, 0, 0),  # time values are not timezone-adjusted in parquet
-            'created_at': datetime.fromisoformat("2024-03-20 07:00:00.555") if location else datetime.fromisoformat("2024-03-20 11:00:00.555").replace(tzinfo=timezone.utc),
-            'updated_at': datetime.fromisoformat("2024-03-20 07:00:00.444") if location else datetime.fromisoformat("2024-03-20 11:00:00.444").replace(tzinfo=timezone.utc),
+            'created_at': datetime.fromisoformat("2024-03-20 11:00:00.555").replace(tzinfo=timezone.utc),
+            'updated_at': datetime.fromisoformat("2024-03-20 11:00:00.444").replace(tzinfo=timezone.utc),
             'decimal_small': Decimal('0.00'),
             'decimal_large': Decimal('-999.9999999999'),
             'decimal_max': Decimal('-1.000000000000001'),
@@ -81,8 +104,8 @@ def verify_parquet_file(file_path, location):
             'score': -45.67,
             'birth_date': date(1970, 1, 1),
             'lunch_time': time(23, 59, 59),  # time values are not timezone-adjusted in parquet
-            'created_at': datetime.fromisoformat("1969-12-31 19:00:00.000") if location else datetime.fromisoformat("1970-01-01 00:00:00.000").replace(tzinfo=timezone.utc),
-            'updated_at': datetime.fromisoformat("2099-12-31 18:59:59.999") if location else datetime.fromisoformat("2099-12-31 23:59:59.999").replace(tzinfo=timezone.utc),
+            'created_at': datetime.fromisoformat("1970-01-01 00:00:00.000").replace(tzinfo=timezone.utc),
+            'updated_at': datetime.fromisoformat("2099-12-31 23:59:59.999").replace(tzinfo=timezone.utc),
             'decimal_small': Decimal('-99.99'),
             'decimal_large': Decimal('999999999.9999999999'),
             'decimal_max': Decimal('999999999999999.999999999999999'),
@@ -100,8 +123,8 @@ def verify_parquet_file(file_path, location):
             'score': 75.25,
             'birth_date': date(1999, 2, 28),
             'lunch_time': time(12, 0, 0, 123000),  # time values are not timezone-adjusted in parquet, with milliseconds
-            'created_at': datetime.fromisoformat("2024-02-29 07:00:00.123") if location else datetime.fromisoformat("2024-02-29 12:00:00.123").replace(tzinfo=timezone.utc),
-            'updated_at': datetime.fromisoformat("2024-02-29 07:00:00.123") if location else datetime.fromisoformat("2024-02-29 12:00:00.123").replace(tzinfo=timezone.utc),
+            'created_at': datetime.fromisoformat("2024-02-29 12:00:00.123").replace(tzinfo=timezone.utc),
+            'updated_at': datetime.fromisoformat("2024-02-29 12:00:00.123").replace(tzinfo=timezone.utc),
             'decimal_small': Decimal('12.34'),
             'decimal_large': Decimal('0.0000000001'),
             'decimal_max': Decimal('0.000000000000001'),
@@ -119,8 +142,8 @@ def verify_parquet_file(file_path, location):
             'score': 100.0,
             'birth_date': date(1900, 1, 1),
             'lunch_time': time(1, 23, 45),  # time values are not timezone-adjusted in parquet
-            'created_at': datetime.fromisoformat("2024-12-31 18:59:59.999") if location else datetime.fromisoformat("2024-12-31 23:59:59.999").replace(tzinfo=timezone.utc),
-            'updated_at': datetime.fromisoformat("2024-12-31 18:59:59.999") if location else datetime.fromisoformat("2024-12-31 23:59:59.999").replace(tzinfo=timezone.utc),
+            'created_at': datetime.fromisoformat("2024-12-31 23:59:59.999").replace(tzinfo=timezone.utc),
+            'updated_at': datetime.fromisoformat("2024-12-31 23:59:59.999").replace(tzinfo=timezone.utc),
             'decimal_small': Decimal('999.99'),
             'decimal_large': Decimal('-1234567890.1234567890'),
             'decimal_max': Decimal('-99999999999999.999999999999999'),
@@ -147,8 +170,8 @@ def verify_parquet_file(file_path, location):
                 'score': 3.1415927,  # float32 precision
                 'birth_date': date(1996, 6, 6),
                 'lunch_time': time(13, 37, 42, 999000),  # max milliseconds
-                'created_at': datetime.fromisoformat("2000-02-28 19:00:01.001") if location else datetime.fromisoformat("2000-02-29 00:00:01.001").replace(tzinfo=timezone.utc),
-                'updated_at': datetime.fromisoformat("2000-02-28 19:00:01.001") if location else datetime.fromisoformat("2000-02-29 00:00:01.001").replace(tzinfo=timezone.utc),
+                'created_at':  datetime.fromisoformat("2000-02-29 00:00:01.001").replace(tzinfo=timezone.utc),
+                'updated_at':  datetime.fromisoformat("2000-02-29 00:00:01.001").replace(tzinfo=timezone.utc),
                 'decimal_small': Decimal('1.01'),
                 'decimal_large': Decimal('99999999.9999999999'),
                 'decimal_max': Decimal('999999999999999.000000000000001'),
@@ -166,8 +189,8 @@ def verify_parquet_file(file_path, location):
                 'score': 0.001,
                 'birth_date': date(1924, 2, 29),
                 'lunch_time': time(23, 59, 59, 999000),  # last millisecond
-                'created_at': datetime.fromisoformat("2038-01-18 22:14:07.999") if location else datetime.fromisoformat("2038-01-19 03:14:07.999").replace(tzinfo=timezone.utc),
-                'updated_at': datetime.fromisoformat("2038-01-18 22:14:07.999") if location else datetime.fromisoformat("2038-01-19 03:14:07.999").replace(tzinfo=timezone.utc),
+                'created_at': datetime.fromisoformat("2038-01-19 03:14:07.999").replace(tzinfo=timezone.utc),
+                'updated_at': datetime.fromisoformat("2038-01-19 03:14:07.999").replace(tzinfo=timezone.utc),
                 'decimal_small': Decimal('-0.01'),
                 'decimal_large': Decimal('-0.0000000001'),
                 'decimal_max': Decimal('-0.000000000000001'),
@@ -185,8 +208,8 @@ def verify_parquet_file(file_path, location):
                 'score': 0.0,  # -0.0 becomes 0.0
                 'birth_date': date(2023, 12, 31),
                 'lunch_time': time(0, 0, 0, 1000),  # first millisecond
-                'created_at': datetime.fromisoformat("1900-12-31 19:00:00.000") if location else datetime.fromisoformat("1901-01-01 00:00:00.000").replace(tzinfo=timezone.utc),
-                'updated_at': datetime.fromisoformat("1900-12-31 19:00:00.000") if location else datetime.fromisoformat("1901-01-01 00:00:00.000").replace(tzinfo=timezone.utc),
+                'created_at': datetime.fromisoformat("1901-01-01 00:00:00.000").replace(tzinfo=timezone.utc),
+                'updated_at': datetime.fromisoformat("1901-01-01 00:00:00.000").replace(tzinfo=timezone.utc),
                 'decimal_small': Decimal('99.99'),
                 'decimal_large': Decimal('1.0000000000'),
                 'decimal_max': Decimal('1.000000000000000'),
@@ -288,15 +311,12 @@ def verify_parquet_file(file_path, location):
     return True
 
 def main():
-    parser = argparse.ArgumentParser(description='Verify comprehensive parquet file contents')
-    parser.add_argument('--file-path', help='Path to the parquet file to verify')
-    parser.add_argument('--location', help='Location to use for the parquet file')
-    args = parser.parse_args()
-
     try:
-        success = verify_parquet_file(args.file_path, args.location)
-        print(f"\n✅ Verification {'PASSED' if success else 'FAILED'}")
-        sys.exit(0 if success else 1)
+        if not verify_parquet_file("output/comprehensive_test.parquet"):
+            raise Exception("Comprehensive test failed")
+        if not verify_basic_parquet_file("output/basic_test.parquet"):
+            raise Exception("Basic test failed")
+        print("\n✅ Verification PASSED")
     except Exception as e:
         print(f"\n❌ Verification FAILED with error: {e}")
         import traceback

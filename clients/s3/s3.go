@@ -32,7 +32,6 @@ const batchSize = 1000
 type Store struct {
 	config   config.Config
 	s3Client awslib.S3Client
-	location *time.Location
 }
 
 func (s Store) GetConfig() config.Config {
@@ -186,7 +185,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (b
 	}
 
 	fp := buildTemporaryFilePath(tableData)
-	if err := WriteParquetFiles(tableData, fp, s.location); err != nil {
+	if err := WriteParquetFiles(tableData, fp); err != nil {
 		return false, err
 	}
 
@@ -224,18 +223,9 @@ func LoadStore(ctx context.Context, cfg config.Config) (*Store, error) {
 		return nil, fmt.Errorf("failed to load aws config: %w", err)
 	}
 
-	var location *time.Location
-	if cfg.SharedDestinationSettings.SharedTimestampSettings.Location != "" {
-		location, err = time.LoadLocation(cfg.SharedDestinationSettings.SharedTimestampSettings.Location)
-		if err != nil {
-			return nil, fmt.Errorf("failed to load location: %w", err)
-		}
-	}
-
 	store := Store{
 		config:   cfg,
 		s3Client: awslib.NewS3Client(awsConfig),
-		location: location,
 	}
 
 	if err := store.Validate(); err != nil {
