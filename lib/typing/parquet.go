@@ -47,11 +47,14 @@ func (kd KindDetails) ToArrowType(location *time.Location) (arrow.DataType, erro
 		// For arrays, we need to determine the element type
 		// For now, default to list of strings
 		return arrow.ListOf(arrow.BinaryTypes.String), nil
-	case TimestampTZ.Kind, TimestampNTZ.Kind:
+	case TimestampTZ.Kind:
 		if location == nil {
 			return arrow.FixedWidthTypes.Timestamp_ms, nil
 		}
 		return &arrow.TimestampType{Unit: arrow.Millisecond, TimeZone: location.String()}, nil
+	case TimestampNTZ.Kind:
+		// TimestampNTZ should never have timezone information - create timezone-naive timestamp
+		return &arrow.TimestampType{Unit: arrow.Millisecond}, nil
 	default:
 		return arrow.BinaryTypes.String, nil
 	}
@@ -201,7 +204,7 @@ func (kd KindDetails) ParseValueForArrow(value interface{}, location *time.Locat
 		default:
 			return fmt.Sprintf("%v", value), nil
 		}
-	case TimestampTZ.Kind, TimestampNTZ.Kind:
+	case TimestampTZ.Kind:
 		switch v := value.(type) {
 		case time.Time:
 			// Convert to milliseconds since epoch
@@ -213,6 +216,24 @@ func (kd KindDetails) ParseValueForArrow(value interface{}, location *time.Locat
 			}
 			// Try alternative formats
 			if timeVal, err := time.Parse("2006-01-02T15:04:05.999", v); err == nil {
+				return timeVal.UnixMilli(), nil
+			}
+			return v, nil
+		default:
+			return fmt.Sprintf("%v", value), nil
+		}
+	case TimestampNTZ.Kind:
+		switch v := value.(type) {
+		case time.Time:
+			// For NTZ, convert to milliseconds since epoch without timezone adjustment
+			return v.UnixMilli(), nil
+		case string:
+			// Try to parse string as timestamp (NTZ format)
+			if timeVal, err := time.Parse("2006-01-02T15:04:05.999", v); err == nil {
+				return timeVal.UnixMilli(), nil
+			}
+			// Try with RFC3339 but ignore timezone
+			if timeVal, err := time.Parse(time.RFC3339, v); err == nil {
 				return timeVal.UnixMilli(), nil
 			}
 			return v, nil
