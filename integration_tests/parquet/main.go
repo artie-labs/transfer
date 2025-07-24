@@ -28,7 +28,7 @@ func createBasicTestTable() *optimization.TableData {
 }
 
 func addBasicTestData(tableData *optimization.TableData) {
-	for i := 0; i < 10_000; i++ {
+	for i := range 10_000 {
 		tableData.InsertRow(strconv.Itoa(i), map[string]any{"id": i, "name": fmt.Sprintf("User %d", i)}, false)
 	}
 }
