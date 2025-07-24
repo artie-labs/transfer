@@ -11,12 +11,12 @@ import (
 )
 
 // ParseValueForArrow converts a raw value to Arrow-compatible format given column details and location
-func ParseValueForArrow(value interface{}, kindDetails typing.KindDetails) (interface{}, error) {
+func ParseValueForArrow(value any, kindDetails typing.KindDetails) (any, error) {
 	return kindDetails.ParseValueForArrow(value)
 }
 
 // ConvertValueForArrowBuilder converts a parsed value to the appropriate Arrow builder method call
-func ConvertValueForArrowBuilder(builder array.Builder, value interface{}) error {
+func ConvertValueForArrowBuilder(builder array.Builder, value any) error {
 	if value == nil {
 		builder.AppendNull()
 		return nil
