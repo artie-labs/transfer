@@ -14,6 +14,9 @@ import (
 var kindToArrowType = map[string]arrow.DataType{
 	String.Kind:  arrow.BinaryTypes.String,
 	Boolean.Kind: arrow.FixedWidthTypes.Boolean,
+	// Number data types:
+	Integer.Kind: arrow.PrimitiveTypes.Int64,
+	Float.Kind:   arrow.PrimitiveTypes.Float64,
 }
 
 // ToArrowType converts a KindDetails to the corresponding Arrow data type
@@ -23,10 +26,6 @@ func (kd KindDetails) ToArrowType(location *time.Location) (arrow.DataType, erro
 	}
 
 	switch kd.Kind {
-	case Integer.Kind:
-		return arrow.PrimitiveTypes.Int64, nil
-	case Float.Kind:
-		return arrow.PrimitiveTypes.Float64, nil
 	case Time.Kind:
 		return arrow.FixedWidthTypes.Time32ms, nil
 	case Date.Kind:

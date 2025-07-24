@@ -27,7 +27,7 @@ func TestKindDetails_ToArrowType(t *testing.T) {
 		// Float
 		arrowType, err := Float.ToArrowType(nil)
 		assert.NoError(t, err)
-		assert.Equal(t, arrow.PrimitiveTypes.Float32, arrowType)
+		assert.Equal(t, arrow.PrimitiveTypes.Float64, arrowType)
 	}
 	{
 		// Boolean
