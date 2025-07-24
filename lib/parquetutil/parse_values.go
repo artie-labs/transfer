@@ -45,11 +45,11 @@ func ConvertValueForArrowBuilder(builder array.Builder, value interface{}) error
 		} else {
 			return fmt.Errorf("expected bool value, got %T", value)
 		}
-	case *array.Float64Builder:
-		if floatVal, ok := value.(float64); ok {
+	case *array.Float32Builder:
+		if floatVal, ok := value.(float32); ok {
 			b.Append(floatVal)
-		} else if floatVal, ok := value.(float32); ok {
-			b.Append(float64(floatVal))
+		} else if floatVal, ok := value.(float64); ok {
+			b.Append(float32(floatVal))
 		} else {
 			return fmt.Errorf("expected float32 value, got %T", value)
 		}

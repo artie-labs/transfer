@@ -16,7 +16,7 @@ var kindToArrowType = map[string]arrow.DataType{
 	Boolean.Kind: arrow.FixedWidthTypes.Boolean,
 	// Number data types:
 	Integer.Kind: arrow.PrimitiveTypes.Int64,
-	Float.Kind:   arrow.PrimitiveTypes.Float64,
+	Float.Kind:   arrow.PrimitiveTypes.Float32,
 	// Date and time data types:
 	Time.Kind: arrow.FixedWidthTypes.Time32ms,
 	Date.Kind: arrow.FixedWidthTypes.Date32,
