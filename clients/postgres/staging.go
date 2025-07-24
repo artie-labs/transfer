@@ -87,8 +87,6 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 			return fmt.Errorf("failed to build staging iterator: %w", err)
 		}
 
-		fmt.Println("columns.ColumnNames(cols)", columns.ColumnNames(cols))
-
 		copyCount, err := pgxConn.CopyFrom(ctx, pgxIdentifier, columns.ColumnNames(cols), stagingIterator)
 		if err != nil {
 			return fmt.Errorf("failed to copy from rows: %w", err)
