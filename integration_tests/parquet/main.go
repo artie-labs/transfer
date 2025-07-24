@@ -170,8 +170,7 @@ func createSimpleTestTable() *optimization.TableData {
 	cols.AddColumn(columns.NewColumn("id", typing.Integer))
 	cols.AddColumn(columns.NewColumn("name", typing.String))
 
-	tableData := optimization.NewTableData(&cols, config.Replication, []string{"id"}, kafkalib.TopicConfig{}, "simple_test_table")
-	return tableData
+	return optimization.NewTableData(&cols, config.Replication, []string{"id"}, kafkalib.TopicConfig{}, "simple_test_table")
 }
 
 func addSimpleTestData(tableData *optimization.TableData) {
