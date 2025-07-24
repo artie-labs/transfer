@@ -7,6 +7,29 @@ from datetime import datetime, timezone, date, time
 from decimal import Decimal
 import json
 
+def verify_basic_parquet_file(file_path):
+    """
+    Read and verify the contents of a basic parquet file.
+    Returns True if all verifications pass, False otherwise.
+    """
+    df = pd.read_parquet(file_path)
+    
+    # Sort by 'id' to ensure consistent row order
+    df = df.sort_values(by='id').reset_index(drop=True)
+    
+    # Expecting id, name
+    assert list(df.columns) == ['id', 'name'], f"Expected columns ['id', 'name'], got {list(df.columns)}"
+    # Asserting the row count
+    assert len(df) == 10_000, f"Expected 10,000 rows, got {len(df)}"
+
+    # Read the data to make sure it's all 10k
+    for i in range(10_000):
+        assert df.iloc[i]['id'] == i, f"Expected id {i}, got {df.iloc[i]['id']}"
+        assert df.iloc[i]['name'] == f"User {i}", f"Expected name 'User {i}', got {df.iloc[i]['name']}"
+
+    return True
+
+
 def verify_parquet_file(file_path):
     """
     Read and verify the contents of a comprehensive parquet file.
@@ -288,14 +311,12 @@ def verify_parquet_file(file_path):
     return True
 
 def main():
-    parser = argparse.ArgumentParser(description='Verify comprehensive parquet file contents')
-    parser.add_argument('--file-path', help='Path to the parquet file to verify')
-    args = parser.parse_args()
-
     try:
-        success = verify_parquet_file(args.file_path)
-        print(f"\n✅ Verification {'PASSED' if success else 'FAILED'}")
-        sys.exit(0 if success else 1)
+        if not verify_parquet_file("output/comprehensive_test.parquet"):
+            raise Exception("Comprehensive test failed")
+        if not verify_basic_parquet_file("output/basic_test.parquet"):
+            raise Exception("Basic test failed")
+        print("\n✅ Verification PASSED")
     except Exception as e:
         print(f"\n❌ Verification FAILED with error: {e}")
         import traceback
