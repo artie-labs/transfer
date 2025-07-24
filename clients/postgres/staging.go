@@ -16,7 +16,7 @@ import (
 	"github.com/jackc/pgx/v5/stdlib"
 )
 
-// [stagingIterator] - This is a wrapper around [pgx.CopyFromSource]
+// [stagingIterator] - This is an implementation of [pgx.CopyFromSource]
 // Source: https://pkg.go.dev/github.com/jackc/pgx/v5#CopyFromSource
 type stagingIterator struct {
 	data [][]any
