@@ -7,6 +7,7 @@ import (
 	"github.com/apache/arrow/go/v17/arrow/array"
 	"github.com/apache/arrow/go/v17/arrow/decimal128"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/converters/primitives"
 )
 
 // ParseValueForArrow converts a raw value to Arrow-compatible format given column details and location
@@ -23,27 +24,23 @@ func ConvertValueForArrowBuilder(builder array.Builder, value interface{}) error
 
 	switch b := builder.(type) {
 	case *array.StringBuilder:
-		if strVal, ok := value.(string); ok {
-			b.Append(strVal)
-		} else {
-			b.Append(fmt.Sprintf("%v", value))
+		castedValue, err := typing.AssertType[string](value)
+		if err != nil {
+			return fmt.Errorf("failed to cast value to string: %w", err)
 		}
+		b.Append(castedValue)
 	case *array.Int64Builder:
-		if intVal, ok := value.(int64); ok {
-			b.Append(intVal)
-		} else if intVal, ok := value.(int); ok {
-			b.Append(int64(intVal))
-		} else if intVal, ok := value.(int32); ok {
-			b.Append(int64(intVal))
-		} else {
-			return fmt.Errorf("expected int64 value, got %T", value)
+		castedValue, err := primitives.Int64Converter{}.Convert(value)
+		if err != nil {
+			return fmt.Errorf("failed to cast value to int64: %w", err)
 		}
+		b.Append(castedValue)
 	case *array.BooleanBuilder:
-		if boolVal, ok := value.(bool); ok {
-			b.Append(boolVal)
-		} else {
-			return fmt.Errorf("expected bool value, got %T", value)
+		castedValue, err := primitives.BooleanConverter{}.Convert(value)
+		if err != nil {
+			return fmt.Errorf("failed to cast value to boolean: %w", err)
 		}
+		b.Append(castedValue)
 	case *array.Float32Builder:
 		if floatVal, ok := value.(float32); ok {
 			b.Append(floatVal)
