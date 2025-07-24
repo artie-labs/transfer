@@ -71,7 +71,6 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	}
 
 	pgxIdentifier := []string{castedTableID.Schema(), castedTableID.Table()}
-
 	conn, err := s.Store.Conn(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get pgx conn: %w", err)
