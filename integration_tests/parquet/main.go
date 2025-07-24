@@ -1,11 +1,9 @@
 package main
 
 import (
-	"flag"
 	"log/slog"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/artie-labs/transfer/clients/s3"
 	"github.com/artie-labs/transfer/lib/config"
@@ -163,20 +161,6 @@ func addComprehensiveTestData(tableData *optimization.TableData) {
 }
 
 func main() {
-	var locationString string
-	flag.StringVar(&locationString, "location", "", "The location to use for the parquet file")
-	flag.Parse()
-
-	var loc *time.Location
-	if locationString != "" {
-		slog.Info("Loading location", slog.String("location", locationString))
-		var err error
-		loc, err = time.LoadLocation(locationString)
-		if err != nil {
-			logger.Fatal("Failed to load location", slog.Any("error", err))
-		}
-	}
-
 	tableData := createComprehensiveTestTable()
 	addComprehensiveTestData(tableData)
 
@@ -188,7 +172,7 @@ func main() {
 
 	// Write the parquet file
 	parquetPath := filepath.Join(outputDir, "comprehensive_test.parquet")
-	if err := s3.WriteParquetFiles(tableData, parquetPath, loc); err != nil {
+	if err := s3.WriteParquetFiles(tableData, parquetPath); err != nil {
 		logger.Fatal("Failed to write parquet file", slog.Any("error", err))
 	}
 

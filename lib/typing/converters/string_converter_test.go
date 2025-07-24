@@ -331,19 +331,7 @@ func TestStringConverter_Convert(t *testing.T) {
 
 func TestTimestampNTZConverter_Convert(t *testing.T) {
 	_time := time.Date(2023, 4, 24, 17, 29, 5, 699_000_000, time.UTC)
-	{
-		// No location
-		value, err := NewTimestampNTZConverter("", nil).Convert(_time)
-		assert.NoError(t, err)
-		assert.Equal(t, "2023-04-24T17:29:05.699", value)
-	}
-	{
-		// With location
-		est, err := time.LoadLocation("America/New_York")
-		assert.NoError(t, err)
-
-		value, err := NewTimestampNTZConverter("", est).Convert(_time)
-		assert.NoError(t, err)
-		assert.Equal(t, "2023-04-24T13:29:05.699", value)
-	}
+	value, err := NewTimestampNTZConverter("").Convert(_time)
+	assert.NoError(t, err)
+	assert.Equal(t, "2023-04-24T17:29:05.699", value)
 }

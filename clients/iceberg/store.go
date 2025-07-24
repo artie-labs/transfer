@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"maps"
 	"slices"
-	"time"
 
 	"github.com/aws/aws-sdk-go-v2/credentials"
 
@@ -29,7 +28,6 @@ type Store struct {
 	apacheLivyClient *apachelivy.Client
 	config           config.Config
 	cm               *types.DestinationTableConfigMap
-	location         *time.Location
 }
 
 func (s Store) GetConfig() config.Config {
@@ -267,14 +265,6 @@ func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {
 		cfg.Iceberg.S3Tables.Region,
 	)
 
-	var location *time.Location
-	if cfg.SharedDestinationSettings.SharedTimestampSettings.Location != "" {
-		location, err = time.LoadLocation(cfg.SharedDestinationSettings.SharedTimestampSettings.Location)
-		if err != nil {
-			return Store{}, fmt.Errorf("failed to load location: %w", err)
-		}
-	}
-
 	store := Store{
 		catalogName:      cfg.Iceberg.S3Tables.CatalogName(),
 		config:           cfg,
@@ -282,7 +272,6 @@ func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {
 		cm:               &types.DestinationTableConfigMap{},
 		s3TablesAPI:      awslib.NewS3TablesAPI(awsCfg, cfg.Iceberg.S3Tables.BucketARN),
 		s3Client:         awslib.NewS3Client(awsCfg),
-		location:         location,
 	}
 
 	namespaces := make(map[string]bool)
