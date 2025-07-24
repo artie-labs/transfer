@@ -36,8 +36,12 @@ func LoadStore(cfg config.Config) (*Store, error) {
 	}, nil
 }
 
-func (s Store) Dialect() sql.Dialect {
+func (s Store) dialect() dialect.PostgresDialect {
 	return dialect.PostgresDialect{}
+}
+
+func (s Store) Dialect() sql.Dialect {
+	return s.dialect()
 }
 
 func (s Store) GetConfig() config.Config {
@@ -81,7 +85,12 @@ func (s *Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, 
 }
 
 func (s *Store) SweepTemporaryTables(ctx context.Context) error {
-	return fmt.Errorf("not implemented")
+	tcs, err := s.config.TopicConfigs()
+	if err != nil {
+		return err
+	}
+
+	return shared.Sweep(ctx, s, tcs, s.dialect().BuildSweepQuery)
 }
 
 func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
