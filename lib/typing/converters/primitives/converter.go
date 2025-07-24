@@ -26,3 +26,16 @@ func (Int64Converter) Convert(value any) (int64, error) {
 	}
 	return 0, fmt.Errorf("expected string/int/int16/int32/int64 got %T with value: %v", value, value)
 }
+
+type BooleanConverter struct{}
+
+func (BooleanConverter) Convert(value any) (bool, error) {
+	switch castValue := value.(type) {
+	case string:
+		return strconv.ParseBool(castValue)
+	case bool:
+		return castValue, nil
+	}
+
+	return false, fmt.Errorf("failed to parse boolean, unsupported type: %T", value)
+}

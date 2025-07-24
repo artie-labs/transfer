@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/artie-labs/transfer/clients/bigquery/converters"
 	"github.com/artie-labs/transfer/clients/postgres/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -121,12 +122,7 @@ func parseValue(value any, col columns.Column) (any, error) {
 	case typing.Integer.Kind:
 		return value, nil
 	case typing.Boolean.Kind:
-		castedValue, err := typing.AssertType[bool](value)
-		if err != nil {
-			return "", err
-		}
-
-		return castedValue, nil
+		return converters.BooleanConverter{}.Convert(value)
 	default:
 		return nil, fmt.Errorf("unsupported type %q, not implemented", col.KindDetails.Kind)
 	}
