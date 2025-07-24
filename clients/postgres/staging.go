@@ -15,6 +15,8 @@ import (
 	"github.com/jackc/pgx/v5/stdlib"
 )
 
+// [stagingIterator] - This is a wrapper around [pgx.CopyFromSource]
+// Source: https://pkg.go.dev/github.com/jackc/pgx/v5#CopyFromSource
 type stagingIterator struct {
 	data [][]any
 	idx  int
@@ -52,10 +54,7 @@ func (s *Store) buildStagingIterator(tableData *optimization.TableData) (pgx.Cop
 		values = append(values, rowValues)
 	}
 
-	return &stagingIterator{
-		data: values,
-		idx:  0,
-	}, nil
+	return &stagingIterator{data: values, idx: 0}, nil
 }
 
 func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
@@ -79,15 +78,19 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 
 	defer conn.Close()
 
+	// This is lifted from pgx v5's docs: https://pkg.go.dev/github.com/jackc/pgx/v5/stdlib
 	err = conn.Raw(func(driverConn any) error {
-		pgxConn := driverConn.(*stdlib.Conn).Conn() // conn is a *pgx.Conn
-		cols := tableData.ReadOnlyInMemoryCols().ValidColumns()
+		stdlibConn, ok := driverConn.(*stdlib.Conn)
+		if !ok {
+			return fmt.Errorf("failed to cast driverConn to *stdlib.Conn")
+		}
+
 		stagingIterator, err := s.buildStagingIterator(tableData)
 		if err != nil {
 			return fmt.Errorf("failed to build staging iterator: %w", err)
 		}
 
-		copyCount, err := pgxConn.CopyFrom(ctx, pgxIdentifier, columns.ColumnNames(cols), stagingIterator)
+		copyCount, err := stdlibConn.Conn().CopyFrom(ctx, pgxIdentifier, columns.ColumnNames(tableData.ReadOnlyInMemoryCols().ValidColumns()), stagingIterator)
 		if err != nil {
 			return fmt.Errorf("failed to copy from rows: %w", err)
 		}
