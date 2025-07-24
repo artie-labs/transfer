@@ -64,7 +64,7 @@ func TestKindDetails_ToArrowType(t *testing.T) {
 		timestampType, ok := arrowType.(*arrow.TimestampType)
 		assert.True(t, ok)
 		assert.Equal(t, arrow.Millisecond, timestampType.Unit)
-		assert.Equal(t, "America/New_York", timestampType.TimeZone)
+		assert.Equal(t, "", timestampType.TimeZone) // Should be timezone-naive when location is provided
 	}
 	{
 		// TimestampTZ without location

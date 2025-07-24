@@ -53,7 +53,7 @@ func (kd KindDetails) ToArrowType(location *time.Location) (arrow.DataType, erro
 		if location == nil {
 			return arrow.FixedWidthTypes.Timestamp_ms, nil
 		}
-		return &arrow.TimestampType{Unit: arrow.Millisecond, TimeZone: location.String()}, nil
+		return &arrow.TimestampType{Unit: arrow.Millisecond}, nil
 	case TimestampNTZ.Kind:
 		// For parquet compatibility: when location is provided, store as timezone-naive
 		// When no location is provided, store as timezone-aware UTC (to match test expectations)
