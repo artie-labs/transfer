@@ -143,12 +143,12 @@ func (tf *TestFramework) VerifyRowCount(expected int) error {
 	return tf.verifyRowCountDestination(expected)
 }
 
-func (tf *TestFramework) VerifyDataContent(rowCount int) error {
+func (tf *TestFramework) VerifyDataContent(ctx context.Context, rowCount int) error {
 	if tf.iceberg != nil {
 		return tf.verifyDataContentIceberg(rowCount)
 	}
 
-	return tf.verifyDataContentDestination(rowCount)
+	return tf.verifyDataContentDestination(ctx, rowCount)
 }
 
 func (tf *TestFramework) Cleanup(tableID sql.TableIdentifier) error {

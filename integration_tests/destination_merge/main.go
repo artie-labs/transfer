@@ -74,7 +74,7 @@ func (mt *MergeTest) deleteData(numRows int) error {
 	return nil
 }
 
-func (mt *MergeTest) verifyUpdatedData(numRows int) error {
+func (mt *MergeTest) verifyUpdatedData(ctx context.Context, numRows int) error {
 	query := fmt.Sprintf("SELECT id, name, value, json_data, json_array, json_string, json_boolean, json_number FROM %s ORDER BY id ASC LIMIT %d", mt.framework.GetTableID().FullyQualifiedName(), numRows)
 	if mt.framework.MSSQL() {
 		query = fmt.Sprintf("SELECT TOP %d id, name, value, json_data, json_array, json_string, json_boolean, json_number FROM %s ORDER BY id ASC", numRows, mt.framework.GetTableID().FullyQualifiedName())
@@ -84,7 +84,7 @@ func (mt *MergeTest) verifyUpdatedData(numRows int) error {
 		query = fmt.Sprintf("SELECT id, name, value, TO_JSON_STRING(json_data), TO_JSON_STRING(json_array) FROM %s ORDER BY id ASC LIMIT %d", mt.framework.GetTableID().FullyQualifiedName(), numRows)
 	}
 
-	rows, err := mt.framework.GetDestination().Query(query)
+	rows, err := mt.framework.GetDestination().QueryContext(ctx, query)
 	if err != nil {
 		return fmt.Errorf("failed to query table data: %w", err)
 	}
@@ -110,7 +110,7 @@ func (mt *MergeTest) verifyUpdatedData(numRows int) error {
 	return nil
 }
 
-func (mt *MergeTest) Run() error {
+func (mt *MergeTest) Run(ctx context.Context) error {
 	if err := mt.framework.Cleanup(mt.framework.GetTableID()); err != nil {
 		return fmt.Errorf("failed to cleanup table: %w", err)
 	}
@@ -129,7 +129,7 @@ func (mt *MergeTest) Run() error {
 		return fmt.Errorf("failed to verify initial row count: %w", err)
 	}
 
-	if err := mt.framework.VerifyDataContent(numRows); err != nil {
+	if err := mt.framework.VerifyDataContent(ctx, numRows); err != nil {
 		return fmt.Errorf("failed to verify initial data content: %w", err)
 	}
 
@@ -139,7 +139,7 @@ func (mt *MergeTest) Run() error {
 		return fmt.Errorf("failed to update data: %w", err)
 	}
 
-	if err := mt.verifyUpdatedData(updatedRows); err != nil {
+	if err := mt.verifyUpdatedData(ctx, updatedRows); err != nil {
 		return fmt.Errorf("failed to verify updated data: %w", err)
 	}
 
@@ -178,7 +178,7 @@ func main() {
 	}
 
 	test := NewMergeTest(ctx, dest, nil, *tc[0])
-	if err := test.Run(); err != nil {
+	if err := test.Run(ctx); err != nil {
 		logger.Fatal("Test failed", slog.Any("err", err))
 	}
 
