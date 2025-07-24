@@ -26,6 +26,19 @@ import (
 	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
+// Parquet writing configuration constants
+const (
+	// DefaultParquetBatchSize is the default number of rows to process in each batch
+	// Smaller batches use less memory but may have slightly lower throughput
+	DefaultParquetBatchSize = 1000
+
+	// SmallMemoryBatchSize for memory-constrained environments
+	SmallMemoryBatchSize = 500
+
+	// LargeMemoryBatchSize for environments with ample memory
+	LargeMemoryBatchSize = 5000
+)
+
 type Store struct {
 	config   config.Config
 	s3Client awslib.S3Client
@@ -77,8 +90,14 @@ func buildTemporaryFilePath(tableData *optimization.TableData) string {
 }
 
 // WriteParquetFiles writes the table data to a parquet file at the specified path using Arrow.
+// batchSize controls memory usage - smaller values use less memory but may be slower.
+// Use 0 for default batch size.
 // Returns an error if any step of the writing process fails.
-func WriteParquetFiles(tableData *optimization.TableData, filePath string, location *time.Location) error {
+func WriteParquetFiles(tableData *optimization.TableData, filePath string, location *time.Location, batchSize int) error {
+	if batchSize <= 0 {
+		batchSize = DefaultParquetBatchSize
+	}
+
 	arrowSchema, err := parquetutil.BuildArrowSchemaFromColumns(tableData.ReadOnlyInMemoryCols().ValidColumns(), location)
 	if err != nil {
 		return fmt.Errorf("failed to generate arrow schema: %w", err)
@@ -89,7 +108,6 @@ func WriteParquetFiles(tableData *optimization.TableData, filePath string, locat
 	if err != nil {
 		return fmt.Errorf("failed to create parquet file: %w", err)
 	}
-
 	defer file.Close()
 
 	// Create parquet file writer
@@ -97,22 +115,104 @@ func WriteParquetFiles(tableData *optimization.TableData, filePath string, locat
 	if err != nil {
 		return fmt.Errorf("failed to create parquet writer: %w", err)
 	}
-
 	defer writer.Close()
 
-	record, err := buildArrowRecord(arrowSchema, tableData, location)
-	if err != nil {
-		return fmt.Errorf("failed to build arrow record: %w", err)
-	}
-	defer record.Release()
-
-	if err = writer.Write(record); err != nil {
-		return fmt.Errorf("failed to write record: %w", err)
+	// Use streaming approach to write data in batches
+	if err := writeArrowRecordsInBatches(writer, arrowSchema, tableData, location, batchSize); err != nil {
+		return fmt.Errorf("failed to write records in batches: %w", err)
 	}
 
 	return nil
 }
 
+// writeArrowRecordsInBatches processes table data in configurable batch sizes and writes
+// Arrow records incrementally to reduce memory usage.
+func writeArrowRecordsInBatches(writer *pqarrow.FileWriter, schema *arrow.Schema, tableData *optimization.TableData, location *time.Location, batchSize int) error {
+	pool := memory.NewGoAllocator()
+	rows := tableData.Rows()
+	cols := tableData.ReadOnlyInMemoryCols().ValidColumns()
+
+	// Start a buffered row group to control memory usage
+	writer.NewBufferedRowGroup()
+
+	// Process rows in batches
+	for batchStart := 0; batchStart < len(rows); batchStart += batchSize {
+		batchEnd := batchStart + batchSize
+		if batchEnd > len(rows) {
+			batchEnd = len(rows)
+		}
+
+		// Create builders for this batch
+		var builders []array.Builder
+		for _, field := range schema.Fields() {
+			builders = append(builders, array.NewBuilder(pool, field.Type))
+		}
+
+		// Process the current batch of rows
+		batchRows := rows[batchStart:batchEnd]
+		for _, row := range batchRows {
+			for i, col := range cols {
+				value, _ := row.GetValue(col.Name())
+
+				// Parse value for Arrow
+				parsedValue, err := parquetutil.ParseValueForArrow(value, col.KindDetails, location)
+				if err != nil {
+					// Clean up builders before returning error
+					for _, builder := range builders {
+						builder.Release()
+					}
+					return fmt.Errorf("failed to parse value for column %q: %w", col.Name(), err)
+				}
+
+				// Convert and append to builder
+				if err := parquetutil.ConvertValueForArrowBuilder(builders[i], parsedValue); err != nil {
+					// Clean up builders before returning error
+					for _, builder := range builders {
+						builder.Release()
+					}
+					return fmt.Errorf("failed to append value to builder for column %q: %w", col.Name(), err)
+				}
+			}
+		}
+
+		// Build arrays from builders
+		arrays := make([]arrow.Array, len(builders))
+		for i, builder := range builders {
+			arrays[i] = builder.NewArray()
+		}
+
+		// Create record for this batch
+		record := array.NewRecord(schema, arrays, int64(len(batchRows)))
+
+		// Write the batch to the parquet file using buffered writing
+		if err := writer.WriteBuffered(record); err != nil {
+			// Clean up before returning error
+			record.Release()
+			for _, arr := range arrays {
+				arr.Release()
+			}
+			for _, builder := range builders {
+				builder.Release()
+			}
+			return fmt.Errorf("failed to write batch record: %w", err)
+		}
+
+		// Clean up this batch's resources
+		record.Release()
+		for _, arr := range arrays {
+			arr.Release()
+		}
+		for _, builder := range builders {
+			builder.Release()
+		}
+	}
+
+	return nil
+}
+
+// buildArrowRecord creates an Arrow record from table data.
+// Deprecated: Use writeArrowRecordsInBatches for memory-efficient processing.
+// This function is kept for backward compatibility but loads all data into memory at once.
 func buildArrowRecord(schema *arrow.Schema, tableData *optimization.TableData, location *time.Location) (arrow.Record, error) {
 	pool := memory.NewGoAllocator()
 
@@ -120,6 +220,7 @@ func buildArrowRecord(schema *arrow.Schema, tableData *optimization.TableData, l
 	for _, field := range schema.Fields() {
 		builders = append(builders, array.NewBuilder(pool, field.Type))
 	}
+
 	defer func() {
 		for _, builder := range builders {
 			builder.Release()
@@ -172,7 +273,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (b
 	}
 
 	fp := buildTemporaryFilePath(tableData)
-	if err := WriteParquetFiles(tableData, fp, s.location); err != nil {
+	if err := WriteParquetFiles(tableData, fp, s.location, DefaultParquetBatchSize); err != nil {
 		return false, err
 	}
 
