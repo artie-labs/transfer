@@ -67,7 +67,7 @@ func main() {
 		logger.Fatal("Failed to create output directory", slog.Any("error", err))
 	}
 
-	// Write the parquet file
+	// Write the parquet file using arrow-go implementation
 	parquetPath := filepath.Join(outputDir, "test.parquet")
 	if err := s3.WriteParquetFiles(tableData, parquetPath, loc); err != nil {
 		logger.Fatal("Failed to write parquet file", slog.Any("error", err))

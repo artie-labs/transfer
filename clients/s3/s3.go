@@ -8,11 +8,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/apache/arrow/go/v17/arrow"
+	"github.com/apache/arrow/go/v17/arrow/array"
+	"github.com/apache/arrow/go/v17/arrow/memory"
+	"github.com/apache/arrow/go/v17/parquet"
+	"github.com/apache/arrow/go/v17/parquet/compress"
+	"github.com/apache/arrow/go/v17/parquet/pqarrow"
 	awsCfg "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
-	"github.com/xitongsys/parquet-go-source/local"
-	"github.com/xitongsys/parquet-go/parquet"
-	"github.com/xitongsys/parquet-go/writer"
 
 	"github.com/artie-labs/transfer/lib/awslib"
 	"github.com/artie-labs/transfer/lib/config"
@@ -73,52 +76,99 @@ func buildTemporaryFilePath(tableData *optimization.TableData) string {
 	return fmt.Sprintf("/tmp/%d_%s.parquet", tableData.LatestCDCTs.UnixMilli(), stringutil.Random(4))
 }
 
-// WriteParquetFiles writes the table data to a parquet file at the specified path.
+// WriteParquetFiles writes the table data to a parquet file at the specified path using Arrow.
 // Returns an error if any step of the writing process fails.
 func WriteParquetFiles(tableData *optimization.TableData, filePath string, location *time.Location) error {
 	cols := tableData.ReadOnlyInMemoryCols().ValidColumns()
-	schema, err := parquetutil.BuildCSVSchema(cols, location)
+
+	// Build Arrow schema from columns
+	arrowSchema, err := parquetutil.BuildArrowSchemaFromColumns(cols, location)
 	if err != nil {
-		return fmt.Errorf("failed to generate parquet schema: %w", err)
+		return fmt.Errorf("failed to generate arrow schema: %w", err)
 	}
 
-	fw, err := local.NewLocalFileWriter(filePath)
+	// Create file for writing
+	file, err := os.Create(filePath)
 	if err != nil {
-		return fmt.Errorf("failed to create a local parquet file: %w", err)
+		return fmt.Errorf("failed to create parquet file: %w", err)
 	}
+	defer file.Close()
 
-	pw, err := writer.NewCSVWriter(schema, fw, 4)
+	// Set up parquet writer properties with compression
+	props := parquet.NewWriterProperties(parquet.WithCompression(compress.Codecs.Gzip))
+
+	// Set up arrow writer properties
+	arrowProps := pqarrow.DefaultWriterProps()
+
+	// Create parquet file writer
+	writer, err := pqarrow.NewFileWriter(arrowSchema, file, props, arrowProps)
 	if err != nil {
-		return fmt.Errorf("failed to instantiate parquet writer: %w", err)
+		return fmt.Errorf("failed to create parquet writer: %w", err)
 	}
+	defer writer.Close()
 
-	pw.CompressionType = parquet.CompressionCodec_GZIP
-	for _, row := range tableData.Rows() {
-		var csvValues []any
-		for _, col := range cols {
-			value, _ := row.GetValue(col.Name())
-			parsedValue, err := parquetutil.ParseValue(value, col.KindDetails, location)
-			if err != nil {
-				return fmt.Errorf("failed to parse value, err: %w, value: %v, column: %q", err, value, col.Name())
-			}
-
-			csvValues = append(csvValues, parsedValue)
-		}
-
-		if err = pw.Write(csvValues); err != nil {
-			return fmt.Errorf("failed to write row: %w", err)
-		}
+	// Create record from table data
+	record, err := buildArrowRecord(arrowSchema, tableData, location)
+	if err != nil {
+		return fmt.Errorf("failed to build arrow record: %w", err)
 	}
+	defer record.Release()
 
-	if err = pw.WriteStop(); err != nil {
-		return fmt.Errorf("failed to write stop: %w", err)
-	}
-
-	if err = fw.Close(); err != nil {
-		return fmt.Errorf("failed to close filewriter: %w", err)
+	// Write the record to parquet file
+	if err = writer.Write(record); err != nil {
+		return fmt.Errorf("failed to write record: %w", err)
 	}
 
 	return nil
+}
+
+// buildArrowRecord creates an Arrow record from table data
+func buildArrowRecord(schema *arrow.Schema, tableData *optimization.TableData, location *time.Location) (arrow.Record, error) {
+	pool := memory.NewGoAllocator()
+
+	builders := make([]array.Builder, len(schema.Fields()))
+	for i, field := range schema.Fields() {
+		builders[i] = array.NewBuilder(pool, field.Type)
+	}
+	defer func() {
+		for _, builder := range builders {
+			builder.Release()
+		}
+	}()
+
+	cols := tableData.ReadOnlyInMemoryCols().ValidColumns()
+
+	// Process each row
+	for _, row := range tableData.Rows() {
+		for i, col := range cols {
+			value, _ := row.GetValue(col.Name())
+
+			// Parse value for Arrow
+			parsedValue, err := parquetutil.ParseValueForArrow(value, col.KindDetails, location)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse value for column %q: %w", col.Name(), err)
+			}
+
+			// Convert and append to builder
+			if err := parquetutil.ConvertValueForArrowBuilder(builders[i], parsedValue); err != nil {
+				return nil, fmt.Errorf("failed to append value to builder for column %q: %w", col.Name(), err)
+			}
+		}
+	}
+
+	// Build arrays from builders
+	arrays := make([]arrow.Array, len(builders))
+	for i, builder := range builders {
+		arrays[i] = builder.NewArray()
+	}
+	defer func() {
+		for _, arr := range arrays {
+			arr.Release()
+		}
+	}()
+
+	// Create record
+	return array.NewRecord(schema, arrays, int64(tableData.NumberOfRows())), nil
 }
 
 // Merge - will take tableData, write it into a particular file in the specified format, in these steps:

@@ -2,194 +2,130 @@ package typing
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
+	"github.com/apache/arrow/go/v17/arrow"
+	"github.com/apache/arrow/go/v17/arrow/decimal128"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
-	"github.com/xitongsys/parquet-go/parquet"
 )
 
-type FieldTag struct {
-	Name               string
-	Type               *string
-	ConvertedType      *string
-	ValueConvertedType *string
-	// https://github.com/xitongsys/parquet-go#repetition-type
-	RepetitionType *string
-	Scale          *int
-	Precision      *int
-	Length         *int
-	// This is used for timestamps only:
-	LogicalType      *string
-	IsAdjustedForUTC *bool
-	Unit             *string
-}
-
-func (f FieldTag) String() string {
-	parts := []string{
-		fmt.Sprintf("name=%s", f.Name),
-	}
-
-	if f.Type != nil {
-		parts = append(parts, fmt.Sprintf("type=%s", *f.Type))
-	}
-
-	if f.ConvertedType != nil {
-		parts = append(parts, fmt.Sprintf("convertedtype=%s", *f.ConvertedType))
-	}
-
-	if f.ValueConvertedType != nil {
-		parts = append(parts, fmt.Sprintf("valueconvertedtype=%s", *f.ValueConvertedType))
-	}
-
-	if f.RepetitionType != nil {
-		parts = append(parts, fmt.Sprintf("repetitiontype=%s", *f.RepetitionType))
-	} else {
-		parts = append(parts, "repetitiontype=OPTIONAL")
-	}
-
-	if f.Scale != nil {
-		parts = append(parts, fmt.Sprintf("scale=%v", *f.Scale))
-	}
-
-	if f.Precision != nil {
-		parts = append(parts, fmt.Sprintf("precision=%v", *f.Precision))
-	}
-
-	if f.Length != nil {
-		parts = append(parts, fmt.Sprintf("length=%v", *f.Length))
-	}
-
-	// Timestamps:
-	if f.LogicalType != nil {
-		parts = append(parts, fmt.Sprintf("logicaltype=%s", *f.LogicalType))
-	}
-
-	if f.IsAdjustedForUTC != nil {
-		parts = append(parts, fmt.Sprintf("logicaltype.isadjustedtoutc=%t", *f.IsAdjustedForUTC))
-	}
-
-	if f.Unit != nil {
-		parts = append(parts, fmt.Sprintf("logicaltype.unit=%s", *f.Unit))
-	}
-
-	return strings.Join(parts, ", ")
-}
-
-type Field struct {
-	Tag    string  `json:"Tag"`
-	Fields []Field `json:"Fields,omitempty"`
-}
-
-func (k *KindDetails) ParquetAnnotation(colName string, location *time.Location) (*Field, error) {
-	switch k.Kind {
-	case String.Kind, Struct.Kind:
-		return &Field{
-			Tag: FieldTag{
-				Name:          colName,
-				Type:          ToPtr(parquet.Type_BYTE_ARRAY.String()),
-				ConvertedType: ToPtr(parquet.ConvertedType_UTF8.String()),
-			}.String(),
-		}, nil
-	case Float.Kind:
-		return &Field{
-			Tag: FieldTag{
-				Name: colName,
-				Type: ToPtr(parquet.Type_FLOAT.String()),
-			}.String(),
-		}, nil
-	case Date.Kind:
-		return &Field{
-			Tag: FieldTag{
-				Name:          colName,
-				Type:          ToPtr(parquet.Type_INT32.String()),
-				ConvertedType: ToPtr(parquet.ConvertedType_DATE.String()),
-			}.String(),
-		}, nil
-	case Time.Kind:
-		return &Field{
-			Tag: FieldTag{
-				Name:          colName,
-				Type:          ToPtr(parquet.Type_INT32.String()),
-				ConvertedType: ToPtr(parquet.ConvertedType_TIME_MILLIS.String()),
-			}.String(),
-		}, nil
-	case TimestampNTZ.Kind, TimestampTZ.Kind:
-		adjustedForUTC := true
-		if location != nil {
-			adjustedForUTC = false
-		}
-
-		return &Field{
-			Tag: FieldTag{
-				Name:             colName,
-				Type:             ToPtr(parquet.Type_INT64.String()),
-				LogicalType:      ToPtr("TIMESTAMP"),
-				IsAdjustedForUTC: ToPtr(adjustedForUTC),
-				Unit:             ToPtr("MILLIS"),
-			}.String(),
-		}, nil
+// ToArrowType converts a KindDetails to the corresponding Arrow data type
+func (kd KindDetails) ToArrowType(location *time.Location) (arrow.DataType, error) {
+	switch kd.Kind {
+	case String.Kind:
+		return arrow.BinaryTypes.String, nil
 	case Integer.Kind:
-		return &Field{
-			Tag: FieldTag{
-				Name: colName,
-				Type: ToPtr(parquet.Type_INT64.String()),
-			}.String(),
-		}, nil
-	case EDecimal.Kind:
-		precision := k.ExtendedDecimalDetails.Precision()
-		if precision == decimal.PrecisionNotSpecified {
-			// Precision is required for a parquet DECIMAL type, as such, we should fall back on a STRING type.
-			return &Field{
-				Tag: FieldTag{
-					Name:          colName,
-					Type:          ToPtr(parquet.Type_BYTE_ARRAY.String()),
-					ConvertedType: ToPtr(parquet.ConvertedType_UTF8.String()),
-				}.String(),
-			}, nil
-		}
-
-		scale := k.ExtendedDecimalDetails.Scale()
-		if scale > precision {
-			return nil, fmt.Errorf("scale (%d) must be less than or equal to precision (%d)", scale, precision)
-		}
-
-		return &Field{
-			Tag: FieldTag{
-				Name:          colName,
-				Type:          ToPtr(parquet.Type_FIXED_LEN_BYTE_ARRAY.String()),
-				ConvertedType: ToPtr(parquet.ConvertedType_DECIMAL.String()),
-				Precision:     ToPtr(int(precision)),
-				Scale:         ToPtr(int(scale)),
-				Length:        ToPtr(int(k.ExtendedDecimalDetails.TwosComplementByteArrLength())),
-			}.String(),
-		}, nil
+		return arrow.PrimitiveTypes.Int64, nil
 	case Boolean.Kind:
-		return &Field{
-			Tag: FieldTag{
-				Name: colName,
-				Type: ToPtr(parquet.Type_BOOLEAN.String()),
-			}.String(),
-		}, nil
+		return arrow.FixedWidthTypes.Boolean, nil
+	case Float.Kind:
+		return arrow.PrimitiveTypes.Float32, nil
+	case Time.Kind:
+		if location == nil {
+			// Default to millisecond precision time (TIME_MILLIS)
+			return arrow.FixedWidthTypes.Time32ms, nil
+		}
+		return arrow.FixedWidthTypes.Time32ms, nil
+	case Date.Kind:
+		return arrow.FixedWidthTypes.Date32, nil
+	case EDecimal.Kind:
+		if kd.ExtendedDecimalDetails != nil {
+			precision := kd.ExtendedDecimalDetails.Precision()
+			scale := kd.ExtendedDecimalDetails.Scale()
+			if precision <= 38 {
+				return &arrow.Decimal128Type{Precision: precision, Scale: scale}, nil
+			}
+		}
+		// Default decimal or unsupported precision - use string
+		return arrow.BinaryTypes.String, nil
+	case Struct.Kind:
+		// For struct types, we'll use string representation
+		return arrow.BinaryTypes.String, nil
 	case Array.Kind:
-		return &Field{
-			Tag: FieldTag{
-				Name:           colName,
-				Type:           ToPtr("LIST"),
-				RepetitionType: ToPtr("REQUIRED"),
-			}.String(),
-			Fields: []Field{
-				{
-					Tag: FieldTag{
-						Name:           "element",
-						Type:           ToPtr(parquet.Type_BYTE_ARRAY.String()),
-						ConvertedType:  ToPtr(parquet.ConvertedType_UTF8.String()),
-						RepetitionType: ToPtr("REQUIRED"),
-					}.String(),
-				},
-			},
-		}, nil
+		// For arrays, we need to determine the element type
+		// For now, default to list of strings
+		return arrow.ListOf(arrow.BinaryTypes.String), nil
+	case TimestampTZ.Kind, TimestampNTZ.Kind:
+		if location == nil {
+			return arrow.FixedWidthTypes.Timestamp_ms, nil
+		}
+		return &arrow.TimestampType{Unit: arrow.Millisecond, TimeZone: location.String()}, nil
 	default:
-		return nil, fmt.Errorf("unsupported kind: %q", k.Kind)
+		return arrow.BinaryTypes.String, nil
+	}
+}
+
+// ParseValueForArrow converts a value to the appropriate Arrow-compatible type
+func (kd KindDetails) ParseValueForArrow(value interface{}, location *time.Location) (interface{}, error) {
+	if value == nil {
+		return nil, nil
+	}
+
+	switch kd.Kind {
+	case String.Kind, Struct.Kind:
+		return fmt.Sprintf("%v", value), nil
+	case Integer.Kind:
+		if intVal, ok := value.(int64); ok {
+			return intVal, nil
+		}
+		return fmt.Sprintf("%v", value), nil
+	case Boolean.Kind:
+		if boolVal, ok := value.(bool); ok {
+			return boolVal, nil
+		}
+		return fmt.Sprintf("%v", value), nil
+	case Float.Kind:
+		if floatVal, ok := value.(float32); ok {
+			return floatVal, nil
+		}
+		if floatVal, ok := value.(float64); ok {
+			return float32(floatVal), nil
+		}
+		return fmt.Sprintf("%v", value), nil
+	case EDecimal.Kind:
+		if kd.ExtendedDecimalDetails != nil {
+			precision := kd.ExtendedDecimalDetails.Precision()
+			scale := kd.ExtendedDecimalDetails.Scale()
+
+			if decimalValue, ok := value.(*decimal.Decimal); ok && precision <= 38 {
+				// Convert decimal to string and then to decimal128
+				decStr := decimalValue.String()
+				num, err := decimal128.FromString(decStr, precision, scale)
+				if err != nil {
+					// Fallback to string if conversion fails
+					return decimalValue.String(), nil
+				}
+				return num, nil
+			}
+		}
+		return fmt.Sprintf("%v", value), nil
+	case Time.Kind:
+		if timeVal, ok := value.(time.Time); ok {
+			// Convert time to milliseconds since midnight
+			year, month, day := timeVal.Date()
+			midnight := time.Date(year, month, day, 0, 0, 0, 0, timeVal.Location())
+			millis := int32(timeVal.Sub(midnight).Milliseconds())
+			return millis, nil
+		}
+		return fmt.Sprintf("%v", value), nil
+	case Date.Kind:
+		if timeVal, ok := value.(time.Time); ok {
+			// Convert to days since epoch
+			epoch := time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)
+			days := int32(timeVal.Sub(epoch).Hours() / 24)
+			return days, nil
+		}
+		return fmt.Sprintf("%v", value), nil
+	case TimestampTZ.Kind, TimestampNTZ.Kind:
+		if timeVal, ok := value.(time.Time); ok {
+			// Convert to milliseconds since epoch
+			return timeVal.UnixMilli(), nil
+		}
+		return fmt.Sprintf("%v", value), nil
+	case Array.Kind:
+		// For arrays, convert to string representation for now
+		return fmt.Sprintf("%v", value), nil
+	default:
+		return fmt.Sprintf("%v", value), nil
 	}
 }

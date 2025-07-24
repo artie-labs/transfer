@@ -3,20 +3,26 @@ package parquetutil
 import (
 	"time"
 
+	"github.com/apache/arrow/go/v17/arrow"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func BuildCSVSchema(columns []columns.Column, location *time.Location) ([]string, error) {
-	var fields []string
-	for _, column := range columns {
-		// We don't need to escape the column name here.
-		field, err := column.KindDetails.ParquetAnnotation(column.Name(), location)
+// BuildArrowSchemaFromColumns creates an Arrow schema from typing columns
+func BuildArrowSchemaFromColumns(columns []columns.Column, location *time.Location) (*arrow.Schema, error) {
+	fields := make([]arrow.Field, len(columns))
+
+	for i, column := range columns {
+		arrowType, err := column.KindDetails.ToArrowType(location)
 		if err != nil {
 			return nil, err
 		}
 
-		fields = append(fields, field.Tag)
+		fields[i] = arrow.Field{
+			Name:     column.Name(),
+			Type:     arrowType,
+			Nullable: true, // Most columns are nullable by default
+		}
 	}
 
-	return fields, nil
+	return arrow.NewSchema(fields, nil), nil
 }

@@ -7,9 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/array"
+	"github.com/apache/arrow/go/v17/arrow"
+	"github.com/apache/arrow/go/v17/arrow/array"
+	"github.com/apache/arrow/go/v17/arrow/decimal128"
+	arraylib "github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/debezium/converters"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/converters/primitives"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
@@ -22,7 +24,8 @@ func millisecondsAfterMidnight(t time.Time) int32 {
 	return int32(t.Sub(midnight).Milliseconds())
 }
 
-func ParseValue(colVal any, colKind typing.KindDetails, location *time.Location) (any, error) {
+// ParseValueForArrow converts a value to the appropriate type for Arrow arrays
+func ParseValueForArrow(colVal any, colKind typing.KindDetails, location *time.Location) (any, error) {
 	if colVal == nil {
 		return nil, nil
 	}
@@ -31,7 +34,7 @@ func ParseValue(colVal any, colKind typing.KindDetails, location *time.Location)
 	case typing.Date.Kind:
 		_time, err := ext.ParseDateFromAny(colVal)
 		if err != nil {
-			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
+			return nil, fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
 		}
 
 		// Days since epoch
@@ -39,7 +42,7 @@ func ParseValue(colVal any, colKind typing.KindDetails, location *time.Location)
 	case typing.Time.Kind:
 		_time, err := ext.ParseTimeFromAny(colVal)
 		if err != nil {
-			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
+			return nil, fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
 		}
 
 		// TIME with unit MILLIS is used for millisecond precision. It must annotate an int32 that stores the number of milliseconds after midnight.
@@ -48,7 +51,7 @@ func ParseValue(colVal any, colKind typing.KindDetails, location *time.Location)
 	case typing.TimestampNTZ.Kind:
 		_time, err := ext.ParseTimestampNTZFromAny(colVal)
 		if err != nil {
-			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
+			return nil, fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
 		}
 
 		var offsetMS int64
@@ -61,7 +64,7 @@ func ParseValue(colVal any, colKind typing.KindDetails, location *time.Location)
 	case typing.TimestampTZ.Kind:
 		_time, err := ext.ParseTimestampTZFromAny(colVal)
 		if err != nil {
-			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
+			return nil, fmt.Errorf("failed to cast colVal as time.Time, colVal: %v, err: %w", colVal, err)
 		}
 
 		var offsetMS int64
@@ -84,14 +87,14 @@ func ParseValue(colVal any, colKind typing.KindDetails, location *time.Location)
 			if reflect.TypeOf(colVal).Kind() != reflect.String {
 				colValBytes, err := json.Marshal(colVal)
 				if err != nil {
-					return "", err
+					return nil, err
 				}
 
 				return string(colValBytes), nil
 			}
 		}
 	case typing.Array.Kind:
-		arrayString, err := array.InterfaceToArrayString(colVal, true)
+		arrayString, err := arraylib.InterfaceToArrayString(colVal, true)
 		if err != nil {
 			return nil, err
 		}
@@ -113,19 +116,118 @@ func ParseValue(colVal any, colKind typing.KindDetails, location *time.Location)
 			return decimalValue.String(), nil
 		}
 
-		bytes, err := converters.EncodeDecimalWithFixedLength(
-			decimalValue.Value(),
-			colKind.ExtendedDecimalDetails.Scale(),
-			int(colKind.ExtendedDecimalDetails.TwosComplementByteArrLength()),
-		)
-		if err != nil {
-			return nil, err
+		// For Arrow decimal128, we can use the native decimal type
+		if precision <= 38 {
+			// Convert decimal to string and then to decimal128
+			// This is safer than trying to handle APD vs big.Int differences
+			decStr := decimalValue.String()
+			num, err := decimal128.FromString(decStr, precision, colKind.ExtendedDecimalDetails.Scale())
+			if err != nil {
+				// Fallback to string if conversion fails
+				return decimalValue.String(), nil
+			}
+			return num, nil
 		}
 
-		return string(bytes), nil
+		// For higher precision, fallback to string
+		return decimalValue.String(), nil
 	case typing.Integer.Kind:
 		return primitives.Int64Converter{}.Convert(colVal)
+	case typing.Float.Kind:
+		return colVal, nil
+	case typing.Boolean.Kind:
+		return colVal, nil
 	}
 
 	return colVal, nil
+}
+
+// ConvertValueForArrowBuilder converts a value to the appropriate type for a specific Arrow builder
+func ConvertValueForArrowBuilder(builder array.Builder, value any) error {
+	if value == nil {
+		builder.AppendNull()
+		return nil
+	}
+
+	switch b := builder.(type) {
+	case *array.StringBuilder:
+		if str, ok := value.(string); ok {
+			b.Append(str)
+		} else {
+			b.Append(fmt.Sprintf("%v", value))
+		}
+	case *array.Int64Builder:
+		if i64, ok := value.(int64); ok {
+			b.Append(i64)
+		} else if i32, ok := value.(int32); ok {
+			b.Append(int64(i32))
+		} else if i, ok := value.(int); ok {
+			b.Append(int64(i))
+		} else {
+			return fmt.Errorf("cannot convert %T to int64", value)
+		}
+	case *array.Int32Builder:
+		if i32, ok := value.(int32); ok {
+			b.Append(i32)
+		} else if i64, ok := value.(int64); ok {
+			b.Append(int32(i64))
+		} else if i, ok := value.(int); ok {
+			b.Append(int32(i))
+		} else {
+			return fmt.Errorf("cannot convert %T to int32", value)
+		}
+	case *array.Float32Builder:
+		if f32, ok := value.(float32); ok {
+			b.Append(f32)
+		} else if f64, ok := value.(float64); ok {
+			b.Append(float32(f64))
+		} else {
+			return fmt.Errorf("cannot convert %T to float32", value)
+		}
+	case *array.BooleanBuilder:
+		if boolean, ok := value.(bool); ok {
+			b.Append(boolean)
+		} else {
+			return fmt.Errorf("cannot convert %T to bool", value)
+		}
+	case *array.TimestampBuilder:
+		if timestamp, ok := value.(int64); ok {
+			b.Append(arrow.Timestamp(timestamp))
+		} else {
+			return fmt.Errorf("cannot convert %T to timestamp", value)
+		}
+	case *array.Date32Builder:
+		if date, ok := value.(int32); ok {
+			b.Append(arrow.Date32(date))
+		} else {
+			return fmt.Errorf("cannot convert %T to date32", value)
+		}
+	case *array.Time32Builder:
+		if time32, ok := value.(int32); ok {
+			b.Append(arrow.Time32(time32))
+		} else {
+			return fmt.Errorf("cannot convert %T to time32", value)
+		}
+	case *array.Decimal128Builder:
+		if dec128, ok := value.(decimal128.Num); ok {
+			b.Append(dec128)
+		} else {
+			return fmt.Errorf("cannot convert %T to decimal128", value)
+		}
+	case *array.ListBuilder:
+		// For lists, the value should be a slice of strings for now
+		if strSlice, ok := value.([]string); ok {
+			valueBuilder := b.ValueBuilder().(*array.StringBuilder)
+			b.Append(true)
+			for _, str := range strSlice {
+				valueBuilder.Append(str)
+			}
+		} else {
+			return fmt.Errorf("cannot convert %T to list", value)
+		}
+	default:
+		return fmt.Errorf("unsupported builder type: %T", builder)
+	}
+
+	return nil
 }

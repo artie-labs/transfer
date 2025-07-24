@@ -11,6 +11,7 @@ require (
 	cloud.google.com/go/bigquery v1.67.0
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/DataDog/datadog-go/v5 v5.6.0
+	github.com/apache/arrow/go/v17 v17.0.0
 	github.com/aws/aws-sdk-go-v2 v1.36.3
 	github.com/aws/aws-sdk-go-v2/config v1.29.12
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.65
@@ -36,8 +37,6 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/twpayne/go-geom v1.6.0
 	github.com/viant/bigquery v0.4.1
-	github.com/xitongsys/parquet-go v1.6.2
-	github.com/xitongsys/parquet-go-source v0.0.0-20200817004010-026bad9b25d0
 	go.mongodb.org/mongo-driver v1.17.3
 	google.golang.org/api v0.228.0
 	google.golang.org/protobuf v1.36.6
@@ -56,10 +55,10 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.10.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.6.0 // indirect
 	github.com/BurntSushi/toml v1.5.0 // indirect
+	github.com/JohnCGriffin/overflow v0.0.0-20211019200055-46fa312c352c // indirect
 	github.com/Microsoft/go-winio v0.6.0 // indirect
 	github.com/andybalholm/brotli v1.1.1 // indirect
 	github.com/apache/arrow-go/v18 v18.2.0 // indirect
-	github.com/apache/arrow/go/arrow v0.0.0-20200730104253-651201b0f516 // indirect
 	github.com/apache/arrow/go/v12 v12.0.1 // indirect
 	github.com/apache/arrow/go/v15 v15.0.2 // indirect
 	github.com/apache/thrift v0.21.0 // indirect
