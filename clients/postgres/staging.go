@@ -29,7 +29,9 @@ func (s *stagingIterator) Err() error {
 }
 
 func (s *stagingIterator) Values() ([]any, error) {
-	return s.data[s.idx], nil
+	row := s.data[s.idx]
+	s.idx++
+	return row, nil
 }
 
 func (s *Store) buildStagingIterator(tableData *optimization.TableData) (pgx.CopyFromSource, error) {
@@ -47,7 +49,6 @@ func (s *Store) buildStagingIterator(tableData *optimization.TableData) (pgx.Cop
 			rowValues = append(rowValues, parsedValue)
 		}
 
-		fmt.Println("rowValues", rowValues)
 		values = append(values, rowValues)
 	}
 
@@ -85,6 +86,8 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		if err != nil {
 			return fmt.Errorf("failed to build staging iterator: %w", err)
 		}
+
+		fmt.Println("columns.ColumnNames(cols)", columns.ColumnNames(cols))
 
 		copyCount, err := pgxConn.CopyFrom(ctx, pgxIdentifier, columns.ColumnNames(cols), stagingIterator)
 		if err != nil {
