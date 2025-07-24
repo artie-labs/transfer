@@ -7,6 +7,7 @@ import (
 
 	"github.com/artie-labs/transfer/clients/postgres"
 	"github.com/artie-labs/transfer/clients/postgres/dialect"
+	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -31,6 +32,11 @@ func TestDialect(ctx context.Context, store *postgres.Store, _dialect sql.Dialec
 	// Test ADD COLUMN and DROP COLUMN
 	if err := testAddDropColumn(ctx, store, pgDialect); err != nil {
 		return fmt.Errorf("failed to test add/drop column: %w", err)
+	}
+
+	// Test sweep
+	if err := testSweep(ctx, store, pgDialect); err != nil {
+		return fmt.Errorf("failed to test sweep: %w", err)
 	}
 
 	return nil
@@ -214,6 +220,47 @@ func testDropColumn(ctx context.Context, store *postgres.Store, pgDialect dialec
 
 	if columnExists {
 		return fmt.Errorf("expected column %q to be dropped, got none", colName)
+	}
+
+	return nil
+}
+
+func testSweep(ctx context.Context, store *postgres.Store, pgDialect dialect.PostgresDialect) error {
+	// Create 5 staging tables.
+	var expectedNames []string
+	for range 5 {
+		tableID := shared.TempTableID(dialect.NewTableIdentifier("public", "test_sweep"))
+		expectedNames = append(expectedNames, tableID.FullyQualifiedName())
+		if _, err := store.ExecContext(ctx, pgDialect.BuildCreateTableQuery(tableID, true, []string{"pk int PRIMARY KEY"})); err != nil {
+			return fmt.Errorf("failed to create table: %w", err)
+		}
+	}
+
+	query, args := pgDialect.BuildSweepQuery("", "public")
+	rows, err := store.QueryContext(ctx, query, args...)
+	if err != nil {
+		return fmt.Errorf("failed to query tables: %w", err)
+	}
+
+	actualNamesMap := make(map[string]bool)
+	for rows.Next() {
+		var tableSchema, tableName string
+		if err := rows.Scan(&tableSchema, &tableName); err != nil {
+			return fmt.Errorf("failed to scan table: %w", err)
+		}
+
+		actualNamesMap[dialect.NewTableIdentifier(tableSchema, tableName).FullyQualifiedName()] = true
+	}
+
+	var missingNames []string
+	for _, name := range expectedNames {
+		if _, ok := actualNamesMap[name]; !ok {
+			missingNames = append(missingNames, name)
+		}
+	}
+
+	if len(missingNames) > 0 {
+		return fmt.Errorf("did not find the following tables: %s", strings.Join(missingNames, ","))
 	}
 
 	return nil

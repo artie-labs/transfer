@@ -186,5 +186,5 @@ func StripPrecision(s string) (string, string) {
 }
 
 func (PostgresDialect) BuildSweepQuery(_ string, schema string) (string, []any) {
-	return `SELECT table_schema, table_name FROM information_schema.tables WHERE table_schema = ? AND table_name LIKE ?`, []any{schema, "%" + constants.ArtiePrefix + "%"}
+	return `SELECT table_schema, table_name FROM information_schema.tables WHERE table_schema = $1 AND table_name LIKE $2`, []any{schema, "%" + constants.ArtiePrefix + "%"}
 }
