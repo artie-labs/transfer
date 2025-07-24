@@ -120,7 +120,7 @@ func parseValue(value any, col columns.Column) (any, error) {
 
 		return castedValue, nil
 	case typing.Integer.Kind:
-		return value, nil
+		return converters.Int64Converter{}.Convert(value)
 	case typing.Boolean.Kind:
 		return converters.BooleanConverter{}.Convert(value)
 	default:
