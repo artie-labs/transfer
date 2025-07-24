@@ -159,7 +159,25 @@ func (kd KindDetails) ParseValueForArrow(value interface{}, location *time.Locat
 			millis := int32(v.Sub(midnight).Milliseconds())
 			return millis, nil
 		case string:
-			// Try to parse string as time-only format first
+			// Try to parse string as time-only format with microseconds first
+			if timeVal, err := time.Parse("15:04:05.999999", v); err == nil {
+				hours := timeVal.Hour()
+				minutes := timeVal.Minute()
+				seconds := timeVal.Second()
+				nanos := timeVal.Nanosecond()
+				millis := int32((hours*3600+minutes*60+seconds)*1000 + nanos/1_000_000)
+				return millis, nil
+			}
+			// Try to parse string as time-only format with milliseconds
+			if timeVal, err := time.Parse("15:04:05.999", v); err == nil {
+				hours := timeVal.Hour()
+				minutes := timeVal.Minute()
+				seconds := timeVal.Second()
+				nanos := timeVal.Nanosecond()
+				millis := int32((hours*3600+minutes*60+seconds)*1000 + nanos/1_000_000)
+				return millis, nil
+			}
+			// Try to parse string as time-only format (basic)
 			if timeVal, err := time.Parse("15:04:05", v); err == nil {
 				// Extract hours, minutes, seconds from the parsed time
 				hours := timeVal.Hour()
