@@ -101,3 +101,11 @@ func (d Details) BigQueryKind(useBigNumericForVariableNumeric bool) string {
 
 	return "STRING"
 }
+
+func (d Details) PostgresKind() string {
+	if d.precision == PrecisionNotSpecified {
+		return "NUMERIC"
+	}
+
+	return fmt.Sprintf("NUMERIC(%d, %d)", d.precision, d.scale)
+}

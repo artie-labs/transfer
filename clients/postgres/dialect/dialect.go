@@ -104,9 +104,47 @@ func (PostgresDialect) BuildMergeQueries(
 	return nil, fmt.Errorf("not implemented")
 }
 
+var kindDetailsMap = map[typing.KindDetails]string{
+	typing.Float:        "double precision",
+	typing.Boolean:      "boolean",
+	typing.Struct:       "jsonb",
+	typing.Array:        "jsonb",
+	typing.String:       "text",
+	typing.Date:         "date",
+	typing.Time:         "time",
+	typing.TimestampNTZ: "timestamp without time zone",
+	typing.TimestampTZ:  "timestamp with time zone",
+}
+
 func (PostgresDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, settings config.SharedDestinationColumnSettings) (string, error) {
-	// TODO: To implement
-	return "", fmt.Errorf("not implemented")
+	if kind, ok := kindDetailsMap[kd]; ok {
+		return kind, nil
+	}
+
+	switch kd.Kind {
+	case typing.Integer.Kind:
+		if kd.OptionalIntegerKind == nil {
+			return "integer", nil
+		}
+
+		switch *kd.OptionalIntegerKind {
+		case typing.SmallIntegerKind:
+			return "smallint", nil
+		case typing.IntegerKind:
+			return "integer", nil
+		case typing.BigIntegerKind:
+			return "bigint", nil
+		default:
+			return "", fmt.Errorf("unexpected integer kind: %q", *kd.OptionalIntegerKind)
+		}
+	case typing.EDecimal.Kind:
+		if kd.ExtendedDecimalDetails == nil {
+			return "", fmt.Errorf("expected extended decimal details to be set for %q", kd.Kind)
+		}
+		return kd.ExtendedDecimalDetails.PostgresKind(), nil
+	default:
+		return "", fmt.Errorf("unsupported kind: %q", kd.Kind)
+	}
 }
 
 var dataTypeMap = map[string]typing.KindDetails{
@@ -126,7 +164,8 @@ var dataTypeMap = map[string]typing.KindDetails{
 	"timestamp with time zone":    typing.TimestampTZ,
 	"timestamp without time zone": typing.TimestampNTZ,
 	// Other data types:
-	"json": typing.Struct,
+	"json":  typing.Struct,
+	"jsonb": typing.Struct,
 }
 
 func (PostgresDialect) KindForDataType(_type string) (typing.KindDetails, error) {
