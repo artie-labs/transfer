@@ -8,6 +8,7 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/jackc/pgx/v5"
 )
@@ -100,5 +101,24 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 }
 
 func parseValue(value any, col columns.Column) (any, error) {
-	return value, fmt.Errorf("not implemented")
+	switch col.KindDetails.Kind {
+	case typing.String.Kind:
+		castedValue, err := typing.AssertType[string](value)
+		if err != nil {
+			return "", err
+		}
+
+		return castedValue, nil
+	case typing.Integer.Kind:
+		return value, nil
+	case typing.Boolean.Kind:
+		castedValue, err := typing.AssertType[bool](value)
+		if err != nil {
+			return "", err
+		}
+
+		return castedValue, nil
+	default:
+		return nil, fmt.Errorf("unsupported type %q, not implemented", col.KindDetails.Kind)
+	}
 }
