@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/artie-labs/transfer/clients/postgres/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -62,6 +63,13 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		}
 	}
 
+	castedTableID, ok := tempTableID.(dialect.TableIdentifier)
+	if !ok {
+		return fmt.Errorf("failed to cast table identifier to dialect.TableIdentifier")
+	}
+
+	pgxIdentifier := []string{castedTableID.Schema(), castedTableID.Table()}
+
 	conn, err := s.Store.Conn(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get pgx conn: %w", err)
@@ -77,7 +85,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 			return fmt.Errorf("failed to build staging iterator: %w", err)
 		}
 
-		copyCount, err := pgxConn.CopyFrom(ctx, pgx.Identifier{tempTableID.FullyQualifiedName()}, columns.ColumnNames(cols), stagingIterator)
+		copyCount, err := pgxConn.CopyFrom(ctx, pgxIdentifier, columns.ColumnNames(cols), stagingIterator)
 		if err != nil {
 			return fmt.Errorf("failed to copy from rows: %w", err)
 		}
