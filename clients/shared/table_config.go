@@ -1,6 +1,7 @@
 package shared
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -30,7 +31,7 @@ type GetTableCfgArgs struct {
 	DropDeletedColumns   bool
 }
 
-func (g GetTableCfgArgs) GetTableConfig() (*types.DestinationTableConfig, error) {
+func (g GetTableCfgArgs) GetTableConfig(ctx context.Context) (*types.DestinationTableConfig, error) {
 	if tableConfig := g.ConfigMap.GetTableConfig(g.TableID); tableConfig != nil {
 		return tableConfig, nil
 	}
@@ -40,7 +41,7 @@ func (g GetTableCfgArgs) GetTableConfig() (*types.DestinationTableConfig, error)
 		return nil, fmt.Errorf("failed to generate describe table query: %w", err)
 	}
 
-	rows, err := g.Destination.Query(query, args...)
+	rows, err := g.Destination.QueryContext(ctx, query, args...)
 	defer func() {
 		if rows != nil {
 			err = rows.Close()

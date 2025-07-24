@@ -88,7 +88,7 @@ func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primary
 	return fmt.Errorf("dedupe not implemented for PostgreSQL")
 }
 
-func (s *Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
+func (s *Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 

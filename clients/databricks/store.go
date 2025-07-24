@@ -89,7 +89,7 @@ func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryK
 	return nil
 }
 
-func (s Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
+func (s Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
 	return shared.GetTableCfgArgs{
 		Destination:           s,
 		TableID:               tableID,
@@ -98,7 +98,7 @@ func (s Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bo
 		ColumnNameForDataType: "data_type",
 		ColumnNameForComment:  "comment",
 		DropDeletedColumns:    dropDeletedColumns,
-	}.GetTableConfig()
+	}.GetTableConfig(ctx)
 }
 
 func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {

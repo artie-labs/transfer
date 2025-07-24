@@ -100,7 +100,7 @@ func (s *Store) dialect() dialect.RedshiftDialect {
 	return dialect.RedshiftDialect{}
 }
 
-func (s *Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
+func (s *Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
 	return shared.GetTableCfgArgs{
 		Destination:           s,
 		TableID:               tableID,
@@ -109,7 +109,7 @@ func (s *Store) GetTableConfig(tableID sql.TableIdentifier, dropDeletedColumns b
 		ColumnNameForDataType: "data_type",
 		ColumnNameForComment:  "description",
 		DropDeletedColumns:    dropDeletedColumns,
-	}.GetTableConfig()
+	}.GetTableConfig(ctx)
 }
 
 func (s *Store) SweepTemporaryTables(ctx context.Context) error {
