@@ -10,12 +10,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func millisecondsAfterMidnight(t time.Time) int32 {
-	year, month, day := t.Date()
-	midnight := time.Date(year, month, day, 0, 0, 0, 0, t.Location())
-	return int32(t.Sub(midnight).Milliseconds())
-}
-
 // ParseValueForArrow converts a raw value to Arrow-compatible format given column details and location
 func ParseValueForArrow(value interface{}, kindDetails typing.KindDetails, location *time.Location) (interface{}, error) {
 	return kindDetails.ParseValueForArrow(value, location)
