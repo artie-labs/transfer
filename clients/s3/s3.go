@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"slices"
 	"strings"
 	"time"
 
@@ -120,13 +121,8 @@ func writeArrowRecordsInBatches(writer *pqarrow.FileWriter, schema *arrow.Schema
 	// Start a buffered row group to control memory usage
 	writer.NewBufferedRowGroup()
 
-	// Process rows in batches
-	for batchStart := 0; batchStart < len(rows); batchStart += batchSize {
-		batchEnd := batchStart + batchSize
-		if batchEnd > len(rows) {
-			batchEnd = len(rows)
-		}
-
+	// Process rows in batches using slices.Chunk for clean iteration
+	for batch := range slices.Chunk(rows, batchSize) {
 		// Create builders for this batch
 		var builders []array.Builder
 		for _, field := range schema.Fields() {
@@ -134,8 +130,7 @@ func writeArrowRecordsInBatches(writer *pqarrow.FileWriter, schema *arrow.Schema
 		}
 
 		// Process the current batch of rows
-		batchRows := rows[batchStart:batchEnd]
-		for _, row := range batchRows {
+		for _, row := range batch {
 			for i, col := range cols {
 				value, _ := row.GetValue(col.Name())
 
@@ -167,7 +162,7 @@ func writeArrowRecordsInBatches(writer *pqarrow.FileWriter, schema *arrow.Schema
 		}
 
 		// Create record for this batch
-		record := array.NewRecord(schema, arrays, int64(len(batchRows)))
+		record := array.NewRecord(schema, arrays, int64(len(batch)))
 
 		// Write the batch to the parquet file using buffered writing
 		if err := writer.WriteBuffered(record); err != nil {
