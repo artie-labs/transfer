@@ -26,18 +26,7 @@ import (
 	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
-// Parquet writing configuration constants
-const (
-	// DefaultParquetBatchSize is the default number of rows to process in each batch
-	// Smaller batches use less memory but may have slightly lower throughput
-	DefaultParquetBatchSize = 1000
-
-	// SmallMemoryBatchSize for memory-constrained environments
-	SmallMemoryBatchSize = 500
-
-	// LargeMemoryBatchSize for environments with ample memory
-	LargeMemoryBatchSize = 5000
-)
+const batchSize = 1000
 
 type Store struct {
 	config   config.Config
@@ -93,11 +82,7 @@ func buildTemporaryFilePath(tableData *optimization.TableData) string {
 // batchSize controls memory usage - smaller values use less memory but may be slower.
 // Use 0 for default batch size.
 // Returns an error if any step of the writing process fails.
-func WriteParquetFiles(tableData *optimization.TableData, filePath string, location *time.Location, batchSize int) error {
-	if batchSize <= 0 {
-		batchSize = DefaultParquetBatchSize
-	}
-
+func WriteParquetFiles(tableData *optimization.TableData, filePath string, location *time.Location) error {
 	arrowSchema, err := parquetutil.BuildArrowSchemaFromColumns(tableData.ReadOnlyInMemoryCols().ValidColumns(), location)
 	if err != nil {
 		return fmt.Errorf("failed to generate arrow schema: %w", err)
@@ -221,7 +206,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (b
 	}
 
 	fp := buildTemporaryFilePath(tableData)
-	if err := WriteParquetFiles(tableData, fp, s.location, DefaultParquetBatchSize); err != nil {
+	if err := WriteParquetFiles(tableData, fp, s.location); err != nil {
 		return false, err
 	}
 
