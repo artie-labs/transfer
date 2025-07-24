@@ -51,3 +51,21 @@ func TestInt64Converter_Convert(t *testing.T) {
 		assert.Equal(t, int64(0), got)
 	}
 }
+
+func TestBooleanConverter_Convert(t *testing.T) {
+	converter := BooleanConverter{}
+
+	trueVariants := []any{"true", true}
+	for _, variant := range trueVariants {
+		got, err := converter.Convert(variant)
+		assert.NoError(t, err)
+		assert.True(t, got)
+	}
+
+	falseVariants := []any{"false", false}
+	for _, variant := range falseVariants {
+		got, err := converter.Convert(variant)
+		assert.NoError(t, err)
+		assert.False(t, got)
+	}
+}
