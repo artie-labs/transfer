@@ -2,6 +2,8 @@ package typing
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/apache/arrow/go/v17/arrow"
@@ -65,63 +67,158 @@ func (kd KindDetails) ParseValueForArrow(value interface{}, location *time.Locat
 	case String.Kind, Struct.Kind:
 		return fmt.Sprintf("%v", value), nil
 	case Integer.Kind:
-		if intVal, ok := value.(int64); ok {
-			return intVal, nil
+		// Handle various integer types and string-to-int conversion
+		switch v := value.(type) {
+		case int64:
+			return v, nil
+		case int:
+			return int64(v), nil
+		case int32:
+			return int64(v), nil
+		case string:
+			// Try to parse string as int64
+			if intVal, err := strconv.ParseInt(v, 10, 64); err == nil {
+				return intVal, nil
+			}
+			// If parse fails, fallback to string representation
+			return v, nil
+		case float64:
+			return int64(v), nil
+		case float32:
+			return int64(v), nil
+		default:
+			return fmt.Sprintf("%v", value), nil
 		}
-		return fmt.Sprintf("%v", value), nil
 	case Boolean.Kind:
-		if boolVal, ok := value.(bool); ok {
-			return boolVal, nil
+		switch v := value.(type) {
+		case bool:
+			return v, nil
+		case string:
+			// Try to parse string as bool
+			if boolVal, err := strconv.ParseBool(v); err == nil {
+				return boolVal, nil
+			}
+			return strings.ToLower(v) == "true", nil
+		default:
+			return fmt.Sprintf("%v", value), nil
 		}
-		return fmt.Sprintf("%v", value), nil
 	case Float.Kind:
-		if floatVal, ok := value.(float32); ok {
-			return floatVal, nil
+		switch v := value.(type) {
+		case float32:
+			return v, nil
+		case float64:
+			return float32(v), nil
+		case string:
+			// Try to parse string as float
+			if floatVal, err := strconv.ParseFloat(v, 32); err == nil {
+				return float32(floatVal), nil
+			}
+			return v, nil
+		case int64:
+			return float32(v), nil
+		case int:
+			return float32(v), nil
+		default:
+			return fmt.Sprintf("%v", value), nil
 		}
-		if floatVal, ok := value.(float64); ok {
-			return float32(floatVal), nil
-		}
-		return fmt.Sprintf("%v", value), nil
 	case EDecimal.Kind:
 		if kd.ExtendedDecimalDetails != nil {
 			precision := kd.ExtendedDecimalDetails.Precision()
 			scale := kd.ExtendedDecimalDetails.Scale()
 
-			if decimalValue, ok := value.(*decimal.Decimal); ok && precision <= 38 {
+			if decimalValue, ok := value.(*decimal.Decimal); ok && precision <= 38 && precision > 0 {
 				// Convert decimal to string and then to decimal128
 				decStr := decimalValue.String()
-				num, err := decimal128.FromString(decStr, precision, scale)
-				if err != nil {
-					// Fallback to string if conversion fails
-					return decimalValue.String(), nil
+				// Validate that the decimal string can fit in the specified precision
+				if len(strings.ReplaceAll(strings.ReplaceAll(decStr, ".", ""), "-", "")) <= int(precision) {
+					num, err := decimal128.FromString(decStr, precision, scale)
+					if err != nil {
+						// Fallback to string if conversion fails
+						return decimalValue.String(), nil
+					}
+					return num, nil
 				}
-				return num, nil
 			}
 		}
 		return fmt.Sprintf("%v", value), nil
 	case Time.Kind:
-		if timeVal, ok := value.(time.Time); ok {
+		switch v := value.(type) {
+		case time.Time:
 			// Convert time to milliseconds since midnight
-			year, month, day := timeVal.Date()
-			midnight := time.Date(year, month, day, 0, 0, 0, 0, timeVal.Location())
-			millis := int32(timeVal.Sub(midnight).Milliseconds())
+			year, month, day := v.Date()
+			midnight := time.Date(year, month, day, 0, 0, 0, 0, v.Location())
+			millis := int32(v.Sub(midnight).Milliseconds())
 			return millis, nil
+		case string:
+			// Try to parse string as time-only format first
+			if timeVal, err := time.Parse("15:04:05", v); err == nil {
+				// Extract hours, minutes, seconds from the parsed time
+				hours := timeVal.Hour()
+				minutes := timeVal.Minute()
+				seconds := timeVal.Second()
+				millis := int32((hours*3600 + minutes*60 + seconds) * 1000)
+				return millis, nil
+			}
+			// Try alternative time formats
+			if timeVal, err := time.Parse("15:04", v); err == nil {
+				hours := timeVal.Hour()
+				minutes := timeVal.Minute()
+				millis := int32((hours*3600 + minutes*60) * 1000)
+				return millis, nil
+			}
+			// Try to parse as full RFC3339
+			if timeVal, err := time.Parse(time.RFC3339, v); err == nil {
+				year, month, day := timeVal.Date()
+				midnight := time.Date(year, month, day, 0, 0, 0, 0, timeVal.Location())
+				millis := int32(timeVal.Sub(midnight).Milliseconds())
+				return millis, nil
+			}
+			return v, nil
+		default:
+			return fmt.Sprintf("%v", value), nil
 		}
-		return fmt.Sprintf("%v", value), nil
 	case Date.Kind:
-		if timeVal, ok := value.(time.Time); ok {
+		switch v := value.(type) {
+		case time.Time:
 			// Convert to days since epoch
 			epoch := time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)
-			days := int32(timeVal.Sub(epoch).Hours() / 24)
+			days := int32(v.Sub(epoch).Hours() / 24)
 			return days, nil
+		case string:
+			// Try to parse string as date
+			if timeVal, err := time.Parse("2006-01-02", v); err == nil {
+				epoch := time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)
+				days := int32(timeVal.Sub(epoch).Hours() / 24)
+				return days, nil
+			}
+			// Try alternative date format
+			if timeVal, err := time.Parse("2006/01/02", v); err == nil {
+				epoch := time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)
+				days := int32(timeVal.Sub(epoch).Hours() / 24)
+				return days, nil
+			}
+			return v, nil
+		default:
+			return fmt.Sprintf("%v", value), nil
 		}
-		return fmt.Sprintf("%v", value), nil
 	case TimestampTZ.Kind, TimestampNTZ.Kind:
-		if timeVal, ok := value.(time.Time); ok {
+		switch v := value.(type) {
+		case time.Time:
 			// Convert to milliseconds since epoch
-			return timeVal.UnixMilli(), nil
+			return v.UnixMilli(), nil
+		case string:
+			// Try to parse string as timestamp
+			if timeVal, err := time.Parse(time.RFC3339, v); err == nil {
+				return timeVal.UnixMilli(), nil
+			}
+			// Try alternative formats
+			if timeVal, err := time.Parse("2006-01-02T15:04:05.999", v); err == nil {
+				return timeVal.UnixMilli(), nil
+			}
+			return v, nil
+		default:
+			return fmt.Sprintf("%v", value), nil
 		}
-		return fmt.Sprintf("%v", value), nil
 	case Array.Kind:
 		// For arrays, convert to string representation for now
 		return fmt.Sprintf("%v", value), nil
