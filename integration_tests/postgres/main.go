@@ -32,5 +32,9 @@ func main() {
 		log.Fatalf("failed to test dialect: %v", err)
 	}
 
+	if err := checks.TestStagingTable(ctx, store); err != nil {
+		log.Fatalf("failed to test staging table: %v", err)
+	}
+
 	slog.Info("Postgres integration tests all passed! 🎉")
 }

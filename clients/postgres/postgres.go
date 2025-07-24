@@ -100,7 +100,3 @@ func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primary
 func (s *Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
 	return nil, fmt.Errorf("not implemented")
 }
-
-func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
-	return fmt.Errorf("not implemented")
-}
