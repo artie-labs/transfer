@@ -56,13 +56,11 @@ func (PostgresDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) stri
 }
 
 func (PostgresDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string {
-	// TODO: To implement
-	return nil
+	panic("not implemented") // We don't currently support deduping for Postgres.
 }
 
 func (PostgresDialect) BuildDedupeTableQuery(tableID sql.TableIdentifier, primaryKeys []string) string {
-	// TODO: To implement
-	return ""
+	panic("not implemented")
 }
 
 func (PostgresDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (string, []any, error) {
@@ -88,8 +86,7 @@ func (PostgresDialect) BuildDropColumnQuery(tableID sql.TableIdentifier, colName
 }
 
 func (PostgresDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string {
-	// TODO: To implement
-	return nil
+	panic("not implemented")
 }
 
 func (PostgresDialect) BuildMergeQueries(
