@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/artie-labs/transfer/clients/s3"
 	"github.com/artie-labs/transfer/lib/config"
@@ -15,6 +17,21 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
+
+func createBasicTestTable() *optimization.TableData {
+	var cols columns.Columns
+
+	cols.AddColumn(columns.NewColumn("id", typing.Integer))
+	cols.AddColumn(columns.NewColumn("name", typing.String))
+
+	return optimization.NewTableData(&cols, config.Replication, []string{"id"}, kafkalib.TopicConfig{}, "basic_test_table")
+}
+
+func addBasicTestData(tableData *optimization.TableData) {
+	for i := 0; i < 10_000; i++ {
+		tableData.InsertRow(strconv.Itoa(i), map[string]any{"id": i, "name": fmt.Sprintf("User %d", i)}, false)
+	}
+}
 
 func createComprehensiveTestTable() *optimization.TableData {
 	var cols columns.Columns
@@ -48,8 +65,7 @@ func createComprehensiveTestTable() *optimization.TableData {
 	// They would be converted to JSON strings which is tested with complex_json_string
 	cols.AddColumn(columns.NewColumn("complex_json_string", typing.String))
 
-	tableData := optimization.NewTableData(&cols, config.Replication, []string{"id"}, kafkalib.TopicConfig{}, "comprehensive_test_table")
-	return tableData
+	return optimization.NewTableData(&cols, config.Replication, []string{"id"}, kafkalib.TopicConfig{}, "comprehensive_test_table")
 }
 
 func addComprehensiveTestData(tableData *optimization.TableData) {
@@ -161,20 +177,34 @@ func addComprehensiveTestData(tableData *optimization.TableData) {
 }
 
 func main() {
-	tableData := createComprehensiveTestTable()
-	addComprehensiveTestData(tableData)
-
-	// Create output directory if it doesn't exist
 	outputDir := "output"
+	// Create output directory if it doesn't exist
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
 		logger.Fatal("Failed to create output directory", slog.Any("error", err))
 	}
+	{
+		// Basic test (10k rows)
+		tableData := createBasicTestTable()
+		addBasicTestData(tableData)
 
-	// Write the parquet file
-	parquetPath := filepath.Join(outputDir, "comprehensive_test.parquet")
-	if err := s3.WriteParquetFiles(tableData, parquetPath); err != nil {
-		logger.Fatal("Failed to write parquet file", slog.Any("error", err))
+		// Write the parquet file
+		parquetPath := filepath.Join(outputDir, "basic_test.parquet")
+		if err := s3.WriteParquetFiles(tableData, parquetPath); err != nil {
+			logger.Fatal("Failed to write parquet file", slog.Any("error", err))
+		}
+	}
+	{
+		// Comprehensive data test
+		tableData := createComprehensiveTestTable()
+		addComprehensiveTestData(tableData)
+
+		// Write the parquet file
+		parquetPath := filepath.Join(outputDir, "comprehensive_test.parquet")
+		if err := s3.WriteParquetFiles(tableData, parquetPath); err != nil {
+			logger.Fatal("Failed to write parquet file", slog.Any("error", err))
+		}
+
+		slog.Info("Wrote comprehensive parquet file", slog.String("path", parquetPath), slog.Int("rows", len(tableData.Rows())))
 	}
 
-	slog.Info("Wrote comprehensive parquet file", slog.String("path", parquetPath), slog.Int("rows", len(tableData.Rows())))
 }
