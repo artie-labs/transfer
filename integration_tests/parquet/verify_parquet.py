@@ -3,6 +3,7 @@
 import pandas as pd
 import sys
 import argparse
+import random
 from datetime import datetime, timezone, date, time
 from decimal import Decimal
 import json
@@ -287,14 +288,123 @@ def verify_parquet_file(file_path, location):
     
     return True
 
+def verify_simple_parquet_file(file_path):
+    """
+    Read and verify the contents of a simple 10k row parquet file.
+    Returns True if all verifications pass, False otherwise.
+    """
+    # Read the parquet file
+    df = pd.read_parquet(file_path)
+    
+    # Sort by 'id' to ensure consistent row order
+    df = df.sort_values(by='id').reset_index(drop=True)
+    
+    # Print basic info
+    print("Simple test DataFrame info:")
+    print(f"DataFrame shape: {df.shape}")
+    print(f"Columns: {list(df.columns)}")
+    print("\nColumn data types:")
+    print(df.dtypes)
+    
+    # Verify expected columns
+    expected_columns = ['id', 'name']
+    if list(df.columns) != expected_columns:
+        print(f"❌ Column mismatch. Expected: {expected_columns}, Got: {list(df.columns)}")
+        return False
+    
+    # Verify we have exactly 10k rows
+    if len(df) != 10000:
+        print(f"❌ Row count mismatch. Expected: 10000, Got: {len(df)}")
+        return False
+    
+    # Verify data types
+    if df['id'].dtype != 'int64':
+        print(f"❌ ID column type mismatch. Expected: int64, Got: {df['id'].dtype}")
+        return False
+    
+    if df['name'].dtype != 'object':  # strings are stored as object type in pandas
+        print(f"❌ Name column type mismatch. Expected: object (string), Got: {df['name'].dtype}")
+        return False
+    
+    # Verify ID sequence (should be 1 to 10000)
+    expected_ids = list(range(1, 10001))
+    actual_ids = df['id'].tolist()
+    if actual_ids != expected_ids:
+        print(f"❌ ID sequence mismatch. Expected continuous 1-10000, but found issues")
+        # Check for specific issues
+        missing_ids = [i for i in expected_ids if i not in actual_ids]
+        duplicate_ids = [i for i in actual_ids if actual_ids.count(i) > 1]
+        if missing_ids:
+            print(f"  Missing IDs: {missing_ids[:10]}{'...' if len(missing_ids) > 10 else ''}")
+        if duplicate_ids:
+            print(f"  Duplicate IDs: {list(set(duplicate_ids))[:10]}{'...' if len(set(duplicate_ids)) > 10 else ''}")
+        return False
+    
+    # Verify name patterns (should be "User {id}") - Check EVERY row
+    print(f"\nVerifying name patterns for all {len(df)} rows...")
+    for i in range(len(df)):
+        expected_name = f"User {df.iloc[i]['id']}"
+        actual_name = df.iloc[i]['name']
+        if actual_name != expected_name:
+            print(f"❌ Name pattern mismatch at row {i}. Expected: '{expected_name}', Got: '{actual_name}'")
+            return False
+        
+        # Progress indicator for large datasets
+        if (i + 1) % 1000 == 0:
+            print(f"  ✓ Verified {i + 1:,} rows...")
+    
+    print(f"✓ Successfully verified name patterns for all {len(df):,} rows!")
+    
+    # Show some sample data
+    print("\nFirst 10 rows:")
+    print(df.head(10))
+    print("\nLast 10 rows:")
+    print(df.tail(10))
+    
+    print("\n✅ All simple parquet file verifications passed!")
+    print(f"  - Correct number of rows: {len(df)}")
+    print(f"  - Correct columns: {list(df.columns)}")
+    print(f"  - Correct data types")
+    print(f"  - ID sequence is continuous 1-{len(df)}")
+    print(f"  - Name patterns follow 'User {{id}}' format")
+    
+    return True
+
 def main():
-    parser = argparse.ArgumentParser(description='Verify comprehensive parquet file contents')
+    parser = argparse.ArgumentParser(description='Verify parquet file contents')
     parser.add_argument('--file-path', help='Path to the parquet file to verify')
     parser.add_argument('--location', help='Location to use for the parquet file')
+    parser.add_argument('--test-type', choices=['comprehensive', 'simple', 'auto'], default='auto', 
+                       help='Type of test to run (auto-detect by default)')
     args = parser.parse_args()
 
     try:
-        success = verify_parquet_file(args.file_path, args.location)
+        # Auto-detect test type if not specified
+        test_type = args.test_type
+        if test_type == 'auto':
+            # Read the parquet file to detect columns and determine test type
+            df = pd.read_parquet(args.file_path)
+            columns = list(df.columns)
+            
+            if columns == ['id', 'name'] and len(df) == 10000:
+                test_type = 'simple'
+                print("🔍 Auto-detected: Simple 10k row test")
+            elif len(columns) > 2:
+                test_type = 'comprehensive'
+                print("🔍 Auto-detected: Comprehensive test")
+            else:
+                print(f"⚠️  Could not auto-detect test type. Columns: {columns}, Rows: {len(df)}")
+                print("Defaulting to comprehensive test verification...")
+                test_type = 'comprehensive'
+        
+        # Run the appropriate verification
+        if test_type == 'simple':
+            success = verify_simple_parquet_file(args.file_path)
+        elif test_type == 'comprehensive':
+            success = verify_parquet_file(args.file_path, args.location)
+        else:
+            raise ValueError(f"Unknown test type: {test_type}")
+            
         print(f"\n✅ Verification {'PASSED' if success else 'FAILED'}")
         sys.exit(0 if success else 1)
     except Exception as e:

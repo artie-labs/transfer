@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -162,6 +163,27 @@ func addComprehensiveTestData(tableData *optimization.TableData) {
 
 }
 
+func createSimpleTestTable() *optimization.TableData {
+	var cols columns.Columns
+
+	// Simple table with just id and name
+	cols.AddColumn(columns.NewColumn("id", typing.Integer))
+	cols.AddColumn(columns.NewColumn("name", typing.String))
+
+	tableData := optimization.NewTableData(&cols, config.Replication, []string{"id"}, kafkalib.TopicConfig{}, "simple_test_table")
+	return tableData
+}
+
+func addSimpleTestData(tableData *optimization.TableData) {
+	// Generate 10k rows with simple id and name data
+	for i := 1; i <= 10000; i++ {
+		tableData.InsertRow(fmt.Sprintf("%d", i), map[string]any{
+			"id":   i,
+			"name": fmt.Sprintf("User %d", i),
+		}, false)
+	}
+}
+
 func main() {
 	var locationString string
 	flag.StringVar(&locationString, "location", "", "The location to use for the parquet file")
@@ -177,20 +199,33 @@ func main() {
 		}
 	}
 
-	tableData := createComprehensiveTestTable()
-	addComprehensiveTestData(tableData)
-
 	// Create output directory if it doesn't exist
 	outputDir := "output"
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
 		logger.Fatal("Failed to create output directory", slog.Any("error", err))
 	}
 
-	// Write the parquet file
-	parquetPath := filepath.Join(outputDir, "comprehensive_test.parquet")
-	if err := s3.WriteParquetFiles(tableData, parquetPath, loc); err != nil {
-		logger.Fatal("Failed to write parquet file", slog.Any("error", err))
+	// Test 1: Comprehensive test with various data types (existing test)
+	slog.Info("Creating comprehensive test table...")
+	comprehensiveTableData := createComprehensiveTestTable()
+	addComprehensiveTestData(comprehensiveTableData)
+
+	comprehensiveParquetPath := filepath.Join(outputDir, "comprehensive_test.parquet")
+	if err := s3.WriteParquetFiles(comprehensiveTableData, comprehensiveParquetPath, loc); err != nil {
+		logger.Fatal("Failed to write comprehensive parquet file", slog.Any("error", err))
 	}
 
-	slog.Info("Wrote comprehensive parquet file", slog.String("path", parquetPath), slog.Int("rows", len(tableData.Rows())))
+	slog.Info("Wrote comprehensive parquet file", slog.String("path", comprehensiveParquetPath), slog.Int("rows", len(comprehensiveTableData.Rows())))
+
+	// Test 2: Simple test with 10k rows (new test)
+	slog.Info("Creating simple test table with 10k rows...")
+	simpleTableData := createSimpleTestTable()
+	addSimpleTestData(simpleTableData)
+
+	simpleParquetPath := filepath.Join(outputDir, "simple_10k_test.parquet")
+	if err := s3.WriteParquetFiles(simpleTableData, simpleParquetPath, loc); err != nil {
+		logger.Fatal("Failed to write simple parquet file", slog.Any("error", err))
+	}
+
+	slog.Info("Wrote simple parquet file", slog.String("path", simpleParquetPath), slog.Int("rows", len(simpleTableData.Rows())))
 }
