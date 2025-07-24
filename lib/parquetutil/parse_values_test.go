@@ -14,55 +14,55 @@ import (
 func TestParseValueForArrow(t *testing.T) {
 	{
 		// Nil
-		value, err := ParseValueForArrow(nil, typing.KindDetails{}, nil)
+		value, err := ParseValueForArrow(nil, typing.KindDetails{})
 		assert.NoError(t, err)
 		assert.Nil(t, value)
 	}
 	{
 		// String
-		value, err := ParseValueForArrow("test", typing.String, nil)
+		value, err := ParseValueForArrow("test", typing.String)
 		assert.NoError(t, err)
 		assert.Equal(t, "test", value)
 	}
 	{
 		// Struct - now returns formatted string instead of JSON
-		value, err := ParseValueForArrow(map[string]any{"foo": "bar"}, typing.Struct, nil)
+		value, err := ParseValueForArrow(map[string]any{"foo": "bar"}, typing.Struct)
 		assert.NoError(t, err)
 		assert.Equal(t, "map[foo:bar]", value)
 	}
 	{
 		// Array - now returns formatted string instead of array
-		value, err := ParseValueForArrow([]int{123, 456}, typing.Array, nil)
+		value, err := ParseValueForArrow([]int{123, 456}, typing.Array)
 		assert.NoError(t, err)
 		assert.Equal(t, "[123 456]", value)
 	}
 	{
 		// Array boolean - now returns formatted string instead of array
-		value, err := ParseValueForArrow([]bool{false, true, false}, typing.Array, nil)
+		value, err := ParseValueForArrow([]bool{false, true, false}, typing.Array)
 		assert.NoError(t, err)
 		assert.Equal(t, "[false true false]", value)
 	}
 	{
 		// Integer
-		value, err := ParseValueForArrow(int64(123), typing.Integer, nil)
+		value, err := ParseValueForArrow(int64(123), typing.Integer)
 		assert.NoError(t, err)
 		assert.Equal(t, int64(123), value)
 	}
 	{
 		// Integer from string
-		value, err := ParseValueForArrow("456", typing.Integer, nil)
+		value, err := ParseValueForArrow("456", typing.Integer)
 		assert.NoError(t, err)
 		assert.Equal(t, int64(456), value)
 	}
 	{
 		// Boolean
-		value, err := ParseValueForArrow(true, typing.Boolean, nil)
+		value, err := ParseValueForArrow(true, typing.Boolean)
 		assert.NoError(t, err)
 		assert.Equal(t, true, value)
 	}
 	{
 		// Float
-		value, err := ParseValueForArrow(float32(3.14), typing.Float, nil)
+		value, err := ParseValueForArrow(float32(3.14), typing.Float)
 		assert.NoError(t, err)
 		assert.Equal(t, float32(3.14), value)
 	}
@@ -72,7 +72,7 @@ func TestParseValueForArrow(t *testing.T) {
 		decimalKind := typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimalDetails)
 		decimalValue := decimal.NewDecimalWithPrecision(numbers.MustParseDecimal("123.45"), 10)
 
-		value, err := ParseValueForArrow(decimalValue, decimalKind, nil)
+		value, err := ParseValueForArrow(decimalValue, decimalKind)
 		assert.NoError(t, err)
 
 		// Should be decimal128.Num
@@ -83,7 +83,7 @@ func TestParseValueForArrow(t *testing.T) {
 	}
 	{
 		// Time from string
-		value, err := ParseValueForArrow("12:30:45", typing.Time, nil)
+		value, err := ParseValueForArrow("12:30:45", typing.Time)
 		assert.NoError(t, err)
 
 		// Should be milliseconds since midnight: (12*3600 + 30*60 + 45) * 1000
@@ -92,7 +92,7 @@ func TestParseValueForArrow(t *testing.T) {
 	}
 	{
 		// Date from string
-		value, err := ParseValueForArrow("2023-12-25", typing.Date, nil)
+		value, err := ParseValueForArrow("2023-12-25", typing.Date)
 		assert.NoError(t, err)
 
 		// Should be days since epoch
@@ -103,7 +103,7 @@ func TestParseValueForArrow(t *testing.T) {
 	}
 	{
 		// Timestamp from string
-		value, err := ParseValueForArrow("2023-12-25T10:30:00Z", typing.TimestampTZ, nil)
+		value, err := ParseValueForArrow("2023-12-25T10:30:00Z", typing.TimestampTZ)
 		assert.NoError(t, err)
 
 		// Should be milliseconds since epoch

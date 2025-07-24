@@ -223,14 +223,6 @@ func (kd KindDetails) ParseValueForArrow(value interface{}) (interface{}, error)
 	case TimestampTZ.Kind:
 		switch v := value.(type) {
 		case time.Time:
-			// If location is provided, convert to that timezone and treat local components as UTC
-			if location != nil {
-				localTime := v.In(location)
-				// Extract local time components and create UTC time with those components
-				utcWithLocalComponents := time.Date(localTime.Year(), localTime.Month(), localTime.Day(),
-					localTime.Hour(), localTime.Minute(), localTime.Second(), localTime.Nanosecond(), time.UTC)
-				return utcWithLocalComponents.UnixMilli(), nil
-			}
 			// Convert to milliseconds since epoch
 			return v.UnixMilli(), nil
 		case string:
