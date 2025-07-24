@@ -79,10 +79,7 @@ func buildTemporaryFilePath(tableData *optimization.TableData) string {
 	return fmt.Sprintf("/tmp/%d_%s.parquet", tableData.LatestCDCTs.UnixMilli(), stringutil.Random(4))
 }
 
-// WriteParquetFiles writes the table data to a parquet file at the specified path using Arrow.
-// batchSize controls memory usage - smaller values use less memory but may be slower.
-// Use 0 for default batch size.
-// Returns an error if any step of the writing process fails.
+// WriteParquetFiles writes the table data to a parquet file at the specified path using Arrow and returns an error if any step of the writing process fails.
 func WriteParquetFiles(tableData *optimization.TableData, filePath string, location *time.Location) error {
 	arrowSchema, err := parquetutil.BuildArrowSchemaFromColumns(tableData.ReadOnlyInMemoryCols().ValidColumns(), location)
 	if err != nil {
@@ -111,19 +108,15 @@ func WriteParquetFiles(tableData *optimization.TableData, filePath string, locat
 	return nil
 }
 
-// writeArrowRecordsInBatches processes table data in configurable batch sizes and writes
-// Arrow records incrementally to reduce memory usage.
+// writeArrowRecordsInBatches processes table data in configurable batch sizes and writes incrementally to reduce memory usage.
 func writeArrowRecordsInBatches(writer *pqarrow.FileWriter, schema *arrow.Schema, tableData *optimization.TableData, location *time.Location, batchSize int) error {
 	pool := memory.NewGoAllocator()
 	rows := tableData.Rows()
 	cols := tableData.ReadOnlyInMemoryCols().ValidColumns()
 
-	// Start a buffered row group to control memory usage
 	writer.NewBufferedRowGroup()
 
-	// Process rows in batches using slices.Chunk for clean iteration
 	for batch := range slices.Chunk(rows, batchSize) {
-		// Create builders for this batch
 		var builders []array.Builder
 		for _, field := range schema.Fields() {
 			builders = append(builders, array.NewBuilder(pool, field.Type))
@@ -137,7 +130,6 @@ func writeArrowRecordsInBatches(writer *pqarrow.FileWriter, schema *arrow.Schema
 				// Parse value for Arrow
 				parsedValue, err := parquetutil.ParseValueForArrow(value, col.KindDetails, location)
 				if err != nil {
-					// Clean up builders before returning error
 					for _, builder := range builders {
 						builder.Release()
 					}
@@ -146,7 +138,6 @@ func writeArrowRecordsInBatches(writer *pqarrow.FileWriter, schema *arrow.Schema
 
 				// Convert and append to builder
 				if err := parquetutil.ConvertValueForArrowBuilder(builders[i], parsedValue); err != nil {
-					// Clean up builders before returning error
 					for _, builder := range builders {
 						builder.Release()
 					}
@@ -155,18 +146,13 @@ func writeArrowRecordsInBatches(writer *pqarrow.FileWriter, schema *arrow.Schema
 			}
 		}
 
-		// Build arrays from builders
-		arrays := make([]arrow.Array, len(builders))
-		for i, builder := range builders {
-			arrays[i] = builder.NewArray()
+		var arrays []arrow.Array
+		for _, builder := range builders {
+			arrays = append(arrays, builder.NewArray())
 		}
 
-		// Create record for this batch
 		record := array.NewRecord(schema, arrays, int64(len(batch)))
-
-		// Write the batch to the parquet file using buffered writing
 		if err := writer.WriteBuffered(record); err != nil {
-			// Clean up before returning error
 			record.Release()
 			for _, arr := range arrays {
 				arr.Release()
@@ -182,6 +168,7 @@ func writeArrowRecordsInBatches(writer *pqarrow.FileWriter, schema *arrow.Schema
 		for _, arr := range arrays {
 			arr.Release()
 		}
+
 		for _, builder := range builders {
 			builder.Release()
 		}
