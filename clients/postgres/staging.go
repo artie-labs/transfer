@@ -12,8 +12,45 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-func (s *Store) buildPgxConn(ctx context.Context) (*pgx.Conn, func(), error) {
+type stagingIterator struct {
+	data [][]any
+	idx  int
+}
 
+func (s *stagingIterator) Next() bool {
+	return s.idx < len(s.data)
+}
+
+func (s *stagingIterator) Err() error {
+	return nil
+}
+
+func (s *stagingIterator) Values() ([]any, error) {
+	return s.data[s.idx], nil
+}
+
+func (s *Store) buildStagingIterator(tableData *optimization.TableData) (pgx.CopyFromSource, error) {
+	var values [][]any
+	cols := tableData.ReadOnlyInMemoryCols().ValidColumns()
+	for _, row := range tableData.Rows() {
+		var rowValues []any
+		for _, col := range cols {
+			value, _ := row.GetValue(col.Name())
+			parsedValue, err := parseValue(value, col)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse value: %w", err)
+			}
+
+			rowValues = append(rowValues, parsedValue)
+		}
+
+		values = append(values, rowValues)
+	}
+
+	return &stagingIterator{
+		data: values,
+		idx:  0,
+	}, nil
 }
 
 func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
@@ -25,21 +62,25 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 
 	conn, err := s.Store.Conn(ctx)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get pgx conn: %w", err)
+		return fmt.Errorf("failed to get pgx conn: %w", err)
 	}
 
 	defer conn.Close()
 
-	conn.Raw(func(driverConn any) error {
+	err = conn.Raw(func(driverConn any) error {
 		pgxConn, ok := driverConn.(*pgx.Conn)
 		if !ok {
 			return fmt.Errorf("expected pgx.Conn, got %T", driverConn)
 		}
 
 		cols := tableData.ReadOnlyInMemoryCols().ValidColumns()
-		copyCount, err := pgxConn.CopyFrom(ctx, pgx.Identifier{tempTableID.FullyQualifiedName()}, columns.ColumnNames(cols), pgx.CopyFromSlice(len(tableData.Rows()), func(i int) ([]any, error) {
-			return tableData.Rows()[i], nil
-		}))
+
+		stagingIterator, err := s.buildStagingIterator(tableData)
+		if err != nil {
+			return fmt.Errorf("failed to build staging iterator: %w", err)
+		}
+
+		copyCount, err := pgxConn.CopyFrom(ctx, pgx.Identifier{tempTableID.FullyQualifiedName()}, columns.ColumnNames(cols), stagingIterator)
 		if err != nil {
 			return fmt.Errorf("failed to copy from rows: %w", err)
 		}
@@ -51,61 +92,10 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		return nil
 	})
 
-	tx, err := s.Begin()
 	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %w", err)
+		return fmt.Errorf("failed to copy from rows: %w", err)
 	}
 
-	var txCommitted bool
-	defer func() {
-		if !txCommitted {
-			tx.Rollback()
-		}
-	}()
-
-	stmt, err := tx.Prepare(mssql.CopyIn(tempTableID.FullyQualifiedName(), mssql.BulkOptions{}, columns.ColumnNames(cols)...))
-	if err != nil {
-		return fmt.Errorf("failed to prepare bulk insert: %w", err)
-	}
-
-	defer stmt.Close()
-
-	for _, row := range tableData.Rows() {
-		var parsedValues []any
-		for _, col := range cols {
-			value, _ := row.GetValue(col.Name())
-			parsedValue, err := parseValue(value, col)
-			if err != nil {
-				return fmt.Errorf("failed to parse value: %w", err)
-			}
-
-			parsedValues = append(parsedValues, parsedValue)
-		}
-
-		if _, err = stmt.ExecContext(ctx, parsedValues...); err != nil {
-			return fmt.Errorf("failed to copy row: %w", err)
-		}
-	}
-
-	results, err := stmt.ExecContext(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to finalize bulk insert: %w", err)
-	}
-
-	rowsLoaded, err := results.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("failed to get rows affected: %w", err)
-	}
-
-	if expectedRows := int64(tableData.NumberOfRows()); rowsLoaded != expectedRows {
-		return fmt.Errorf("expected %d rows to be loaded, but got %d", expectedRows, rowsLoaded)
-	}
-
-	if err = tx.Commit(); err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
-	}
-
-	txCommitted = true
 	return nil
 }
 
