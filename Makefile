@@ -89,7 +89,7 @@ parquet-venv:
 test-parquet: parquet-venv
 	@cd integration_tests/parquet && go run main.go
 	@echo "Running parquet verification (Python)..."
-	@cd integration_tests/parquet && venv/bin/python verify_parquet.py --file-path output/comprehensive_test.parquet
+	@cd integration_tests/parquet && venv/bin/python verify_parquet.py
 
 .PHONY: dest-itest-types
 dest-itest-types:

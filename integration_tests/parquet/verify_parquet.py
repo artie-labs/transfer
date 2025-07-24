@@ -288,12 +288,8 @@ def verify_parquet_file(file_path):
     return True
 
 def main():
-    parser = argparse.ArgumentParser(description='Verify comprehensive parquet file contents')
-    parser.add_argument('--file-path', help='Path to the parquet file to verify')
-    args = parser.parse_args()
-
     try:
-        success = verify_parquet_file(args.file_path)
+        success = verify_parquet_file("output/comprehensive_test.parquet")
         print(f"\n✅ Verification {'PASSED' if success else 'FAILED'}")
         sys.exit(0 if success else 1)
     except Exception as e:
