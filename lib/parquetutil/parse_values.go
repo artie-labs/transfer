@@ -76,7 +76,7 @@ func ConvertValueForArrowBuilder(builder array.Builder, value any) error {
 			return fmt.Errorf("failed to cast value to []string: %w", err)
 		}
 
-		b.Append(true) // Start list
+		b.Append(true)
 		valueBuilder, ok := b.ValueBuilder().(*array.StringBuilder)
 		if !ok {
 			return fmt.Errorf("failed to cast value builder to array.StringBuilder")
