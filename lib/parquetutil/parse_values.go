@@ -7,7 +7,6 @@ import (
 	"github.com/apache/arrow/go/v17/arrow/array"
 	"github.com/apache/arrow/go/v17/arrow/decimal128"
 	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/artie-labs/transfer/lib/typing/converters/primitives"
 )
 
 // ParseValueForArrow converts a raw value to Arrow-compatible format given column details and location
@@ -42,7 +41,7 @@ func ConvertValueForArrowBuilder(builder array.Builder, value any) error {
 		}
 		b.Append(castedValue)
 	case *array.Float32Builder:
-		castedValue, err := primitives.Float32Converter{}.Convert(value)
+		castedValue, err := typing.AssertType[float32](value)
 		if err != nil {
 			return fmt.Errorf("failed to cast value to float32: %w", err)
 		}

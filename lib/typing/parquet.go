@@ -3,7 +3,6 @@ package typing
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -92,24 +91,7 @@ func (kd KindDetails) ParseValueForArrow(value any) (any, error) {
 	case Boolean.Kind:
 		return primitives.BooleanConverter{}.Convert(value)
 	case Float.Kind:
-		switch v := value.(type) {
-		case float32:
-			return v, nil
-		case float64:
-			return float32(v), nil
-		case string:
-			// Try to parse string as float
-			if floatVal, err := strconv.ParseFloat(v, 32); err == nil {
-				return float32(floatVal), nil
-			}
-			return v, nil
-		case int64:
-			return float32(v), nil
-		case int:
-			return float32(v), nil
-		default:
-			return fmt.Sprintf("%v", value), nil
-		}
+		return primitives.Float32Converter{}.Convert(value)
 	case EDecimal.Kind:
 		if kd.ExtendedDecimalDetails != nil {
 			precision := kd.ExtendedDecimalDetails.Precision()
