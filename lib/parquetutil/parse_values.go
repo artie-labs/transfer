@@ -6,6 +6,7 @@ import (
 	"github.com/apache/arrow/go/v17/arrow"
 	"github.com/apache/arrow/go/v17/arrow/array"
 	"github.com/apache/arrow/go/v17/arrow/decimal128"
+	"github.com/apache/arrow/go/v17/arrow/decimal256"
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
@@ -68,6 +69,12 @@ func ConvertValueForArrowBuilder(builder array.Builder, value any) error {
 		castedValue, err := typing.AssertType[decimal128.Num](value)
 		if err != nil {
 			return fmt.Errorf("failed to cast value to decimal128.Num: %w", err)
+		}
+		castedBuilder.Append(castedValue)
+	case *array.Decimal256Builder:
+		castedValue, err := typing.AssertType[decimal256.Num](value)
+		if err != nil {
+			return fmt.Errorf("failed to cast value to decimal256.Num: %w", err)
 		}
 		castedBuilder.Append(castedValue)
 	case *array.ListBuilder:

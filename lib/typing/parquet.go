@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/apache/arrow-go/v18/arrow/decimal256"
 	"github.com/apache/arrow/go/v17/arrow"
 	"github.com/apache/arrow/go/v17/arrow/decimal128"
 
@@ -47,6 +48,8 @@ func (kd KindDetails) ToArrowType() (arrow.DataType, error) {
 			precision := kd.ExtendedDecimalDetails.Precision()
 			if precision <= 38 {
 				return &arrow.Decimal128Type{Precision: precision, Scale: kd.ExtendedDecimalDetails.Scale()}, nil
+			} else if precision <= 76 {
+				return &arrow.Decimal256Type{Precision: precision, Scale: kd.ExtendedDecimalDetails.Scale()}, nil
 			}
 		}
 		// Default decimal or unsupported precision - use string
@@ -115,7 +118,13 @@ func (kd KindDetails) ParseValueForArrow(value any) (any, error) {
 			return castedValue.String(), nil
 		}
 
-		return decimal128.FromString(castedValue.String(), precision, kd.ExtendedDecimalDetails.Scale())
+		if precision <= 38 {
+			return decimal128.FromString(castedValue.String(), precision, kd.ExtendedDecimalDetails.Scale())
+		} else if precision <= 76 {
+			return decimal256.FromString(castedValue.String(), precision, kd.ExtendedDecimalDetails.Scale())
+		}
+
+		return castedValue.String(), nil
 	case Time.Kind:
 		_time, err := ext.ParseTimeFromAny(value)
 		if err != nil {
