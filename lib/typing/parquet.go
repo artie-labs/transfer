@@ -3,9 +3,11 @@ package typing
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/apache/arrow/go/v17/arrow"
+	"github.com/apache/arrow/go/v17/arrow/decimal128"
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/typing/converters/primitives"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
@@ -98,12 +100,25 @@ func (kd KindDetails) ParseValueForArrow(value any) (any, error) {
 	case Float.Kind:
 		return primitives.Float32Converter{}.Convert(value)
 	case EDecimal.Kind:
-		decimalValue, err := AssertType[*decimal.Decimal](value)
-		if err != nil {
-			return nil, err
-		}
+		if kd.ExtendedDecimalDetails != nil {
+			precision := kd.ExtendedDecimalDetails.Precision()
+			scale := kd.ExtendedDecimalDetails.Scale()
 
-		return decimalValue.ToDecimal128()
+			if decimalValue, ok := value.(*decimal.Decimal); ok && precision <= 38 && precision > 0 {
+				// Convert decimal to string and then to decimal128
+				decStr := decimalValue.String()
+				// Validate that the decimal string can fit in the specified precision
+				if len(strings.ReplaceAll(strings.ReplaceAll(decStr, ".", ""), "-", "")) <= int(precision) {
+					num, err := decimal128.FromString(decStr, precision, scale)
+					if err != nil {
+						// Fallback to string if conversion fails
+						return decimalValue.String(), nil
+					}
+					return num, nil
+				}
+			}
+		}
+		return fmt.Sprintf("%v", value), nil
 	case Time.Kind:
 		_time, err := ext.ParseTimeFromAny(value)
 		if err != nil {
