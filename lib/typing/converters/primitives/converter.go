@@ -54,3 +54,26 @@ func (BooleanConverter) Convert(value any) (bool, error) {
 
 	return false, fmt.Errorf("failed to parse boolean, unsupported type: %T", value)
 }
+
+type Float32Converter struct{}
+
+func (Float32Converter) Convert(value any) (float32, error) {
+	switch castValue := value.(type) {
+	case float32:
+		return castValue, nil
+	case float64:
+		if castValue > math.MaxFloat32 || castValue < -math.MaxFloat32 {
+			return 0, fmt.Errorf("value overflows float32")
+		}
+
+		return float32(castValue), nil
+	case string:
+		parsed, err := strconv.ParseFloat(castValue, 32)
+		if err != nil {
+			return 0, fmt.Errorf("failed to parse string to float32: %w", err)
+		}
+		return float32(parsed), nil
+	}
+
+	return 0, fmt.Errorf("failed to parse float32, unsupported type: %T", value)
+}

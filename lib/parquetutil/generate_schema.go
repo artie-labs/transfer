@@ -1,20 +1,27 @@
 package parquetutil
 
 import (
+	"fmt"
+
+	"github.com/apache/arrow/go/v17/arrow"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func BuildCSVSchema(columns []columns.Column) ([]string, error) {
-	var fields []string
+// BuildArrowSchemaFromColumns creates an Arrow schema from typing columns
+func BuildArrowSchemaFromColumns(columns []columns.Column) (*arrow.Schema, error) {
+	var fields []arrow.Field
 	for _, column := range columns {
-		// We don't need to escape the column name here.
-		field, err := column.KindDetails.ParquetAnnotation(column.Name())
+		arrowType, err := column.KindDetails.ToArrowType()
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to convert kind details to arrow type: %w", err)
 		}
 
-		fields = append(fields, field.Tag)
+		fields = append(fields, arrow.Field{
+			Name:     column.Name(),
+			Type:     arrowType,
+			Nullable: true,
+		})
 	}
 
-	return fields, nil
+	return arrow.NewSchema(fields, nil), nil
 }

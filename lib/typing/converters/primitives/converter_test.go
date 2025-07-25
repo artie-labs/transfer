@@ -137,3 +137,42 @@ func TestBooleanConverter_Convert(t *testing.T) {
 		assert.False(t, got)
 	}
 }
+
+func TestFloat32Converter_Convert(t *testing.T) {
+	converter := Float32Converter{}
+	{
+		// Float32
+		actual, err := converter.Convert(float32(1.1))
+		assert.NoError(t, err)
+		assert.Equal(t, float32(1.1), actual)
+	}
+	{
+		// Float64
+		{
+			// Max float
+			_, err := converter.Convert(math.MaxFloat64)
+			assert.ErrorContains(t, err, "value overflows float32")
+		}
+		{
+			// Min float
+			_, err := converter.Convert(-math.MaxFloat64)
+			assert.ErrorContains(t, err, "value overflows float32")
+		}
+		{
+			actual, err := converter.Convert(float64(123.55))
+			assert.NoError(t, err)
+			assert.Equal(t, float32(123.55), actual)
+		}
+	}
+	{
+		// String
+		actual, err := converter.Convert("1.1")
+		assert.NoError(t, err)
+		assert.Equal(t, float32(1.1), actual)
+	}
+	{
+		// Irrelevant
+		_, err := converter.Convert(true)
+		assert.ErrorContains(t, err, "failed to parse float32, unsupported type: bool")
+	}
+}
