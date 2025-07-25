@@ -219,7 +219,7 @@ func (PostgresDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, setting
 		switch *kd.OptionalIntegerKind {
 		case typing.SmallIntegerKind:
 			return "smallint", nil
-		case typing.IntegerKind:
+		case typing.NotSpecifiedKind, typing.IntegerKind:
 			return "integer", nil
 		case typing.BigIntegerKind:
 			return "bigint", nil
