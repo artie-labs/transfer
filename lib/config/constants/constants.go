@@ -103,6 +103,7 @@ var ValidDestinations = []DestinationKind{
 	S3,
 	Snowflake,
 	Iceberg,
+	Postgres,
 }
 
 func IsValidDestination(destination DestinationKind) bool {
