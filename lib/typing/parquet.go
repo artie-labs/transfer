@@ -46,6 +46,10 @@ func (kd KindDetails) ToArrowType() (arrow.DataType, error) {
 
 		if kd.ExtendedDecimalDetails != nil {
 			precision := kd.ExtendedDecimalDetails.Precision()
+			if precision == decimal.PrecisionNotSpecified {
+				return arrow.BinaryTypes.String, nil
+			}
+
 			if precision <= 38 {
 				return &arrow.Decimal128Type{Precision: precision, Scale: kd.ExtendedDecimalDetails.Scale()}, nil
 			} else if precision <= 76 {
