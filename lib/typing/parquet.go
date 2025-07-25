@@ -176,23 +176,12 @@ func (kd KindDetails) ParseValueForArrow(value any) (any, error) {
 		// Days since epoch
 		return int32(_time.UnixMilli() / (24 * time.Hour.Milliseconds())), nil
 	case TimestampTZ.Kind:
-		switch v := value.(type) {
-		case time.Time:
-			// Convert to milliseconds since epoch
-			return v.UnixMilli(), nil
-		case string:
-			// Try to parse string as timestamp
-			if timeVal, err := time.Parse(time.RFC3339, v); err == nil {
-				return timeVal.UnixMilli(), nil
-			}
-			// Try alternative formats
-			if timeVal, err := time.Parse("2006-01-02T15:04:05.999", v); err == nil {
-				return timeVal.UnixMilli(), nil
-			}
-			return v, nil
-		default:
-			return fmt.Sprintf("%v", value), nil
+		_time, err := ext.ParseTimestampTZFromAny(value)
+		if err != nil {
+			return nil, fmt.Errorf("failed to cast value to timestamp: %w", err)
 		}
+
+		return _time.UnixMilli(), nil
 	case TimestampNTZ.Kind:
 		_time, err := ext.ParseTimestampNTZFromAny(value)
 		if err != nil {
