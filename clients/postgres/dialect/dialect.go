@@ -142,13 +142,9 @@ func (pd PostgresDialect) buildSoftDeleteMergeQuery(
 	joinCondition string,
 	cols []columns.Column,
 ) string {
-	// If subQuery doesn't start with SELECT, wrap it
-	if !strings.HasPrefix(strings.ToUpper(strings.TrimSpace(subQuery)), "SELECT") {
-		subQuery = fmt.Sprintf("SELECT * FROM %s", subQuery)
-	}
-
-	query := fmt.Sprintf(`MERGE INTO %s AS %s
-USING (%s) AS %s ON %s
+	query := fmt.Sprintf(`
+MERGE INTO %s AS %s
+USING %s AS %s ON %s
 WHEN MATCHED AND COALESCE(%s, false) = false THEN UPDATE SET %s
 WHEN MATCHED AND COALESCE(%s, false) = true THEN UPDATE SET %s
 WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s)`,
@@ -176,15 +172,9 @@ func (pd PostgresDialect) buildRegularMergeQuery(
 	joinCondition string,
 	cols []columns.Column,
 ) string {
-	// If subQuery doesn't start with SELECT, wrap it
-	if !strings.HasPrefix(strings.ToUpper(strings.TrimSpace(subQuery)), "SELECT") {
-		subQuery = fmt.Sprintf("SELECT * FROM %s", subQuery)
-	}
-
 	deleteColumnMarker := sql.QuotedDeleteColumnMarker(constants.StagingAlias, pd)
-
 	return fmt.Sprintf(`
-MERGE INTO %s AS %s USING (%s) AS %s ON %s
+MERGE INTO %s AS %s USING %s AS %s ON %s
 WHEN MATCHED AND %s = true THEN DELETE
 WHEN MATCHED AND COALESCE(%s, false) = false THEN UPDATE SET %s
 WHEN NOT MATCHED AND COALESCE(%s, false) = false THEN INSERT (%s) VALUES (%s)`,
