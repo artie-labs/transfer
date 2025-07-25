@@ -14,6 +14,18 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
+const describeTableQuery = `
+SELECT
+    c.column_name,
+    pg_catalog.format_type(a.atttypid, a.atttypmod) AS data_type,
+    pg_catalog.pg_get_expr(d.adbin, d.adrelid, true) AS default_value
+FROM information_schema.columns c
+LEFT JOIN pg_catalog.pg_namespace pn ON pn.nspname = c.table_schema
+LEFT JOIN pg_catalog.pg_class cl ON cl.relname = c.table_name AND cl.relnamespace = pn.oid
+LEFT JOIN pg_catalog.pg_attribute a ON a.attname = c.column_name AND a.attrelid = cl.oid
+LEFT JOIN pg_catalog.pg_attrdef d ON d.adrelid = a.attrelid AND d.adnum = a.attnum
+WHERE c.table_schema = $1 AND c.table_name = $2;`
+
 type PostgresDialect struct{}
 
 func (PostgresDialect) QuoteIdentifier(identifier string) string {
@@ -60,8 +72,12 @@ func (PostgresDialect) BuildDedupeTableQuery(tableID sql.TableIdentifier, primar
 }
 
 func (PostgresDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (string, []any, error) {
-	// TODO: To implement
-	return "", nil, fmt.Errorf("not implemented")
+	castedTableID, err := typing.AssertType[TableIdentifier](tableID)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return describeTableQuery, []any{castedTableID.Schema(), castedTableID.Table()}, nil
 }
 
 func (p PostgresDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
