@@ -8,10 +8,13 @@ import (
 	"github.com/artie-labs/transfer/clients/postgres"
 	"github.com/artie-labs/transfer/clients/postgres/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/stringutil"
+	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 func TestDialect(ctx context.Context, store *postgres.Store, _dialect sql.Dialect) error {
@@ -32,6 +35,11 @@ func TestDialect(ctx context.Context, store *postgres.Store, _dialect sql.Dialec
 	// Test ADD COLUMN and DROP COLUMN
 	if err := testAddDropColumn(ctx, store, pgDialect); err != nil {
 		return fmt.Errorf("failed to test add/drop column: %w", err)
+	}
+
+	// Test BuildIsNotToastValueExpression
+	if err := testBuildIsNotToastValueExpression(ctx, store, pgDialect); err != nil {
+		return fmt.Errorf("failed to test BuildIsNotToastValueExpression: %w", err)
 	}
 
 	// Test sweep
@@ -261,6 +269,32 @@ func testSweep(ctx context.Context, store *postgres.Store, pgDialect dialect.Pos
 
 	if len(missingNames) > 0 {
 		return fmt.Errorf("did not find the following tables: %s", strings.Join(missingNames, ","))
+	}
+
+	return nil
+}
+
+func testBuildIsNotToastValueExpression(ctx context.Context, store *postgres.Store, pgDialect dialect.PostgresDialect) error {
+	tableName := fmt.Sprintf("test_toast_%s", strings.ToLower(stringutil.Random(5)))
+	tableID := store.IdentifierFor(kafkalib.DatabaseAndSchemaPair{Schema: "public"}, tableName)
+	if _, err := store.ExecContext(ctx, pgDialect.BuildCreateTableQuery(tableID, false, []string{"id int PRIMARY KEY", "col text"})); err != nil {
+		return fmt.Errorf("failed to create test table: %w", err)
+	}
+
+	if _, err := store.ExecContext(ctx, fmt.Sprintf(`INSERT INTO %s (id, col) VALUES (1, 'normal'), (2, '%s'), (3, NULL)`, tableName, constants.ToastUnavailableValuePlaceholder)); err != nil {
+		return fmt.Errorf("failed to insert test data: %w", err)
+	}
+
+	// Test the expression - should exclude row 2 (toast value), include rows 1,3
+	expression := pgDialect.BuildIsNotToastValueExpression("t", columns.NewColumn("col", typing.String))
+	query := fmt.Sprintf(`SELECT COUNT(*) FROM %s t WHERE %s`, tableName, expression)
+	var count int
+	if err := store.QueryRowContext(ctx, query).Scan(&count); err != nil {
+		return fmt.Errorf("failed to execute toast expression: %w", err)
+	}
+
+	if count != 2 {
+		return fmt.Errorf("expected 2 rows (excluding toast), got %d", count)
 	}
 
 	return nil

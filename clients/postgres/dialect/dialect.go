@@ -14,6 +14,18 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
+const describeTableQuery = `
+SELECT
+    c.column_name,
+    pg_catalog.format_type(a.atttypid, a.atttypmod) AS data_type,
+    pg_catalog.pg_get_expr(d.adbin, d.adrelid, true) AS default_value
+FROM information_schema.columns c
+LEFT JOIN pg_catalog.pg_namespace pn ON pn.nspname = c.table_schema
+LEFT JOIN pg_catalog.pg_class cl ON cl.relname = c.table_name AND cl.relnamespace = pn.oid
+LEFT JOIN pg_catalog.pg_attribute a ON a.attname = c.column_name AND a.attrelid = cl.oid
+LEFT JOIN pg_catalog.pg_attrdef d ON d.adrelid = a.attrelid AND d.adnum = a.attnum
+WHERE c.table_schema = $1 AND c.table_name = $2;`
+
 type PostgresDialect struct{}
 
 func (PostgresDialect) QuoteIdentifier(identifier string) string {
@@ -29,10 +41,6 @@ func (PostgresDialect) IsColumnAlreadyExistsErr(_ error) bool {
 }
 
 func (PostgresDialect) IsTableDoesNotExistErr(err error) bool {
-	if err == nil {
-		return false
-	}
-
 	if pgErr, ok := err.(*pgconn.PgError); ok {
 		// https://www.postgresql.org/docs/current/errcodes-appendix.html#:~:text=undefined_function-,42P01,-undefined_table
 		return pgErr.Code == "42P01"
@@ -56,23 +64,24 @@ func (PostgresDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) stri
 }
 
 func (PostgresDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string {
-	// TODO: To implement
-	return nil
+	panic("not implemented") // We don't currently support deduping for Postgres.
 }
 
 func (PostgresDialect) BuildDedupeTableQuery(tableID sql.TableIdentifier, primaryKeys []string) string {
-	// TODO: To implement
-	return ""
+	panic("not implemented")
 }
 
 func (PostgresDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (string, []any, error) {
-	// TODO: To implement
-	return "", nil, fmt.Errorf("not implemented")
+	castedTableID, err := typing.AssertType[TableIdentifier](tableID)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return describeTableQuery, []any{castedTableID.Schema(), castedTableID.Table()}, nil
 }
 
-func (PostgresDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
-	// TODO: To implement
-	return ""
+func (p PostgresDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
+	return fmt.Sprintf("COALESCE(%s, '') NOT LIKE '%s'", sql.QuoteTableAliasColumn(tableAlias, column, p), "%"+constants.ToastUnavailableValuePlaceholder+"%")
 }
 
 func (PostgresDialect) GetDefaultValueStrategy() sql.DefaultValueStrategy {
@@ -88,11 +97,10 @@ func (PostgresDialect) BuildDropColumnQuery(tableID sql.TableIdentifier, colName
 }
 
 func (PostgresDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string {
-	// TODO: To implement
-	return nil
+	panic("not implemented")
 }
 
-func (PostgresDialect) BuildMergeQueries(
+func (pd PostgresDialect) BuildMergeQueries(
 	tableID sql.TableIdentifier,
 	subQuery string,
 	primaryKeys []columns.Column,
@@ -101,7 +109,88 @@ func (PostgresDialect) BuildMergeQueries(
 	softDelete bool,
 	containsHardDeletes bool,
 ) ([]string, error) {
-	return nil, fmt.Errorf("not implemented")
+	// Build equality conditions for the MERGE ON clause
+	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, pd)
+	if len(additionalEqualityStrings) > 0 {
+		equalitySQLParts = append(equalitySQLParts, additionalEqualityStrings...)
+	}
+	joinCondition := strings.Join(equalitySQLParts, " AND ")
+
+	// Remove columns that are handled separately
+	cols, err := columns.RemoveOnlySetDeleteColumnMarker(cols)
+	if err != nil {
+		return nil, err
+	}
+
+	if softDelete {
+		return []string{pd.buildSoftDeleteMergeQuery(tableID, subQuery, joinCondition, cols)}, nil
+	}
+
+	// Remove __artie flags since they don't exist in the destination table
+	cols, err = columns.RemoveDeleteColumnMarker(cols)
+	if err != nil {
+		return nil, err
+	}
+
+	return []string{pd.buildRegularMergeQuery(tableID, subQuery, joinCondition, cols)}, nil
+}
+
+// buildSoftDeleteMergeQuery builds a single MERGE query for soft delete operations
+func (pd PostgresDialect) buildSoftDeleteMergeQuery(
+	tableID sql.TableIdentifier,
+	subQuery string,
+	joinCondition string,
+	cols []columns.Column,
+) string {
+	query := fmt.Sprintf(`
+MERGE INTO %s AS %s
+USING %s AS %s ON %s
+WHEN MATCHED AND COALESCE(%s, false) = false THEN UPDATE SET %s
+WHEN MATCHED AND COALESCE(%s, false) = true THEN UPDATE SET %s
+WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s)`,
+		// MERGE INTO target AS tgt
+		tableID.FullyQualifiedName(), constants.TargetAlias,
+		// USING (subquery) AS stg ON join_condition
+		subQuery, constants.StagingAlias, joinCondition,
+		// Update all columns when __artie_only_set_delete = false
+		sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, pd), sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, pd),
+		// Update only delete column when __artie_only_set_delete = true
+		sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, pd),
+		sql.BuildColumnsUpdateFragment([]columns.Column{columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean)}, constants.StagingAlias, constants.TargetAlias, pd),
+		// Insert new records
+		strings.Join(sql.QuoteColumns(cols, pd), ","),
+		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, pd), ","),
+	)
+
+	return query
+}
+
+// buildRegularMergeQuery builds a single MERGE query for regular merge operations
+func (pd PostgresDialect) buildRegularMergeQuery(
+	tableID sql.TableIdentifier,
+	subQuery string,
+	joinCondition string,
+	cols []columns.Column,
+) string {
+	deleteColumnMarker := sql.QuotedDeleteColumnMarker(constants.StagingAlias, pd)
+	return fmt.Sprintf(`
+MERGE INTO %s AS %s USING %s AS %s ON %s
+WHEN MATCHED AND %s = true THEN DELETE
+WHEN MATCHED AND COALESCE(%s, false) = false THEN UPDATE SET %s
+WHEN NOT MATCHED AND COALESCE(%s, false) = false THEN INSERT (%s) VALUES (%s)`,
+		// MERGE INTO target AS tgt
+		tableID.FullyQualifiedName(), constants.TargetAlias,
+		// USING (subquery) AS stg ON join_condition
+		subQuery, constants.StagingAlias, joinCondition,
+		// Delete when __artie_delete = true
+		deleteColumnMarker,
+		// Update all columns when __artie_delete = false
+		deleteColumnMarker, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, pd),
+		// Update only delete column when __artie_delete = true
+		deleteColumnMarker, strings.Join(sql.QuoteColumns(cols, pd), ","),
+		// Insert new records
+		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, pd), ","),
+	)
 }
 
 var kindDetailsMap = map[typing.KindDetails]string{
