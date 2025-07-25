@@ -32,7 +32,7 @@ func testSoftDeleteMerge(ctx context.Context, store *postgres.Store) error {
 	tableID := dialect.NewTableIdentifier("public", fmt.Sprintf("test_merge_soft_%s", strings.ToLower(stringutil.Random(5))))
 
 	var cols columns.Columns
-	cols.AddColumn(columns.NewColumn("id", typing.Integer))
+	cols.AddColumn(columns.NewColumn("id", typing.BuildIntegerKind(typing.IntegerKind)))
 	cols.AddColumn(columns.NewColumn("name", typing.String))
 	cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 	cols.AddColumn(columns.NewColumn(constants.OnlySetDeleteColumnMarker, typing.Boolean))
