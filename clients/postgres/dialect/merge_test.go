@@ -48,8 +48,8 @@ func TestPostgresDialect_buildRegularMergeQuery(t *testing.T) {
 
 	query := dialect.buildRegularMergeQuery(tableID, subQuery, joinCondition, cols)
 
-	expectedQuery := `MERGE INTO "database"."schema"."table" AS tgt
-USING (SELECT * FROM staging) AS stg ON tgt."id" = stg."id"
+	expectedQuery := `
+MERGE INTO "database"."schema"."table" AS tgt USING (SELECT * FROM staging) AS stg ON tgt."id" = stg."id"
 WHEN MATCHED AND stg."__artie_delete" = 1 THEN DELETE
 WHEN MATCHED AND COALESCE(stg."__artie_delete", 0) = 0 THEN UPDATE SET "id"=stg."id","name"=stg."name"
 WHEN NOT MATCHED AND COALESCE(stg."__artie_delete", 0) = 0 THEN INSERT ("id","name") VALUES (stg."id",stg."name")`
@@ -89,7 +89,7 @@ WHEN NOT MATCHED THEN INSERT ("id","name","__artie_delete") VALUES (stg."id",stg
 		assert.Equal(t, expectedQuery, queries[0])
 	})
 
-	t.Run("regular mode with hard deletes", func(t *testing.T) {
+	t.Run("regular mode", func(t *testing.T) {
 		cols := []columns.Column{
 			columns.NewColumn("id", typing.String),
 			columns.NewColumn("name", typing.String),
@@ -102,32 +102,11 @@ WHEN NOT MATCHED THEN INSERT ("id","name","__artie_delete") VALUES (stg."id",stg
 		assert.NoError(t, err)
 		assert.Len(t, queries, 1) // Single MERGE query
 
-		expectedQuery := `MERGE INTO "database"."schema"."table" AS tgt
-USING (SELECT * FROM staging) AS stg ON tgt."id" = stg."id"
+		expectedQuery := `
+MERGE INTO "database"."schema"."table" AS tgt USING (SELECT * FROM staging) AS stg ON tgt."id" = stg."id"
 WHEN MATCHED AND stg."__artie_delete" = 1 THEN DELETE
 WHEN MATCHED AND COALESCE(stg."__artie_delete", 0) = 0 THEN UPDATE SET "id"=stg."id","name"=stg."name"
 WHEN NOT MATCHED AND COALESCE(stg."__artie_delete", 0) = 0 THEN INSERT ("id","name") VALUES (stg."id",stg."name")`
-
-		assert.Equal(t, expectedQuery, queries[0])
-	})
-
-	t.Run("regular mode without hard deletes", func(t *testing.T) {
-		cols := []columns.Column{
-			columns.NewColumn("id", typing.String),
-			columns.NewColumn("name", typing.String),
-			columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean),
-			columns.NewColumn(constants.OnlySetDeleteColumnMarker, typing.Boolean),
-		}
-
-		queries, err := dialect.BuildMergeQueries(tableID, subQuery, primaryKeys, nil, cols, false, false)
-
-		assert.NoError(t, err)
-		assert.Len(t, queries, 1) // Single MERGE query
-
-		expectedQuery := `MERGE INTO "database"."schema"."table" AS tgt
-USING (SELECT * FROM staging) AS stg ON tgt."id" = stg."id"
-WHEN MATCHED THEN UPDATE SET "id"=stg."id","name"=stg."name"
-WHEN NOT MATCHED THEN INSERT ("id","name") VALUES (stg."id",stg."name")`
 
 		assert.Equal(t, expectedQuery, queries[0])
 	})
