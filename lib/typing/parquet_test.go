@@ -2,7 +2,6 @@ package typing
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/xitongsys/parquet-go/parquet"
@@ -12,7 +11,7 @@ func TestKindDetails_ParquetAnnotation(t *testing.T) {
 	{
 		// String field
 		for _, kd := range []KindDetails{String, Struct} {
-			field, err := kd.ParquetAnnotation("foo", nil)
+			field, err := kd.ParquetAnnotation("foo")
 			assert.NoError(t, err)
 			assert.Equal(t,
 				Field{
@@ -28,7 +27,7 @@ func TestKindDetails_ParquetAnnotation(t *testing.T) {
 	}
 	{
 		// Integers
-		field, err := Integer.ParquetAnnotation("foo", nil)
+		field, err := Integer.ParquetAnnotation("foo")
 		assert.NoError(t, err)
 		assert.Equal(t,
 			Field{
@@ -42,7 +41,7 @@ func TestKindDetails_ParquetAnnotation(t *testing.T) {
 	}
 	{
 		// Time
-		field, err := Time.ParquetAnnotation("foo", nil)
+		field, err := Time.ParquetAnnotation("foo")
 		assert.NoError(t, err)
 		assert.Equal(t,
 			Field{
@@ -57,7 +56,7 @@ func TestKindDetails_ParquetAnnotation(t *testing.T) {
 	}
 	{
 		// Date
-		field, err := Date.ParquetAnnotation("foo", nil)
+		field, err := Date.ParquetAnnotation("foo")
 		assert.NoError(t, err)
 		assert.Equal(t,
 			Field{
@@ -75,7 +74,7 @@ func TestKindDetails_ParquetAnnotation(t *testing.T) {
 		{
 			// No location
 			for _, kd := range []KindDetails{TimestampTZ, TimestampNTZ} {
-				field, err := kd.ParquetAnnotation("foo", nil)
+				field, err := kd.ParquetAnnotation("foo")
 				assert.NoError(t, err)
 				assert.Equal(t,
 					Field{
@@ -84,28 +83,6 @@ func TestKindDetails_ParquetAnnotation(t *testing.T) {
 							Type:             ToPtr(parquet.Type_INT64.String()),
 							LogicalType:      ToPtr("TIMESTAMP"),
 							IsAdjustedForUTC: ToPtr(true),
-							Unit:             ToPtr("MILLIS"),
-						}.String(),
-					},
-					*field,
-				)
-			}
-		}
-		{
-			// With location
-			est, err := time.LoadLocation("America/New_York")
-			assert.NoError(t, err)
-
-			for _, kd := range []KindDetails{TimestampTZ, TimestampNTZ} {
-				field, err := kd.ParquetAnnotation("foo", est)
-				assert.NoError(t, err)
-				assert.Equal(t,
-					Field{
-						Tag: FieldTag{
-							Name:             "foo",
-							Type:             ToPtr(parquet.Type_INT64.String()),
-							LogicalType:      ToPtr("TIMESTAMP"),
-							IsAdjustedForUTC: ToPtr(false),
 							Unit:             ToPtr("MILLIS"),
 						}.String(),
 					},

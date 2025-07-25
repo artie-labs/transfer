@@ -26,7 +26,6 @@ func (s Store) castColValStaging(colVal any, colKind typing.KindDetails, cfg con
 
 	value, err := values.ToStringOpts(colVal, colKind, converters.GetStringConverterOpts{
 		UseNewStringMethod: cfg.UseNewStringMethod,
-		Location:           s.location,
 	})
 	if err != nil {
 		return shared.ValueConvertResponse{}, err
