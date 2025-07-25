@@ -36,5 +36,9 @@ func main() {
 		log.Fatalf("failed to test staging table: %v", err)
 	}
 
+	if err := checks.TestMergeOperations(ctx, store); err != nil {
+		log.Fatalf("failed to test merge operations: %v", err)
+	}
+
 	slog.Info("Postgres integration tests all passed! 🎉")
 }
