@@ -11,6 +11,7 @@ import (
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/typing/converters/primitives"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 var kindToArrowType = map[string]arrow.DataType{
@@ -167,29 +168,13 @@ func (kd KindDetails) ParseValueForArrow(value any) (any, error) {
 			return fmt.Sprintf("%v", value), nil
 		}
 	case Date.Kind:
-		switch v := value.(type) {
-		case time.Time:
-			// Convert to days since epoch
-			epoch := time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)
-			days := int32(v.Sub(epoch).Hours() / 24)
-			return days, nil
-		case string:
-			// Try to parse string as date
-			if timeVal, err := time.Parse("2006-01-02", v); err == nil {
-				epoch := time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)
-				days := int32(timeVal.Sub(epoch).Hours() / 24)
-				return days, nil
-			}
-			// Try alternative date format
-			if timeVal, err := time.Parse("2006/01/02", v); err == nil {
-				epoch := time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)
-				days := int32(timeVal.Sub(epoch).Hours() / 24)
-				return days, nil
-			}
-			return v, nil
-		default:
-			return fmt.Sprintf("%v", value), nil
+		_time, err := ext.ParseDateFromAny(value)
+		if err != nil {
+			return nil, fmt.Errorf("failed to cast value to date: %w", err)
 		}
+
+		// Days since epoch
+		return int32(_time.UnixMilli() / (24 * time.Hour.Milliseconds())), nil
 	case TimestampTZ.Kind:
 		switch v := value.(type) {
 		case time.Time:
