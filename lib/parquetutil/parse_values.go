@@ -42,13 +42,11 @@ func ConvertValueForArrowBuilder(builder array.Builder, value any) error {
 		}
 		b.Append(castedValue)
 	case *array.Float32Builder:
-		if floatVal, ok := value.(float32); ok {
-			b.Append(floatVal)
-		} else if floatVal, ok := value.(float64); ok {
-			b.Append(float32(floatVal))
-		} else {
-			return fmt.Errorf("expected float32 value, got %T", value)
+		castedValue, err := primitives.Float32Converter{}.Convert(value)
+		if err != nil {
+			return fmt.Errorf("failed to cast value to float32: %w", err)
 		}
+		b.Append(castedValue)
 	case *array.Time32Builder:
 		if timeVal, ok := value.(int32); ok {
 			b.Append(arrow.Time32(timeVal))
