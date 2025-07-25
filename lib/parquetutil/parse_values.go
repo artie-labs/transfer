@@ -30,13 +30,13 @@ func ConvertValueForArrowBuilder(builder array.Builder, value any) error {
 		}
 		b.Append(castedValue)
 	case *array.Int64Builder:
-		castedValue, err := primitives.Int64Converter{}.Convert(value)
+		castedValue, err := typing.AssertType[int64](value)
 		if err != nil {
 			return fmt.Errorf("failed to cast value to int64: %w", err)
 		}
 		b.Append(castedValue)
 	case *array.BooleanBuilder:
-		castedValue, err := primitives.BooleanConverter{}.Convert(value)
+		castedValue, err := typing.AssertType[bool](value)
 		if err != nil {
 			return fmt.Errorf("failed to cast value to boolean: %w", err)
 		}

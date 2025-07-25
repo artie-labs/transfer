@@ -1,6 +1,7 @@
 package typing
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -8,6 +9,8 @@ import (
 
 	"github.com/apache/arrow/go/v17/arrow"
 	"github.com/apache/arrow/go/v17/arrow/decimal128"
+	"github.com/artie-labs/transfer/lib/array"
+	"github.com/artie-labs/transfer/lib/typing/converters/primitives"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
 
@@ -59,50 +62,35 @@ func (kd KindDetails) ToArrowType() (arrow.DataType, error) {
 }
 
 // ParseValueForArrow converts a value to the appropriate Arrow-compatible type
-func (kd KindDetails) ParseValueForArrow(value interface{}) (interface{}, error) {
+func (kd KindDetails) ParseValueForArrow(value any) (any, error) {
 	if value == nil {
 		return nil, nil
 	}
 
 	switch kd.Kind {
-	case String.Kind, Struct.Kind:
-		return fmt.Sprintf("%v", value), nil
+	case String.Kind:
+		return value, nil
+	case Struct.Kind:
+		out, err := json.Marshal(value)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal struct: %w", err)
+		}
+		return string(out), nil
+	case Array.Kind:
+		arrayString, err := array.InterfaceToArrayString(value, true)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(arrayString) == 0 {
+			return nil, nil
+		}
+
+		return arrayString, nil
 	case Integer.Kind:
-		// Handle various integer types and string-to-int conversion
-		switch v := value.(type) {
-		case int64:
-			return v, nil
-		case int:
-			return int64(v), nil
-		case int32:
-			return int64(v), nil
-		case string:
-			// Try to parse string as int64
-			if intVal, err := strconv.ParseInt(v, 10, 64); err == nil {
-				return intVal, nil
-			}
-			// If parse fails, fallback to string representation
-			return v, nil
-		case float64:
-			return int64(v), nil
-		case float32:
-			return int64(v), nil
-		default:
-			return fmt.Sprintf("%v", value), nil
-		}
+		return primitives.Int64Converter{}.Convert(value)
 	case Boolean.Kind:
-		switch v := value.(type) {
-		case bool:
-			return v, nil
-		case string:
-			// Try to parse string as bool
-			if boolVal, err := strconv.ParseBool(v); err == nil {
-				return boolVal, nil
-			}
-			return strings.ToLower(v) == "true", nil
-		default:
-			return fmt.Sprintf("%v", value), nil
-		}
+		return primitives.BooleanConverter{}.Convert(value)
 	case Float.Kind:
 		switch v := value.(type) {
 		case float32:
