@@ -3,7 +3,6 @@ package decimal
 import (
 	"encoding/json"
 
-	"github.com/apache/arrow-go/v18/arrow/decimal128"
 	"github.com/cockroachdb/apd/v3"
 )
 
@@ -43,8 +42,4 @@ func (d *Decimal) String() string {
 
 func (d *Decimal) Details() Details {
 	return NewDetails(d.precision, -d.value.Exponent)
-}
-
-func (d *Decimal) ToDecimal128() (decimal128.Num, error) {
-	return decimal128.FromString(d.String(), d.precision, -d.value.Exponent)
 }
