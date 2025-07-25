@@ -41,7 +41,7 @@ func testSoftDeleteMerge(ctx context.Context, store *postgres.Store) error {
 		return fmt.Errorf("failed to upsert column: %w", err)
 	}
 
-	tableData := optimization.NewTableData(&cols, config.Replication, []string{"id"}, kafkalib.TopicConfig{}, tableID.Table())
+	tableData := optimization.NewTableData(&cols, config.Replication, []string{"id"}, kafkalib.TopicConfig{Schema: "public", SoftDelete: true}, tableID.Table())
 
 	// Insert initial data
 	for i := 1; i <= 5; i++ {
@@ -101,14 +101,14 @@ func testSoftDeleteMerge(ctx context.Context, store *postgres.Store) error {
 		return fmt.Errorf("expected delete marker to be true")
 	}
 
-	return store.DropTable(ctx, tableID)
+	return store.DropTable(ctx, tableID.WithDisableDropProtection(true))
 }
 
 func testRegularMerge(ctx context.Context, store *postgres.Store) error {
 	tableID := dialect.NewTableIdentifier("public", fmt.Sprintf("test_merge_reg_%s", strings.ToLower(stringutil.Random(5))))
 
 	var cols columns.Columns
-	cols.AddColumn(columns.NewColumn("id", typing.Integer))
+	cols.AddColumn(columns.NewColumn("id", typing.BuildIntegerKind(typing.IntegerKind)))
 	cols.AddColumn(columns.NewColumn("value", typing.String))
 	cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
 	cols.AddColumn(columns.NewColumn(constants.OnlySetDeleteColumnMarker, typing.Boolean))
@@ -117,7 +117,7 @@ func testRegularMerge(ctx context.Context, store *postgres.Store) error {
 		return fmt.Errorf("failed to upsert column: %w", err)
 	}
 
-	tableData := optimization.NewTableData(&cols, config.Replication, []string{"id"}, kafkalib.TopicConfig{}, tableID.Table())
+	tableData := optimization.NewTableData(&cols, config.Replication, []string{"id"}, kafkalib.TopicConfig{Schema: "public", SoftDelete: false}, tableID.Table())
 
 	// Insert initial data
 	for i := 1; i <= 10; i++ {
@@ -189,7 +189,7 @@ func testRegularMerge(ctx context.Context, store *postgres.Store) error {
 		return fmt.Errorf("expected 'updated_1', got %q", value)
 	}
 
-	return store.DropTable(ctx, tableID)
+	return store.DropTable(ctx, tableID.WithDisableDropProtection(true))
 }
 
 func verifyRowCount(ctx context.Context, store *postgres.Store, tableName string, expected int) error {

@@ -142,10 +142,15 @@ func (pd PostgresDialect) buildSoftDeleteMergeQuery(
 	joinCondition string,
 	cols []columns.Column,
 ) string {
-	return fmt.Sprintf(`MERGE INTO %s AS %s
+	// If subQuery doesn't start with SELECT, wrap it
+	if !strings.HasPrefix(strings.ToUpper(strings.TrimSpace(subQuery)), "SELECT") {
+		subQuery = fmt.Sprintf("SELECT * FROM %s", subQuery)
+	}
+
+	query := fmt.Sprintf(`MERGE INTO %s AS %s
 USING (%s) AS %s ON %s
-WHEN MATCHED AND COALESCE(%s, 0) = 0 THEN UPDATE SET %s
-WHEN MATCHED AND COALESCE(%s, 0) = 1 THEN UPDATE SET %s
+WHEN MATCHED AND COALESCE(%s, false) = false THEN UPDATE SET %s
+WHEN MATCHED AND COALESCE(%s, false) = true THEN UPDATE SET %s
 WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s)`,
 		// MERGE INTO target AS tgt
 		tableID.FullyQualifiedName(), constants.TargetAlias,
@@ -160,6 +165,8 @@ WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s)`,
 		strings.Join(sql.QuoteColumns(cols, pd), ","),
 		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, pd), ","),
 	)
+
+	return query
 }
 
 // buildRegularMergeQuery builds a single MERGE query for regular merge operations
@@ -169,13 +176,18 @@ func (pd PostgresDialect) buildRegularMergeQuery(
 	joinCondition string,
 	cols []columns.Column,
 ) string {
+	// If subQuery doesn't start with SELECT, wrap it
+	if !strings.HasPrefix(strings.ToUpper(strings.TrimSpace(subQuery)), "SELECT") {
+		subQuery = fmt.Sprintf("SELECT * FROM %s", subQuery)
+	}
+
 	deleteColumnMarker := sql.QuotedDeleteColumnMarker(constants.StagingAlias, pd)
 
 	return fmt.Sprintf(`
 MERGE INTO %s AS %s USING (%s) AS %s ON %s
-WHEN MATCHED AND %s = 1 THEN DELETE
-WHEN MATCHED AND COALESCE(%s, 0) = 0 THEN UPDATE SET %s
-WHEN NOT MATCHED AND COALESCE(%s, 0) = 0 THEN INSERT (%s) VALUES (%s)`,
+WHEN MATCHED AND %s = true THEN DELETE
+WHEN MATCHED AND COALESCE(%s, false) = false THEN UPDATE SET %s
+WHEN NOT MATCHED AND COALESCE(%s, false) = false THEN INSERT (%s) VALUES (%s)`,
 		tableID.FullyQualifiedName(), constants.TargetAlias,
 		subQuery, constants.StagingAlias, joinCondition,
 		deleteColumnMarker,

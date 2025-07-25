@@ -27,8 +27,8 @@ func TestPostgresDialect_buildSoftDeleteMergeQuery(t *testing.T) {
 
 	expectedQuery := `MERGE INTO "database"."schema"."table" AS tgt
 USING (SELECT * FROM staging) AS stg ON tgt."id" = stg."id"
-WHEN MATCHED AND COALESCE(stg."__artie_only_set_delete", 0) = 0 THEN UPDATE SET "id"=stg."id","name"=stg."name","__artie_delete"=stg."__artie_delete"
-WHEN MATCHED AND COALESCE(stg."__artie_only_set_delete", 0) = 1 THEN UPDATE SET "__artie_delete"=stg."__artie_delete"
+WHEN MATCHED AND COALESCE(stg."__artie_only_set_delete", false) = false THEN UPDATE SET "id"=stg."id","name"=stg."name","__artie_delete"=stg."__artie_delete"
+WHEN MATCHED AND COALESCE(stg."__artie_only_set_delete", false) = true THEN UPDATE SET "__artie_delete"=stg."__artie_delete"
 WHEN NOT MATCHED THEN INSERT ("id","name","__artie_delete") VALUES (stg."id",stg."name",stg."__artie_delete")`
 
 	assert.Equal(t, expectedQuery, query)
@@ -50,9 +50,9 @@ func TestPostgresDialect_buildRegularMergeQuery(t *testing.T) {
 
 	expectedQuery := `
 MERGE INTO "database"."schema"."table" AS tgt USING (SELECT * FROM staging) AS stg ON tgt."id" = stg."id"
-WHEN MATCHED AND stg."__artie_delete" = 1 THEN DELETE
-WHEN MATCHED AND COALESCE(stg."__artie_delete", 0) = 0 THEN UPDATE SET "id"=stg."id","name"=stg."name"
-WHEN NOT MATCHED AND COALESCE(stg."__artie_delete", 0) = 0 THEN INSERT ("id","name") VALUES (stg."id",stg."name")`
+WHEN MATCHED AND stg."__artie_delete" = true THEN DELETE
+WHEN MATCHED AND COALESCE(stg."__artie_delete", false) = false THEN UPDATE SET "id"=stg."id","name"=stg."name"
+WHEN NOT MATCHED AND COALESCE(stg."__artie_delete", false) = false THEN INSERT ("id","name") VALUES (stg."id",stg."name")`
 
 	assert.Equal(t, expectedQuery, query)
 }
@@ -82,8 +82,8 @@ func TestPostgresDialect_BuildMergeQueries(t *testing.T) {
 
 		expectedQuery := `MERGE INTO "database"."schema"."table" AS tgt
 USING (SELECT * FROM staging) AS stg ON tgt."id" = stg."id"
-WHEN MATCHED AND COALESCE(stg."__artie_only_set_delete", 0) = 0 THEN UPDATE SET "id"=stg."id","name"=stg."name","__artie_delete"=stg."__artie_delete"
-WHEN MATCHED AND COALESCE(stg."__artie_only_set_delete", 0) = 1 THEN UPDATE SET "__artie_delete"=stg."__artie_delete"
+WHEN MATCHED AND COALESCE(stg."__artie_only_set_delete", false) = false THEN UPDATE SET "id"=stg."id","name"=stg."name","__artie_delete"=stg."__artie_delete"
+WHEN MATCHED AND COALESCE(stg."__artie_only_set_delete", false) = true THEN UPDATE SET "__artie_delete"=stg."__artie_delete"
 WHEN NOT MATCHED THEN INSERT ("id","name","__artie_delete") VALUES (stg."id",stg."name",stg."__artie_delete")`
 
 		assert.Equal(t, expectedQuery, queries[0])
@@ -104,9 +104,9 @@ WHEN NOT MATCHED THEN INSERT ("id","name","__artie_delete") VALUES (stg."id",stg
 
 		expectedQuery := `
 MERGE INTO "database"."schema"."table" AS tgt USING (SELECT * FROM staging) AS stg ON tgt."id" = stg."id"
-WHEN MATCHED AND stg."__artie_delete" = 1 THEN DELETE
-WHEN MATCHED AND COALESCE(stg."__artie_delete", 0) = 0 THEN UPDATE SET "id"=stg."id","name"=stg."name"
-WHEN NOT MATCHED AND COALESCE(stg."__artie_delete", 0) = 0 THEN INSERT ("id","name") VALUES (stg."id",stg."name")`
+WHEN MATCHED AND stg."__artie_delete" = true THEN DELETE
+WHEN MATCHED AND COALESCE(stg."__artie_delete", false) = false THEN UPDATE SET "id"=stg."id","name"=stg."name"
+WHEN NOT MATCHED AND COALESCE(stg."__artie_delete", false) = false THEN INSERT ("id","name") VALUES (stg."id",stg."name")`
 
 		assert.Equal(t, expectedQuery, queries[0])
 	})
