@@ -71,11 +71,20 @@ func ConvertValueForArrowBuilder(builder array.Builder, value any) error {
 		}
 		b.Append(castedValue)
 	case *array.ListBuilder:
-		// TODO: Figure out what to do here later:
-		// For now, handle arrays as strings
+		castedValue, err := typing.AssertType[[]string](value)
+		if err != nil {
+			return fmt.Errorf("failed to cast value to []string: %w", err)
+		}
+
 		b.Append(true) // Start list
-		valueBuilder := b.ValueBuilder().(*array.StringBuilder)
-		valueBuilder.Append(fmt.Sprintf("%v", value))
+		valueBuilder, ok := b.ValueBuilder().(*array.StringBuilder)
+		if !ok {
+			return fmt.Errorf("failed to cast value builder to array.StringBuilder")
+		}
+
+		for _, item := range castedValue {
+			valueBuilder.Append(item)
+		}
 	default:
 		return fmt.Errorf("unsupported builder type: %T", builder)
 	}
