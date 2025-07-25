@@ -152,9 +152,9 @@ WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s)`,
 		tableID.FullyQualifiedName(), constants.TargetAlias,
 		// USING (subquery) AS stg ON join_condition
 		subQuery, constants.StagingAlias, joinCondition,
-		// Update all columns when __artie_only_set_delete = 0
+		// Update all columns when __artie_only_set_delete = false
 		sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, pd), sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, pd),
-		// Update only delete column when __artie_only_set_delete = 1
+		// Update only delete column when __artie_only_set_delete = true
 		sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, pd),
 		sql.BuildColumnsUpdateFragment([]columns.Column{columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean)}, constants.StagingAlias, constants.TargetAlias, pd),
 		// Insert new records
@@ -178,11 +178,17 @@ MERGE INTO %s AS %s USING %s AS %s ON %s
 WHEN MATCHED AND %s = true THEN DELETE
 WHEN MATCHED AND COALESCE(%s, false) = false THEN UPDATE SET %s
 WHEN NOT MATCHED AND COALESCE(%s, false) = false THEN INSERT (%s) VALUES (%s)`,
+		// MERGE INTO target AS tgt
 		tableID.FullyQualifiedName(), constants.TargetAlias,
+		// USING (subquery) AS stg ON join_condition
 		subQuery, constants.StagingAlias, joinCondition,
+		// Delete when __artie_delete = true
 		deleteColumnMarker,
+		// Update all columns when __artie_delete = false
 		deleteColumnMarker, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, pd),
+		// Update only delete column when __artie_delete = true
 		deleteColumnMarker, strings.Join(sql.QuoteColumns(cols, pd), ","),
+		// Insert new records
 		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, pd), ","),
 	)
 }
