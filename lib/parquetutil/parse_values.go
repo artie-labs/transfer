@@ -48,30 +48,31 @@ func ConvertValueForArrowBuilder(builder array.Builder, value any) error {
 		}
 		b.Append(castedValue)
 	case *array.Time32Builder:
-		if timeVal, ok := value.(int32); ok {
-			b.Append(arrow.Time32(timeVal))
-		} else {
-			return fmt.Errorf("expected int32 time value, got %T", value)
+		castedValue, err := typing.AssertType[int32](value)
+		if err != nil {
+			return fmt.Errorf("failed to cast value to int32: %w", err)
 		}
+		b.Append(arrow.Time32(castedValue))
 	case *array.Date32Builder:
-		if dateVal, ok := value.(int32); ok {
-			b.Append(arrow.Date32(dateVal))
-		} else {
-			return fmt.Errorf("expected int32 date value, got %T", value)
+		castedValue, err := typing.AssertType[int32](value)
+		if err != nil {
+			return fmt.Errorf("failed to cast value to int32: %w", err)
 		}
+		b.Append(arrow.Date32(castedValue))
 	case *array.TimestampBuilder:
-		if tsVal, ok := value.(int64); ok {
-			b.Append(arrow.Timestamp(tsVal))
-		} else {
-			return fmt.Errorf("expected int64 timestamp value, got %T", value)
+		castedValue, err := typing.AssertType[int64](value)
+		if err != nil {
+			return fmt.Errorf("failed to cast value to int64: %w", err)
 		}
+		b.Append(arrow.Timestamp(castedValue))
 	case *array.Decimal128Builder:
-		if decVal, ok := value.(decimal128.Num); ok {
-			b.Append(decVal)
-		} else {
-			return fmt.Errorf("expected decimal128.Num value, got %T", value)
+		castedValue, err := typing.AssertType[decimal128.Num](value)
+		if err != nil {
+			return fmt.Errorf("failed to cast value to decimal128.Num: %w", err)
 		}
+		b.Append(castedValue)
 	case *array.ListBuilder:
+		// TODO: Figure out what to do here later:
 		// For now, handle arrays as strings
 		b.Append(true) // Start list
 		valueBuilder := b.ValueBuilder().(*array.StringBuilder)
