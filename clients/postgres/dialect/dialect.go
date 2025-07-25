@@ -29,10 +29,6 @@ func (PostgresDialect) IsColumnAlreadyExistsErr(_ error) bool {
 }
 
 func (PostgresDialect) IsTableDoesNotExistErr(err error) bool {
-	if err == nil {
-		return false
-	}
-
 	if pgErr, ok := err.(*pgconn.PgError); ok {
 		// https://www.postgresql.org/docs/current/errcodes-appendix.html#:~:text=undefined_function-,42P01,-undefined_table
 		return pgErr.Code == "42P01"
