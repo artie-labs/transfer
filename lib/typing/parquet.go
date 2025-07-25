@@ -193,6 +193,6 @@ func (kd KindDetails) ParseValueForArrow(value any) (any, error) {
 		// For arrays, convert to string representation for now
 		return fmt.Sprintf("%v", value), nil
 	default:
-		return fmt.Sprintf("%v", value), nil
+		return nil, fmt.Errorf("unsupported kind: %q", kd.Kind)
 	}
 }
