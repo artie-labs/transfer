@@ -84,7 +84,7 @@ func (PostgresDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifi
 	panic("not implemented")
 }
 
-func (PostgresDialect) BuildMergeQueries(
+func (pd PostgresDialect) BuildMergeQueries(
 	tableID sql.TableIdentifier,
 	subQuery string,
 	primaryKeys []columns.Column,
@@ -93,7 +93,80 @@ func (PostgresDialect) BuildMergeQueries(
 	softDelete bool,
 	containsHardDeletes bool,
 ) ([]string, error) {
-	return nil, fmt.Errorf("not implemented")
+	// Build equality conditions for the MERGE ON clause
+	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, pd)
+	if len(additionalEqualityStrings) > 0 {
+		equalitySQLParts = append(equalitySQLParts, additionalEqualityStrings...)
+	}
+	joinCondition := strings.Join(equalitySQLParts, " AND ")
+
+	// Remove columns that are handled separately
+	cols, err := columns.RemoveOnlySetDeleteColumnMarker(cols)
+	if err != nil {
+		return nil, err
+	}
+
+	if softDelete {
+		return []string{pd.buildSoftDeleteMergeQuery(tableID, subQuery, joinCondition, cols)}, nil
+	}
+
+	// Remove __artie flags since they don't exist in the destination table
+	cols, err = columns.RemoveDeleteColumnMarker(cols)
+	if err != nil {
+		return nil, err
+	}
+
+	return []string{pd.buildRegularMergeQuery(tableID, subQuery, joinCondition, cols)}, nil
+}
+
+// buildSoftDeleteMergeQuery builds a single MERGE query for soft delete operations
+func (pd PostgresDialect) buildSoftDeleteMergeQuery(
+	tableID sql.TableIdentifier,
+	subQuery string,
+	joinCondition string,
+	cols []columns.Column,
+) string {
+	return fmt.Sprintf(`MERGE INTO %s AS %s
+USING (%s) AS %s ON %s
+WHEN MATCHED AND COALESCE(%s, 0) = 0 THEN UPDATE SET %s
+WHEN MATCHED AND COALESCE(%s, 0) = 1 THEN UPDATE SET %s
+WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s)`,
+		// MERGE INTO target AS tgt
+		tableID.FullyQualifiedName(), constants.TargetAlias,
+		// USING (subquery) AS stg ON join_condition
+		subQuery, constants.StagingAlias, joinCondition,
+		// Update all columns when __artie_only_set_delete = 0
+		sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, pd), sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, pd),
+		// Update only delete column when __artie_only_set_delete = 1
+		sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, pd),
+		sql.BuildColumnsUpdateFragment([]columns.Column{columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean)}, constants.StagingAlias, constants.TargetAlias, pd),
+		// Insert new records
+		strings.Join(sql.QuoteColumns(cols, pd), ","),
+		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, pd), ","),
+	)
+}
+
+// buildRegularMergeQuery builds a single MERGE query for regular merge operations
+func (pd PostgresDialect) buildRegularMergeQuery(
+	tableID sql.TableIdentifier,
+	subQuery string,
+	joinCondition string,
+	cols []columns.Column,
+) string {
+	deleteColumnMarker := sql.QuotedDeleteColumnMarker(constants.StagingAlias, pd)
+
+	return fmt.Sprintf(`
+MERGE INTO %s AS %s USING (%s) AS %s ON %s
+WHEN MATCHED AND %s = 1 THEN DELETE
+WHEN MATCHED AND COALESCE(%s, 0) = 0 THEN UPDATE SET %s
+WHEN NOT MATCHED AND COALESCE(%s, 0) = 0 THEN INSERT (%s) VALUES (%s)`,
+		tableID.FullyQualifiedName(), constants.TargetAlias,
+		subQuery, constants.StagingAlias, joinCondition,
+		deleteColumnMarker,
+		deleteColumnMarker, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, pd),
+		deleteColumnMarker, strings.Join(sql.QuoteColumns(cols, pd), ","),
+		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, pd), ","),
+	)
 }
 
 var kindDetailsMap = map[typing.KindDetails]string{
