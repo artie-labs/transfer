@@ -28,19 +28,19 @@ func TestParseValueForArrow(t *testing.T) {
 		// Struct - now returns formatted string instead of JSON
 		value, err := ParseValueForArrow(map[string]any{"foo": "bar"}, typing.Struct)
 		assert.NoError(t, err)
-		assert.Equal(t, "map[foo:bar]", value)
+		assert.Equal(t, `{"foo":"bar"}`, value)
 	}
 	{
 		// Array - now returns formatted string instead of array
 		value, err := ParseValueForArrow([]int{123, 456}, typing.Array)
 		assert.NoError(t, err)
-		assert.Equal(t, "[123 456]", value)
+		assert.Equal(t, []string{"123", "456"}, value)
 	}
 	{
 		// Array boolean - now returns formatted string instead of array
 		value, err := ParseValueForArrow([]bool{false, true, false}, typing.Array)
 		assert.NoError(t, err)
-		assert.Equal(t, "[false true false]", value)
+		assert.Equal(t, []string{"false", "true", "false"}, value)
 	}
 	{
 		// Integer
