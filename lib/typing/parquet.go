@@ -194,23 +194,12 @@ func (kd KindDetails) ParseValueForArrow(value any) (any, error) {
 			return fmt.Sprintf("%v", value), nil
 		}
 	case TimestampNTZ.Kind:
-		switch v := value.(type) {
-		case time.Time:
-			// Convert to milliseconds since epoch without timezone adjustment
-			return v.UnixMilli(), nil
-		case string:
-			// Try to parse string as timestamp (NTZ format)
-			if timeVal, err := time.Parse("2006-01-02T15:04:05.999", v); err == nil {
-				return timeVal.UnixMilli(), nil
-			}
-			// Try with RFC3339 but ignore timezone
-			if timeVal, err := time.Parse(time.RFC3339, v); err == nil {
-				return timeVal.UnixMilli(), nil
-			}
-			return v, nil
-		default:
-			return fmt.Sprintf("%v", value), nil
+		_time, err := ext.ParseTimestampNTZFromAny(value)
+		if err != nil {
+			return nil, fmt.Errorf("failed to cast value to timestamp: %w", err)
 		}
+
+		return _time.UnixMilli(), nil
 	case Array.Kind:
 		// For arrays, convert to string representation for now
 		return fmt.Sprintf("%v", value), nil
