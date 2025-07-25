@@ -14,6 +14,12 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
+func millisecondsAfterMidnight(t time.Time) int32 {
+	year, month, day := t.Date()
+	midnight := time.Date(year, month, day, 0, 0, 0, 0, t.Location())
+	return int32(t.Sub(midnight).Milliseconds())
+}
+
 var kindToArrowType = map[string]arrow.DataType{
 	String.Kind:  arrow.BinaryTypes.String,
 	Boolean.Kind: arrow.FixedWidthTypes.Boolean,
@@ -114,59 +120,14 @@ func (kd KindDetails) ParseValueForArrow(value any) (any, error) {
 		}
 		return fmt.Sprintf("%v", value), nil
 	case Time.Kind:
-		switch v := value.(type) {
-		case time.Time:
-			// Convert time to milliseconds since midnight
-			year, month, day := v.Date()
-			midnight := time.Date(year, month, day, 0, 0, 0, 0, v.Location())
-			millis := int32(v.Sub(midnight).Milliseconds())
-			return millis, nil
-		case string:
-			// Try to parse string as time-only format with microseconds first
-			if timeVal, err := time.Parse("15:04:05.999999", v); err == nil {
-				hours := timeVal.Hour()
-				minutes := timeVal.Minute()
-				seconds := timeVal.Second()
-				nanos := timeVal.Nanosecond()
-				millis := int32((hours*3600+minutes*60+seconds)*1000 + nanos/1_000_000)
-				return millis, nil
-			}
-			// Try to parse string as time-only format with milliseconds
-			if timeVal, err := time.Parse("15:04:05.999", v); err == nil {
-				hours := timeVal.Hour()
-				minutes := timeVal.Minute()
-				seconds := timeVal.Second()
-				nanos := timeVal.Nanosecond()
-				millis := int32((hours*3600+minutes*60+seconds)*1000 + nanos/1_000_000)
-				return millis, nil
-			}
-			// Try to parse string as time-only format (basic)
-			if timeVal, err := time.Parse("15:04:05", v); err == nil {
-				// Extract hours, minutes, seconds from the parsed time
-				hours := timeVal.Hour()
-				minutes := timeVal.Minute()
-				seconds := timeVal.Second()
-				millis := int32((hours*3600 + minutes*60 + seconds) * 1000)
-				return millis, nil
-			}
-			// Try alternative time formats
-			if timeVal, err := time.Parse("15:04", v); err == nil {
-				hours := timeVal.Hour()
-				minutes := timeVal.Minute()
-				millis := int32((hours*3600 + minutes*60) * 1000)
-				return millis, nil
-			}
-			// Try to parse as full RFC3339
-			if timeVal, err := time.Parse(time.RFC3339, v); err == nil {
-				year, month, day := timeVal.Date()
-				midnight := time.Date(year, month, day, 0, 0, 0, 0, timeVal.Location())
-				millis := int32(timeVal.Sub(midnight).Milliseconds())
-				return millis, nil
-			}
-			return v, nil
-		default:
-			return fmt.Sprintf("%v", value), nil
+		_time, err := ext.ParseTimeFromAny(value)
+		if err != nil {
+			return nil, fmt.Errorf("failed to cast value to time: %w", err)
 		}
+
+		// TIME with unit MILLIS is used for millisecond precision. It must annotate an int32 that stores the number of milliseconds after midnight.
+		// https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#time-millis
+		return millisecondsAfterMidnight(_time), nil
 	case Date.Kind:
 		_time, err := ext.ParseDateFromAny(value)
 		if err != nil {
@@ -189,9 +150,6 @@ func (kd KindDetails) ParseValueForArrow(value any) (any, error) {
 		}
 
 		return _time.UnixMilli(), nil
-	case Array.Kind:
-		// For arrays, convert to string representation for now
-		return fmt.Sprintf("%v", value), nil
 	default:
 		return nil, fmt.Errorf("unsupported kind: %q with value type %T", kd.Kind, value)
 	}
