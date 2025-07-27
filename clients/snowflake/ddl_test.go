@@ -34,13 +34,12 @@ func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 	nameCol := columns.NewColumn("name", typing.String)
 	tc := s.stageStore.configMap.GetTableConfig(tableID)
 
-	val := tc.ShouldDeleteColumn(nameCol.Name(), time.Now().Add(-1*6*time.Hour), true)
-	assert.False(s.T(), val, "should not try to delete this column")
-	assert.Equal(s.T(), len(s.stageStore.configMap.GetTableConfig(tableID).ReadOnlyColumnsToDelete()), 1)
+	assert.False(s.T(), tc.ShouldDeleteColumn(nameCol.Name(), time.Now().Add(-1*6*time.Hour), true), "should not try to delete this column")
+	assert.False(s.T(), tc.ColumnMarkedForDeletion(nameCol.Name()), "should not be marked for deletion")
 
 	// Now let's try to add this column back, it should delete it from the cache.
 	tc.MutateInMemoryColumns(constants.AddColumn, nameCol)
-	assert.Equal(s.T(), len(s.stageStore.configMap.GetTableConfig(tableID).ReadOnlyColumnsToDelete()), 0)
+	assert.False(s.T(), tc.ColumnMarkedForDeletion(nameCol.Name()))
 }
 
 func (s *SnowflakeTestSuite) TestShouldDeleteColumn() {
@@ -98,9 +97,13 @@ func (s *SnowflakeTestSuite) TestManipulateShouldDeleteColumn() {
 	tc := types.NewDestinationTableConfig(cols, false)
 	tc.SetColumnsToDeleteForTest(map[string]time.Time{"customer_id": time.Now()})
 
-	assert.Equal(s.T(), len(tc.ReadOnlyColumnsToDelete()), 1)
-	assert.False(s.T(), tc.ShouldDeleteColumn("customer_id",
-		time.Now().Add(24*time.Hour), false))
+	assert.True(s.T(), tc.ColumnMarkedForDeletion("customer_id"))
+
+	// This is false because there's no other operations.
+	assert.False(s.T(), tc.ShouldDeleteColumn("customer_id", time.Now().Add(24*time.Hour), false))
+
+	// This is true because there's other operations.
+	assert.True(s.T(), tc.ShouldDeleteColumn("customer_id", time.Now().Add(24*time.Hour), true))
 }
 
 func (s *SnowflakeTestSuite) TestGetTableConfig() {

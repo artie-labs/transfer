@@ -108,3 +108,12 @@ func (d *DestinationTableConfig) ShouldDeleteColumn(colName string, cdcTime time
 	d.columnsToDelete[colName] = delTime
 	return false
 }
+
+// [ColumnMarkedForDeletion] is used to check if a column is marked for deletion, this is used for tests only.
+func (d *DestinationTableConfig) ColumnMarkedForDeletion(colName string) bool {
+	d.RLock()
+	defer d.RUnlock()
+
+	_, ok := d.columnsToDelete[colName]
+	return ok
+}

@@ -346,11 +346,8 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
 
 	// Check the temp deletion table now.
-	assert.Equal(s.T(), len(s.stageStore.configMap.GetTableConfig(s.identifierFor(tableData)).ReadOnlyColumnsToDelete()), 1,
-		s.stageStore.configMap.GetTableConfig(s.identifierFor(tableData)).ReadOnlyColumnsToDelete())
-
-	_, ok := s.stageStore.configMap.GetTableConfig(s.identifierFor(tableData)).ReadOnlyColumnsToDelete()["new"]
-	assert.True(s.T(), ok)
+	// There's an extra column "new" that exists in Snowflake but not in the source, so it's marked as deletion
+	assert.True(s.T(), s.stageStore.configMap.GetTableConfig(s.identifierFor(tableData)).ColumnMarkedForDeletion("new"))
 
 	// Now try to execute merge where 1 of the rows have the column now
 	for _, row := range tableData.Rows() {
@@ -391,7 +388,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
 
 	// Caught up now, so columns should be 0.
-	assert.Len(s.T(), s.stageStore.configMap.GetTableConfig(s.identifierFor(tableData)).ReadOnlyColumnsToDelete(), 0)
+	assert.False(s.T(), s.stageStore.configMap.GetTableConfig(s.identifierFor(tableData)).ColumnMarkedForDeletion("new"))
 }
 
 func (s *SnowflakeTestSuite) TestExecuteMergeExitEarly() {
