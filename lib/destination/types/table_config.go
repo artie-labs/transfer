@@ -111,10 +111,7 @@ func (d *DestinationTableConfig) ShouldDeleteColumn(colName string, cdcTime time
 	}
 
 	delTime := time.Now().UTC().Add(constants.DeletionConfidencePadding)
-	slog.Info("Column added to columnsToDelete",
-		slog.String("colName", colName),
-		slog.Time("deleteAfterTime", delTime),
-	)
+	slog.Info("Column added to columnsToDelete", slog.String("name", colName), slog.Time("deleteAfterTime", delTime))
 
 	d.AddColumnsToDelete(colName, delTime)
 	return false
