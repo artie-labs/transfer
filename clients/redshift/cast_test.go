@@ -15,6 +15,10 @@ func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 		// expandStringPrecision = false
 		{
 			// Irrelevant data type
+			expectedMap := map[string]string{
+				stringutil.Random(int(maxStringLength + 1)):
+			}
+
 			{
 				// Integer
 				result := replaceExceededValues("123", typing.Integer, false, false)
@@ -200,7 +204,6 @@ func (r *RedshiftTestSuite) TestCastColValStaging() {
 		// nil
 		{
 			// Struct
-
 			result, err := castColValStaging(nil, typing.Struct, settings)
 			assert.NoError(r.T(), err)
 			assert.Empty(r.T(), result.Value)
