@@ -61,8 +61,6 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 		return fmt.Errorf("failed to drop columns for table %q: %w", tableID.Table(), err)
 	}
 
-	// TODO: Examine whether [AuditColumnsToDelete] still needs to be called.
-	tableConfig.AuditColumnsToDelete(srcKeysMissing)
 	if err = tableData.MergeColumnsFromDestination(tableConfig.GetColumns()...); err != nil {
 		return fmt.Errorf("failed to merge columns from destination: %w for table %q", err, tableData.Name())
 	}

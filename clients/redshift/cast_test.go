@@ -15,10 +15,6 @@ func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 		// expandStringPrecision = false
 		{
 			// Irrelevant data type
-			expectedMap := map[string]string{
-				stringutil.Random(int(maxStringLength + 1)):
-			}
-
 			{
 				// Integer
 				result := replaceExceededValues("123", typing.Integer, false, false)
