@@ -97,7 +97,7 @@ func (d *DestinationTableConfig) ReadOnlyColumnsToDelete() map[string]time.Time 
 
 func (d *DestinationTableConfig) ShouldDeleteColumn(colName string, cdcTime time.Time, containOtherOperations bool) bool {
 	// We should not delete if any of these conditions are true:
-	// 1. TableData contains only DELETES
+	// 1. TableData only contains deletes (delete events may only contain the primary key values)
 	// 2. Explicit setting that specifies not to drop columns
 	if !containOtherOperations || !d.dropDeletedColumns {
 		return false
