@@ -121,9 +121,5 @@ func (d *DestinationTableConfig) AddColumnsToDelete(colName string, ts time.Time
 	d.Lock()
 	defer d.Unlock()
 
-	if d.columnsToDelete == nil {
-		d.columnsToDelete = make(map[string]time.Time)
-	}
-
 	d.columnsToDelete[colName] = ts
 }
