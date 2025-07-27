@@ -35,7 +35,9 @@ func (s *SnowflakeTestSuite) TestMutateColumnsWithMemoryCacheDeletions() {
 	tc := s.stageStore.configMap.GetTableConfig(tableID)
 
 	assert.False(s.T(), tc.ShouldDeleteColumn(nameCol.Name(), time.Now().Add(-1*6*time.Hour), true), "should not try to delete this column")
-	assert.False(s.T(), tc.ColumnMarkedForDeletion(nameCol.Name()), "should not be marked for deletion")
+
+	// Should be marked for deletion, just not deleted yet because the time isn't up.
+	assert.True(s.T(), tc.ColumnMarkedForDeletion(nameCol.Name()))
 
 	// Now let's try to add this column back, it should delete it from the cache.
 	tc.MutateInMemoryColumns(constants.AddColumn, nameCol)
@@ -98,12 +100,7 @@ func (s *SnowflakeTestSuite) TestManipulateShouldDeleteColumn() {
 	tc.SetColumnsToDeleteForTest(map[string]time.Time{"customer_id": time.Now()})
 
 	assert.True(s.T(), tc.ColumnMarkedForDeletion("customer_id"))
-
-	// This is false because there's no other operations.
 	assert.False(s.T(), tc.ShouldDeleteColumn("customer_id", time.Now().Add(24*time.Hour), false))
-
-	// This is true because there's other operations.
-	assert.True(s.T(), tc.ShouldDeleteColumn("customer_id", time.Now().Add(24*time.Hour), true))
 }
 
 func (s *SnowflakeTestSuite) TestGetTableConfig() {

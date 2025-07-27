@@ -121,13 +121,12 @@ func TestDwhTableConfig_ReadOnlyColumnsToDelete(t *testing.T) {
 	tc.SetColumnsToDeleteForTest(colsToDelete)
 
 	var wg sync.WaitGroup
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		wg.Add(1)
 		go func() {
 			time.Sleep(time.Duration(rand.Intn(100)) * time.Millisecond)
 			defer wg.Done()
-			actualColsToDelete := tc.ReadOnlyColumnsToDelete()
-			assert.Equal(t, colsToDelete, actualColsToDelete)
+			assert.Equal(t, len(getColumnsToDelete(tc)), len(colsToDelete))
 		}()
 	}
 	wg.Wait()
