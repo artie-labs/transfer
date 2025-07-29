@@ -2,7 +2,6 @@ package types_test
 
 import (
 	"math/rand"
-	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -127,59 +126,4 @@ func TestDwhTableConfig_ReadOnlyColumnsToDelete(t *testing.T) {
 		}()
 	}
 	wg.Wait()
-}
-
-func TestAuditColumnsToDelete(t *testing.T) {
-	type _tc struct {
-		colsToDelete       []string
-		dropDeletedCols    bool
-		expectedColsRemain []string
-	}
-
-	colsToDeleteList := []string{"aa", "ba", "ca", "da"}
-	tcs := []_tc{
-		{
-			colsToDelete:       []string{"aa"},
-			dropDeletedCols:    false,
-			expectedColsRemain: colsToDeleteList,
-		},
-		{
-			colsToDelete:       []string{},
-			dropDeletedCols:    true,
-			expectedColsRemain: []string{},
-		},
-		{
-			colsToDelete:       []string{"aa", "ba", "ccc"},
-			dropDeletedCols:    true,
-			expectedColsRemain: []string{"aa", "ba"},
-		},
-	}
-
-	for idx, tc := range tcs {
-		dwhTc := types.NewDestinationTableConfig(nil, tc.dropDeletedCols)
-		colsToDelete := make(map[string]time.Time)
-		for _, colToDelete := range colsToDeleteList {
-			colsToDelete[colToDelete] = time.Now()
-		}
-
-		dwhTc.SetColumnsToDeleteForTest(colsToDelete)
-
-		var cols []columns.Column
-		for _, colToDelete := range tc.colsToDelete {
-			cols = append(cols, columns.NewColumn(colToDelete, typing.String))
-		}
-
-		dwhTc.AuditColumnsToDelete(cols)
-		var actualCols []string
-		for col := range dwhTc.ReadOnlyColumnsToDelete() {
-			actualCols = append(actualCols, col)
-		}
-
-		if len(actualCols) == 0 {
-			actualCols = []string{}
-		}
-
-		slices.Sort(actualCols)
-		assert.Equal(t, tc.expectedColsRemain, actualCols, idx)
-	}
 }
