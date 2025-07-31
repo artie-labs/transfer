@@ -75,10 +75,11 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 			defer wg.Done()
 
 			kafkaCfg := kafka.ReaderConfig{
-				GroupID: cfg.Kafka.GroupID,
-				Dialer:  dialer,
-				Topic:   topic,
-				Brokers: cfg.Kafka.BootstrapServers(true),
+				GroupID:     cfg.Kafka.GroupID,
+				Dialer:      dialer,
+				Topic:       topic,
+				Brokers:     cfg.Kafka.BootstrapServers(true),
+				MaxAttempts: 1,
 			}
 
 			kafkaConsumer := kafka.NewReader(kafkaCfg)
@@ -107,13 +108,13 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 					// Should never happen
 					if hwm > kafkaMsg.Offset {
 						// Skip this message since we already processed it.
-						continue
-						// logger.Panic("Found a message with an offset that is less than the high watermark",
-						// 	slog.String("topic", kafkaMsg.Topic),
-						// 	slog.Int("partition", kafkaMsg.Partition),
-						// 	slog.Int64("hwm", hwm),
-						// 	slog.Int64("offset", kafkaMsg.Offset),
-						// )
+						// continue
+						logger.Panic("Found a message with an offset that is less than the high watermark",
+							slog.String("topic", kafkaMsg.Topic),
+							slog.Int("partition", kafkaMsg.Partition),
+							slog.Int64("hwm", hwm),
+							slog.Int64("offset", kafkaMsg.Offset),
+						)
 					}
 				}
 
