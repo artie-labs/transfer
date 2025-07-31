@@ -26,6 +26,11 @@ func (h *HighWaterMark) GetHWM(topic string, partition int) (int64, bool) {
 func (h *HighWaterMark) SetHWM(topic string, partition int, hwm int64) {
 	h.Lock()
 	defer h.Unlock()
+
+	if _, ok := h.topicToPartitionHWM[topic]; !ok {
+		h.topicToPartitionHWM[topic] = make(map[int]int64)
+	}
+
 	h.topicToPartitionHWM[topic][partition] = hwm
 }
 
@@ -40,6 +45,6 @@ func GetHWMFromContext(ctx context.Context) (*HighWaterMark, error) {
 
 func InjectHWMIntoContext(ctx context.Context) context.Context {
 	return context.WithValue(ctx, ctxKey, &HighWaterMark{
-		topicToPartitionHWM: map[string]map[int]int64{},
+		topicToPartitionHWM: make(map[string]map[int]int64),
 	})
 }
