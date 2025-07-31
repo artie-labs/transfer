@@ -14,6 +14,7 @@ import (
 	"github.com/artie-labs/transfer/lib/cryptography"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/utils"
+	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"github.com/artie-labs/transfer/models"
@@ -62,6 +63,7 @@ func main() {
 	)
 
 	ctx := context.Background()
+	ctx = kafkalib.InjectHWMIntoContext(ctx)
 	metricsClient := metrics.LoadExporter(settings.Config)
 	var dest destination.Baseline
 	if utils.IsOutputBaseline(settings.Config) {

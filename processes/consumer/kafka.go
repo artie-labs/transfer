@@ -97,6 +97,24 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 				}
 
 				msg := artie.NewMessage(kafkaMsg)
+
+				hwm, err := kafkalib.GetHWMFromContext(ctx)
+				if err != nil {
+					logger.Fatal("Failed to get HWM from context", slog.Any("err", err))
+				}
+
+				if hwm, ok := hwm.GetHWM(kafkaMsg.Topic, kafkaMsg.Partition); ok {
+					// Should never happen
+					if hwm > kafkaMsg.Offset {
+						logger.Panic("Found a message with an offset that is less than the high watermark",
+							slog.String("topic", kafkaMsg.Topic),
+							slog.Int("partition", kafkaMsg.Partition),
+							slog.Int64("hwm", hwm),
+							slog.Int64("offset", kafkaMsg.Offset),
+						)
+					}
+				}
+
 				args := processArgs{
 					Msg:                    msg,
 					GroupID:                kafkaConsumer.Config().GroupID,
