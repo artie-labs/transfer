@@ -114,6 +114,7 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 							slog.Int("partition", kafkaMsg.Partition),
 							slog.Int64("hwm", hwm),
 							slog.Int64("offset", kafkaMsg.Offset),
+							slog.Int64("version", kafkaConsumer.GetVersion()),
 						)
 					}
 				}
