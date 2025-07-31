@@ -279,6 +279,8 @@ func (s *Store) SweepTemporaryTables(_ context.Context) error {
 	return nil
 }
 
+// [RestoreTable] - Adding this functionality to restore a deleted table.
+// Ref: https://cloud.google.com/bigquery/docs/samples/bigquery-undelete-table
 func (s *Store) RestoreTable(ctx context.Context, deletedTableID dialect.TableIdentifier, restoredTableID dialect.TableIdentifier, restoreTime time.Time) error {
 	slog.Info("Restoring table",
 		slog.String("deletedTableID", deletedTableID.FullyQualifiedName()),
