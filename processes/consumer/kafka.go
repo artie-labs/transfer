@@ -115,17 +115,10 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 				}
 
 				if hwm, ok := hwm.GetHWM(kafkaMsg.Topic, kafkaMsg.Partition); ok {
-					// Should never happen
 					if hwm > kafkaMsg.Offset {
 						// Skip this message since we already processed it.
-						// continue
-						logger.Panic("Found a message with an offset that is less than the high watermark",
-							slog.String("topic", kafkaMsg.Topic),
-							slog.Int("partition", kafkaMsg.Partition),
-							slog.Int64("hwm", hwm),
-							slog.Int64("offset", kafkaMsg.Offset),
-							slog.Int64("version", kafkaConsumer.GetVersion()),
-						)
+						// There's a bug with Segment kafka-go where if it timed out while fetching the message, it may temporarily return the existing internal buffer.
+						continue
 					}
 				}
 
