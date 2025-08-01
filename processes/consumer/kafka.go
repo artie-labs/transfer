@@ -2,7 +2,6 @@ package consumer
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"sync"
 	"time"
@@ -44,14 +43,6 @@ func (t *TopicToConsumer) Get(topic string) kafkalib.Consumer {
 	return t.topicToConsumer[topic]
 }
 
-type kafkaLoggerAdapter struct {
-	logger *slog.Logger
-}
-
-func (k *kafkaLoggerAdapter) Printf(format string, args ...interface{}) {
-	k.logger.Info(fmt.Sprintf(format, args...))
-}
-
 func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client) {
 	kafkaConn := kafkalib.NewConnection(cfg.Kafka.EnableAWSMSKIAM, cfg.Kafka.DisableTLS, cfg.Kafka.Username, cfg.Kafka.Password, kafkalib.DefaultTimeout)
 	slog.Info("Starting Kafka consumer...",
@@ -84,12 +75,10 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 			defer wg.Done()
 
 			kafkaCfg := kafka.ReaderConfig{
-				GroupID:     cfg.Kafka.GroupID,
-				Dialer:      dialer,
-				Topic:       topic,
-				Brokers:     cfg.Kafka.BootstrapServers(true),
-				Logger:      &kafkaLoggerAdapter{logger: slog.Default()},
-				MaxAttempts: 1,
+				GroupID: cfg.Kafka.GroupID,
+				Dialer:  dialer,
+				Topic:   topic,
+				Brokers: cfg.Kafka.BootstrapServers(true),
 			}
 
 			kafkaConsumer := kafka.NewReader(kafkaCfg)
