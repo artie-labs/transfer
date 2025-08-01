@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"os"
 	"strings"
-	"time"
 
 	"cloud.google.com/go/bigquery"
 	"cloud.google.com/go/bigquery/storage/managedwriter"
@@ -276,38 +275,6 @@ func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primary
 
 func (s *Store) SweepTemporaryTables(_ context.Context) error {
 	// BigQuery doesn't need to sweep temporary tables, since they support setting TTL on temporary tables.
-	return nil
-}
-
-// [RestoreTable] - Adding this functionality to restore a deleted table.
-// Ref: https://cloud.google.com/bigquery/docs/samples/bigquery-undelete-table
-func (s *Store) RestoreTable(ctx context.Context, deletedTableID dialect.TableIdentifier, restoredTableID dialect.TableIdentifier, restoreTime time.Time) error {
-	slog.Info("Restoring table",
-		slog.String("deletedTableID", deletedTableID.FullyQualifiedName()),
-		slog.String("restoredTableID", restoredTableID.FullyQualifiedName()),
-		slog.String("restoreTime", restoreTime.Format(time.RFC3339)),
-	)
-
-	ds := s.bqClient.Dataset(deletedTableID.Dataset())
-	snapshotTableID := fmt.Sprintf("%s@%d", deletedTableID.Table(), restoreTime.UnixNano()/1e6)
-
-	// Construct and run a copy job.
-	copier := ds.Table(restoredTableID.Table()).CopierFrom(ds.Table(snapshotTableID))
-	copier.WriteDisposition = bigquery.WriteTruncate
-	job, err := copier.Run(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to run copy job: %w", err)
-	}
-
-	status, err := job.Wait(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to wait for copy job: %w", err)
-	}
-
-	if err := status.Err(); err != nil {
-		return fmt.Errorf("failed to wait for copy job: %w", err)
-	}
-
 	return nil
 }
 
