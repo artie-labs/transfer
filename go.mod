@@ -171,5 +171,3 @@ require (
 	gotest.tools/gotestsum v1.8.2 // indirect
 	honnef.co/go/tools v0.6.1 // indirect
 )
-
-replace github.com/segmentio/kafka-go => github.com/artie-labs/kafka-go v0.0.0-20250731234637-9c0969cc2f51
