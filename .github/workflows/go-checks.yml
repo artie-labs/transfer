@@ -1,4 +1,6 @@
 name: Go checks
+permissions:
+  contents: read
 
 on: [push]
 
