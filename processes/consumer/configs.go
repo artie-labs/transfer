@@ -2,6 +2,7 @@ package consumer
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"sync"
 
@@ -45,7 +46,20 @@ func commitOffset(ctx context.Context, topic string, partitionsToOffset map[int]
 			return err
 		}
 
-		slog.Info("Successfully committed Kafka offset", slog.String("topic", topic), slog.Int("partition", msg.Partition()), slog.Int64("offset", msg.GetMessage().Offset))
+		slog.Info("Successfully committed Kafka offset",
+			slog.String("topic", topic),
+			slog.Int("partition", msg.Partition()),
+			slog.Int64("offset", msg.GetMessage().Offset),
+		)
+	}
+
+	hwm, err := kafkalib.GetHWMFromContext(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get HWM from context: %w", err)
+	}
+
+	for _, msg := range partitionsToOffset {
+		hwm.SetHWM(topic, msg.Partition(), msg.GetMessage().Offset)
 	}
 
 	return nil
