@@ -229,6 +229,18 @@ func TestTableData_InsertRowSoftDelete(t *testing.T) {
 		assert.Nil(t, td.Rows()[0].GetData()["foo"])
 		assert.Equal(t, false, td.Rows()[0].GetData()[constants.DeleteColumnMarker])
 	}
+	{
+		// Another scenario, let's update a row and then delete it and inspect the operation.
+		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{SoftDelete: true}, "foo")
+		assert.Equal(t, 0, int(td.NumberOfRows()))
+		td.InsertRow("123", map[string]any{"id": "123", "name": "dana", "foo": "abc", constants.DeleteColumnMarker: false, constants.OnlySetDeleteColumnMarker: false, constants.OperationColumnMarker: "u"}, false)
+		td.InsertRow("123", map[string]any{"id": "123", constants.DeleteColumnMarker: true, constants.OnlySetDeleteColumnMarker: true, constants.OperationColumnMarker: "d"}, true)
+		assert.Equal(t, "dana", td.Rows()[0].GetData()["name"])
+		assert.Equal(t, "abc", td.Rows()[0].GetData()["foo"])
+		assert.Equal(t, "d", td.Rows()[0].GetData()[constants.OperationColumnMarker])
+		assert.True(t, td.Rows()[0].GetData()[constants.DeleteColumnMarker].(bool))
+		assert.False(t, td.Rows()[0].GetData()[constants.OnlySetDeleteColumnMarker].(bool))
+	}
 }
 
 func TestMergeColumn(t *testing.T) {
