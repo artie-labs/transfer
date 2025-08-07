@@ -181,10 +181,10 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 		prevRowSize = prevRow.GetApproxSize()
 		if delete {
 			prevRowData := prevRow.GetData()
-			// If the row was deleted, preserve the previous values that we have in memory
+			// If the current row was deleted, we should preserve the previous values that we have in memory
+			// However, if the current row has a value for the column, then we should use that value instead.
 			for key, value := range prevRowData {
-				val, ok := rowData[key]
-				if val == nil || !ok {
+				if rowData[key] == nil {
 					rowData[key] = value
 				}
 			}
