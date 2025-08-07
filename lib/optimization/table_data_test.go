@@ -229,6 +229,40 @@ func TestTableData_InsertRowSoftDelete(t *testing.T) {
 		assert.Nil(t, td.Rows()[0].GetData()["foo"])
 		assert.Equal(t, false, td.Rows()[0].GetData()[constants.DeleteColumnMarker])
 	}
+	{
+		// Update followed by a delete
+		{
+			// Let's update a row and then delete it and inspect the operation.
+			td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{SoftDelete: true}, "foo")
+			assert.Equal(t, 0, int(td.NumberOfRows()))
+			td.InsertRow("123", map[string]any{"id": "123", "name": "dana", "foo": "abc", constants.DeleteColumnMarker: false, constants.OnlySetDeleteColumnMarker: false, constants.OperationColumnMarker: "u"}, false)
+			td.InsertRow("123", map[string]any{"id": "123", constants.DeleteColumnMarker: true, constants.OnlySetDeleteColumnMarker: true, constants.OperationColumnMarker: "d"}, true)
+			assert.Equal(t, 1, int(td.NumberOfRows()))
+
+			data := td.Rows()[0].GetData()
+			assert.Equal(t, "dana", data["name"])
+			assert.Equal(t, "abc", data["foo"])
+			assert.Equal(t, "d", data[constants.OperationColumnMarker])
+			assert.True(t, data[constants.DeleteColumnMarker].(bool))
+			assert.False(t, data[constants.OnlySetDeleteColumnMarker].(bool))
+		}
+		{
+			// Another scenario, it should not overwrite the previous database timestamp
+			td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{SoftDelete: true}, "foo")
+			assert.Equal(t, 0, int(td.NumberOfRows()))
+			td.InsertRow("123", map[string]any{"id": "123", "name": "dana", "foo": "abc", constants.DeleteColumnMarker: false, constants.OnlySetDeleteColumnMarker: false, constants.OperationColumnMarker: "u", constants.DatabaseUpdatedColumnMarker: "a"}, false)
+			td.InsertRow("123", map[string]any{"id": "123", constants.DeleteColumnMarker: true, constants.OnlySetDeleteColumnMarker: true, constants.OperationColumnMarker: "d", constants.DatabaseUpdatedColumnMarker: "b"}, true)
+			assert.Equal(t, 1, int(td.NumberOfRows()))
+
+			data := td.Rows()[0].GetData()
+			assert.Equal(t, "dana", data["name"])
+			assert.Equal(t, "abc", data["foo"])
+			assert.Equal(t, "b", data[constants.DatabaseUpdatedColumnMarker])
+			assert.Equal(t, "d", data[constants.OperationColumnMarker])
+			assert.True(t, data[constants.DeleteColumnMarker].(bool))
+			assert.False(t, data[constants.OnlySetDeleteColumnMarker].(bool))
+		}
+	}
 }
 
 func TestMergeColumn(t *testing.T) {

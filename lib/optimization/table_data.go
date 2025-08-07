@@ -180,9 +180,17 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 	if prevRow, ok := t.rowsData[pk]; ok {
 		prevRowSize = prevRow.GetApproxSize()
 		if delete {
-			// If the row was deleted, preserve the previous values that we have in memory
-			rowData = prevRow.GetData()
-			rowData[constants.DeleteColumnMarker] = true
+			prevRowData := prevRow.GetData()
+			// If the current row was deleted, we should preserve the previous values that we have in memory
+			// However, if the current row has a value for the column, then we should use that value instead.
+			for key, value := range prevRowData {
+				if rowData[key] == nil {
+					rowData[key] = value
+				}
+			}
+
+			// Setting this to the previous row for idempotency.
+			rowData[constants.OnlySetDeleteColumnMarker] = prevRowData[constants.OnlySetDeleteColumnMarker]
 		} else {
 			for key, val := range rowData {
 				if val == constants.ToastUnavailableValuePlaceholder {
