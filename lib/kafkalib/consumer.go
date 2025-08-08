@@ -19,18 +19,18 @@ type Consumer interface {
 }
 
 type TopicsToConsumerProvider struct {
-	data map[string]Consumer
+	data    map[string]Consumer
 	groupID string
 	sync.Mutex
 }
 
 func NewTopicsToConsumerProvider(ctx context.Context, cfg *Kafka) (*TopicsToConsumerProvider, error) {
 	provider := &TopicsToConsumerProvider{
-		data: make(map[string]Consumer),
+		data:    make(map[string]Consumer),
 		groupID: cfg.GroupID,
 	}
 
-	kafkaConn := NewConnection(cfg.Kafka.EnableAWSMSKIAM, cfg.Kafka.DisableTLS, cfg.Kafka.Username, cfg.Kafka.Password, DefaultTimeout)
+	kafkaConn := NewConnection(cfg.EnableAWSMSKIAM, cfg.DisableTLS, cfg.Username, cfg.Password, DefaultTimeout)
 	dialer, err := kafkaConn.Dialer(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Kafka dialer: %w", err)
@@ -38,10 +38,10 @@ func NewTopicsToConsumerProvider(ctx context.Context, cfg *Kafka) (*TopicsToCons
 
 	for _, topicConfig := range cfg.TopicConfigs {
 		kafkaCfg := kafka.ReaderConfig{
-			GroupID: cfg.Kafka.GroupID,
+			GroupID: cfg.GroupID,
 			Dialer:  dialer,
-			Topic:   topic,
-			Brokers: cfg.Kafka.BootstrapServers(true),
+			Topic:   topicConfig.Topic,
+			Brokers: cfg.BootstrapServers(true),
 		}
 
 		provider.Add(topicConfig.Topic, kafka.NewReader(kafkaCfg))
@@ -92,7 +92,7 @@ func (t *TopicsToConsumerProvider) FetchMessage(ctx context.Context, topic strin
 
 	if _, ok := t.data[topic]; !ok {
 		return kafka.Message{}, fmt.Errorf("topic %q does not exist", topic)
-	},
+	}
 
 	return t.data[topic].FetchMessage(ctx)
 }
