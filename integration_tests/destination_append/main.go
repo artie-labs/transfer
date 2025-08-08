@@ -97,16 +97,12 @@ func main() {
 		}
 	}
 
-	tc, err := settings.Config.TopicConfigs()
-	if err != nil {
-		logger.Fatal("Failed to load topic configs", slog.Any("err", err))
+	tcs := settings.Config.TopicConfigs()
+	if len(tcs) != 1 {
+		logger.Fatal("Expected 1 topic config", slog.Int("num_configs", len(tcs)))
 	}
 
-	if len(tc) != 1 {
-		logger.Fatal("Expected 1 topic config", slog.Int("num_configs", len(tc)))
-	}
-
-	test := NewAppendTest(ctx, dest, _iceberg, *tc[0])
+	test := NewAppendTest(ctx, dest, _iceberg, *tcs[0])
 	if err = test.Run(ctx); err != nil {
 		logger.Fatal("Test failed", slog.Any("err", err))
 	}

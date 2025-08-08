@@ -94,11 +94,7 @@ func main() {
 		logger.Fatal("Failed to load destination", slog.Any("err", err))
 	}
 
-	tcs, err := settings.Config.TopicConfigs()
-	if err != nil {
-		logger.Fatal("Failed to get topic config", slog.Any("err", err))
-	}
-
+	tcs := settings.Config.TopicConfigs()
 	if len(tcs) != 1 {
 		logger.Fatal("Expected 1 topic config, got", slog.Any("count", len(tcs)))
 	}

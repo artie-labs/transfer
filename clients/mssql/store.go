@@ -81,12 +81,7 @@ func (s *Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, 
 }
 
 func (s *Store) SweepTemporaryTables(ctx context.Context) error {
-	tcs, err := s.config.TopicConfigs()
-	if err != nil {
-		return err
-	}
-
-	return shared.Sweep(ctx, s, tcs, s.dialect().BuildSweepQuery)
+	return shared.Sweep(ctx, s, s.config.TopicConfigs(), s.dialect().BuildSweepQuery)
 }
 
 func (s *Store) Dedupe(_ context.Context, _ sql.TableIdentifier, _ []string, _ bool) error {
