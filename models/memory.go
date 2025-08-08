@@ -14,7 +14,6 @@ import (
 type TableData struct {
 	*optimization.TableData
 	lastFlushTime time.Time
-	sync.Mutex
 }
 
 func (t *TableData) Wipe() {
@@ -58,14 +57,9 @@ func NewMemoryDB() *DatabaseData {
 }
 
 func (d *DatabaseData) GetOrCreateTableData(tableID cdc.TableID) *TableData {
-	d.Lock()
-	defer d.Unlock()
-
 	table, exists := d.tableData[tableID]
 	if !exists {
-		table = &TableData{
-			Mutex: sync.Mutex{},
-		}
+		table = &TableData{TableData: &optimization.TableData{}}
 		d.tableData[tableID] = table
 	}
 
@@ -73,8 +67,6 @@ func (d *DatabaseData) GetOrCreateTableData(tableID cdc.TableID) *TableData {
 }
 
 func (d *DatabaseData) ClearTableConfig(tableID cdc.TableID) {
-	d.Lock()
-	defer d.Unlock()
 	d.tableData[tableID].Wipe()
 }
 
