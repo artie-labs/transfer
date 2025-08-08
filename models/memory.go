@@ -57,13 +57,11 @@ func NewMemoryDB() *DatabaseData {
 }
 
 func (d *DatabaseData) GetOrCreateTableData(tableID cdc.TableID) *TableData {
-	table, exists := d.tableData[tableID]
-	if !exists {
-		table = &TableData{TableData: &optimization.TableData{}}
-		d.tableData[tableID] = table
+	if _, ok := d.tableData[tableID]; !ok {
+		d.tableData[tableID] = &TableData{}
 	}
 
-	return table
+	return d.tableData[tableID]
 }
 
 func (d *DatabaseData) ClearTableConfig(tableID cdc.TableID) {
