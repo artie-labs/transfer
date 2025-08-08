@@ -69,8 +69,6 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 				return
 			}
 
-			_tableData.Lock()
-			defer _tableData.Unlock()
 			if _tableData.Empty() {
 				return
 			}
