@@ -38,23 +38,6 @@ func TestBigQuery_DSN(t *testing.T) {
 	assert.Equal(t, "bigquery://project/eu/dataset", b.DSN())
 }
 
-func TestKafka_String(t *testing.T) {
-	k := Kafka{
-		BootstrapServer: "server",
-		GroupID:         "group-id",
-		Username:        "",
-		Password:        "",
-	}
-
-	assert.Equal(t, "bootstrapServer=server, groupID=group-id, user_set=false, pass_set=false", k.String())
-
-	k.Username = "foo"
-	assert.Equal(t, "bootstrapServer=server, groupID=group-id, user_set=true, pass_set=false", k.String())
-
-	k.Password = "bar"
-	assert.Equal(t, "bootstrapServer=server, groupID=group-id, user_set=true, pass_set=true", k.String())
-}
-
 func TestReadNonExistentFile(t *testing.T) {
 	_, err := readFileToConfig(filepath.Join(t.TempDir(), "213213231312"))
 	assert.ErrorContains(t, err, "no such file or directory")
@@ -83,9 +66,8 @@ bufferRows: 10
 	assert.Equal(t, config.FlushIntervalSeconds, 15)
 	assert.Equal(t, int(config.BufferRows), 10)
 
-	tcs, err := config.TopicConfigs()
-	assert.NoError(t, err)
-	assert.Equal(t, 2, len(tcs))
+	tcs := config.TopicConfigs()
+	assert.Len(t, tcs, 2)
 	for _, tc := range tcs {
 		tc.Load()
 		assert.Equal(t, "customer", tc.Database)
@@ -195,8 +177,7 @@ kafka:
 	assert.Equal(t, config.FlushIntervalSeconds, defaultFlushTimeSeconds)
 	assert.Equal(t, int(config.BufferRows), defaultBufferPoolSize)
 
-	tcs, err := config.TopicConfigs()
-	assert.NoError(t, err)
+	tcs := config.TopicConfigs()
 	for _, tc := range tcs {
 		tc.Load()
 	}
@@ -410,7 +391,7 @@ bigquery:
 }
 
 func TestConfig_Validate(t *testing.T) {
-	kafka := &Kafka{BootstrapServer: "foo", GroupID: "bar"}
+	kafka := &kafkalib.Kafka{BootstrapServer: "foo", GroupID: "bar"}
 	cfg := Config{
 		Kafka:                kafka,
 		FlushIntervalSeconds: 5,
@@ -436,9 +417,8 @@ func TestConfig_Validate(t *testing.T) {
 	kafka.TopicConfigs = append(kafka.TopicConfigs, &tc)
 	assert.NoError(t, cfg.Validate())
 
-	tcs, err := cfg.TopicConfigs()
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(tcs))
+	tcs := cfg.TopicConfigs()
+	assert.Len(t, tcs, 1)
 	assert.Equal(t, tc, *tcs[0])
 
 	// Check Snowflake and BigQuery for large rows
@@ -496,23 +476,5 @@ func TestConfig_Validate(t *testing.T) {
 	for _, num := range []int{-500, -300, -5, 0} {
 		cfg.FlushSizeKb = num
 		assert.ErrorContains(t, cfg.Validate(), "flush size pool has to be a positive number")
-	}
-}
-
-func TestCfg_KafkaBootstrapServers(t *testing.T) {
-	{
-		// Single broker
-		kafka := Kafka{BootstrapServer: "localhost:9092"}
-		assert.Equal(t, []string{"localhost:9092"}, kafka.BootstrapServers(false))
-	}
-	{
-		// Multiple brokers
-		kafkaWithMultipleBrokers := Kafka{BootstrapServer: "a:9092,b:9093,c:9094"}
-		assert.Equal(t, []string{"a:9092", "b:9093", "c:9094"}, kafkaWithMultipleBrokers.BootstrapServers(false))
-	}
-	{
-		// Randomize
-		kafkaWithMultipleBrokers := Kafka{BootstrapServer: "a:9092,b:9093,c:9094"}
-		assert.ElementsMatch(t, []string{"a:9092", "b:9093", "c:9094"}, kafkaWithMultipleBrokers.BootstrapServers(true))
 	}
 }

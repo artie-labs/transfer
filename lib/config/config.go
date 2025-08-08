@@ -4,9 +4,7 @@ import (
 	"cmp"
 	"fmt"
 	"io"
-	"math/rand/v2"
 	"os"
-	"strings"
 
 	"gopkg.in/yaml.v3"
 
@@ -26,17 +24,6 @@ const (
 	FlushIntervalSecondsMax = 6 * 60 * 60
 )
 
-func (k *Kafka) BootstrapServers(shuffle bool) []string {
-	parts := strings.Split(k.BootstrapServer, ",")
-	if shuffle {
-		rand.Shuffle(len(parts), func(i, j int) {
-			parts[i], parts[j] = parts[j], parts[i]
-		})
-	}
-
-	return parts
-}
-
 func (s *S3Settings) Validate() error {
 	if s == nil {
 		return fmt.Errorf("s3 settings are nil")
@@ -53,19 +40,8 @@ func (s *S3Settings) Validate() error {
 	return nil
 }
 
-func (k *Kafka) String() string {
-	// Don't log credentials.
-	return fmt.Sprintf("bootstrapServer=%s, groupID=%s, user_set=%v, pass_set=%v",
-		k.BootstrapServer, k.GroupID, k.Username != "", k.Password != "")
-}
-
-func (c Config) TopicConfigs() ([]*kafkalib.TopicConfig, error) {
-	switch c.Queue {
-	case constants.Kafka, constants.Reader:
-		return c.Kafka.TopicConfigs, nil
-	}
-
-	return nil, fmt.Errorf("unsupported queue: %q", c.Queue)
+func (c Config) TopicConfigs() []*kafkalib.TopicConfig {
+	return c.Kafka.TopicConfigs
 }
 
 func (m Mode) String() string {
@@ -188,17 +164,13 @@ func (c Config) Validate() error {
 		}
 	}
 
-	tcs, err := c.TopicConfigs()
-	if err != nil {
-		return fmt.Errorf("failed to retrieve topic configs: %w", err)
-	}
-
+	tcs := c.TopicConfigs()
 	if len(tcs) == 0 {
 		return fmt.Errorf("no topic configs found")
 	}
 
 	for _, topicConfig := range tcs {
-		if err = topicConfig.Validate(); err != nil {
+		if err := topicConfig.Validate(); err != nil {
 			return fmt.Errorf("failed to validate topic config: %w", err)
 		}
 

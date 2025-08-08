@@ -196,11 +196,7 @@ func (s Store) writeTemporaryTableFile(tableData *optimization.TableData, fileNa
 }
 
 func (s Store) SweepTemporaryTables(ctx context.Context) error {
-	tcs, err := s.cfg.TopicConfigs()
-	if err != nil {
-		return err
-	}
-
+	tcs := s.cfg.TopicConfigs()
 	ctx = driverctx.NewContextWithStagingInfo(ctx, []string{"/var", "tmp"})
 	// Remove the temporary files from volumes
 	for _, tc := range tcs {

@@ -168,11 +168,7 @@ func main() {
 		logger.Fatal("Failed to load destination", slog.Any("err", err))
 	}
 
-	tc, err := settings.Config.TopicConfigs()
-	if err != nil {
-		logger.Fatal("Failed to load topic configs", slog.Any("err", err))
-	}
-
+	tc := settings.Config.TopicConfigs()
 	if len(tc) != 1 {
 		logger.Fatal("Expected 1 topic config", slog.Int("num_configs", len(tc)))
 	}

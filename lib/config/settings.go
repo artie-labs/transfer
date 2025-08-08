@@ -33,12 +33,7 @@ func LoadSettings(args []string, loadConfig bool) (*Settings, error) {
 			return nil, fmt.Errorf("failed to parse config file: %w", err)
 		}
 
-		tcs, err := config.TopicConfigs()
-		if err != nil {
-			return nil, err
-		}
-
-		for _, tc := range tcs {
+		for _, tc := range config.TopicConfigs() {
 			tc.Load()
 		}
 
