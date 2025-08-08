@@ -18,31 +18,6 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
-var topicToConsumer *TopicToConsumer
-
-func NewTopicToConsumer() *TopicToConsumer {
-	return &TopicToConsumer{
-		topicToConsumer: make(map[string]kafkalib.Consumer),
-	}
-}
-
-type TopicToConsumer struct {
-	topicToConsumer map[string]kafkalib.Consumer
-	sync.RWMutex
-}
-
-func (t *TopicToConsumer) Add(topic string, consumer kafkalib.Consumer) {
-	t.Lock()
-	defer t.Unlock()
-	t.topicToConsumer[topic] = consumer
-}
-
-func (t *TopicToConsumer) Get(topic string) kafkalib.Consumer {
-	t.RLock()
-	defer t.RUnlock()
-	return t.topicToConsumer[topic]
-}
-
 func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client) {
 	kafkaConn := kafkalib.NewConnection(cfg.Kafka.EnableAWSMSKIAM, cfg.Kafka.DisableTLS, cfg.Kafka.Username, cfg.Kafka.Password, kafkalib.DefaultTimeout)
 	slog.Info("Starting Kafka consumer...",
