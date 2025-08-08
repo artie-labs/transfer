@@ -100,6 +100,20 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 				}
 
 				msg := artie.NewMessage(kafkaMsg)
+
+				hwm, err := kafkalib.GetHWMFromContext(ctx)
+				if err != nil {
+					logger.Fatal("Failed to get HWM from context", slog.Any("err", err))
+				}
+
+				if hwm, ok := hwm.GetHWM(kafkaMsg.Topic, kafkaMsg.Partition); ok {
+					if hwm > kafkaMsg.Offset {
+						// Skip this message since we already processed it.
+						// There's a bug with Segment kafka-go where if it timed out while fetching the message, it may temporarily return the existing internal buffer.
+						continue
+					}
+				}
+
 				args := processArgs{
 					Msg:                    msg,
 					GroupID:                kafkaConsumer.Config().GroupID,
