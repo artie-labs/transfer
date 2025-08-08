@@ -91,6 +91,8 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 					continue
 				}
 
+				time.Sleep(200 * time.Millisecond)
+
 				slog.Info("Received a Kafka message", artie.BuildLogFields(kafkaMsg)...)
 				if len(kafkaMsg.Value) == 0 {
 					slog.Debug("Found a tombstone message, skipping...", artie.BuildLogFields(kafkaMsg)...)

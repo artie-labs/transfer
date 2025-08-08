@@ -23,8 +23,8 @@ func BuildLogFields(msg kafka.Message) []any {
 		slog.String("topic", msg.Topic),
 		slog.Int("partition", msg.Partition),
 		slog.Int64("offset", msg.Offset),
-		slog.String("key", string(msg.Key)),
-		slog.String("value", string(msg.Value)),
+		// slog.String("key", string(msg.Key)),
+		// slog.String("value", string(msg.Value)),
 	}
 }
 

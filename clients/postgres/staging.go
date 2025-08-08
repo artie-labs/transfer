@@ -123,6 +123,6 @@ func parseValue(value any, col columns.Column) (any, error) {
 	case typing.Boolean.Kind:
 		return converters.BooleanConverter{}.Convert(value)
 	default:
-		return nil, fmt.Errorf("unsupported type %q, not implemented", col.KindDetails.Kind)
+		return value, nil
 	}
 }

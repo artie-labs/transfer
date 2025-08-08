@@ -250,7 +250,9 @@ var dataTypeMap = map[string]typing.KindDetails{
 	// Date and timestamp data types:
 	"date":                        typing.Date,
 	"time":                        typing.Time,
+	"timestamp_ntz":               typing.TimestampNTZ,
 	"timestamp with time zone":    typing.TimestampTZ,
+	"timestamp_tz":                typing.TimestampTZ,
 	"timestamp without time zone": typing.TimestampNTZ,
 	// Other data types:
 	"json":  typing.Struct,
