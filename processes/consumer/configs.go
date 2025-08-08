@@ -1,11 +1,8 @@
 package consumer
 
 import (
-	"context"
-	"log/slog"
 	"sync"
 
-	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 )
@@ -37,16 +34,4 @@ func (t *TcFmtMap) GetTopicFmt(topic string) (TopicConfigFormatter, bool) {
 type TopicConfigFormatter struct {
 	tc kafkalib.TopicConfig
 	cdc.Format
-}
-
-func commitOffset(ctx context.Context, topic string, partitionsToOffset map[int]artie.Message) error {
-	for _, msg := range partitionsToOffset {
-		if err := topicToConsumer.Get(topic).CommitMessages(ctx, msg.GetMessage()); err != nil {
-			return err
-		}
-
-		slog.Info("Successfully committed Kafka offset", slog.String("topic", topic), slog.Int("partition", msg.Partition()), slog.Int64("offset", msg.GetMessage().Offset))
-	}
-
-	return nil
 }
