@@ -4,9 +4,7 @@ import (
 	"cmp"
 	"fmt"
 	"io"
-	"math/rand/v2"
 	"os"
-	"strings"
 
 	"gopkg.in/yaml.v3"
 
@@ -26,17 +24,6 @@ const (
 	FlushIntervalSecondsMax = 6 * 60 * 60
 )
 
-func (k *Kafka) BootstrapServers(shuffle bool) []string {
-	parts := strings.Split(k.BootstrapServer, ",")
-	if shuffle {
-		rand.Shuffle(len(parts), func(i, j int) {
-			parts[i], parts[j] = parts[j], parts[i]
-		})
-	}
-
-	return parts
-}
-
 func (s *S3Settings) Validate() error {
 	if s == nil {
 		return fmt.Errorf("s3 settings are nil")
@@ -51,12 +38,6 @@ func (s *S3Settings) Validate() error {
 	}
 
 	return nil
-}
-
-func (k *Kafka) String() string {
-	// Don't log credentials.
-	return fmt.Sprintf("bootstrapServer=%s, groupID=%s, user_set=%v, pass_set=%v",
-		k.BootstrapServer, k.GroupID, k.Username != "", k.Password != "")
 }
 
 func (c Config) TopicConfigs() ([]*kafkalib.TopicConfig, error) {

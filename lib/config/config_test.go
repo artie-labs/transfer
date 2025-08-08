@@ -38,23 +38,6 @@ func TestBigQuery_DSN(t *testing.T) {
 	assert.Equal(t, "bigquery://project/eu/dataset", b.DSN())
 }
 
-func TestKafka_String(t *testing.T) {
-	k := Kafka{
-		BootstrapServer: "server",
-		GroupID:         "group-id",
-		Username:        "",
-		Password:        "",
-	}
-
-	assert.Equal(t, "bootstrapServer=server, groupID=group-id, user_set=false, pass_set=false", k.String())
-
-	k.Username = "foo"
-	assert.Equal(t, "bootstrapServer=server, groupID=group-id, user_set=true, pass_set=false", k.String())
-
-	k.Password = "bar"
-	assert.Equal(t, "bootstrapServer=server, groupID=group-id, user_set=true, pass_set=true", k.String())
-}
-
 func TestReadNonExistentFile(t *testing.T) {
 	_, err := readFileToConfig(filepath.Join(t.TempDir(), "213213231312"))
 	assert.ErrorContains(t, err, "no such file or directory")
@@ -410,7 +393,7 @@ bigquery:
 }
 
 func TestConfig_Validate(t *testing.T) {
-	kafka := &Kafka{BootstrapServer: "foo", GroupID: "bar"}
+	kafka := &kafkalib.Kafka{BootstrapServer: "foo", GroupID: "bar"}
 	cfg := Config{
 		Kafka:                kafka,
 		FlushIntervalSeconds: 5,
@@ -496,23 +479,5 @@ func TestConfig_Validate(t *testing.T) {
 	for _, num := range []int{-500, -300, -5, 0} {
 		cfg.FlushSizeKb = num
 		assert.ErrorContains(t, cfg.Validate(), "flush size pool has to be a positive number")
-	}
-}
-
-func TestCfg_KafkaBootstrapServers(t *testing.T) {
-	{
-		// Single broker
-		kafka := Kafka{BootstrapServer: "localhost:9092"}
-		assert.Equal(t, []string{"localhost:9092"}, kafka.BootstrapServers(false))
-	}
-	{
-		// Multiple brokers
-		kafkaWithMultipleBrokers := Kafka{BootstrapServer: "a:9092,b:9093,c:9094"}
-		assert.Equal(t, []string{"a:9092", "b:9093", "c:9094"}, kafkaWithMultipleBrokers.BootstrapServers(false))
-	}
-	{
-		// Randomize
-		kafkaWithMultipleBrokers := Kafka{BootstrapServer: "a:9092,b:9093,c:9094"}
-		assert.ElementsMatch(t, []string{"a:9092", "b:9093", "c:9094"}, kafkaWithMultipleBrokers.BootstrapServers(true))
 	}
 }

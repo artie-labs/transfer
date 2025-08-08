@@ -40,7 +40,7 @@ func (f *FlushTestSuite) SetupTest() {
 
 	f.cfg = config.Config{
 		Mode: config.Replication,
-		Kafka: &config.Kafka{
+		Kafka: &kafkalib.Kafka{
 			BootstrapServer: "foo",
 			GroupID:         "bar",
 			Username:        "user",
