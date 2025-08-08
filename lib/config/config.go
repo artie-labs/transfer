@@ -40,13 +40,8 @@ func (s *S3Settings) Validate() error {
 	return nil
 }
 
-func (c Config) TopicConfigs() ([]*kafkalib.TopicConfig, error) {
-	switch c.Queue {
-	case constants.Kafka, constants.Reader:
-		return c.Kafka.TopicConfigs, nil
-	}
-
-	return nil, fmt.Errorf("unsupported queue: %q", c.Queue)
+func (c Config) TopicConfigs() []*kafkalib.TopicConfig {
+	return c.Kafka.TopicConfigs
 }
 
 func (m Mode) String() string {
@@ -169,17 +164,13 @@ func (c Config) Validate() error {
 		}
 	}
 
-	tcs, err := c.TopicConfigs()
-	if err != nil {
-		return fmt.Errorf("failed to retrieve topic configs: %w", err)
-	}
-
+	tcs := c.TopicConfigs()
 	if len(tcs) == 0 {
 		return fmt.Errorf("no topic configs found")
 	}
 
 	for _, topicConfig := range tcs {
-		if err = topicConfig.Validate(); err != nil {
+		if err := topicConfig.Validate(); err != nil {
 			return fmt.Errorf("failed to validate topic config: %w", err)
 		}
 

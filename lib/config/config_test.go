@@ -66,9 +66,8 @@ bufferRows: 10
 	assert.Equal(t, config.FlushIntervalSeconds, 15)
 	assert.Equal(t, int(config.BufferRows), 10)
 
-	tcs, err := config.TopicConfigs()
-	assert.NoError(t, err)
-	assert.Equal(t, 2, len(tcs))
+	tcs := config.TopicConfigs()
+	assert.Len(t, tcs, 2)
 	for _, tc := range tcs {
 		tc.Load()
 		assert.Equal(t, "customer", tc.Database)
@@ -178,8 +177,7 @@ kafka:
 	assert.Equal(t, config.FlushIntervalSeconds, defaultFlushTimeSeconds)
 	assert.Equal(t, int(config.BufferRows), defaultBufferPoolSize)
 
-	tcs, err := config.TopicConfigs()
-	assert.NoError(t, err)
+	tcs := config.TopicConfigs()
 	for _, tc := range tcs {
 		tc.Load()
 	}
@@ -419,9 +417,8 @@ func TestConfig_Validate(t *testing.T) {
 	kafka.TopicConfigs = append(kafka.TopicConfigs, &tc)
 	assert.NoError(t, cfg.Validate())
 
-	tcs, err := cfg.TopicConfigs()
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(tcs))
+	tcs := cfg.TopicConfigs()
+	assert.Len(t, tcs, 1)
 	assert.Equal(t, tc, *tcs[0])
 
 	// Check Snowflake and BigQuery for large rows
