@@ -15,23 +15,13 @@ import (
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 	"github.com/artie-labs/transfer/models"
-	"github.com/segmentio/kafka-go"
 )
 
 func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client) {
 	kafkaConn := kafkalib.NewConnection(cfg.Kafka.EnableAWSMSKIAM, cfg.Kafka.DisableTLS, cfg.Kafka.Username, cfg.Kafka.Password, kafkalib.DefaultTimeout)
-	slog.Info("Starting Kafka consumer...",
-		slog.Any("config", cfg.Kafka),
-		slog.Any("authMechanism", kafkaConn.Mechanism()),
-	)
-
-	dialer, err := kafkaConn.Dialer(ctx)
-	if err != nil {
-		logger.Panic("Failed to create Kafka dialer", slog.Any("err", err))
-	}
+	slog.Info("Starting Kafka consumer...", slog.Any("config", cfg.Kafka), slog.Any("authMechanism", kafkaConn.Mechanism()))
 
 	tcFmtMap := NewTcFmtMap()
-	topicToConsumer = NewTopicToConsumer()
 	var topics []string
 	for _, topicConfig := range cfg.Kafka.TopicConfigs {
 		tcFmtMap.Add(topicConfig.Topic, TopicConfigFormatter{
@@ -48,18 +38,13 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 		wg.Add(1)
 		go func(topic string) {
 			defer wg.Done()
-
-			kafkaCfg := kafka.ReaderConfig{
-				GroupID: cfg.Kafka.GroupID,
-				Dialer:  dialer,
-				Topic:   topic,
-				Brokers: cfg.Kafka.BootstrapServers(true),
-			}
-
-			kafkaConsumer := kafka.NewReader(kafkaCfg)
-			topicToConsumer.Add(topic, kafkaConsumer)
 			for {
-				kafkaMsg, err := kafkaConsumer.FetchMessage(ctx)
+				kafkaConsumer, ok := kafkalib.GetTopicsToConsumerProviderFromContext(ctx)
+				if !ok {
+					logger.Fatal("Failed to get topics to consumer provider from context")
+				}
+
+				kafkaMsg, err := kafkaConsumer.FetchMessage(ctx, topic)
 				if err != nil {
 					slog.With(artie.BuildLogFields(kafkaMsg)...).Warn("Failed to read kafka message", slog.Any("err", err))
 					time.Sleep(500 * time.Millisecond)
@@ -74,7 +59,7 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 				msg := artie.NewMessage(kafkaMsg)
 				args := processArgs{
 					Msg:                    msg,
-					GroupID:                kafkaConsumer.Config().GroupID,
+					GroupID:                kafkaConsumer.GroupID(),
 					TopicToConfigFormatMap: tcFmtMap,
 				}
 
@@ -83,8 +68,8 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 					logger.Fatal("Failed to process message", slog.Any("err", err), slog.String("topic", kafkaMsg.Topic))
 				}
 
-				msg.EmitIngestionLag(metricsClient, cfg.Mode, kafkaConsumer.Config().GroupID, tableID.Table)
-				msg.EmitRowLag(metricsClient, cfg.Mode, kafkaConsumer.Config().GroupID, tableID.Table)
+				msg.EmitIngestionLag(metricsClient, cfg.Mode, kafkaConsumer.GroupID(), tableID.Table)
+				msg.EmitRowLag(metricsClient, cfg.Mode, kafkaConsumer.GroupID(), tableID.Table)
 			}
 		}(topic)
 	}
