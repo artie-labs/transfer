@@ -25,7 +25,12 @@ func (b *BigQuery) DSN() string {
 }
 
 func (p Postgres) DSN() string {
-	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s", p.Username, p.Password, p.Host, p.Port, p.Database)
+	dsn := fmt.Sprintf("postgres://%s:%s@%s:%d/%s", p.Username, p.Password, p.Host, p.Port, p.Database)
+	if p.DisableSSL {
+		dsn = fmt.Sprintf("%s?sslmode=disable", dsn)
+	}
+
+	return dsn
 }
 
 func (m MSSQL) DSN() string {
