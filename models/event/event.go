@@ -372,6 +372,7 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 	}
 
 	td.InsertRow(pkValueString, e.data, e.deleted)
+	slog.Info("Inserted a row", slog.Int64("offset", message.Offset()))
 	// Record the last message for this partition, so we can use this for committing the offset.
 	td.PartitionsToLastMessage[message.Partition()] = message
 	td.LatestCDCTs = e.executionTime

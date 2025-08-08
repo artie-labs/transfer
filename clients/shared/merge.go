@@ -8,7 +8,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib"
 	"github.com/artie-labs/transfer/lib/destination"
-	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/jitter"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -67,9 +66,9 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 
 	temporaryTableID := TempTableIDWithSuffix(dest.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name()), tableData.TempTableSuffix())
 	defer func() {
-		if dropErr := ddl.DropTemporaryTable(ctx, dest, temporaryTableID, false); dropErr != nil {
-			slog.Warn("Failed to drop temporary table", slog.Any("err", dropErr), slog.String("tableName", temporaryTableID.FullyQualifiedName()))
-		}
+		// if dropErr := ddl.DropTemporaryTable(ctx, dest, temporaryTableID, false); dropErr != nil {
+		// 	slog.Warn("Failed to drop temporary table", slog.Any("err", dropErr), slog.String("tableName", temporaryTableID.FullyQualifiedName()))
+		// }
 	}()
 
 	if err = dest.PrepareTemporaryTable(ctx, tableData, tableConfig, temporaryTableID, tableID, types.AdditionalSettings{ColumnSettings: opts.ColumnSettings}, true); err != nil {
@@ -180,6 +179,8 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 			return fmt.Errorf("expected %d rows to be affected, got %d", rows, totalRowsAffected)
 		}
 	}
+
+	time.Sleep(5 * time.Second)
 
 	return nil
 }

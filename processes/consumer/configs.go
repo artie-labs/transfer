@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"sync"
+	"time"
 
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/cdc"
@@ -45,6 +46,8 @@ func commitOffset(ctx context.Context, topic string, partitionsToOffset map[int]
 		if err := topicToConsumer.Get(topic).CommitMessages(ctx, msg.GetMessage()); err != nil {
 			return err
 		}
+
+		time.Sleep(3 * time.Second)
 
 		slog.Info("Successfully committed Kafka offset",
 			slog.String("topic", topic),

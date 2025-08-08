@@ -91,7 +91,7 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 					continue
 				}
 
-				time.Sleep(200 * time.Millisecond)
+				time.Sleep(500 * time.Millisecond)
 
 				slog.Info("Received a Kafka message", artie.BuildLogFields(kafkaMsg)...)
 				if len(kafkaMsg.Value) == 0 {
@@ -106,8 +106,10 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 					logger.Fatal("Failed to get HWM from context", slog.Any("err", err))
 				}
 
+				// hwm 82, msg offset = 82
 				if hwm, ok := hwm.GetHWM(kafkaMsg.Topic, kafkaMsg.Partition); ok {
 					if hwm > kafkaMsg.Offset {
+						slog.Info("Skipping message since it's already processed", artie.BuildLogFields(kafkaMsg)...)
 						// Skip this message since we already processed it.
 						// There's a bug with Segment kafka-go where if it timed out while fetching the message, it may temporarily return the existing internal buffer.
 						continue
@@ -124,6 +126,8 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 				if err != nil {
 					logger.Fatal("Failed to process message", slog.Any("err", err), slog.String("topic", kafkaMsg.Topic))
 				}
+
+				slog.Info("Processed a Kafka message", artie.BuildLogFields(kafkaMsg)...)
 
 				msg.EmitIngestionLag(metricsClient, cfg.Mode, kafkaConsumer.Config().GroupID, tableID.Table)
 				msg.EmitRowLag(metricsClient, cfg.Mode, kafkaConsumer.Config().GroupID, tableID.Table)
