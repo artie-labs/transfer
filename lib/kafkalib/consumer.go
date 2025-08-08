@@ -24,6 +24,13 @@ type TopicsToConsumerProvider struct {
 	sync.Mutex
 }
 
+func NewTopicsToConsumerProviderForTest(groupID string) *TopicsToConsumerProvider {
+	return &TopicsToConsumerProvider{
+		data:    make(map[string]Consumer),
+		groupID: groupID,
+	}
+}
+
 func NewTopicsToConsumerProvider(ctx context.Context, cfg *Kafka) (*TopicsToConsumerProvider, error) {
 	provider := &TopicsToConsumerProvider{
 		data:    make(map[string]Consumer),
