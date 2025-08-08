@@ -10,6 +10,7 @@ import (
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination"
+	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/retry"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
@@ -123,8 +124,15 @@ func flush(ctx context.Context, dest destination.Baseline, _tableData *models.Ta
 	}
 
 	if commitTransaction {
-		if err = commitOffset(ctx, _tableData.TopicConfig().Topic, _tableData.PartitionsToLastMessage); err != nil {
-			return "commit_fail", fmt.Errorf("failed to commit kafka offset: %w", err)
+		provider, ok := kafkalib.GetTopicsToConsumerProviderFromContext(ctx)
+		if !ok {
+			return "commit_fail", fmt.Errorf("failed to get topics to consumer provider from context")
+		}
+
+		for _, msg := range _tableData.PartitionsToLastMessage {
+			if err = provider.CommitMessage(ctx, _tableData.TopicConfig().Topic, msg.GetMessage()); err != nil {
+				return "commit_fail", fmt.Errorf("failed to commit kafka offset: %w", err)
+			}
 		}
 
 		slog.Info(fmt.Sprintf("%s success, clearing memory...", stringutil.CapitalizeFirstLetter(action)), slog.String("tableID", _tableID.String()))
