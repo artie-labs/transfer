@@ -49,7 +49,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 	var wg sync.WaitGroup
 	for topic, tables := range topicToTables {
 		if args.Topic != "" && args.Topic != topic {
-			// If the table is specified within args and the table does not match the database, skip this flush.
+			// If topic was specified and doesn't match this topic, we'll skip flushing this topic.
 			continue
 		}
 
