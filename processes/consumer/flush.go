@@ -35,11 +35,11 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 
 	// Read lock to examine the map of tables
 	inMemDB.RLock()
-	allTables := inMemDB.GetTopicToTables()
+	topicToTables := inMemDB.GetTopicToTables()
 	inMemDB.RUnlock()
 
 	if args.Topic != "" {
-		if _, ok := allTables[args.Topic]; !ok {
+		if _, ok := topicToTables[args.Topic]; !ok {
 			// Should never happen
 			return fmt.Errorf("topic %q does not exist in the in-memory database", args.Topic)
 		}
@@ -47,7 +47,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 
 	// Flush will take everything in memory and call the destination to create temp tables.
 	var wg sync.WaitGroup
-	for topic, tables := range allTables {
+	for topic, tables := range topicToTables {
 		if args.Topic != "" && args.Topic != topic {
 			// If the table is specified within args and the table does not match the database, skip this flush.
 			continue
