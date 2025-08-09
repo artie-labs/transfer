@@ -35,7 +35,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 
 	// Read lock to examine the map of tables
 	inMemDB.RLock()
-	allTables := inMemDB.GetTopicToTableDatas()
+	allTables := inMemDB.GetTopicToTables()
 	inMemDB.RUnlock()
 
 	if args.Topic != "" {
