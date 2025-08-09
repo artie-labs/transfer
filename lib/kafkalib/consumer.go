@@ -52,7 +52,7 @@ func InjectConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) (contex
 			Brokers: cfg.BootstrapServers(true),
 		}
 
-		ctx = context.WithValue(ctx, BuildContextKey(topicConfig.Topic), ConsumerProvider{Consumer: kafka.NewReader(kafkaCfg), GroupID: cfg.GroupID})
+		ctx = context.WithValue(ctx, BuildContextKey(topicConfig.Topic), &ConsumerProvider{Consumer: kafka.NewReader(kafkaCfg), GroupID: cfg.GroupID})
 	}
 
 	return ctx, nil
