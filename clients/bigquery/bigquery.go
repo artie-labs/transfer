@@ -1,10 +1,12 @@
 package bigquery
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"log/slog"
 	"os"
+	"strconv"
 	"strings"
 
 	"cloud.google.com/go/bigquery"
@@ -29,16 +31,13 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-const (
-	GooglePathToCredentialsEnvKey = "GOOGLE_APPLICATION_CREDENTIALS"
-	// Storage Write API is limited to 10 MiB, subtract 400 KiB to account for request overhead.
-	maxRequestByteSize = (10 * 1024 * 1024) - (400 * 1024)
-)
+const GooglePathToCredentialsEnvKey = "GOOGLE_APPLICATION_CREDENTIALS"
 
 type Store struct {
-	configMap *types.DestinationTableConfigMap
-	config    config.Config
-	bqClient  *bigquery.Client
+	maxRequestBytesSize int
+	configMap           *types.DestinationTableConfigMap
+	config              config.Config
+	bqClient            *bigquery.Client
 
 	db.Store
 }
@@ -202,7 +201,7 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 		return bytes, nil
 	}
 
-	err = batch.BySize(tableData.Rows(), maxRequestByteSize, false, encoder, func(chunk [][]byte, _ []optimization.Row) error {
+	err = batch.BySize(tableData.Rows(), s.maxRequestBytesSize, false, encoder, func(chunk [][]byte, _ []optimization.Row) error {
 		result, err := managedStream.AppendRows(ctx, chunk)
 		if err != nil {
 			return fmt.Errorf("failed to append rows: %w", err)
@@ -309,10 +308,20 @@ func LoadBigQuery(ctx context.Context, cfg config.Config, _store *db.Store) (*St
 		return nil, err
 	}
 
+	// We'll default to 400 kb offset. You can override this behavior by setting [BIGQUERY_STORAGE_WRITE_OFFSET_KB]
+	offset, err := strconv.Atoi(cmp.Or(os.Getenv("BIGQUERY_STORAGE_WRITE_OFFSET_KB"), "400"))
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert offset to int: %w", err)
+	}
+
+	slog.Info("Loaded BigQuery storage write offset", slog.Int("offset kb", offset))
+	// Storage Write API is limited to 10 MiB, subtract 400 KiB to account for request overhead.
+	maxRequestByteSize := (10 * 1024 * 1024) - (offset * 1024)
 	return &Store{
-		bqClient:  bqClient,
-		configMap: &types.DestinationTableConfigMap{},
-		config:    cfg,
-		Store:     store,
+		bqClient:            bqClient,
+		configMap:           &types.DestinationTableConfigMap{},
+		config:              cfg,
+		Store:               store,
+		maxRequestBytesSize: maxRequestByteSize,
 	}, nil
 }
