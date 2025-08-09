@@ -314,6 +314,7 @@ func LoadBigQuery(ctx context.Context, cfg config.Config, _store *db.Store) (*St
 		return nil, fmt.Errorf("failed to convert offset to int: %w", err)
 	}
 
+	slog.Info("Loaded BigQuery storage write offset", slog.Int("offset kb", offset))
 	// Storage Write API is limited to 10 MiB, subtract 400 KiB to account for request overhead.
 	maxRequestByteSize := (10 * 1024 * 1024) - (offset * 1024)
 	return &Store{
