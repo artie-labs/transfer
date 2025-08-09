@@ -45,11 +45,11 @@ func (f *FlushTestSuite) TestMemoryBasic() {
 		_, _, err = evt.Save(f.cfg, f.db, topicConfig, artie.NewMessage(kafkaMsg))
 		assert.NoError(f.T(), err)
 
-		td := f.db.GetOrCreateTableData(expectedTableID)
+		td := f.db.GetOrCreateTableData(expectedTableID, topicConfig.Topic)
 		assert.Equal(f.T(), int(td.NumberOfRows()), i+1)
 	}
 
-	assert.Equal(f.T(), f.db.GetOrCreateTableData(expectedTableID).NumberOfRows(), uint(5))
+	assert.Equal(f.T(), f.db.GetOrCreateTableData(expectedTableID, topicConfig.Topic).NumberOfRows(), uint(5))
 }
 
 func (f *FlushTestSuite) TestShouldFlush() {
@@ -109,7 +109,7 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 					"cat":                               "dog",
 				}, nil)
 
-				evt, err := event.ToMemoryEvent(mockEvent, map[string]any{"id": fmt.Sprintf("pk-%d", i)}, kafkalib.TopicConfig{Schema: tableID.Schema}, config.Replication)
+				evt, err := event.ToMemoryEvent(mockEvent, map[string]any{"id": fmt.Sprintf("pk-%d", i)}, kafkalib.TopicConfig{Schema: tableID.Schema, Topic: topicConfig.Topic}, config.Replication)
 				assert.NoError(f.T(), err)
 
 				kafkaMsg := kafka.Message{Partition: 1, Offset: int64(i)}
@@ -123,14 +123,13 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 
 	// Verify all the tables exist.
 	for idx := range tableIDs {
-		td := f.db.GetOrCreateTableData(tableIDs[idx])
+		td := f.db.GetOrCreateTableData(tableIDs[idx], topicConfig.Topic)
 		assert.Len(f.T(), td.Rows(), 5)
 	}
 
 	f.fakeBaseline.MergeReturns(true, nil)
 	assert.NoError(f.T(), Flush(f.T().Context(), f.db, f.baseline, metrics.NullMetricsProvider{}, Args{}))
 	assert.Equal(f.T(), f.fakeConsumer.CommitMessagesCallCount(), len(tableIDs)) // Commit 3 times because 3 topics.
-
 	for i := range len(tableIDs) {
 		_, kafkaMessages := f.fakeConsumer.CommitMessagesArgsForCall(i)
 		assert.Equal(f.T(), len(kafkaMessages), 1) // There's only 1 partition right now

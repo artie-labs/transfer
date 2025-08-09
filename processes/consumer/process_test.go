@@ -174,7 +174,7 @@ func TestProcessMessageFailures(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, tableID, actualTableID)
 
-	td := memoryDB.GetOrCreateTableData(tableID)
+	td := memoryDB.GetOrCreateTableData(tableID, msg.Topic())
 	// Check that there are corresponding row(s) in the memory DB
 	assert.Len(t, td.Rows(), 1)
 
@@ -337,7 +337,7 @@ func TestProcessMessageSkip(t *testing.T) {
 			TopicToConfigFormatMap: tcFmtMap,
 		}
 
-		td := memoryDB.GetOrCreateTableData(tableID)
+		td := memoryDB.GetOrCreateTableData(tableID, msg.Topic())
 		assert.Equal(t, 0, int(td.NumberOfRows()))
 
 		actualTableID, err := args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{})
