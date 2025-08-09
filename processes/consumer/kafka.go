@@ -15,6 +15,7 @@ import (
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 	"github.com/artie-labs/transfer/models"
+	"github.com/segmentio/kafka-go"
 )
 
 func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client) {
@@ -36,37 +37,44 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 		go func(topic string) {
 			defer wg.Done()
 			for {
-				kafkaConsumer, ok := kafkalib.GetTopicsToConsumerProviderFromContext(ctx)
-				if !ok {
-					logger.Fatal("Failed to get topics to consumer provider from context")
-				}
-
-				kafkaMsg, err := kafkaConsumer.FetchMessage(ctx, topic)
+				kafkaConsumer, err := kafkalib.GetConsumerFromContext(ctx, topic)
 				if err != nil {
-					slog.With(artie.BuildLogFields(kafkaMsg)...).Warn("Failed to read kafka message", slog.Any("err", err))
-					time.Sleep(500 * time.Millisecond)
-					continue
+					logger.Fatal("Failed to get consumer from context", slog.Any("err", err))
 				}
 
-				if len(kafkaMsg.Value) == 0 {
-					slog.Debug("Found a tombstone message, skipping...", artie.BuildLogFields(kafkaMsg)...)
-					continue
-				}
+				err = kafkaConsumer.FetchMessageAndProcess(ctx, func(kafkaMsg kafka.Message) error {
+					if len(kafkaMsg.Value) == 0 {
+						slog.Debug("Found a tombstone message, skipping...", artie.BuildLogFields(kafkaMsg)...)
+						return nil
+					}
 
-				msg := artie.NewMessage(kafkaMsg)
-				args := processArgs{
-					Msg:                    msg,
-					GroupID:                kafkaConsumer.GroupID(),
-					TopicToConfigFormatMap: tcFmtMap,
-				}
+					msg := artie.NewMessage(kafkaMsg)
+					args := processArgs{
+						Msg:                    msg,
+						GroupID:                kafkaConsumer.GroupID,
+						TopicToConfigFormatMap: tcFmtMap,
+					}
 
-				tableID, err := args.process(ctx, cfg, inMemDB, dest, metricsClient)
+					tableID, err := args.process(ctx, cfg, inMemDB, dest, metricsClient)
+					if err != nil {
+						logger.Fatal("Failed to process message", slog.Any("err", err), slog.String("topic", kafkaMsg.Topic))
+					}
+
+					msg.EmitIngestionLag(metricsClient, cfg.Mode, kafkaConsumer.GroupID, tableID.Table)
+					msg.EmitRowLag(metricsClient, cfg.Mode, kafkaConsumer.GroupID, tableID.Table)
+
+					return nil
+				})
+
 				if err != nil {
-					logger.Fatal("Failed to process message", slog.Any("err", err), slog.String("topic", kafkaMsg.Topic))
+					if kafkalib.IsFetchMessageError(err) {
+						slog.Warn("Failed to read kafka message", slog.Any("err", err))
+						time.Sleep(500 * time.Millisecond)
+						continue
+					} else {
+						logger.Fatal("Failed to process message", slog.Any("err", err), slog.String("topic", topic))
+					}
 				}
-
-				msg.EmitIngestionLag(metricsClient, cfg.Mode, kafkaConsumer.GroupID(), tableID.Table)
-				msg.EmitRowLag(metricsClient, cfg.Mode, kafkaConsumer.GroupID(), tableID.Table)
 			}
 		}(topic)
 	}

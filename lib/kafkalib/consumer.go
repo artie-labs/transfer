@@ -23,6 +23,7 @@ type Consumer interface {
 type ConsumerProvider struct {
 	mu sync.Mutex
 	Consumer
+	GroupID string
 }
 
 func (c *ConsumerProvider) LockAndProcess(ctx context.Context, do func() error) error {
@@ -51,7 +52,7 @@ func InjectConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) (contex
 			Brokers: cfg.BootstrapServers(true),
 		}
 
-		ctx = context.WithValue(ctx, BuildContextKey(topicConfig.Topic), ConsumerProvider{Consumer: kafka.NewReader(kafkaCfg)})
+		ctx = context.WithValue(ctx, BuildContextKey(topicConfig.Topic), ConsumerProvider{Consumer: kafka.NewReader(kafkaCfg), GroupID: cfg.GroupID})
 	}
 
 	return ctx, nil
@@ -77,7 +78,7 @@ func (t *ConsumerProvider) FetchMessageAndProcess(ctx context.Context, do func(k
 
 	msg, err := t.Consumer.FetchMessage(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to fetch message: %w", err)
+		return NewFetchMessageError(err)
 	}
 
 	if err := do(msg); err != nil {
