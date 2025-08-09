@@ -90,10 +90,14 @@ func (d *DatabaseData) TableData() map[cdc.TableID]*TableData {
 	return d.tableData
 }
 
-func (d *DatabaseData) GetTopicToTableData() map[string]*TableData {
-	out := make(map[string]*TableData)
+func (d *DatabaseData) GetTopicToTableDatas() map[string][]*TableData {
+	out := make(map[string][]*TableData)
 	for _, v := range d.tableData {
-		out[v.topic] = v
+		if _, ok := out[v.topic]; !ok {
+			out[v.topic] = make([]*TableData, 0)
+		}
+
+		out[v.topic] = append(out[v.topic], v)
 	}
 
 	return out
