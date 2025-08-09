@@ -12,8 +12,14 @@ import (
 // The wrapper here is just to have a mutex. Any of the ptr methods on *TableData will require callers to use their own locks.
 // We did this because certain operations require different locking patterns
 type TableData struct {
+	topic   string
+	tableID cdc.TableID
 	*optimization.TableData
 	lastFlushTime time.Time
+}
+
+func (t *TableData) GetTableID() cdc.TableID {
+	return t.tableID
 }
 
 func (t *TableData) Wipe() {
@@ -56,9 +62,17 @@ func NewMemoryDB() *DatabaseData {
 	}
 }
 
-func (d *DatabaseData) GetOrCreateTableData(tableID cdc.TableID) *TableData {
+func (d *DatabaseData) GetOrCreateTableData(tableID cdc.TableID, topic string) *TableData {
+	d.Lock()
+	defer d.Unlock()
+
 	if _, ok := d.tableData[tableID]; !ok {
-		d.tableData[tableID] = &TableData{}
+		table := &TableData{
+			topic:   topic,
+			tableID: tableID,
+		}
+
+		d.tableData[tableID] = table
 	}
 
 	return d.tableData[tableID]
@@ -70,4 +84,17 @@ func (d *DatabaseData) ClearTableConfig(tableID cdc.TableID) {
 
 func (d *DatabaseData) TableData() map[cdc.TableID]*TableData {
 	return d.tableData
+}
+
+func (d *DatabaseData) GetTopicToTables() map[string][]*TableData {
+	out := make(map[string][]*TableData)
+	for _, v := range d.tableData {
+		if _, ok := out[v.topic]; !ok {
+			out[v.topic] = make([]*TableData, 0)
+		}
+
+		out[v.topic] = append(out[v.topic], v)
+	}
+
+	return out
 }

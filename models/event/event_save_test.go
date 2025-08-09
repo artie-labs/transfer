@@ -46,7 +46,7 @@ func (e *EventsTestSuite) TestSaveEvent() {
 	_, _, err = event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafka.Message{}))
 	assert.NoError(e.T(), err)
 
-	optimization := e.db.GetOrCreateTableData(event.GetTableID())
+	optimization := e.db.GetOrCreateTableData(event.GetTableID(), topicConfig.Topic)
 	// Check the in-memory DB columns.
 	var found int
 	for _, col := range optimization.ReadOnlyInMemoryCols().GetColumns() {
@@ -77,7 +77,7 @@ func (e *EventsTestSuite) TestSaveEvent() {
 	_, _, err = edgeCaseEvent.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafka.Message{}))
 	assert.NoError(e.T(), err)
 
-	td := e.db.GetOrCreateTableData(edgeCaseEvent.GetTableID())
+	td := e.db.GetOrCreateTableData(edgeCaseEvent.GetTableID(), topicConfig.Topic)
 	inMemCol, ok := td.ReadOnlyInMemoryCols().GetColumn(badColumn)
 	assert.True(e.T(), ok)
 	assert.Equal(e.T(), typing.Invalid, inMemCol.KindDetails)
@@ -100,7 +100,7 @@ func (e *EventsTestSuite) TestEvent_SaveCasing() {
 	_, _, err = event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafka.Message{}))
 	assert.NoError(e.T(), err)
 
-	td := e.db.GetOrCreateTableData(event.GetTableID())
+	td := e.db.GetOrCreateTableData(event.GetTableID(), topicConfig.Topic)
 	var rowData map[string]any
 	for _, row := range td.Rows() {
 		if id, ok := row.GetValue("id"); ok {
@@ -143,7 +143,7 @@ func (e *EventsTestSuite) TestEventSaveOptionalSchema() {
 	_, _, err = event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafkaMsg))
 	assert.NoError(e.T(), err)
 
-	td := e.db.GetOrCreateTableData(event.GetTableID())
+	td := e.db.GetOrCreateTableData(event.GetTableID(), topicConfig.Topic)
 	{
 		// Optional schema w/ string
 		column, ok := td.ReadOnlyInMemoryCols().GetColumn("created_at_date_string")
@@ -190,7 +190,7 @@ func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 	_, _, err = evt.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafka.Message{}))
 	assert.NoError(e.T(), err)
 
-	td := e.db.GetOrCreateTableData(evt.GetTableID())
+	td := e.db.GetOrCreateTableData(evt.GetTableID(), topicConfig.Topic)
 	var prevKey string
 	for _, col := range td.ReadOnlyInMemoryCols().GetColumns() {
 		if col.Name() == constants.DeleteColumnMarker || col.Name() == constants.OnlySetDeleteColumnMarker {
@@ -249,7 +249,7 @@ func (e *EventsTestSuite) TestEventSaveColumns() {
 	_, _, err = event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafka.Message{}))
 	assert.NoError(e.T(), err)
 
-	td := e.db.GetOrCreateTableData(event.GetTableID())
+	td := e.db.GetOrCreateTableData(event.GetTableID(), topicConfig.Topic)
 	{
 		// String
 		column, ok := td.ReadOnlyInMemoryCols().GetColumn("randomcol")
@@ -296,11 +296,11 @@ func (e *EventsTestSuite) TestEventSaveTestDeleteFlag() {
 	assert.NoError(e.T(), err)
 	_, _, err = event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafka.Message{}))
 	assert.NoError(e.T(), err)
-	assert.False(e.T(), e.db.GetOrCreateTableData(event.GetTableID()).ContainOtherOperations())
-	assert.True(e.T(), e.db.GetOrCreateTableData(event.GetTableID()).ContainsHardDeletes())
+	assert.False(e.T(), e.db.GetOrCreateTableData(event.GetTableID(), topicConfig.Topic).ContainOtherOperations())
+	assert.True(e.T(), e.db.GetOrCreateTableData(event.GetTableID(), topicConfig.Topic).ContainsHardDeletes())
 
 	event.deleted = false
 	_, _, err = event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafka.Message{}))
 	assert.NoError(e.T(), err)
-	assert.True(e.T(), e.db.GetOrCreateTableData(event.GetTableID()).ContainOtherOperations())
+	assert.True(e.T(), e.db.GetOrCreateTableData(event.GetTableID(), topicConfig.Topic).ContainOtherOperations())
 }
