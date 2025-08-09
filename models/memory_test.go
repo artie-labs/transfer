@@ -19,10 +19,11 @@ func TestTableData_Complete(t *testing.T) {
 	}
 	{
 		// Exists after we created it.
-		td := db.GetOrCreateTableData(tableID)
+		td := db.GetOrCreateTableData(tableID, "topic")
 		assert.True(t, td.Empty())
 		_, ok := db.TableData()[tableID]
 		assert.True(t, ok)
+		assert.Equal(t, "topic", td.topic)
 
 		// Various ways to wipe the database data
 		{
