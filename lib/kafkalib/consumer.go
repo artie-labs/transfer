@@ -10,7 +10,9 @@ import (
 
 type ctxKey string
 
-const consumer ctxKey = "consumer"
+func BuildContextKey(topic string) ctxKey {
+	return ctxKey(fmt.Sprintf("consumer-%s", topic))
+}
 
 type Consumer interface {
 	Close() (err error)
@@ -18,25 +20,23 @@ type Consumer interface {
 	CommitMessages(ctx context.Context, msgs ...kafka.Message) error
 }
 
-type TopicsToConsumerProvider struct {
-	data    map[string]Consumer
-	groupID string
-	sync.Mutex
+type ConsumerProvider struct {
+	mu sync.Mutex
+	Consumer
 }
 
-func NewTopicsToConsumerProviderForTest(groupID string) *TopicsToConsumerProvider {
-	return &TopicsToConsumerProvider{
-		data:    make(map[string]Consumer),
-		groupID: groupID,
+func (c *ConsumerProvider) LockAndProcess(ctx context.Context, do func() error) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if err := do(); err != nil {
+		return fmt.Errorf("failed to process: %w", err)
 	}
+
+	return nil
 }
 
-func NewTopicsToConsumerProvider(ctx context.Context, cfg *Kafka) (*TopicsToConsumerProvider, error) {
-	provider := &TopicsToConsumerProvider{
-		data:    make(map[string]Consumer),
-		groupID: cfg.GroupID,
-	}
-
+func InjectConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) (context.Context, error) {
 	kafkaConn := NewConnection(cfg.EnableAWSMSKIAM, cfg.DisableTLS, cfg.Username, cfg.Password, DefaultTimeout)
 	dialer, err := kafkaConn.Dialer(ctx)
 	if err != nil {
@@ -51,55 +51,38 @@ func NewTopicsToConsumerProvider(ctx context.Context, cfg *Kafka) (*TopicsToCons
 			Brokers: cfg.BootstrapServers(true),
 		}
 
-		provider.Add(topicConfig.Topic, kafka.NewReader(kafkaCfg))
+		ctx = context.WithValue(ctx, BuildContextKey(topicConfig.Topic), ConsumerProvider{Consumer: kafka.NewReader(kafkaCfg)})
 	}
 
-	return provider, nil
+	return ctx, nil
 }
 
-func (t *TopicsToConsumerProvider) GroupID() string {
-	return t.groupID
-}
-
-func (t *TopicsToConsumerProvider) InjectIntoContext(ctx context.Context) context.Context {
-	return context.WithValue(ctx, consumer, t)
-}
-
-func GetTopicsToConsumerProviderFromContext(ctx context.Context) (*TopicsToConsumerProvider, bool) {
-	provider, ok := ctx.Value(consumer).(*TopicsToConsumerProvider)
-	return provider, ok
-}
-
-func (t *TopicsToConsumerProvider) Add(topic string, consumer Consumer) error {
-	t.Lock()
-	defer t.Unlock()
-
-	if _, ok := t.data[topic]; ok {
-		return fmt.Errorf("topic %q already exists", topic)
+func GetConsumerFromContext(ctx context.Context, topic string) (*ConsumerProvider, error) {
+	value := ctx.Value(BuildContextKey(topic))
+	consumer, ok := value.(*ConsumerProvider)
+	if !ok {
+		return nil, fmt.Errorf("consumer not found for topic %q, got: %T", topic, value)
 	}
 
-	t.data[topic] = consumer
+	return consumer, nil
+}
+
+func (t *ConsumerProvider) CommitMessage(ctx context.Context, msg kafka.Message) error {
+	return t.Consumer.CommitMessages(ctx, msg)
+}
+
+func (t *ConsumerProvider) FetchMessageAndProcess(ctx context.Context, do func(kafka.Message) error) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	msg, err := t.Consumer.FetchMessage(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to fetch message: %w", err)
+	}
+
+	if err := do(msg); err != nil {
+		return fmt.Errorf("failed to process message: %w", err)
+	}
+
 	return nil
-}
-
-func (t *TopicsToConsumerProvider) CommitMessage(ctx context.Context, topic string, msg kafka.Message) error {
-	t.Lock()
-	defer t.Unlock()
-
-	if _, ok := t.data[topic]; !ok {
-		return fmt.Errorf("topic %q does not exist", topic)
-	}
-
-	return t.data[topic].CommitMessages(ctx, msg)
-}
-
-func (t *TopicsToConsumerProvider) FetchMessage(ctx context.Context, topic string) (kafka.Message, error) {
-	t.Lock()
-	defer t.Unlock()
-
-	if _, ok := t.data[topic]; !ok {
-		return kafka.Message{}, fmt.Errorf("topic %q does not exist", topic)
-	}
-
-	return t.data[topic].FetchMessage(ctx)
 }
