@@ -78,17 +78,16 @@ func (t *ConsumerProvider) CommitMessage(ctx context.Context, msg kafka.Message)
 }
 
 func (t *ConsumerProvider) FetchMessageAndProcess(ctx context.Context, do func(kafka.Message) error) error {
-	fmt.Println("fetching message")
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	fmt.Println("acquired lock")
-
 	msg, err := t.Consumer.FetchMessage(ctx)
 	if err != nil {
 		return NewFetchMessageError(err)
 	}
 
-	fmt.Println("fetched message")
+	fmt.Println("fetching message")
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	fmt.Println("acquired lock")
 
 	if err := do(msg); err != nil {
 		return fmt.Errorf("failed to process message: %w", err)
