@@ -56,6 +56,10 @@ func CreateTable(ctx context.Context, dest destination.Destination, mode config.
 }
 
 func addColumn(ctx context.Context, dest destination.Destination, sqlPart string, attempts int) error {
+	if attempts > 100 {
+		return fmt.Errorf("failed to add column after 100 attempts")
+	}
+
 	slog.Info("[DDL] Executing query", slog.String("query", sqlPart))
 	if _, err := dest.ExecContext(ctx, sqlPart); err != nil {
 		if dest.IsRetryableError(err) {
