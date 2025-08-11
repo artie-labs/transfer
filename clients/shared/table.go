@@ -56,22 +56,31 @@ func CreateTable(ctx context.Context, dest destination.Destination, mode config.
 }
 
 func addColumn(ctx context.Context, dest destination.Destination, sqlPart string, attempts int) error {
-	if attempts > 100 {
+	if attempts >= 100 {
 		return fmt.Errorf("failed to add column after 100 attempts")
 	}
 
 	slog.Info("[DDL] Executing query", slog.String("query", sqlPart))
 	if _, err := dest.ExecContext(ctx, sqlPart); err != nil {
+		if dest.Dialect().IsColumnAlreadyExistsErr(err) {
+			return nil
+		}
+
 		if dest.IsRetryableError(err) {
 			sleepDuration := jitter.Jitter(1500, jitter.DefaultMaxMs, attempts)
 			slog.Warn("Failed to add column, retrying...", slog.Any("err", err), slog.Duration("sleep", sleepDuration))
-			time.Sleep(sleepDuration)
+
+			// Respect context cancellation while waiting to retry.
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(sleepDuration):
+			}
+
 			return addColumn(ctx, dest, sqlPart, attempts+1)
 		}
 
-		if !dest.Dialect().IsColumnAlreadyExistsErr(err) {
-			return fmt.Errorf("failed to alter table: %w", err)
-		}
+		return fmt.Errorf("failed to alter table: %w", err)
 	}
 
 	return nil
