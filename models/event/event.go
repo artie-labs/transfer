@@ -122,6 +122,14 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 		for pk := range pkMap {
 			pks = append(pks, pk)
 		}
+
+		for _, pk := range tc.IncludePrimaryKeys {
+			// If it's not already included in the [pkMap], let's add it.
+			if _, ok := pkMap[pk]; !ok {
+				pks = append(pks, pk)
+			}
+		}
+
 	}
 
 	if cols != nil {
