@@ -65,8 +65,12 @@ type TopicConfig struct {
 	// [ColumnsToInclude] can be used to specify the exact columns that should be written to the destination.
 	ColumnsToInclude []string `yaml:"columnsToInclude,omitempty"`
 	// [ColumnsToExclude] can be used to exclude columns from being written to the destination.
-	ColumnsToExclude       []string                `yaml:"columnsToExclude,omitempty"`
-	PrimaryKeysOverride    []string                `yaml:"primaryKeysOverride,omitempty"`
+	ColumnsToExclude    []string `yaml:"columnsToExclude,omitempty"`
+	PrimaryKeysOverride []string `yaml:"primaryKeysOverride,omitempty"`
+
+	// [IncludePrimaryKeys] - This is used to specify an additional column that can be used as part of the primary key
+	// An example of this could be to include the full source table name.
+	IncludePrimaryKeys     []string                `yaml:"includePrimaryKeys,omitempty"`
 	MultiStepMergeSettings *MultiStepMergeSettings `yaml:"multiStepMergeSettings,omitempty"`
 
 	// Internal metadata
@@ -140,6 +144,11 @@ func (t TopicConfig) Validate() error {
 	// You can't specify both [ColumnsToInclude] and [ColumnsToExclude]
 	if len(t.ColumnsToInclude) > 0 && len(t.ColumnsToExclude) > 0 {
 		return fmt.Errorf("cannot specify both columnsToInclude and columnsToExclude")
+	}
+
+	// You cannot have both [PrimaryKeysOverride] and [IncludePrimaryKeys]
+	if len(t.PrimaryKeysOverride) > 0 && len(t.IncludePrimaryKeys) > 0 {
+		return fmt.Errorf("cannot specify both primaryKeysOverride and includePrimaryKeys")
 	}
 
 	return nil
