@@ -175,11 +175,12 @@ func (s *SchemaEventPayload) parseAndMutateMapInPlace(retMap map[string]any, kin
 				continue
 			}
 
-			if val, parseErr := field.ParseValue(fieldVal); parseErr == nil {
-				retMap[field.FieldName] = val
-			} else {
-				return nil, fmt.Errorf("failed to parse field %q: %w", field.FieldName, parseErr)
+			value, err := field.ParseValue(fieldVal)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse field %q: %w", field.FieldName, err)
 			}
+
+			retMap[field.FieldName] = value
 		}
 	}
 
