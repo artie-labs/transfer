@@ -139,19 +139,19 @@ func (f Field) ParseValue(value any) (any, error) {
 		var err error
 		value, err = toInt64(value)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to convert to int64: %w", err)
 		}
 	case Bytes:
 		var err error
 		value, err = converters.Bytes{}.Convert(value)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to convert to bytes: %w", err)
 		}
 	}
 
 	converter, err := f.ToValueConverter()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to convert to value converter: %w", err)
 	}
 
 	if converter != nil {
