@@ -155,7 +155,12 @@ func (f Field) ParseValue(value any) (any, error) {
 	}
 
 	if converter != nil {
-		return converter.Convert(value)
+		val, err := converter.Convert(value)
+		if err != nil {
+			return nil, fmt.Errorf("%T failed to convert to value converter: %w", converter, err)
+		}
+
+		return val, nil
 	}
 
 	if bytes, ok := value.([]byte); ok {
