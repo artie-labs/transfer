@@ -121,7 +121,8 @@ func (a Array) Convert(value any) (any, error) {
 	for i, element := range elements {
 		convertedElement, err := a.parseItemFunc(element)
 		if err != nil {
-			return nil, err
+			fmt.Println("element", element, "error", err)
+			return nil, fmt.Errorf("failed to convert item %d: %w", i, err)
 		}
 
 		convertedElements[i] = convertedElement

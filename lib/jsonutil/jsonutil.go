@@ -1,6 +1,10 @@
 package jsonutil
 
-import jsoniter "github.com/json-iterator/go"
+import (
+	"fmt"
+
+	jsoniter "github.com/json-iterator/go"
+)
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
@@ -13,7 +17,7 @@ func UnmarshalPayload(val string) (any, error) {
 
 	var obj any
 	if err := json.Unmarshal([]byte(val), &obj); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to unmarshal json: %w", err)
 	}
 
 	return obj, nil
