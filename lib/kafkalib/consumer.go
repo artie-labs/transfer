@@ -35,19 +35,6 @@ func NewConsumerProviderForTest(consumer Consumer, groupID string) *ConsumerProv
 	}
 }
 
-func (c *ConsumerProvider) LockAndProcess(ctx context.Context, lock bool, do func() error) error {
-	if lock {
-		c.mu.Lock()
-		defer c.mu.Unlock()
-	}
-
-	if err := do(); err != nil {
-		return fmt.Errorf("failed to process: %w", err)
-	}
-
-	return nil
-}
-
 func InjectConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) (context.Context, error) {
 	kafkaConn := NewConnection(cfg.EnableAWSMSKIAM, cfg.DisableTLS, cfg.Username, cfg.Password, DefaultTimeout)
 	dialer, err := kafkaConn.Dialer(ctx)
@@ -67,6 +54,19 @@ func InjectConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) (contex
 	}
 
 	return ctx, nil
+}
+
+func (c *ConsumerProvider) LockAndProcess(ctx context.Context, lock bool, do func() error) error {
+	if lock {
+		c.mu.Lock()
+		defer c.mu.Unlock()
+	}
+
+	if err := do(); err != nil {
+		return fmt.Errorf("failed to process: %w", err)
+	}
+
+	return nil
 }
 
 func GetConsumerFromContext(ctx context.Context, topic string) (*ConsumerProvider, error) {
