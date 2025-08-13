@@ -68,7 +68,6 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 		if !ok {
 			return fmt.Errorf("consumer not found for topic %q", topic)
 		}
-		fmt.Println("Trying to flush now", args.Topic)
 		consumer.LockAndProcess(ctx, args.ShouldLock, func() error {
 			for _, tableData := range tables {
 				wg.Add(1)

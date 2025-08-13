@@ -75,13 +75,10 @@ func (c *ConsumerProvider) FetchMessageAndProcess(ctx context.Context, do func(k
 		return NewFetchMessageError(err)
 	}
 
-	fmt.Println("fetching message", msg.Offset, c.offset)
-
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	if c.offset > msg.Offset {
-		fmt.Println("skipping message", msg.Offset, c.offset)
 		// We should skip this message because we have already processed it.
 		return nil
 	}
@@ -106,7 +103,6 @@ func GetConsumerFromContext(ctx context.Context, topic string) (*ConsumerProvide
 }
 
 func (c *ConsumerProvider) CommitMessage(ctx context.Context, msg kafka.Message) error {
-	fmt.Println("committing message", msg.Offset, c.offset)
 	return c.Consumer.CommitMessages(ctx, msg)
 }
 
