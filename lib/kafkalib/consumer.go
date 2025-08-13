@@ -21,9 +21,18 @@ type Consumer interface {
 }
 
 type ConsumerProvider struct {
-	mu sync.Mutex
+	mu      sync.Mutex
+	groupID string
+	offset  int64
+
 	Consumer
-	GroupID string
+}
+
+func NewConsumerProviderForTest(consumer Consumer, groupID string) *ConsumerProvider {
+	return &ConsumerProvider{
+		Consumer: consumer,
+		groupID:  groupID,
+	}
 }
 
 func (c *ConsumerProvider) LockAndProcess(ctx context.Context, lock bool, do func() error) error {
@@ -54,7 +63,7 @@ func InjectConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) (contex
 			Brokers: cfg.BootstrapServers(true),
 		}
 
-		ctx = context.WithValue(ctx, BuildContextKey(topicConfig.Topic), &ConsumerProvider{Consumer: kafka.NewReader(kafkaCfg), GroupID: cfg.GroupID})
+		ctx = context.WithValue(ctx, BuildContextKey(topicConfig.Topic), &ConsumerProvider{Consumer: kafka.NewReader(kafkaCfg), groupID: cfg.GroupID})
 	}
 
 	return ctx, nil
@@ -70,22 +79,33 @@ func GetConsumerFromContext(ctx context.Context, topic string) (*ConsumerProvide
 	return consumer, nil
 }
 
-func (t *ConsumerProvider) CommitMessage(ctx context.Context, msg kafka.Message) error {
-	return t.Consumer.CommitMessages(ctx, msg)
+func (c *ConsumerProvider) CommitMessage(ctx context.Context, msg kafka.Message) error {
+	return c.Consumer.CommitMessages(ctx, msg)
 }
 
-func (t *ConsumerProvider) FetchMessageAndProcess(ctx context.Context, do func(kafka.Message) error) error {
-	msg, err := t.Consumer.FetchMessage(ctx)
+func (c *ConsumerProvider) GetGroupID() string {
+	return c.groupID
+}
+
+func (c *ConsumerProvider) FetchMessageAndProcess(ctx context.Context, do func(kafka.Message) error) error {
+	msg, err := c.Consumer.FetchMessage(ctx)
 	if err != nil {
 		return NewFetchMessageError(err)
 	}
 
-	t.mu.Lock()
-	defer t.mu.Unlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.offset > msg.Offset {
+		// We should skip this message because we have already processed it.
+		return nil
+	}
 
 	if err := do(msg); err != nil {
 		return fmt.Errorf("failed to process message: %w", err)
 	}
 
+	// Set the offset to the last processed message.
+	c.offset = msg.Offset
 	return nil
 }

@@ -51,7 +51,7 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 					msg := artie.NewMessage(kafkaMsg)
 					args := processArgs{
 						Msg:                    msg,
-						GroupID:                kafkaConsumer.GroupID,
+						GroupID:                kafkaConsumer.GetGroupID(),
 						TopicToConfigFormatMap: tcFmtMap,
 					}
 
@@ -60,8 +60,8 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 						logger.Fatal("Failed to process message", slog.Any("err", err), slog.String("topic", kafkaMsg.Topic))
 					}
 
-					msg.EmitIngestionLag(metricsClient, cfg.Mode, kafkaConsumer.GroupID, tableID.Table)
-					msg.EmitRowLag(metricsClient, cfg.Mode, kafkaConsumer.GroupID, tableID.Table)
+					msg.EmitIngestionLag(metricsClient, cfg.Mode, kafkaConsumer.GetGroupID(), tableID.Table)
+					msg.EmitRowLag(metricsClient, cfg.Mode, kafkaConsumer.GetGroupID(), tableID.Table)
 
 					return nil
 				})

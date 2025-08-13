@@ -86,7 +86,7 @@ func (f *FlushTestSuite) TestShouldFlush() {
 }
 
 func (f *FlushTestSuite) TestMemoryConcurrency() {
-	ctx := context.WithValue(f.T().Context(), kafkalib.BuildContextKey("foo"), &kafkalib.ConsumerProvider{Consumer: f.fakeConsumer, GroupID: "test-group"})
+	ctx := context.WithValue(f.T().Context(), kafkalib.BuildContextKey("foo"), kafkalib.NewConsumerProviderForTest(f.fakeConsumer, "test-group"))
 
 	tableIDs := []cdc.TableID{
 		cdc.NewTableID("public", "dusty"),
