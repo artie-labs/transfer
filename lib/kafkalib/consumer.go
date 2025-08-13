@@ -28,12 +28,9 @@ type ConsumerProvider struct {
 
 func (c *ConsumerProvider) LockAndProcess(ctx context.Context, lock bool, do func() error) error {
 	if lock {
-		fmt.Println("locking")
 		c.mu.Lock()
 		defer c.mu.Unlock()
 	}
-
-	fmt.Println("acquired lock")
 
 	if err := do(); err != nil {
 		return fmt.Errorf("failed to process: %w", err)
@@ -83,17 +80,12 @@ func (t *ConsumerProvider) FetchMessageAndProcess(ctx context.Context, do func(k
 		return NewFetchMessageError(err)
 	}
 
-	fmt.Println("fetching message")
 	t.mu.Lock()
 	defer t.mu.Unlock()
-
-	fmt.Println("acquired lock")
 
 	if err := do(msg); err != nil {
 		return fmt.Errorf("failed to process message: %w", err)
 	}
-
-	fmt.Println("processed message")
 
 	return nil
 }
