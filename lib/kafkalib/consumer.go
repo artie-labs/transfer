@@ -56,9 +56,11 @@ func InjectConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) (contex
 	return ctx, nil
 }
 
-func (c *ConsumerProvider) LockAndProcess(ctx context.Context, do func() error) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+func (c *ConsumerProvider) LockAndProcess(ctx context.Context, lock bool, do func() error) error {
+	if lock {
+		c.mu.Lock()
+		defer c.mu.Unlock()
+	}
 
 	if err := do(); err != nil {
 		return fmt.Errorf("failed to process: %w", err)
@@ -73,10 +75,13 @@ func (c *ConsumerProvider) FetchMessageAndProcess(ctx context.Context, do func(k
 		return NewFetchMessageError(err)
 	}
 
+	fmt.Println("fetching message", msg.Offset, c.offset)
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	if c.offset > msg.Offset {
+		fmt.Println("skipping message", msg.Offset, c.offset)
 		// We should skip this message because we have already processed it.
 		return nil
 	}

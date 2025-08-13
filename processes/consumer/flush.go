@@ -24,6 +24,9 @@ type Args struct {
 	Topic string
 	// [reason] - Is used to track the reason for the flush.
 	Reason string
+
+	// [ShouldLock] - If this is set to true, we will lock the consumer for the duration of the flush
+	ShouldLock bool
 }
 
 func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, args Args) error {
@@ -65,8 +68,8 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 		if !ok {
 			return fmt.Errorf("consumer not found for topic %q", topic)
 		}
-
-		consumer.LockAndProcess(ctx, func() error {
+		fmt.Println("Trying to flush now", args.Topic)
+		consumer.LockAndProcess(ctx, args.ShouldLock, func() error {
 			for _, tableData := range tables {
 				wg.Add(1)
 				go func(_tableData *models.TableData) {
