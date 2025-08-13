@@ -146,6 +146,8 @@ func flush(ctx context.Context, dest destination.Baseline, _tableData *models.Ta
 			if err = consumer.CommitMessage(ctx, msg.GetMessage()); err != nil {
 				return "commit_fail", fmt.Errorf("failed to commit kafka offset: %w", err)
 			}
+
+			slog.Info("Successfully committed Kafka offset", slog.String("topic", msg.Topic()), slog.Int("partition", msg.Partition()), slog.Int64("offset", msg.Offset()))
 		}
 
 		slog.Info(fmt.Sprintf("%s success, clearing memory...", stringutil.CapitalizeFirstLetter(action)), slog.String("tableID", _tableData.GetTableID().String()))
