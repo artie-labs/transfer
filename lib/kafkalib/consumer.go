@@ -106,6 +106,7 @@ func GetConsumerFromContext(ctx context.Context, topic string) (*ConsumerProvide
 }
 
 func (c *ConsumerProvider) CommitMessage(ctx context.Context, msg kafka.Message) error {
+	fmt.Println("committing message", msg.Offset, c.offset)
 	return c.Consumer.CommitMessages(ctx, msg)
 }
 

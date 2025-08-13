@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 
@@ -63,6 +64,7 @@ func (s Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error
 }
 
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
+	time.Sleep(1500 * time.Millisecond)
 	if err := shared.Merge(ctx, s, tableData, types.MergeOpts{}); err != nil {
 		return false, fmt.Errorf("failed to merge: %w", err)
 	}
