@@ -69,24 +69,6 @@ func (c *ConsumerProvider) LockAndProcess(ctx context.Context, lock bool, do fun
 	return nil
 }
 
-func GetConsumerFromContext(ctx context.Context, topic string) (*ConsumerProvider, error) {
-	value := ctx.Value(BuildContextKey(topic))
-	consumer, ok := value.(*ConsumerProvider)
-	if !ok {
-		return nil, fmt.Errorf("consumer not found for topic %q, got: %T", topic, value)
-	}
-
-	return consumer, nil
-}
-
-func (c *ConsumerProvider) CommitMessage(ctx context.Context, msg kafka.Message) error {
-	return c.Consumer.CommitMessages(ctx, msg)
-}
-
-func (c *ConsumerProvider) GetGroupID() string {
-	return c.groupID
-}
-
 func (c *ConsumerProvider) FetchMessageAndProcess(ctx context.Context, do func(kafka.Message) error) error {
 	msg, err := c.Consumer.FetchMessage(ctx)
 	if err != nil {
@@ -108,4 +90,22 @@ func (c *ConsumerProvider) FetchMessageAndProcess(ctx context.Context, do func(k
 	// Set the offset to the last processed message.
 	c.offset = msg.Offset
 	return nil
+}
+
+func GetConsumerFromContext(ctx context.Context, topic string) (*ConsumerProvider, error) {
+	value := ctx.Value(BuildContextKey(topic))
+	consumer, ok := value.(*ConsumerProvider)
+	if !ok {
+		return nil, fmt.Errorf("consumer not found for topic %q, got: %T", topic, value)
+	}
+
+	return consumer, nil
+}
+
+func (c *ConsumerProvider) CommitMessage(ctx context.Context, msg kafka.Message) error {
+	return c.Consumer.CommitMessages(ctx, msg)
+}
+
+func (c *ConsumerProvider) GetGroupID() string {
+	return c.groupID
 }
