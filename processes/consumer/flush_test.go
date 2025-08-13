@@ -1,6 +1,7 @@
 package consumer
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
@@ -85,9 +86,7 @@ func (f *FlushTestSuite) TestShouldFlush() {
 }
 
 func (f *FlushTestSuite) TestMemoryConcurrency() {
-	provider := kafkalib.NewTopicsToConsumerProviderForTest("test-group")
-	assert.NoError(f.T(), provider.Add("foo", f.fakeConsumer))
-	ctx := provider.InjectIntoContext(f.T().Context())
+	ctx := context.WithValue(f.T().Context(), kafkalib.BuildContextKey("foo"), &kafkalib.ConsumerProvider{Consumer: f.fakeConsumer, GroupID: "test-group"})
 
 	tableIDs := []cdc.TableID{
 		cdc.NewTableID("public", "dusty"),
