@@ -47,7 +47,7 @@ func (e *EventsTestSuite) TestEvent_Validate() {
 				"foo": "bar",
 			},
 		}
-		assert.ErrorContains(e.T(), _evt.Validate(), "")
+		assert.ErrorContains(e.T(), _evt.Validate(), "delete column marker does not exist")
 	}
 	{
 		_evt := Event{
@@ -116,6 +116,11 @@ func (e *EventsTestSuite) TestTransformData() {
 			// include foo, but also artie columns
 			data := transformData(map[string]any{"foo": "bar", "abc": "def", constants.DeleteColumnMarker: true}, kafkalib.TopicConfig{ColumnsToInclude: []string{"foo"}})
 			assert.Equal(e.T(), map[string]any{"foo": "bar", constants.DeleteColumnMarker: true}, data)
+		}
+		{
+			// Includes static columns
+			data := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToInclude: []string{"foo"}, StaticColumns: []kafkalib.StaticColumn{{Name: "dusty", Value: "mini aussie"}}})
+			assert.Equal(e.T(), map[string]any{"foo": "bar", "dusty": "mini aussie"}, data)
 		}
 	}
 }
@@ -329,5 +334,21 @@ func (e *EventsTestSuite) TestEvent_PrimaryKeysOverride() {
 		evt, err := ToMemoryEvent(e.fakeEvent, map[string]any{"not_id": 123}, kafkalib.TopicConfig{PrimaryKeysOverride: []string{"id"}}, config.Replication)
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), []string{"id"}, evt.GetPrimaryKeys())
+	}
+}
+
+func (e *EventsTestSuite) TestEvent_StaticColumns() {
+	{
+		// Should error if there's a static column collision
+		e.fakeEvent.GetDataReturns(map[string]any{"id": 123}, nil)
+		_, err := ToMemoryEvent(e.fakeEvent, map[string]any{"id": 123}, kafkalib.TopicConfig{StaticColumns: []kafkalib.StaticColumn{{Name: "id", Value: "123"}}}, config.Replication)
+		assert.ErrorContains(e.T(), err, `static column "id" collides with event data`)
+	}
+	{
+		// No error since there's no collision
+		e.fakeEvent.GetDataReturns(map[string]any{"id": 123}, nil)
+		evt, err := ToMemoryEvent(e.fakeEvent, map[string]any{"id": 123}, kafkalib.TopicConfig{StaticColumns: []kafkalib.StaticColumn{{Name: "foo", Value: "bar"}}}, config.Replication)
+		assert.NoError(e.T(), err)
+		assert.Equal(e.T(), map[string]any{"id": 123, "foo": "bar"}, evt.data)
 	}
 }

@@ -73,6 +73,10 @@ func transformData(data map[string]any, tc kafkalib.TopicConfig) map[string]any 
 			}
 		}
 
+		for _, col := range tc.StaticColumns {
+			filteredData[col.Name] = col.Value
+		}
+
 		return filteredData
 	}
 
@@ -103,7 +107,17 @@ func buildFilteredColumns(event cdc.Event, tc kafkalib.TopicConfig) (*columns.Co
 			}
 		}
 
+		// If columns to include is specified, we should always include static columns.
+		for _, col := range tc.StaticColumns {
+			filteredColumns.AddColumn(columns.NewColumn(col.Name, typing.String))
+		}
+
 		return &filteredColumns, nil
+	}
+
+	// Include static columns
+	for _, col := range tc.StaticColumns {
+		cols.AddColumn(columns.NewColumn(col.Name, typing.String))
 	}
 
 	return cols, nil
@@ -112,7 +126,7 @@ func buildFilteredColumns(event cdc.Event, tc kafkalib.TopicConfig) (*columns.Co
 func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfig, cfgMode config.Mode) (Event, error) {
 	cols, err := buildFilteredColumns(event, tc)
 	if err != nil {
-		return Event{}, err
+		return Event{}, fmt.Errorf("failed to build filtered columns: %w", err)
 	}
 	// Now iterate over pkMap and tag each column that is a primary key
 	var pks []string
@@ -150,7 +164,7 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 
 	evtData, err := event.GetData(tc)
 	if err != nil {
-		return Event{}, err
+		return Event{}, fmt.Errorf("failed to get data: %w", err)
 	}
 
 	if tc.IncludeArtieOperation {
@@ -189,7 +203,17 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 
 	optionalSchema, err := event.GetOptionalSchema()
 	if err != nil {
-		return Event{}, err
+		return Event{}, fmt.Errorf("failed to get optional schema: %w", err)
+	}
+
+	// Static columns cannot collide with the event data.
+	for _, staticColumn := range tc.StaticColumns {
+		if _, ok := evtData[staticColumn.Name]; ok {
+			return Event{}, fmt.Errorf("static column %q collides with event data", staticColumn.Name)
+		}
+
+		// Inject static columns into the event data.
+		evtData[staticColumn.Name] = staticColumn.Value
 	}
 
 	sort.Strings(pks)
