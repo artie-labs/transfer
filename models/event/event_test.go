@@ -47,7 +47,7 @@ func (e *EventsTestSuite) TestEvent_Validate() {
 				"foo": "bar",
 			},
 		}
-		assert.ErrorContains(e.T(), _evt.Validate(), "")
+		assert.ErrorContains(e.T(), _evt.Validate(), "delete column marker does not exist")
 	}
 	{
 		_evt := Event{
