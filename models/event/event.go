@@ -107,11 +107,17 @@ func buildFilteredColumns(event cdc.Event, tc kafkalib.TopicConfig) (*columns.Co
 			}
 		}
 
+		// If columns to include is specified, we should always include static columns.
 		for _, col := range tc.StaticColumns {
 			filteredColumns.AddColumn(columns.NewColumn(col.Name, typing.String))
 		}
 
 		return &filteredColumns, nil
+	}
+
+	// Include static columns
+	for _, col := range tc.StaticColumns {
+		cols.AddColumn(columns.NewColumn(col.Name, typing.String))
 	}
 
 	return cols, nil
