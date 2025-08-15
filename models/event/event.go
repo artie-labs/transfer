@@ -73,6 +73,10 @@ func transformData(data map[string]any, tc kafkalib.TopicConfig) map[string]any 
 			}
 		}
 
+		for _, col := range tc.StaticColumns {
+			filteredData[col.Name] = col.Value
+		}
+
 		return filteredData
 	}
 
@@ -101,6 +105,10 @@ func buildFilteredColumns(event cdc.Event, tc kafkalib.TopicConfig) (*columns.Co
 			if existingColumn, ok := cols.GetColumn(col); ok {
 				filteredColumns.AddColumn(existingColumn)
 			}
+		}
+
+		for _, col := range tc.StaticColumns {
+			filteredColumns.AddColumn(columns.NewColumn(col.Name, typing.String))
 		}
 
 		return &filteredColumns, nil
@@ -197,6 +205,9 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 		if _, ok := evtData[staticColumn.Name]; ok {
 			return Event{}, fmt.Errorf("static column %q collides with event data", staticColumn.Name)
 		}
+
+		// Inject static columns into the event data.
+		evtData[staticColumn.Name] = staticColumn.Value
 	}
 
 	sort.Strings(pks)
