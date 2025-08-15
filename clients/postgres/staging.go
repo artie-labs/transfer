@@ -110,6 +110,10 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 }
 
 func parseValue(value any, col columns.Column) (any, error) {
+	if value == nil {
+		return value, nil
+	}
+
 	switch col.KindDetails.Kind {
 	case typing.String.Kind:
 		castedValue, err := typing.AssertType[string](value)
