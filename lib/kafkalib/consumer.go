@@ -32,8 +32,11 @@ type ConsumerProvider struct {
 
 func NewConsumerProviderForTest(consumer Consumer, groupID string) *ConsumerProvider {
 	return &ConsumerProvider{
-		Consumer: consumer,
-		groupID:  groupID,
+		Consumer:                 consumer,
+		groupID:                  groupID,
+		partitionToReadOffset:    make(map[int]int64),
+		partitionToAppliedOffset: make(map[int]int64),
+		partitionToCommitOffset:  make(map[int]int64),
 	}
 }
 
@@ -52,7 +55,13 @@ func InjectConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) (contex
 			Brokers: cfg.BootstrapServers(true),
 		}
 
-		ctx = context.WithValue(ctx, BuildContextKey(topicConfig.Topic), &ConsumerProvider{Consumer: kafka.NewReader(kafkaCfg), groupID: cfg.GroupID})
+		ctx = context.WithValue(ctx, BuildContextKey(topicConfig.Topic), &ConsumerProvider{
+			Consumer:                 kafka.NewReader(kafkaCfg),
+			groupID:                  cfg.GroupID,
+			partitionToReadOffset:    make(map[int]int64),
+			partitionToAppliedOffset: make(map[int]int64),
+			partitionToCommitOffset:  make(map[int]int64),
+		})
 	}
 
 	return ctx, nil
@@ -82,7 +91,7 @@ func (c *ConsumerProvider) FetchMessageAndProcess(ctx context.Context, do func(k
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if c.partitionToReadOffset[msg.Partition] > msg.Offset {
+	if c.partitionToAppliedOffset[msg.Partition] >= msg.Offset {
 		// We should skip this message because we have already processed it.
 		return nil
 	}
