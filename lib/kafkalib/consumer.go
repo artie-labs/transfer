@@ -21,9 +21,11 @@ type Consumer interface {
 }
 
 type ConsumerProvider struct {
-	mu      sync.Mutex
-	groupID string
-	offset  int64
+	mu                       sync.Mutex
+	groupID                  string
+	partitionToReadOffset    map[int]int64
+	partitionToAppliedOffset map[int]int64
+	partitionToCommitOffset  map[int]int64
 
 	Consumer
 }
@@ -75,10 +77,12 @@ func (c *ConsumerProvider) FetchMessageAndProcess(ctx context.Context, do func(k
 		return NewFetchMessageError(err)
 	}
 
+	c.partitionToReadOffset[msg.Partition] = msg.Offset
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if c.offset > msg.Offset {
+	if c.partitionToReadOffset[msg.Partition] > msg.Offset {
 		// We should skip this message because we have already processed it.
 		return nil
 	}
@@ -88,7 +92,7 @@ func (c *ConsumerProvider) FetchMessageAndProcess(ctx context.Context, do func(k
 	}
 
 	// Set the offset to the last processed message.
-	c.offset = msg.Offset
+	c.partitionToAppliedOffset[msg.Partition] = msg.Offset
 	return nil
 }
 
@@ -103,6 +107,7 @@ func GetConsumerFromContext(ctx context.Context, topic string) (*ConsumerProvide
 }
 
 func (c *ConsumerProvider) CommitMessage(ctx context.Context, msg kafka.Message) error {
+	c.partitionToCommitOffset[msg.Partition] = msg.Offset
 	return c.Consumer.CommitMessages(ctx, msg)
 }
 
