@@ -393,8 +393,16 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 	}
 
 	td.InsertRow(pkValueString, e.data, e.deleted)
-	// Record the last message for this partition, so we can use this for committing the offset.
+
+	// Recording the last message we processed for this partition, so we can use this to commit the offset later.
+	if prev, ok := td.PartitionsToLastMessage[message.Partition()]; ok {
+		if prev.Offset() > message.Offset() {
+			return false, "", fmt.Errorf("previous message offset %d is greater than the current message offset %d for partition %d", prev.Offset(), message.Offset(), message.Partition())
+		}
+	}
+
 	td.PartitionsToLastMessage[message.Partition()] = message
+
 	td.LatestCDCTs = e.executionTime
 	flush, flushReason := td.ShouldFlush(cfg)
 	return flush, flushReason, nil
