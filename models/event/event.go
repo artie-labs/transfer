@@ -396,6 +396,7 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 
 	// Recording the last message we processed for this partition, so we can use this to commit the offset later.
 	if prev, ok := td.PartitionsToLastMessage[message.Partition()]; ok {
+		// This should never happen because we have a guardrail on the outerloop
 		if prev.Offset() > message.Offset() {
 			return false, "", fmt.Errorf("previous message offset %d is greater than the current message offset %d for partition %d", prev.Offset(), message.Offset(), message.Partition())
 		}
