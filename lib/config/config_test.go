@@ -430,7 +430,7 @@ func TestConfig_Validate(t *testing.T) {
 	}
 	{
 		// Invalid flush settings
-		for i := range bufferPoolSizeMin {
+		for i := range BufferPoolSizeMin {
 			cfg.BufferRows = 500
 			cfg.FlushIntervalSeconds = i
 			assert.ErrorContains(t, cfg.Validate(), "flush interval is outside of our range")
