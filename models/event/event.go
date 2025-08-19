@@ -185,7 +185,26 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 		evtData[constants.FullSourceTableNameColumnMarker] = event.GetFullTableName()
 	}
 
-	tblName := cmp.Or(tc.TableName, event.GetTableName())
+	var tblName string
+	if !tc.SoftPartitioning.Enabled {
+		tblName = cmp.Or(tc.TableName, event.GetTableName())
+	} else {
+		tblName = cmp.Or(tc.TableName, event.GetTableName())
+		maybeDatetime, ok := evtData[tc.SoftPartitioning.PartitionColumn]
+		if !ok {
+			return Event{}, fmt.Errorf("partition column %s not found in data", tc.SoftPartitioning.PartitionColumn)
+		}
+		actuallyDateTime, err := typing.AssertType[time.Time](maybeDatetime)
+		if err != nil {
+			return Event{}, fmt.Errorf("failed to assert datetime: %w for table %s schema %s", err, tc.TableName, tc.Schema)
+		}
+		suffix, err := tc.SoftPartitioning.PartitionFrequency.Suffix(actuallyDateTime)
+		if err != nil {
+			return Event{}, fmt.Errorf("failed to get partition frequency suffix: %w for table %s schema %s", err, tc.TableName, tc.Schema)
+		}
+		tblName = tblName + suffix
+	}
+
 	if cfgMode == config.History {
 		if !strings.HasSuffix(tblName, constants.HistoryModeSuffix) {
 			// History mode will include a table suffix and operation column
@@ -307,33 +326,9 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 	if err := e.Validate(); err != nil {
 		return false, "", fmt.Errorf("event validation failed: %w", err)
 	}
-	var td *models.TableData
-	if !tc.SoftPartitioning.Enabled {
-		td = inMemDB.GetOrCreateTableData(e.tableID, tc.Topic)
-	} else {
-		maybeDatetime, ok := e.data[tc.SoftPartitioning.PartitionColumn]
-		if !ok {
-			return false, "", fmt.Errorf("partition column %s not found in data", tc.SoftPartitioning.PartitionColumn)
-		}
 
-		actuallyDateTime, err := typing.AssertType[time.Time](maybeDatetime)
-		if err != nil {
-			return false, "", fmt.Errorf("failed to assert datetime: %w for table %s schema %s", err, tc.TableName, tc.Schema)
-		}
-
-		suffix, err := tc.SoftPartitioning.PartitionFrequency.Suffix(actuallyDateTime)
-		if err != nil {
-			return false, "", fmt.Errorf("failed to get partition frequency suffix: %w for table %s schema %s", err, tc.TableName, tc.Schema)
-		}
-		finalTableName := tc.TableName + suffix
-		var tableID cdc.TableID
-		if tc.SoftPartitioning.PartitionSchema == "" {
-			tableID = cdc.NewTableID(tc.Schema, finalTableName)
-		} else {
-			tableID = cdc.NewTableID(tc.SoftPartitioning.PartitionSchema, finalTableName)
-		}
-		td = inMemDB.GetOrCreateTableData(tableID, tc.Topic)
-	}
+	// Does the table exist?
+	td := inMemDB.GetOrCreateTableData(e.tableID, tc.Topic)
 	td.Lock()
 	defer td.Unlock()
 	if td.Empty() {
