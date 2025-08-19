@@ -1,7 +1,9 @@
 package event
 
 import (
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -350,5 +352,68 @@ func (e *EventsTestSuite) TestEvent_StaticColumns() {
 		evt, err := ToMemoryEvent(e.fakeEvent, map[string]any{"id": 123}, kafkalib.TopicConfig{StaticColumns: []kafkalib.StaticColumn{{Name: "foo", Value: "bar"}}}, config.Replication)
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), map[string]any{"id": 123, "foo": "bar"}, evt.data)
+	}
+}
+
+func (e *EventsTestSuite) TestToMemoryEventWithSoftPartitioning() {
+	partitionFrequencies := []kafkalib.PartitionFrequency{
+		kafkalib.Monthly,
+		kafkalib.Daily,
+		kafkalib.Hourly,
+	}
+	createdAt, err := time.Parse("2006-01-02T15:04:05Z", "2024-06-01T12:34:56Z")
+	assert.NoError(e.T(), err)
+
+	for _, freq := range partitionFrequencies {
+		softPartitioning := kafkalib.SoftPartitioning{
+			Enabled:            true,
+			PartitionColumn:    "created_at",
+			PartitionFrequency: freq,
+			PartitionSchema:    "soft_part_schema",
+		}
+		tc := kafkalib.TopicConfig{
+			Database:         "customer",
+			TableName:        "users",
+			Schema:           "public",
+			SoftPartitioning: softPartitioning,
+			Topic:            "customer.public.users",
+		}
+
+		mockEvent := &mocks.FakeEvent{}
+		mockEvent.GetTableNameReturns(tc.TableName)
+		mockEvent.GetDataReturns(map[string]any{
+			"id":                                "123",
+			"created_at":                        createdAt,
+			constants.DeleteColumnMarker:        false,
+			constants.OnlySetDeleteColumnMarker: false,
+			"randomCol":                         "dusty",
+		}, nil)
+		mockEvent.GetOptionalSchemaReturns(map[string]typing.KindDetails{
+			"created_at": typing.Time,
+		}, nil)
+
+		event, err := ToMemoryEvent(mockEvent, map[string]any{"id": "123"}, tc, config.Replication)
+		assert.NoError(e.T(), err)
+
+		// Verify that the event has the correct partitioned table name
+		suffix, err := softPartitioning.PartitionFrequency.Suffix(createdAt)
+		assert.NoError(e.T(), err)
+		expectedTableName := tc.TableName + suffix
+		assert.Equal(e.T(), expectedTableName, event.GetTable(), "Table name should include partition suffix for frequency %s", freq)
+
+		// Verify that the event data contains the expected fields
+		assert.Equal(e.T(), "123", event.data["id"])
+		assert.Equal(e.T(), createdAt, event.data["created_at"])
+		assert.Equal(e.T(), "dusty", event.data["randomCol"])
+		assert.Equal(e.T(), false, event.data[constants.DeleteColumnMarker])
+		assert.Equal(e.T(), false, event.data[constants.OnlySetDeleteColumnMarker])
+
+		// Verify primary keys
+		assert.Equal(e.T(), []string{"id"}, event.GetPrimaryKeys())
+
+		// Verify that the event has the correct table ID structure
+		// Note: partition schema is not used for the table ID yet, using the schema from the topic config
+		expectedTableID := fmt.Sprintf("%s.%s", tc.Schema, expectedTableName)
+		assert.Equal(e.T(), expectedTableID, event.GetTableID().String())
 	}
 }
