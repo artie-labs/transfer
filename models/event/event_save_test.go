@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -303,4 +305,69 @@ func (e *EventsTestSuite) TestEventSaveTestDeleteFlag() {
 	_, _, err = event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafka.Message{}))
 	assert.NoError(e.T(), err)
 	assert.True(e.T(), e.db.GetOrCreateTableData(event.GetTableID(), topicConfig.Topic).ContainOtherOperations())
+}
+
+func (e *EventsTestSuite) TestEventSaveWithSoftPartitioning() {
+	partitionFrequencies := []kafkalib.PartitionFrequency{
+		kafkalib.Monthly,
+		kafkalib.Daily,
+		kafkalib.Hourly,
+	}
+	createdAt, err := time.Parse("2006-01-02T15:04:05Z", "2024-06-01T12:34:56Z")
+	assert.NoError(e.T(), err)
+
+	for _, freq := range partitionFrequencies {
+		softPartitioning := &kafkalib.SoftPartitioning{
+			Enabled:            true,
+			PartitionColumn:    "created_at",
+			PartitionFrequency: freq,
+			PartitionSchema:    "soft_part_schema",
+		}
+		tc := kafkalib.TopicConfig{
+			Database:         "customer",
+			TableName:        "users",
+			Schema:           "public",
+			SoftPartitioning: softPartitioning,
+			Topic:            "customer.public.users",
+		}
+
+		mockEvent := &mocks.FakeEvent{}
+		mockEvent.GetTableNameReturns(tc.TableName)
+		mockEvent.GetDataReturns(map[string]any{
+			"id":                                "123",
+			"created_at":                        createdAt,
+			constants.DeleteColumnMarker:        false,
+			constants.OnlySetDeleteColumnMarker: false,
+			"randomCol":                         "dusty",
+		}, nil)
+		mockEvent.GetOptionalSchemaReturns(map[string]typing.KindDetails{
+			"created_at": typing.Time,
+		}, nil)
+
+		event, err := ToMemoryEvent(mockEvent, map[string]any{"id": "123"}, tc, config.Replication)
+		assert.NoError(e.T(), err)
+
+		flush, reason, err := event.Save(e.cfg, e.db, tc, artie.NewMessage(kafka.Message{}))
+		assert.NoError(e.T(), err)
+		assert.False(e.T(), flush, reason)
+
+		// The table name should have the partition suffix
+		suffix, err := softPartitioning.PartitionFrequency.Suffix(createdAt)
+		assert.NoError(e.T(), err)
+		expectedTableName := tc.TableName + suffix
+		expectedTableID := fmt.Sprintf("%s.%s", softPartitioning.PartitionSchema, expectedTableName)
+
+		td := e.db.GetOrCreateTableData(cdc.NewTableID(softPartitioning.PartitionSchema, expectedTableName), tc.Topic)
+		assert.NotNil(e.T(), td)
+		assert.Equal(e.T(), expectedTableID, td.GetTableID().String())
+		// Check that the data is present
+		found := false
+		for _, col := range td.ReadOnlyInMemoryCols().GetColumns() {
+			if col.Name() == "created_at" {
+				found = true
+				assert.Equal(e.T(), typing.Time, col.KindDetails)
+			}
+		}
+		assert.True(e.T(), found, "created_at column should exist in in-memory columns for frequency %s", freq)
+	}
 }
