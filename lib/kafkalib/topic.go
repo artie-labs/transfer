@@ -75,6 +75,22 @@ type SoftPartitioning struct {
 	PartitionSchema    string             `yaml:"partitionSchema"`
 }
 
+func (sp SoftPartitioning) Validate() error {
+	if !sp.Enabled {
+		return nil
+	}
+	if sp.PartitionFrequency == "" {
+		return fmt.Errorf("partition frequency is required")
+	}
+	if _, err := sp.PartitionFrequency.Suffix(time.Now()); err != nil {
+		return fmt.Errorf("invalid partition frequency: %w", err)
+	}
+	if sp.PartitionColumn == "" {
+		return fmt.Errorf("partition column is required")
+	}
+	return nil
+}
+
 type TopicConfig struct {
 	Database                   string `yaml:"db"`
 	TableName                  string `yaml:"tableName"`
@@ -111,7 +127,7 @@ type TopicConfig struct {
 	StaticColumns []StaticColumn `yaml:"staticColumns,omitempty"`
 
 	// [SoftPartitioning] can be used to specify soft partitioning settings for the table.
-	SoftPartitioning *SoftPartitioning `yaml:"softPartitioning,omitempty"`
+	SoftPartitioning SoftPartitioning `yaml:"softPartitioning,omitempty"`
 
 	// Internal metadata
 	opsToSkipMap map[string]bool `yaml:"-"`
@@ -191,20 +207,8 @@ func (t TopicConfig) Validate() error {
 		return fmt.Errorf("cannot specify both primaryKeysOverride and includePrimaryKeys")
 	}
 
-	if t.SoftPartitioning != nil {
-		if t.SoftPartitioning.Enabled {
-			if t.SoftPartitioning.PartitionFrequency == "" {
-				return fmt.Errorf("partition frequency is required")
-			}
-
-			if _, err := t.SoftPartitioning.PartitionFrequency.Suffix(time.Now()); err != nil {
-				return fmt.Errorf("invalid partition frequency: %w", err)
-			}
-
-			if t.SoftPartitioning.PartitionColumn == "" {
-				return fmt.Errorf("partition column is required")
-			}
-		}
+	if err := t.SoftPartitioning.Validate(); err != nil {
+		return fmt.Errorf("invalid soft partitioning configuration: %w", err)
 	}
 
 	return nil

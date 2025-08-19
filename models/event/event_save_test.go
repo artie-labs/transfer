@@ -317,7 +317,7 @@ func (e *EventsTestSuite) TestEventSaveWithSoftPartitioning() {
 	assert.NoError(e.T(), err)
 
 	for _, freq := range partitionFrequencies {
-		softPartitioning := &kafkalib.SoftPartitioning{
+		softPartitioning := kafkalib.SoftPartitioning{
 			Enabled:            true,
 			PartitionColumn:    "created_at",
 			PartitionFrequency: freq,

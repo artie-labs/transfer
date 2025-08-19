@@ -308,7 +308,7 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 		return false, "", fmt.Errorf("event validation failed: %w", err)
 	}
 	var td *models.TableData
-	if tc.SoftPartitioning == nil || !tc.SoftPartitioning.Enabled {
+	if !tc.SoftPartitioning.Enabled {
 		td = inMemDB.GetOrCreateTableData(e.tableID, tc.Topic)
 	} else {
 		if tc.SoftPartitioning.PartitionColumn == "" {
