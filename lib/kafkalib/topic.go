@@ -65,7 +65,7 @@ func (pf PartitionFrequency) Suffix(value time.Time) (string, error) {
 	case Hourly:
 		return value.Format("_2006_01_02_15"), nil
 	}
-	return "", fmt.Errorf("invalid partition frequency: %s", pf)
+	return "", fmt.Errorf("invalid partition frequency: %q", pf)
 }
 
 type SoftPartitioning struct {
