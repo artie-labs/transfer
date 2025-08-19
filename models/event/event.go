@@ -311,10 +311,6 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 	if !tc.SoftPartitioning.Enabled {
 		td = inMemDB.GetOrCreateTableData(e.tableID, tc.Topic)
 	} else {
-		if tc.SoftPartitioning.PartitionColumn == "" {
-			return false, "", fmt.Errorf("partition column is required for soft partitioning")
-		}
-
 		maybeDatetime, ok := e.data[tc.SoftPartitioning.PartitionColumn]
 		if !ok {
 			return false, "", fmt.Errorf("partition column %s not found in data", tc.SoftPartitioning.PartitionColumn)
