@@ -5,6 +5,7 @@ import (
 	"maps"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/artie-labs/transfer/lib/kafkalib/partition"
 	"github.com/artie-labs/transfer/lib/stringutil"
@@ -47,6 +48,33 @@ type StaticColumn struct {
 	Value string `yaml:"value"`
 }
 
+type PartitionFrequency string
+
+const (
+	Monthly PartitionFrequency = "monthly"
+	Daily   PartitionFrequency = "daily"
+	Hourly  PartitionFrequency = "hourly"
+)
+
+func (pf PartitionFrequency) Suffix(value time.Time) (string, error) {
+	switch pf {
+	case Monthly:
+		return value.Format("_2006_01"), nil
+	case Daily:
+		return value.Format("_2006_01_02"), nil
+	case Hourly:
+		return value.Format("_2006_01_02_15"), nil
+	}
+	return "", fmt.Errorf("invalid partition frequency: %s", pf)
+}
+
+type SoftPartitioning struct {
+	Enabled            bool               `yaml:"enabled"`
+	PartitionFrequency PartitionFrequency `yaml:"partitionFrequency"`
+	PartitionColumn    string             `yaml:"partitionColumn"`
+	PartitionSchema    string             `yaml:"partitionSchema"`
+}
+
 type TopicConfig struct {
 	Database                   string `yaml:"db"`
 	TableName                  string `yaml:"tableName"`
@@ -81,6 +109,9 @@ type TopicConfig struct {
 	// [StaticColumns] can be used to specify static columns that should be written to the destination.
 	// This is useful for cases where you want to add additional columns to provide metadata, etc in the destination.
 	StaticColumns []StaticColumn `yaml:"staticColumns,omitempty"`
+
+	// [SoftPartitioning] can be used to specify soft partitioning settings for the table.
+	SoftPartitioning *SoftPartitioning `yaml:"softPartitioning,omitempty"`
 
 	// Internal metadata
 	opsToSkipMap map[string]bool `yaml:"-"`
@@ -158,6 +189,22 @@ func (t TopicConfig) Validate() error {
 	// You cannot have both [PrimaryKeysOverride] and [IncludePrimaryKeys]
 	if len(t.PrimaryKeysOverride) > 0 && len(t.IncludePrimaryKeys) > 0 {
 		return fmt.Errorf("cannot specify both primaryKeysOverride and includePrimaryKeys")
+	}
+
+	if t.SoftPartitioning != nil {
+		if t.SoftPartitioning.Enabled {
+			if t.SoftPartitioning.PartitionFrequency == "" {
+				return fmt.Errorf("partition frequency is required")
+			}
+
+			if _, err := t.SoftPartitioning.PartitionFrequency.Suffix(time.Now()); err != nil {
+				return fmt.Errorf("invalid partition frequency: %w", err)
+			}
+
+			if t.SoftPartitioning.PartitionColumn == "" {
+				return fmt.Errorf("partition column is required")
+			}
+		}
 	}
 
 	return nil
