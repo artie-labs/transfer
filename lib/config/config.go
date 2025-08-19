@@ -183,6 +183,10 @@ func (c Config) Validate() error {
 			if !topicConfig.IncludeDatabaseUpdatedAt {
 				return fmt.Errorf("includeDatabaseUpdatedAt is required in history mode, topic: %s", topicConfig.String())
 			}
+
+			if topicConfig.SoftPartitioning.Enabled {
+				return fmt.Errorf("soft partitioning is not supported in history mode, topic: %s", topicConfig.String())
+			}
 		}
 
 	}
