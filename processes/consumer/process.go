@@ -49,7 +49,7 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 	pkMap, err := topicConfig.GetPrimaryKey(p.Msg.Key(), topicConfig.tc)
 	if err != nil {
 		tags["what"] = "marshall_pk_err"
-		return cdc.TableID{}, fmt.Errorf("cannot unmarshall key %s: %w", string(p.Msg.Key()), err)
+		return cdc.TableID{}, fmt.Errorf("cannot unmarshall key %q, body: %q: %w", string(p.Msg.Key()), string(p.Msg.Value()), err)
 	}
 
 	_event, err := topicConfig.GetEventFromBytes(p.Msg.Value())
