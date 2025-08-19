@@ -46,6 +46,10 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 	tags["database"] = topicConfig.tc.Database
 	tags["schema"] = topicConfig.tc.Schema
 
+	if len(p.Msg.Key()) == 0 {
+		return cdc.TableID{}, nil
+	}
+
 	pkMap, err := topicConfig.GetPrimaryKey(p.Msg.Key(), topicConfig.tc)
 	if err != nil {
 		tags["what"] = "marshall_pk_err"
