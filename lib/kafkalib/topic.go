@@ -69,10 +69,10 @@ func (pf PartitionFrequency) Suffix(value time.Time) (string, error) {
 }
 
 type SoftPartitioning struct {
-	Enabled            bool               `yaml:"enabled"`
-	PartitionFrequency PartitionFrequency `yaml:"partitionFrequency"`
-	PartitionColumn    string             `yaml:"partitionColumn"`
-	PartitionSchema    string             `yaml:"partitionSchema"`
+	Enabled            bool               `yaml:"enabled" json:"enabled"`
+	PartitionFrequency PartitionFrequency `yaml:"partitionFrequency" json:"partitionFrequency"`
+	PartitionColumn    string             `yaml:"partitionColumn" json:"partitionColumn"`
+	PartitionSchema    string             `yaml:"partitionSchema" json:"partitionSchema"`
 }
 
 func (sp SoftPartitioning) Validate() error {
