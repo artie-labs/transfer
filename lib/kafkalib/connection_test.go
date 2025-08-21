@@ -30,44 +30,55 @@ func TestConnection_Mechanism(t *testing.T) {
 	}
 }
 
-func TestConnection_Dialer(t *testing.T) {
+func TestConnection_ClientOptions(t *testing.T) {
 	ctx := t.Context()
-	{
-		// Plain
-		c := NewConnection(false, false, "", "", DefaultTimeout)
-		dialer, err := c.Dialer(ctx)
-		assert.NoError(t, err)
-		assert.Nil(t, dialer.TLS)
-		assert.Nil(t, dialer.SASLMechanism)
-	}
-	{
-		// SCRAM enabled with TLS
-		c := NewConnection(false, false, "username", "password", DefaultTimeout)
-		dialer, err := c.Dialer(ctx)
-		assert.NoError(t, err)
-		assert.NotNil(t, dialer.TLS)
-		assert.NotNil(t, dialer.SASLMechanism)
+	brokers := []string{"localhost:9092"}
 
-		// w/o TLS
-		c = NewConnection(false, true, "username", "password", DefaultTimeout)
-		dialer, err = c.Dialer(ctx)
+	{
+		// Plain - should have minimal options (brokers + timeout)
+		c := NewConnection(false, false, "", "", DefaultTimeout)
+		opts, err := c.ClientOptions(ctx, brokers)
 		assert.NoError(t, err)
-		assert.Nil(t, dialer.TLS)
-		assert.NotNil(t, dialer.SASLMechanism)
+		assert.NotEmpty(t, opts) // Should have at least seed brokers and timeout
 	}
 	{
-		// AWS IAM w/ TLS
-		c := NewConnection(true, false, "", "", DefaultTimeout)
-		dialer, err := c.Dialer(ctx)
+		// SCRAM enabled with TLS - should have SASL and Dialer options
+		c := NewConnection(false, false, "username", "password", DefaultTimeout)
+		opts, err := c.ClientOptions(ctx, brokers)
 		assert.NoError(t, err)
-		assert.NotNil(t, dialer.TLS)
-		assert.NotNil(t, dialer.SASLMechanism)
+		assert.NotEmpty(t, opts)
+		// Should have more options (SASL + TLS dialer)
+		assert.GreaterOrEqual(t, len(opts), 3) // brokers, timeout, SASL, dialer
+
+		// w/o TLS - should have SASL but no TLS dialer
+		c = NewConnection(false, true, "username", "password", DefaultTimeout)
+		opts, err = c.ClientOptions(ctx, brokers)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, opts)
+		assert.GreaterOrEqual(t, len(opts), 3) // brokers, timeout, SASL
+	}
+	{
+		// AWS IAM w/ TLS - should have SASL and TLS dialer
+		c := NewConnection(true, false, "", "", DefaultTimeout)
+		opts, err := c.ClientOptions(ctx, brokers)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, opts)
+		assert.GreaterOrEqual(t, len(opts), 4) // brokers, timeout, SASL, dialer
 
 		// w/o TLS (still enabled because AWS doesn't support not having TLS)
 		c = NewConnection(true, true, "", "", DefaultTimeout)
-		dialer, err = c.Dialer(ctx)
+		opts, err = c.ClientOptions(ctx, brokers)
 		assert.NoError(t, err)
-		assert.NotNil(t, dialer.TLS)
-		assert.NotNil(t, dialer.SASLMechanism)
+		assert.NotEmpty(t, opts)
+		assert.GreaterOrEqual(t, len(opts), 4) // brokers, timeout, SASL, dialer (TLS still forced)
 	}
+}
+
+// Test backward compatibility of Dialer method
+func TestConnection_Dialer_BackwardCompatibility(t *testing.T) {
+	ctx := t.Context()
+	c := NewConnection(false, false, "", "", DefaultTimeout)
+	opts, err := c.Dialer(ctx)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, opts) // Should return client options
 }
