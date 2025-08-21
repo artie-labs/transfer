@@ -213,13 +213,15 @@ func (PostgresDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, setting
 	switch kd.Kind {
 	case typing.Integer.Kind:
 		if kd.OptionalIntegerKind == nil {
-			return "integer", nil
+			return "bigint", nil
 		}
 
 		switch *kd.OptionalIntegerKind {
+		case typing.NotSpecifiedKind:
+			return "bigint", nil
 		case typing.SmallIntegerKind:
 			return "smallint", nil
-		case typing.NotSpecifiedKind, typing.IntegerKind:
+		case typing.IntegerKind:
 			return "integer", nil
 		case typing.BigIntegerKind:
 			return "bigint", nil
@@ -241,11 +243,8 @@ var dataTypeMap = map[string]typing.KindDetails{
 	"text":    typing.String,
 	// Numbers:
 	"smallint":         typing.BuildIntegerKind(typing.SmallIntegerKind),
-	"int2":         typing.BuildIntegerKind(typing.SmallIntegerKind),
 	"integer":          typing.BuildIntegerKind(typing.IntegerKind),
-	"int4":          typing.BuildIntegerKind(typing.IntegerKind),
 	"bigint":           typing.BuildIntegerKind(typing.BigIntegerKind),
-	"int8":           typing.BuildIntegerKind(typing.BigIntegerKind),
 	"float":            typing.Float,
 	"real":             typing.Float,
 	"double":           typing.Float,
