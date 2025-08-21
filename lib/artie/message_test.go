@@ -2,19 +2,21 @@ package artie
 
 import (
 	"testing"
+	"time"
 
-	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
+	"github.com/twmb/franz-go/pkg/kgo"
 )
 
 const keyString = "Struct{id=12}"
 
 func TestNewMessage(t *testing.T) {
-	kafkaMsg := kafka.Message{
+	kafkaMsg := &kgo.Record{
 		Topic:     "test_topic",
 		Partition: 5,
 		Key:       []byte(keyString),
 		Value:     []byte("kafka_value"),
+		Timestamp: time.Now(),
 	}
 
 	msg := NewMessage(kafkaMsg)

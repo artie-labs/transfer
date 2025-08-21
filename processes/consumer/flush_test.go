@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
+	"github.com/twmb/franz-go/pkg/kgo"
 
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/cdc"
@@ -41,7 +41,7 @@ func (f *FlushTestSuite) TestMemoryBasic() {
 		evt, err := event.ToMemoryEvent(mockEvent, map[string]any{"id": fmt.Sprintf("pk-%d", i)}, topicConfig, config.Replication)
 		assert.NoError(f.T(), err)
 
-		kafkaMsg := kafka.Message{Partition: 1, Offset: 1}
+		kafkaMsg := &kgo.Record{Partition: 1, Offset: 1}
 		_, _, err = evt.Save(f.cfg, f.db, topicConfig, artie.NewMessage(kafkaMsg))
 		assert.NoError(f.T(), err)
 
@@ -71,7 +71,7 @@ func (f *FlushTestSuite) TestShouldFlush() {
 		evt, err := event.ToMemoryEvent(mockEvent, map[string]any{"id": fmt.Sprintf("pk-%d", i)}, kafkalib.TopicConfig{}, config.Replication)
 		assert.NoError(f.T(), err)
 
-		kafkaMsg := kafka.Message{Partition: 1, Offset: int64(i)}
+		kafkaMsg := &kgo.Record{Partition: 1, Offset: int64(i)}
 		flush, flushReason, err = evt.Save(f.cfg, f.db, topicConfig, artie.NewMessage(kafkaMsg))
 		assert.NoError(f.T(), err)
 
@@ -112,7 +112,7 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 				evt, err := event.ToMemoryEvent(mockEvent, map[string]any{"id": fmt.Sprintf("pk-%d", i)}, kafkalib.TopicConfig{Schema: tableID.Schema, Topic: topicConfig.Topic}, config.Replication)
 				assert.NoError(f.T(), err)
 
-				kafkaMsg := kafka.Message{Partition: 1, Offset: int64(i)}
+				kafkaMsg := &kgo.Record{Partition: 1, Offset: int64(i)}
 				_, _, err = evt.Save(f.cfg, f.db, topicConfig, artie.NewMessage(kafkaMsg))
 				assert.NoError(f.T(), err)
 			}

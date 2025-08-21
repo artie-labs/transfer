@@ -4,21 +4,21 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/segmentio/kafka-go"
+	"github.com/twmb/franz-go/pkg/kgo"
 
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 )
 
 type Message struct {
-	message kafka.Message
+	message *kgo.Record
 }
 
-func (m Message) GetMessage() kafka.Message {
+func (m Message) GetMessage() *kgo.Record {
 	return m.message
 }
 
-func BuildLogFields(msg kafka.Message) []any {
+func BuildLogFields(msg *kgo.Record) []any {
 	return []any{
 		slog.String("topic", msg.Topic),
 		slog.Int64("offset", msg.Offset),
@@ -27,15 +27,17 @@ func BuildLogFields(msg kafka.Message) []any {
 	}
 }
 
-func NewMessage(msg kafka.Message) Message {
+func NewMessage(msg *kgo.Record) Message {
 	return Message{message: msg}
 }
 
 // EmitRowLag will diff against the partition's high watermark and the message's offset
+// Note: franz-go doesn't provide high watermark in the record, so we'll emit 0 for now
+// This would need to be calculated separately if needed
 func (m Message) EmitRowLag(metricsClient base.Client, mode config.Mode, groupID, table string) {
 	metricsClient.GaugeWithSample(
 		"row.lag",
-		float64(m.message.HighWaterMark-m.message.Offset),
+		float64(0), // TODO: Calculate lag separately with franz-go
 		map[string]string{
 			"mode":    mode.String(),
 			"groupID": groupID,
@@ -53,7 +55,7 @@ func (m Message) EmitIngestionLag(metricsClient base.Client, mode config.Mode, g
 }
 
 func (m Message) PublishTime() time.Time {
-	return m.message.Time
+	return m.message.Timestamp
 }
 
 func (m Message) Topic() string {
@@ -61,7 +63,7 @@ func (m Message) Topic() string {
 }
 
 func (m Message) Partition() int {
-	return m.message.Partition
+	return int(m.message.Partition)
 }
 
 func (m Message) Offset() int64 {
