@@ -1,6 +1,7 @@
 package dialect
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
+	"google.golang.org/api/googleapi"
 )
 
 const (
@@ -37,7 +39,15 @@ func (BigQueryDialect) IsColumnAlreadyExistsErr(err error) bool {
 	return strings.Contains(err.Error(), "Column already exists")
 }
 
-func (BigQueryDialect) IsTableDoesNotExistErr(_ error) bool {
+func (BigQueryDialect) IsTableDoesNotExistErr(err error) bool {
+	var apiError *googleapi.Error
+	if ok := errors.As(err, &apiError); ok {
+		fmt.Println("apiError.Code", apiError.Code)
+		if apiError.Code == 404 {
+			return true
+		}
+	}
+
 	return false
 }
 
