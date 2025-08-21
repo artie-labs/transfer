@@ -241,8 +241,11 @@ var dataTypeMap = map[string]typing.KindDetails{
 	"text":    typing.String,
 	// Numbers:
 	"smallint":         typing.BuildIntegerKind(typing.SmallIntegerKind),
+	"int2":         typing.BuildIntegerKind(typing.SmallIntegerKind),
 	"integer":          typing.BuildIntegerKind(typing.IntegerKind),
+	"int4":          typing.BuildIntegerKind(typing.IntegerKind),
 	"bigint":           typing.BuildIntegerKind(typing.BigIntegerKind),
+	"int8":           typing.BuildIntegerKind(typing.BigIntegerKind),
 	"float":            typing.Float,
 	"real":             typing.Float,
 	"double":           typing.Float,
