@@ -122,6 +122,13 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 		kgo.ConsumeTopics(topics...), // Consume ALL topics with one client
 		// Start from beginning if no committed offset (good for dev/testing)
 		kgo.ConsumeResetOffset(kgo.NewOffset().AtStart()),
+		kgo.DisableAutoCommit(),
+		// Set session timeout for consumer group heartbeats
+		kgo.SessionTimeout(10*time.Second),
+		// Set heartbeat interval
+		kgo.HeartbeatInterval(3*time.Second),
+		// Ensure we allow time for rebalancing
+		kgo.RebalanceTimeout(30*time.Second),
 		// Consumer group lifecycle callbacks with detailed logging
 		kgo.OnPartitionsAssigned(func(ctx context.Context, c *kgo.Client, assigned map[string][]int32) {
 			for topic, partitions := range assigned {
