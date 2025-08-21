@@ -37,8 +37,12 @@ func (BigQueryDialect) IsColumnAlreadyExistsErr(err error) bool {
 	return strings.Contains(err.Error(), "Column already exists")
 }
 
-func (BigQueryDialect) IsTableDoesNotExistErr(_ error) bool {
-	return false
+func (BigQueryDialect) IsTableDoesNotExistErr(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	return strings.Contains(err.Error(), "not found")
 }
 
 func (bd BigQueryDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
