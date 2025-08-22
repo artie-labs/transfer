@@ -330,7 +330,7 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 				slog.Info("Consumer context cancelled")
 				return
 			}
-			slog.Warn("Failed to read kafka message", slog.Any("err", err))
+			slog.Debug("No kafka message available, continuing polling", slog.Any("err", err))
 
 			// Check if consumer is still assigned to partitions
 			groupID, generation := client.GroupMetadata()
