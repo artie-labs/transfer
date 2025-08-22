@@ -90,7 +90,6 @@ func (c *ConsumerProvider) FetchMessageAndProcess(ctx context.Context, do func(k
 	defer c.mu.Unlock()
 
 	c.partitionToReadOffset[msg.Partition] = msg.Offset
-
 	if c.partitionToAppliedOffset[msg.Partition] >= msg.Offset {
 		// We should skip this message because we have already processed it.
 		return nil
