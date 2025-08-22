@@ -14,8 +14,8 @@ import (
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"github.com/artie-labs/transfer/models"
-	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
+	"github.com/twmb/franz-go/pkg/kgo"
 )
 
 var (
@@ -33,15 +33,15 @@ func TestProcessMessageFailures(t *testing.T) {
 	}
 	ctx := t.Context()
 	memDB := models.NewMemoryDB()
-	kafkaMsg := kafka.Message{
-		Topic:         "foo",
-		Partition:     0,
-		Offset:        0,
-		HighWaterMark: 0,
-		Key:           nil,
-		Value:         nil,
-		Headers:       nil,
-		Time:          time.Time{},
+	kafkaMsg := &kgo.Record{
+		Topic:     "foo",
+		Partition: 0,
+		Offset:    0,
+
+		Key:       nil,
+		Value:     nil,
+		Headers:   nil,
+		Timestamp: time.Time{},
 	}
 
 	msg := artie.NewMessage(kafkaMsg)
@@ -214,15 +214,15 @@ func TestProcessMessageSkip(t *testing.T) {
 	}
 	ctx := t.Context()
 	memDB := models.NewMemoryDB()
-	kafkaMsg := kafka.Message{
-		Topic:         "foo",
-		Partition:     0,
-		Offset:        0,
-		HighWaterMark: 0,
-		Key:           nil,
-		Value:         nil,
-		Headers:       nil,
-		Time:          time.Time{},
+	kafkaMsg := &kgo.Record{
+		Topic:     "foo",
+		Partition: 0,
+		Offset:    0,
+
+		Key:       nil,
+		Value:     nil,
+		Headers:   nil,
+		Timestamp: time.Time{},
 	}
 
 	msg := artie.NewMessage(kafkaMsg)
