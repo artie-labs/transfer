@@ -2,6 +2,7 @@ package consumer
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"sync"
 	"time"
@@ -56,9 +57,9 @@ func (f *FranzGoConsumer) ReadMessage(ctx context.Context) (*kgo.Record, error) 
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	groupID, generation := f.client.GroupMetadata()
-	slog.Info("Polling topics", slog.Any("topics", f.client.GetConsumeTopics()), slog.String("groupID", groupID), slog.Int("generation", int(generation)))
+	slog.Debug("Polling topics", slog.Any("topics", f.client.GetConsumeTopics()), slog.String("groupID", groupID), slog.Int("generation", int(generation)))
 	fetches := f.client.PollFetches(ctx)
-	slog.Info("done polling", "fetches", fetches)
+	slog.Debug("done polling", "fetches", fetches, slog.Any("topics", f.client.GetConsumeTopics()), slog.String("groupID", groupID), slog.Int("generation", int(generation)))
 	if errs := fetches.Errors(); len(errs) > 0 {
 		// Don't log timeouts as warnings, they're normal
 		if ctx.Err() != context.DeadlineExceeded {
@@ -233,7 +234,7 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 			time.Sleep(2 * time.Second)
 			connectCount++
 			if connectCount >= 5 {
-				logger.Fatal("Consumer group not ready, exiting... Check if TLS needs to be enabled/disabled", slog.Any("groupID", groupID), slog.Int("generation", int(generation)), slog.Any("brokers", client.DiscoveredBrokers()))
+				logger.Fatal(fmt.Sprintf("Consumer group not ready after %d attempts, exiting... Check if TLS needs to be enabled/disabled", connectCount), slog.String("groupID", groupID), slog.Int("generation", int(generation)), slog.Any("brokers", client.DiscoveredBrokers()))
 			}
 			continue
 		} else {
