@@ -87,37 +87,58 @@ func TestTopicConfig_String(t *testing.T) {
 }
 
 func TestTopicConfig_Validate(t *testing.T) {
-	var tc TopicConfig
-	assert.ErrorContains(t, tc.Validate(), "database, schema, topic or cdc format is empty", tc.String())
-
-	tc = TopicConfig{
-		Database:     "12",
-		TableName:    "34",
-		Schema:       "56",
-		Topic:        "78",
-		CDCFormat:    "aa",
-		CDCKeyFormat: JSONKeyFmt,
+	{
+		// Empty topic config
+		var tc TopicConfig
+		assert.ErrorContains(t, tc.Validate(), "database, schema, topic or cdc format is empty", tc.String())
 	}
+	{
+		tc := TopicConfig{
+			Database:     "12",
+			TableName:    "34",
+			Schema:       "56",
+			Topic:        "78",
+			CDCFormat:    "aa",
+			CDCKeyFormat: JSONKeyFmt,
+		}
 
-	assert.ErrorContains(t, tc.Validate(), "opsToSkipMap is nil, call Load() first")
+		assert.ErrorContains(t, tc.Validate(), "opsToSkipMap is nil, call Load() first")
 
-	tc.Load()
-	assert.NoError(t, tc.Validate(), tc.String())
+		tc.Load()
+		assert.NoError(t, tc.Validate())
 
-	tc.CDCKeyFormat = "non_existent"
-	assert.ErrorContains(t, tc.Validate(), "invalid cdc key format: non_existent", tc.String())
+		{
+			tc.CDCKeyFormat = "non_existent"
+			assert.ErrorContains(t, tc.Validate(), "invalid cdc key format: non_existent")
+		}
+		{
+			// All the valid formats should be supported:
+			for _, validKeyFormat := range validKeyFormats {
+				tc.CDCKeyFormat = validKeyFormat
+				assert.NoError(t, tc.Validate(), tc.String())
+			}
+		}
 
-	for _, validKeyFormat := range validKeyFormats {
-		tc.CDCKeyFormat = validKeyFormat
+		tc.ColumnsToInclude = []string{"col1", "col2"}
+		tc.ColumnsToExclude = []string{"col3"}
+		assert.ErrorContains(t, tc.Validate(), "cannot specify both columnsToInclude and columnsToExclude")
+
+		tc.ColumnsToInclude = []string{}
 		assert.NoError(t, tc.Validate(), tc.String())
+
+		{
+			// If primary key override and include primary keys are both set, we should error
+			tc.PrimaryKeysOverride = []string{"col1", "col2"}
+			tc.IncludePrimaryKeys = []string{"col3"}
+			assert.ErrorContains(t, tc.Validate(), "cannot specify both primaryKeysOverride and includePrimaryKeys")
+		}
+		{
+			// Only one of the two can be set:
+			tc.PrimaryKeysOverride = []string{"col1", "col2"}
+			tc.IncludePrimaryKeys = []string{}
+			assert.NoError(t, tc.Validate())
+		}
 	}
-
-	tc.ColumnsToInclude = []string{"col1", "col2"}
-	tc.ColumnsToExclude = []string{"col3"}
-	assert.ErrorContains(t, tc.Validate(), "cannot specify both columnsToInclude and columnsToExclude", tc.String())
-
-	tc.ColumnsToInclude = []string{}
-	assert.NoError(t, tc.Validate(), tc.String())
 }
 
 func TestTopicConfig_Load_ShouldSkip(t *testing.T) {
