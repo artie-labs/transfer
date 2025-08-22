@@ -18,45 +18,8 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
-var topicToConsumer *TopicToConsumer
-
-func NewTopicToConsumer() *TopicToConsumer {
-	return &TopicToConsumer{
-		topicToConsumer: make(map[string]kafkalib.Consumer),
-	}
-}
-
-type TopicToConsumer struct {
-	topicToConsumer map[string]kafkalib.Consumer
-	sync.RWMutex
-}
-
-func (t *TopicToConsumer) Add(topic string, consumer kafkalib.Consumer) {
-	t.Lock()
-	defer t.Unlock()
-	t.topicToConsumer[topic] = consumer
-}
-
-func (t *TopicToConsumer) Get(topic string) kafkalib.Consumer {
-	t.RLock()
-	defer t.RUnlock()
-	return t.topicToConsumer[topic]
-}
-
 func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client) {
-	kafkaConn := kafkalib.NewConnection(cfg.Kafka.EnableAWSMSKIAM, cfg.Kafka.DisableTLS, cfg.Kafka.Username, cfg.Kafka.Password, kafkalib.DefaultTimeout)
-	slog.Info("Starting Kafka consumer...",
-		slog.Any("config", cfg.Kafka),
-		slog.Any("authMechanism", kafkaConn.Mechanism()),
-	)
-
-	dialer, err := kafkaConn.Dialer(ctx)
-	if err != nil {
-		logger.Panic("Failed to create Kafka dialer", slog.Any("err", err))
-	}
-
 	tcFmtMap := NewTcFmtMap()
-	topicToConsumer = NewTopicToConsumer()
 	var topics []string
 	for _, topicConfig := range cfg.Kafka.TopicConfigs {
 		tcFmtMap.Add(topicConfig.Topic, TopicConfigFormatter{
@@ -73,43 +36,45 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 		wg.Add(1)
 		go func(topic string) {
 			defer wg.Done()
-
-			kafkaCfg := kafka.ReaderConfig{
-				GroupID: cfg.Kafka.GroupID,
-				Dialer:  dialer,
-				Topic:   topic,
-				Brokers: cfg.Kafka.BootstrapServers(true),
-			}
-
-			kafkaConsumer := kafka.NewReader(kafkaCfg)
-			topicToConsumer.Add(topic, kafkaConsumer)
 			for {
-				kafkaMsg, err := kafkaConsumer.FetchMessage(ctx)
+				kafkaConsumer, err := kafkalib.GetConsumerFromContext(ctx, topic)
 				if err != nil {
-					slog.With(artie.BuildLogFields(kafkaMsg)...).Warn("Failed to read kafka message", slog.Any("err", err))
-					time.Sleep(500 * time.Millisecond)
-					continue
+					logger.Fatal("Failed to get consumer from context", slog.Any("err", err))
 				}
 
-				if len(kafkaMsg.Value) == 0 {
-					slog.Debug("Found a tombstone message, skipping...", artie.BuildLogFields(kafkaMsg)...)
-					continue
-				}
+				err = kafkaConsumer.FetchMessageAndProcess(ctx, func(kafkaMsg kafka.Message) error {
+					if len(kafkaMsg.Value) == 0 {
+						slog.Debug("Found a tombstone message, skipping...", artie.BuildLogFields(kafkaMsg)...)
+						return nil
+					}
 
-				msg := artie.NewMessage(kafkaMsg)
-				args := processArgs{
-					Msg:                    msg,
-					GroupID:                kafkaConsumer.Config().GroupID,
-					TopicToConfigFormatMap: tcFmtMap,
-				}
+					msg := artie.NewMessage(kafkaMsg)
+					args := processArgs{
+						Msg:                    msg,
+						GroupID:                kafkaConsumer.GetGroupID(),
+						TopicToConfigFormatMap: tcFmtMap,
+					}
 
-				tableID, err := args.process(ctx, cfg, inMemDB, dest, metricsClient)
+					tableID, err := args.process(ctx, cfg, inMemDB, dest, metricsClient)
+					if err != nil {
+						logger.Fatal("Failed to process message", slog.Any("err", err), slog.String("topic", kafkaMsg.Topic))
+					}
+
+					msg.EmitIngestionLag(metricsClient, cfg.Mode, kafkaConsumer.GetGroupID(), tableID.Table)
+					msg.EmitRowLag(metricsClient, cfg.Mode, kafkaConsumer.GetGroupID(), tableID.Table)
+
+					return nil
+				})
+
 				if err != nil {
-					logger.Fatal("Failed to process message", slog.Any("err", err), slog.String("topic", kafkaMsg.Topic))
+					if kafkalib.IsFetchMessageError(err) {
+						slog.Warn("Failed to read kafka message", slog.Any("err", err))
+						time.Sleep(500 * time.Millisecond)
+						continue
+					} else {
+						logger.Fatal("Failed to process message", slog.Any("err", err), slog.String("topic", topic))
+					}
 				}
-
-				msg.EmitIngestionLag(metricsClient, cfg.Mode, kafkaConsumer.Config().GroupID, tableID.Table)
-				msg.EmitRowLag(metricsClient, cfg.Mode, kafkaConsumer.Config().GroupID, tableID.Table)
 			}
 		}(topic)
 	}

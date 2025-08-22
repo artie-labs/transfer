@@ -45,7 +45,6 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 
 	tags["database"] = topicConfig.tc.Database
 	tags["schema"] = topicConfig.tc.Schema
-
 	pkMap, err := topicConfig.GetPrimaryKey(p.Msg.Key(), topicConfig.tc)
 	if err != nil {
 		tags["what"] = "marshall_pk_err"
@@ -86,8 +85,9 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 
 	if shouldFlush {
 		err = Flush(ctx, inMemDB, dest, metricsClient, Args{
-			Reason: flushReason,
-			Topic:  topicConfig.tc.Topic,
+			Reason:     flushReason,
+			Topic:      topicConfig.tc.Topic,
+			ShouldLock: false,
 		})
 		if err != nil {
 			tags["what"] = "flush_fail"
