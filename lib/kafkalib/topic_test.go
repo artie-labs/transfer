@@ -158,3 +158,77 @@ func TestMultiStepMergeSettings_Validate(t *testing.T) {
 		}.Validate())
 	}
 }
+
+func TestSoftPartitioning_Validate(t *testing.T) {
+	tests := []struct {
+		name    string
+		sp      SoftPartitioning
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			name:    "disabled partitioning is always valid",
+			sp:      SoftPartitioning{Enabled: false},
+			wantErr: false,
+		},
+		{
+			name:    "enabled but missing partition frequency",
+			sp:      SoftPartitioning{Enabled: true, PartitionFrequency: "", PartitionColumn: "col"},
+			wantErr: true,
+			errMsg:  "partition frequency is required",
+		},
+		{
+			name:    "enabled but invalid partition frequency",
+			sp:      SoftPartitioning{Enabled: true, PartitionFrequency: "invalid", PartitionColumn: "col"},
+			wantErr: true,
+			errMsg:  "invalid partition frequency",
+		},
+		{
+			name:    "enabled but missing partition column",
+			sp:      SoftPartitioning{Enabled: true, PartitionFrequency: Daily, PartitionColumn: ""},
+			wantErr: true,
+			errMsg:  "partition column is required",
+		},
+		{
+			name: "enabled and valid (daily)",
+			sp: SoftPartitioning{
+				Enabled:            true,
+				PartitionFrequency: Daily,
+				PartitionColumn:    "col",
+			},
+			wantErr: false,
+		},
+		{
+			name: "enabled and valid (monthly)",
+			sp: SoftPartitioning{
+				Enabled:            true,
+				PartitionFrequency: Monthly,
+				PartitionColumn:    "col",
+			},
+			wantErr: false,
+		},
+		{
+			name: "enabled and valid (hourly)",
+			sp: SoftPartitioning{
+				Enabled:            true,
+				PartitionFrequency: Hourly,
+				PartitionColumn:    "col",
+			},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.sp.Validate()
+			if tt.wantErr {
+				assert.Error(t, err, "expected error but got nil")
+				if tt.errMsg != "" {
+					assert.ErrorContains(t, err, tt.errMsg)
+				}
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}

@@ -3,6 +3,7 @@ package dialect
 import (
 	"testing"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/stretchr/testify/assert"
@@ -80,5 +81,126 @@ func TestStripPrecision(t *testing.T) {
 		stripped, metadata := StripPrecision(s)
 		assert.Equal(t, s, stripped)
 		assert.Empty(t, metadata)
+	}
+}
+
+func TestDataTypeForKind(t *testing.T) {
+	pd := PostgresDialect{}
+
+	tests := []struct {
+		name     string
+		kd       typing.KindDetails
+		isPk     bool
+		settings config.SharedDestinationColumnSettings
+		expected string
+		wantErr  bool
+	}{
+		{
+			name:     "float",
+			kd:       typing.Float,
+			expected: "double precision",
+		},
+		{
+			name:     "boolean",
+			kd:       typing.Boolean,
+			expected: "boolean",
+		},
+		{
+			name:     "struct",
+			kd:       typing.Struct,
+			expected: "jsonb",
+		},
+		{
+			name:     "array",
+			kd:       typing.Array,
+			expected: "jsonb",
+		},
+		{
+			name:     "string",
+			kd:       typing.String,
+			expected: "text",
+		},
+		{
+			name:     "date",
+			kd:       typing.Date,
+			expected: "date",
+		},
+		{
+			name:     "time",
+			kd:       typing.Time,
+			expected: "time",
+		},
+		{
+			name:     "timestamp ntz",
+			kd:       typing.TimestampNTZ,
+			expected: "timestamp without time zone",
+		},
+		{
+			name:     "timestamp tz",
+			kd:       typing.TimestampTZ,
+			expected: "timestamp with time zone",
+		},
+		{
+			name: "integer default (nil kind)",
+			kd: typing.KindDetails{
+				Kind:                    typing.Integer.Kind,
+				OptionalStringPrecision: nil,
+			},
+			expected: "bigint",
+		},
+		{
+			name:     "integer default (no kind)",
+			kd:       typing.BuildIntegerKind(typing.NotSpecifiedKind),
+			expected: "bigint",
+		},
+		{
+			name:     "smallint",
+			kd:       typing.BuildIntegerKind(typing.SmallIntegerKind),
+			expected: "smallint",
+		},
+		{
+			name:     "integer",
+			kd:       typing.BuildIntegerKind(typing.IntegerKind),
+			expected: "integer",
+		},
+		{
+			name:     "bigint",
+			kd:       typing.BuildIntegerKind(typing.BigIntegerKind),
+			expected: "bigint",
+		},
+		{
+			name: "decimal with details",
+			kd: typing.NewDecimalDetailsFromTemplate(
+				typing.EDecimal,
+				decimal.NewDetails(10, 2),
+			),
+			expected: "NUMERIC(10, 2)",
+		},
+		{
+			name: "decimal missing details",
+			kd: typing.KindDetails{
+				Kind: typing.EDecimal.Kind,
+			},
+			wantErr: true,
+		},
+		{
+			name: "unsupported kind",
+			kd: typing.KindDetails{
+				Kind: "unsupported_kind",
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := pd.DataTypeForKind(tt.kd, tt.isPk, tt.settings)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, got)
+			}
+		})
 	}
 }

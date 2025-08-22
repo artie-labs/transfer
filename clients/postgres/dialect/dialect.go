@@ -213,13 +213,15 @@ func (PostgresDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, setting
 	switch kd.Kind {
 	case typing.Integer.Kind:
 		if kd.OptionalIntegerKind == nil {
-			return "integer", nil
+			return "bigint", nil
 		}
 
 		switch *kd.OptionalIntegerKind {
+		case typing.NotSpecifiedKind:
+			return "bigint", nil
 		case typing.SmallIntegerKind:
 			return "smallint", nil
-		case typing.NotSpecifiedKind, typing.IntegerKind:
+		case typing.IntegerKind:
 			return "integer", nil
 		case typing.BigIntegerKind:
 			return "bigint", nil

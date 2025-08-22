@@ -18,8 +18,8 @@ const (
 	defaultFlushTimeSeconds = 10
 	defaultFlushSizeKb      = 25 * 1024 // 25 mb
 	defaultBufferPoolSize   = 30000
-	bufferPoolSizeMin       = 5
 
+	BufferPoolSizeMin       = 5
 	FlushIntervalSecondsMin = 5
 	FlushIntervalSecondsMax = 6 * 60 * 60
 )
@@ -129,8 +129,8 @@ func (c Config) Validate() error {
 			c.FlushIntervalSeconds, FlushIntervalSecondsMin, FlushIntervalSecondsMax)
 	}
 
-	if bufferPoolSizeMin > int(c.BufferRows) {
-		return fmt.Errorf("buffer pool is too small, min value: %d, actual: %d", bufferPoolSizeMin, int(c.BufferRows))
+	if BufferPoolSizeMin > int(c.BufferRows) {
+		return fmt.Errorf("buffer pool is too small, min value: %d, actual: %d", BufferPoolSizeMin, int(c.BufferRows))
 	}
 
 	if !constants.IsValidDestination(c.Output) {
@@ -182,6 +182,10 @@ func (c Config) Validate() error {
 
 			if !topicConfig.IncludeDatabaseUpdatedAt {
 				return fmt.Errorf("includeDatabaseUpdatedAt is required in history mode, topic: %s", topicConfig.String())
+			}
+
+			if topicConfig.SoftPartitioning.Enabled {
+				return fmt.Errorf("soft partitioning is not supported in history mode, topic: %s", topicConfig.String())
 			}
 		}
 

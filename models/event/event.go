@@ -73,6 +73,10 @@ func transformData(data map[string]any, tc kafkalib.TopicConfig) map[string]any 
 			}
 		}
 
+		for _, col := range tc.StaticColumns {
+			filteredData[col.Name] = col.Value
+		}
+
 		return filteredData
 	}
 
@@ -103,7 +107,17 @@ func buildFilteredColumns(event cdc.Event, tc kafkalib.TopicConfig) (*columns.Co
 			}
 		}
 
+		// If columns to include is specified, we should always include static columns.
+		for _, col := range tc.StaticColumns {
+			filteredColumns.AddColumn(columns.NewColumn(col.Name, typing.String))
+		}
+
 		return &filteredColumns, nil
+	}
+
+	// Include static columns
+	for _, col := range tc.StaticColumns {
+		cols.AddColumn(columns.NewColumn(col.Name, typing.String))
 	}
 
 	return cols, nil
@@ -112,7 +126,7 @@ func buildFilteredColumns(event cdc.Event, tc kafkalib.TopicConfig) (*columns.Co
 func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfig, cfgMode config.Mode) (Event, error) {
 	cols, err := buildFilteredColumns(event, tc)
 	if err != nil {
-		return Event{}, err
+		return Event{}, fmt.Errorf("failed to build filtered columns: %w", err)
 	}
 	// Now iterate over pkMap and tag each column that is a primary key
 	var pks []string
@@ -150,7 +164,7 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 
 	evtData, err := event.GetData(tc)
 	if err != nil {
-		return Event{}, err
+		return Event{}, fmt.Errorf("failed to get data: %w", err)
 	}
 
 	if tc.IncludeArtieOperation {
@@ -172,6 +186,7 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 	}
 
 	tblName := cmp.Or(tc.TableName, event.GetTableName())
+
 	if cfgMode == config.History {
 		if !strings.HasSuffix(tblName, constants.HistoryModeSuffix) {
 			// History mode will include a table suffix and operation column
@@ -185,11 +200,35 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 		// We don't need the deletion markers either.
 		delete(evtData, constants.DeleteColumnMarker)
 		delete(evtData, constants.OnlySetDeleteColumnMarker)
+	} else if tc.SoftPartitioning.Enabled {
+		maybeDatetime, ok := evtData[tc.SoftPartitioning.PartitionColumn]
+		if !ok {
+			return Event{}, fmt.Errorf("partition column %s not found in data", tc.SoftPartitioning.PartitionColumn)
+		}
+		actuallyDateTime, err := typing.AssertType[time.Time](maybeDatetime)
+		if err != nil {
+			return Event{}, fmt.Errorf("failed to assert datetime: %w for table %s schema %s", err, tc.TableName, tc.Schema)
+		}
+		suffix, err := tc.SoftPartitioning.PartitionFrequency.Suffix(actuallyDateTime)
+		if err != nil {
+			return Event{}, fmt.Errorf("failed to get partition frequency suffix: %w for table %s schema %s", err, tc.TableName, tc.Schema)
+		}
+		tblName = tblName + suffix
 	}
 
 	optionalSchema, err := event.GetOptionalSchema()
 	if err != nil {
-		return Event{}, err
+		return Event{}, fmt.Errorf("failed to get optional schema: %w", err)
+	}
+
+	// Static columns cannot collide with the event data.
+	for _, staticColumn := range tc.StaticColumns {
+		if _, ok := evtData[staticColumn.Name]; ok {
+			return Event{}, fmt.Errorf("static column %q collides with event data", staticColumn.Name)
+		}
+
+		// Inject static columns into the event data.
+		evtData[staticColumn.Name] = staticColumn.Value
 	}
 
 	sort.Strings(pks)
