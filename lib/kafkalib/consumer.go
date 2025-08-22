@@ -86,10 +86,11 @@ func (c *ConsumerProvider) FetchMessageAndProcess(ctx context.Context, do func(k
 		return NewFetchMessageError(err)
 	}
 
-	c.partitionToReadOffset[msg.Partition] = msg.Offset
-
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
+	// Update the last read offset for this partition under lock to avoid races.
+	c.partitionToReadOffset[msg.Partition] = msg.Offset
 
 	if c.partitionToAppliedOffset[msg.Partition] >= msg.Offset {
 		// We should skip this message because we have already processed it.
@@ -116,6 +117,10 @@ func GetConsumerFromContext(ctx context.Context, topic string) (*ConsumerProvide
 }
 
 func (c *ConsumerProvider) CommitMessage(ctx context.Context, msg kafka.Message) error {
+	// Record the offset to be committed under lock to avoid concurrent map writes.
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	c.partitionToCommitOffset[msg.Partition] = msg.Offset
 	return c.Consumer.CommitMessages(ctx, msg)
 }
