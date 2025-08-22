@@ -89,7 +89,6 @@ func (c *ConsumerProvider) FetchMessageAndProcess(ctx context.Context, do func(k
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	// Update the last read offset for this partition under lock to avoid races.
 	c.partitionToReadOffset[msg.Partition] = msg.Offset
 
 	if c.partitionToAppliedOffset[msg.Partition] >= msg.Offset {
