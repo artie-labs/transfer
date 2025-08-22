@@ -24,7 +24,6 @@ type Args struct {
 	Topic string
 	// [reason] - Is used to track the reason for the flush.
 	Reason string
-
 	// [ShouldLock] - If this is set to true, we will lock the consumer for the duration of the flush
 	ShouldLock bool
 }
