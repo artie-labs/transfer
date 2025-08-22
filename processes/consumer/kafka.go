@@ -28,8 +28,10 @@ func NewTopicToConsumer() *TopicToConsumer {
 
 // FranzGoConsumer wraps franz-go client to implement the Consumer interface
 type FranzGoConsumer struct {
-	client  *kgo.Client
-	groupID string
+	client       *kgo.Client
+	groupID      string
+	recordBuffer []*kgo.Record
+	bufferIndex  int
 }
 
 func (f *FranzGoConsumer) Close() error {
@@ -38,29 +40,56 @@ func (f *FranzGoConsumer) Close() error {
 }
 
 func (f *FranzGoConsumer) ReadMessage(ctx context.Context) (*kgo.Record, error) {
-	// Poll with a reasonable timeout to avoid tight loops
-	ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
-	defer cancel()
-
-	fetches := f.client.PollFetches(ctx)
-	if errs := fetches.Errors(); len(errs) > 0 {
-		// Log the error for debugging
-		slog.Debug("Error polling fetches", slog.Any("err", errs[0].Err))
-		return nil, errs[0].Err
-	}
-
-	iter := fetches.RecordIter()
-	for !iter.Done() {
-		record := iter.Next()
-		slog.Debug("Received message",
+	// First, check if we have buffered records from a previous fetch
+	if f.bufferIndex < len(f.recordBuffer) {
+		record := f.recordBuffer[f.bufferIndex]
+		f.bufferIndex++
+		slog.Info("Received message",
 			slog.String("topic", record.Topic),
 			slog.Int("partition", int(record.Partition)),
 			slog.Int64("offset", record.Offset))
 		return record, nil
 	}
 
-	// Return nil when no messages available (after timeout)
-	return nil, nil
+	// Buffer is empty or exhausted, need to poll for new records
+	// Poll with a longer timeout to allow for consumer group coordination
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+	groupID, generation := f.client.GroupMetadata()
+	slog.Info("Polling topics", slog.Any("topics", f.client.GetConsumeTopics()), slog.String("groupID", groupID), slog.Int("generation", int(generation)))
+	fetches := f.client.PollFetches(ctx)
+	slog.Info("done polling", "fetches", fetches)
+	if errs := fetches.Errors(); len(errs) > 0 {
+		// Don't log timeouts as warnings, they're normal
+		if ctx.Err() != context.DeadlineExceeded {
+			slog.Warn("Error polling fetches", slog.Any("err", errs[0].Err))
+		}
+		return nil, errs[0].Err
+	}
+
+	// Clear the buffer and collect all records from this fetch
+	f.recordBuffer = f.recordBuffer[:0] // Clear slice but keep capacity
+	f.bufferIndex = 0
+
+	iter := fetches.RecordIter()
+	for !iter.Done() {
+		record := iter.Next()
+		f.recordBuffer = append(f.recordBuffer, record)
+	}
+
+	// If no records were fetched, return nil (normal timeout case)
+	if len(f.recordBuffer) == 0 {
+		return nil, nil
+	}
+
+	// Return the first record from the newly filled buffer
+	record := f.recordBuffer[0]
+	f.bufferIndex = 1
+	slog.Info("📨 Received message",
+		slog.String("topic", record.Topic),
+		slog.Int("partition", int(record.Partition)),
+		slog.Int64("offset", record.Offset))
+	return record, nil
 }
 
 func (f *FranzGoConsumer) CommitMessages(ctx context.Context, msgs ...*kgo.Record) error {
@@ -179,8 +208,38 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 		slog.String("groupID", cfg.Kafka.GroupID),
 		slog.Any("brokers", brokers))
 
+	// Wait for consumer group coordination to complete
+	// This is crucial - we need to give franz-go time to join the consumer group
+	slog.Info("Waiting for consumer group coordination...")
+	time.Sleep(5 * time.Second)
+
+	// Check consumer group status after initialization
+	groupID, generation := client.GroupMetadata()
+	slog.Info("Consumer group status after initialization",
+		slog.String("groupID", groupID),
+		slog.Int("generation", int(generation)))
+
+	connectCount := 0
 	// Single consumer loop for all topics
 	for {
+		// Check if we're properly joined to the consumer group before polling
+		groupID, generation := client.GroupMetadata()
+		if groupID == "" || generation < 0 {
+			slog.Info("⏳ Consumer group not ready, waiting...",
+				slog.String("groupID", groupID),
+				slog.Int("generation", int(generation)),
+				slog.Any("brokers", client.DiscoveredBrokers()),
+			)
+			time.Sleep(2 * time.Second)
+			connectCount++
+			if connectCount >= 5 {
+				logger.Fatal("Consumer group not ready, exiting... Check if TLS needs to be enabled/disabled", slog.Any("groupID", groupID), slog.Int("generation", int(generation)), slog.Any("brokers", client.DiscoveredBrokers()))
+			}
+			continue
+		} else {
+			connectCount = 0
+		}
+
 		kafkaMsg, err := kafkaConsumer.ReadMessage(ctx)
 		if err != nil {
 			if ctx.Err() != nil {
