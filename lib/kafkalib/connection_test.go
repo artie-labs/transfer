@@ -73,12 +73,3 @@ func TestConnection_ClientOptions(t *testing.T) {
 		assert.GreaterOrEqual(t, len(opts), 4) // brokers, timeout, SASL, dialer (TLS still forced)
 	}
 }
-
-// Test backward compatibility of Dialer method
-func TestConnection_Dialer_BackwardCompatibility(t *testing.T) {
-	ctx := t.Context()
-	c := NewConnection(false, false, "", "", DefaultTimeout)
-	opts, err := c.Dialer(ctx)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, opts) // Should return client options
-}

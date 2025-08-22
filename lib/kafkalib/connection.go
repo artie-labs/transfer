@@ -97,13 +97,3 @@ func (c Connection) ClientOptions(ctx context.Context, brokers []string, awsOptF
 
 	return opts, nil
 }
-
-// Deprecated: Use ClientOptions instead. This method is kept for backward compatibility.
-func (c Connection) Dialer(ctx context.Context, awsOptFns ...func(options *awsCfg.LoadOptions) error) ([]kgo.Opt, error) {
-	return c.ClientOptions(ctx, []string{}, awsOptFns...)
-}
-
-// Deprecated: Use ClientOptions instead. This method is kept for backward compatibility.
-func (c Connection) Transport(ctx context.Context, awsOptFns ...func(options *awsCfg.LoadOptions) error) ([]kgo.Opt, error) {
-	return c.ClientOptions(ctx, []string{}, awsOptFns...)
-}
