@@ -34,6 +34,7 @@ require (
 	github.com/snowflakedb/gosnowflake v1.13.3
 	github.com/stretchr/testify v1.10.0
 	github.com/twmb/franz-go v1.19.5
+	github.com/twmb/franz-go/pkg/kmsg v1.11.2
 	github.com/twpayne/go-geom v1.6.0
 	github.com/viant/bigquery v0.4.1
 	go.mongodb.org/mongo-driver v1.17.3
@@ -132,7 +133,6 @@ require (
 	github.com/samber/lo v1.49.1 // indirect
 	github.com/samber/slog-common v0.18.1 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
-	github.com/twmb/franz-go/pkg/kmsg v1.11.2 // indirect
 	github.com/viant/afs v1.25.1 // indirect
 	github.com/viant/parsly v0.3.3-0.20240717150634-e1afaedb691b // indirect
 	github.com/viant/scy v0.12.1 // indirect
