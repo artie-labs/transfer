@@ -115,10 +115,6 @@ func GetConsumerFromContext(ctx context.Context, topic string) (*ConsumerProvide
 }
 
 func (c *ConsumerProvider) CommitMessage(ctx context.Context, msg kafka.Message) error {
-	// Record the offset to be committed under lock to avoid concurrent map writes.
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
 	c.partitionToCommitOffset[msg.Partition] = msg.Offset
 	return c.Consumer.CommitMessages(ctx, msg)
 }
