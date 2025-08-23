@@ -3,6 +3,7 @@ package bigquery
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -199,7 +200,9 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 		case typing.Date.Kind:
 			_time, err := ext.ParseDateFromAny(value)
 			if err != nil {
-				return nil, fmt.Errorf("failed to cast value for column: %q, err: %w", column.Name(), err)
+				// TODO uncomment
+				// return nil, fmt.Errorf("failed to cast value for column: %q, err: %w", column.Name(), err)
+				slog.Warn("failed to cast value for column: %q, err: %w", column.Name(), err)
 			}
 
 			daysSinceEpoch := _time.Unix() / (60 * 60 * 24)
