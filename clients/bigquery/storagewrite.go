@@ -200,9 +200,10 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 		case typing.Date.Kind:
 			_time, err := ext.ParseDateFromAny(value)
 			if err != nil {
-				// TODO uncomment
+				// TODO revert
 				// return nil, fmt.Errorf("failed to cast value for column: %q, err: %w", column.Name(), err)
 				slog.Warn("failed to cast value for column: %q, err: %w", column.Name(), err)
+				continue
 			}
 
 			daysSinceEpoch := _time.Unix() / (60 * 60 * 24)
