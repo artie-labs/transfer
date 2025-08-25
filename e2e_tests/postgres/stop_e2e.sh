@@ -27,6 +27,9 @@ fi
 echo -e "${YELLOW}🐳 Stopping Docker services...${NC}"
 docker compose down -v
 
+echo -e "${YELLOW}📋 Transfer service logs:${NC}"
+cat transfer.log
+
 # Clean up log files
 if [ -f transfer.log ]; then
     echo -e "${YELLOW}🧹 Cleaning up log files...${NC}"
