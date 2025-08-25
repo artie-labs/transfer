@@ -18,12 +18,13 @@ jobs:
       - name: Start dependencies and transfer
         working-directory: e2e_tests/postgres
         run: |
-          ./e2e_tests/postgres/start_e2e.sh
+          ./start_e2e.sh
       - name: Run E2E Tests
+        working-directory: e2e_tests/postgres
         run: |
-          go run e2e_tests/postgres/test.go
+          go run test.go
       - name: Stop dependencies and transfer
         if: always()
         working-directory: e2e_tests/postgres
         run: |
-          ./e2e_tests/postgres/stop_e2e.sh
+          ./stop_e2e.sh
