@@ -12,7 +12,7 @@ echo -e "${BLUE}🚀 Starting E2E Test Infrastructure...${NC}"
 
 # Phase 1: Start Docker services
 echo -e "${YELLOW}📦 Phase 1: Starting Docker services...${NC}"
-docker-compose up -d
+docker compose up -d
 
 # Wait for services to be ready
 echo -e "${YELLOW}⏳ Waiting for services to be ready...${NC}"
