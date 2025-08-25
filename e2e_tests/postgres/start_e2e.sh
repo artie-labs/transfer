@@ -16,7 +16,7 @@ docker-compose up -d
 
 # Wait for services to be ready
 echo -e "${YELLOW}⏳ Waiting for services to be ready...${NC}"
-sleep 5
+sleep 1
 
 # Check Postgres
 echo -e "${YELLOW}🔍 Checking Postgres...${NC}"
@@ -48,7 +48,7 @@ done
 
 # Phase 2: Publish test data
 echo -e "${YELLOW}📤 Phase 2: Publishing test data to Kafka...${NC}"
-go run producer.go
+go run producer/producer.go
 if [ $? -ne 0 ]; then
     echo -e "${RED}❌ Failed to publish test data${NC}"
     exit 1
