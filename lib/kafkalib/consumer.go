@@ -23,9 +23,7 @@ type Consumer interface {
 type ConsumerProvider struct {
 	mu                       sync.Mutex
 	groupID                  string
-	partitionToReadOffset    map[int]int64
 	partitionToAppliedOffset map[int]int64
-	partitionToCommitOffset  map[int]int64
 
 	Consumer
 }
@@ -34,9 +32,7 @@ func NewConsumerProviderForTest(consumer Consumer, groupID string) *ConsumerProv
 	return &ConsumerProvider{
 		Consumer:                 consumer,
 		groupID:                  groupID,
-		partitionToReadOffset:    make(map[int]int64),
 		partitionToAppliedOffset: make(map[int]int64),
-		partitionToCommitOffset:  make(map[int]int64),
 	}
 }
 
@@ -58,9 +54,7 @@ func InjectConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) (contex
 		ctx = context.WithValue(ctx, BuildContextKey(topicConfig.Topic), &ConsumerProvider{
 			Consumer:                 kafka.NewReader(kafkaCfg),
 			groupID:                  cfg.GroupID,
-			partitionToReadOffset:    make(map[int]int64),
 			partitionToAppliedOffset: make(map[int]int64),
-			partitionToCommitOffset:  make(map[int]int64),
 		})
 	}
 
@@ -88,7 +82,6 @@ func (c *ConsumerProvider) FetchMessageAndProcess(ctx context.Context, do func(k
 
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.partitionToReadOffset[msg.Partition] = msg.Offset
 	if c.partitionToAppliedOffset[msg.Partition] >= msg.Offset {
 		// We should skip this message because we have already processed it.
 		return nil
@@ -113,7 +106,6 @@ func GetConsumerFromContext(ctx context.Context, topic string) (*ConsumerProvide
 }
 
 func (c *ConsumerProvider) CommitMessage(ctx context.Context, msg kafka.Message) error {
-	c.partitionToCommitOffset[msg.Partition] = msg.Offset
 	return c.Consumer.CommitMessages(ctx, msg)
 }
 
