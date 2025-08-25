@@ -87,8 +87,14 @@ func publishFile(ctx context.Context, bootstrapServers []string, mapping TopicMa
 			return fmt.Errorf("failed to marshal message %d: %w", i, err)
 		}
 
+		// Extract primary key from payload for the message key
+		key, err := extractPrimaryKey(msg)
+		if err != nil {
+			return fmt.Errorf("failed to extract primary key from message %d: %w", i, err)
+		}
+
 		kafkaMessages = append(kafkaMessages, kafka.Message{
-			Key:   nil, // Let Kafka assign partition
+			Key:   key,
 			Value: msgBytes,
 			Time:  time.Now(),
 		})
@@ -116,6 +122,35 @@ func publishFile(ctx context.Context, bootstrapServers []string, mapping TopicMa
 
 	log.Printf("✅ Successfully published %d messages to %s", len(kafkaMessages), mapping.Topic)
 	return nil
+}
+
+func extractPrimaryKey(msg DebeziumMessage) ([]byte, error) {
+	// Parse the payload to extract primary key
+	var payload map[string]any
+	if err := json.Unmarshal(msg.Payload, &payload); err != nil {
+		return nil, fmt.Errorf("failed to parse payload: %w", err)
+	}
+
+	// Get the "after" section which contains the record data
+	after, ok := payload["after"].(map[string]any)
+	if !ok || after == nil {
+		// For delete operations, use "before" section
+		before, ok := payload["before"].(map[string]any)
+		if !ok || before == nil {
+			return nil, fmt.Errorf("no after or before data in payload")
+		}
+		after = before
+	}
+
+	// Extract the ID field (primary key)
+	id, ok := after["id"]
+	if !ok {
+		return nil, fmt.Errorf("no id field found in record")
+	}
+
+	// Create JSON key format: {"id": value}
+	keyMap := map[string]any{"id": id}
+	return json.Marshal(keyMap)
 }
 
 func createTopic(ctx context.Context, bootstrapServers []string, topicName string) error {
