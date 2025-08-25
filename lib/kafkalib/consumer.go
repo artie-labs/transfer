@@ -3,7 +3,6 @@ package kafkalib
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"sync"
 	"time"
 
@@ -93,15 +92,15 @@ func (c *ConsumerProvider) FetchMessageAndProcess(ctx context.Context, do func(k
 
 	time.Sleep(75 * time.Millisecond)
 
-	slog.Info("Fetch Message",
-		slog.Int("partition", msg.Partition),
-		slog.Int64("offset", msg.Offset),
-		slog.String("key", string(msg.Key)),
-		slog.String("value", string(msg.Value)),
-	)
+	// slog.Info("Fetch Message",
+	// 	slog.Int("partition", msg.Partition),
+	// 	slog.Int64("offset", msg.Offset),
+	// 	slog.String("key", string(msg.Key)),
+	// 	slog.String("value", string(msg.Value)),
+	// )
 	c.partitionToReadOffset[msg.Partition] = msg.Offset
 	if c.partitionToAppliedOffset[msg.Partition] >= msg.Offset {
-		slog.Info("Skipping message", slog.Int("partition", msg.Partition), slog.Int64("offset", msg.Offset), slog.String("key", string(msg.Key)), slog.String("value", string(msg.Value)))
+		// slog.Info("Skipping message", slog.Int("partition", msg.Partition), slog.Int64("offset", msg.Offset), slog.String("key", string(msg.Key)), slog.String("value", string(msg.Value)))
 		// We should skip this message because we have already processed it.
 		return nil
 	}
@@ -110,7 +109,7 @@ func (c *ConsumerProvider) FetchMessageAndProcess(ctx context.Context, do func(k
 		return fmt.Errorf("failed to process message: %w", err)
 	}
 
-	slog.Info("Processed message", slog.Int("partition", msg.Partition), slog.Int64("offset", msg.Offset), slog.String("key", string(msg.Key)), slog.String("value", string(msg.Value)))
+	// slog.Info("Processed message", slog.Int("partition", msg.Partition), slog.Int64("offset", msg.Offset), slog.String("key", string(msg.Key)), slog.String("value", string(msg.Value)))
 
 	// Set the offset to the last processed message.
 	c.partitionToAppliedOffset[msg.Partition] = msg.Offset
