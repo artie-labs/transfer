@@ -9,6 +9,9 @@ NC='\033[0m' # No Color
 
 echo -e "${BLUE}🛑 Stopping E2E Test Infrastructure...${NC}"
 
+echo -e "${YELLOW} what's in this directory?${NC}"
+ls -lah
+
 # Stop transfer service
 if [ -f transfer.pid ]; then
     TRANSFER_PID=$(cat transfer.pid)
