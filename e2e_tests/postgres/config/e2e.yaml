@@ -21,5 +21,5 @@ postgres:
   port: 5432
   username: postgres
   password: postgres
-  database: destination
+  database: destination_e2e
   disableSSL: true
