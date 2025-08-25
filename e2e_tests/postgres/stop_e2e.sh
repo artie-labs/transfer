@@ -25,7 +25,7 @@ fi
 
 # Stop Docker services
 echo -e "${YELLOW}🐳 Stopping Docker services...${NC}"
-docker-compose down -v
+docker compose down -v
 
 # Clean up log files
 if [ -f transfer.log ]; then
