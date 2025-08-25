@@ -58,8 +58,7 @@ echo -e "${GREEN}✅ Test data published successfully${NC}"
 # Phase 3: Start transfer service
 echo -e "${YELLOW}⚡ Phase 3: Starting transfer service...${NC}"
 cd ../../
-# Use stdbuf to make stdout/stderr line-buffered for immediate flushing
-nohup stdbuf -oL -eL go run main.go -c e2e_tests/postgres/config/e2e.yaml -v > e2e_tests/postgres/transfer.log 2>&1 &
+nohup go run main.go -c e2e_tests/postgres/config/e2e.yaml -v > e2e_tests/postgres/transfer.log 2>&1 &
 TRANSFER_PID=$!
 echo $TRANSFER_PID > e2e_tests/postgres/transfer.pid
 
