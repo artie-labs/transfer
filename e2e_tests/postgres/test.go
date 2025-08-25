@@ -117,7 +117,7 @@ var (
 func testCountRows(ctx context.Context, testCase TestCase) error {
 	conn, err := pgx.Connect(ctx, "postgres://postgres:postgres@localhost:5432/destination_e2e?sslmode=disable")
 	if err != nil {
-		return fmt.Errorf("Unable to connect to database: %v", err)
+		return fmt.Errorf("unable to connect to database: %v", err)
 	}
 	defer conn.Close(ctx)
 
@@ -137,14 +137,14 @@ func testCountRows(ctx context.Context, testCase TestCase) error {
 func testCustomerRows(ctx context.Context, testCase TestCase) error {
 	conn, err := pgx.Connect(ctx, "postgres://postgres:postgres@localhost:5432/destination_e2e?sslmode=disable")
 	if err != nil {
-		return fmt.Errorf("Unable to connect to database: %v", err)
+		return fmt.Errorf("unable to connect to database: %v", err)
 	}
 	defer conn.Close(ctx)
 
 	query := fmt.Sprintf(`SELECT id, first_name, last_name, email FROM "%s"."%s"`, testCase.schema, testCase.tableName)
 	rows, err := conn.Query(ctx, query)
 	if err != nil {
-		return fmt.Errorf("Failed to query rows in %s.%s: %v", testCase.schema, testCase.tableName, err)
+		return fmt.Errorf("failed to query rows in %s.%s: %v", testCase.schema, testCase.tableName, err)
 	}
 	defer rows.Close()
 
@@ -156,7 +156,7 @@ func testCustomerRows(ctx context.Context, testCase TestCase) error {
 		var email string
 		err := rows.Scan(&id, &firstName, &lastName, &email)
 		if err != nil {
-			return fmt.Errorf("Failed to scan row in %s.%s: %v", testCase.schema, testCase.tableName, err)
+			return fmt.Errorf("failed to scan row in %s.%s: %v", testCase.schema, testCase.tableName, err)
 		}
 		rowMap := make(map[string]interface{})
 		rowMap["id"] = id
@@ -166,16 +166,16 @@ func testCustomerRows(ctx context.Context, testCase TestCase) error {
 		tableData[id] = rowMap
 	}
 	if err := rows.Err(); err != nil {
-		return fmt.Errorf("Error iterating rows in %s.%s: %v", testCase.schema, testCase.tableName, err)
+		return fmt.Errorf("error iterating rows in %s.%s: %v", testCase.schema, testCase.tableName, err)
 	}
 
 	for _, row := range testCase.rows {
 		rowMap, ok := tableData[row["id"].(int)]
 		if !ok {
-			return fmt.Errorf("Row with id %v not found in %s.%s", row["id"], testCase.schema, testCase.tableName)
+			return fmt.Errorf("row with id %v not found in %s.%s", row["id"], testCase.schema, testCase.tableName)
 		}
 		if !reflect.DeepEqual(rowMap, row) {
-			return fmt.Errorf("Row mismatch for id %v in %s.%s: got %v, expected %v", row["id"], testCase.schema, testCase.tableName, rowMap, row)
+			return fmt.Errorf("row mismatch for id %v in %s.%s: got %v, expected %v", row["id"], testCase.schema, testCase.tableName, rowMap, row)
 		}
 	}
 	return nil
@@ -184,7 +184,7 @@ func testCustomerRows(ctx context.Context, testCase TestCase) error {
 func testProductRows(ctx context.Context, testCase TestCase) error {
 	conn, err := pgx.Connect(ctx, "postgres://postgres:postgres@localhost:5432/destination_e2e?sslmode=disable")
 	if err != nil {
-		return fmt.Errorf("Unable to connect to database: %v", err)
+		return fmt.Errorf("unable to connect to database: %v", err)
 	}
 	defer conn.Close(ctx)
 
@@ -192,7 +192,7 @@ func testProductRows(ctx context.Context, testCase TestCase) error {
 	query := fmt.Sprintf(`SELECT id, name, description, weight FROM "%s"."%s"`, testCase.schema, testCase.tableName)
 	rows, err := conn.Query(ctx, query)
 	if err != nil {
-		return fmt.Errorf("Failed to query rows in %s.%s: %v", testCase.schema, testCase.tableName, err)
+		return fmt.Errorf("failed to query rows in %s.%s: %v", testCase.schema, testCase.tableName, err)
 	}
 	defer rows.Close()
 
@@ -204,7 +204,7 @@ func testProductRows(ctx context.Context, testCase TestCase) error {
 		var weight *float64
 		err := rows.Scan(&id, &name, &description, &weight)
 		if err != nil {
-			return fmt.Errorf("Failed to scan row in %s.%s: %v", testCase.schema, testCase.tableName, err)
+			return fmt.Errorf("failed to scan row in %s.%s: %v", testCase.schema, testCase.tableName, err)
 		}
 		rowMap := make(map[string]interface{})
 		rowMap["id"] = id
@@ -222,16 +222,16 @@ func testProductRows(ctx context.Context, testCase TestCase) error {
 		tableData[id] = rowMap
 	}
 	if err := rows.Err(); err != nil {
-		return fmt.Errorf("Error iterating rows in %s.%s: %v", testCase.schema, testCase.tableName, err)
+		return fmt.Errorf("error iterating rows in %s.%s: %v", testCase.schema, testCase.tableName, err)
 	}
 
 	for _, row := range testCase.rows {
 		rowMap, ok := tableData[row["id"].(int)]
 		if !ok {
-			return fmt.Errorf("Row with id %v not found in %s.%s", row["id"], testCase.schema, testCase.tableName)
+			return fmt.Errorf("row with id %v not found in %s.%s", row["id"], testCase.schema, testCase.tableName)
 		}
 		if !reflect.DeepEqual(rowMap, row) {
-			return fmt.Errorf("Row mismatch for id %v in %s.%s: got %v, expected %v", row["id"], testCase.schema, testCase.tableName, rowMap, row)
+			return fmt.Errorf("row mismatch for id %v in %s.%s: got %v, expected %v", row["id"], testCase.schema, testCase.tableName, rowMap, row)
 		}
 	}
 	return nil
