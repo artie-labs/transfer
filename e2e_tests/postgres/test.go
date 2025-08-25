@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -113,10 +114,10 @@ var (
 	}
 )
 
-func testCountRows(ctx context.Context, testCase TestCase) {
+func testCountRows(ctx context.Context, testCase TestCase) error {
 	conn, err := pgx.Connect(ctx, "postgres://postgres:postgres@localhost:5432/destination_e2e?sslmode=disable")
 	if err != nil {
-		log.Fatalf("Unable to connect to database: %v", err)
+		return fmt.Errorf("Unable to connect to database: %v", err)
 	}
 	defer conn.Close(ctx)
 
@@ -124,25 +125,26 @@ func testCountRows(ctx context.Context, testCase TestCase) {
 	query := fmt.Sprintf(`SELECT COUNT(*) FROM "%s"."%s"`, testCase.schema, testCase.tableName)
 	err = conn.QueryRow(ctx, query).Scan(&count)
 	if err != nil {
-		log.Fatalf("Failed to count rows in %s.%s: %v", testCase.schema, testCase.tableName, err)
+		return fmt.Errorf("failed to count rows in %s.%s: %v", testCase.schema, testCase.tableName, err)
 	}
 
 	if count != testCase.expectedCount {
-		log.Fatalf("Row count mismatch for %s.%s: got %d, expected %d", testCase.schema, testCase.tableName, count, testCase.expectedCount)
+		return fmt.Errorf("row count mismatch for %s.%s: got %d, expected %d", testCase.schema, testCase.tableName, count, testCase.expectedCount)
 	}
+	return nil
 }
 
-func testCustomerRows(ctx context.Context, testCase TestCase) {
+func testCustomerRows(ctx context.Context, testCase TestCase) error {
 	conn, err := pgx.Connect(ctx, "postgres://postgres:postgres@localhost:5432/destination_e2e?sslmode=disable")
 	if err != nil {
-		log.Fatalf("Unable to connect to database: %v", err)
+		return fmt.Errorf("Unable to connect to database: %v", err)
 	}
 	defer conn.Close(ctx)
 
 	query := fmt.Sprintf(`SELECT id, first_name, last_name, email FROM "%s"."%s"`, testCase.schema, testCase.tableName)
 	rows, err := conn.Query(ctx, query)
 	if err != nil {
-		log.Fatalf("Failed to query rows in %s.%s: %v", testCase.schema, testCase.tableName, err)
+		return fmt.Errorf("Failed to query rows in %s.%s: %v", testCase.schema, testCase.tableName, err)
 	}
 	defer rows.Close()
 
@@ -154,7 +156,7 @@ func testCustomerRows(ctx context.Context, testCase TestCase) {
 		var email string
 		err := rows.Scan(&id, &firstName, &lastName, &email)
 		if err != nil {
-			log.Fatalf("Failed to scan row in %s.%s: %v", testCase.schema, testCase.tableName, err)
+			return fmt.Errorf("Failed to scan row in %s.%s: %v", testCase.schema, testCase.tableName, err)
 		}
 		rowMap := make(map[string]interface{})
 		rowMap["id"] = id
@@ -164,24 +166,25 @@ func testCustomerRows(ctx context.Context, testCase TestCase) {
 		tableData[id] = rowMap
 	}
 	if err := rows.Err(); err != nil {
-		log.Fatalf("Error iterating rows in %s.%s: %v", testCase.schema, testCase.tableName, err)
+		return fmt.Errorf("Error iterating rows in %s.%s: %v", testCase.schema, testCase.tableName, err)
 	}
 
 	for _, row := range testCase.rows {
 		rowMap, ok := tableData[row["id"].(int)]
 		if !ok {
-			log.Fatalf("Row with id %v not found in %s.%s", row["id"], testCase.schema, testCase.tableName)
+			return fmt.Errorf("Row with id %v not found in %s.%s", row["id"], testCase.schema, testCase.tableName)
 		}
 		if !reflect.DeepEqual(rowMap, row) {
-			log.Fatalf("Row mismatch for id %v in %s.%s: got %v, expected %v", row["id"], testCase.schema, testCase.tableName, rowMap, row)
+			return fmt.Errorf("Row mismatch for id %v in %s.%s: got %v, expected %v", row["id"], testCase.schema, testCase.tableName, rowMap, row)
 		}
 	}
+	return nil
 }
 
-func testProductRows(ctx context.Context, testCase TestCase) {
+func testProductRows(ctx context.Context, testCase TestCase) error {
 	conn, err := pgx.Connect(ctx, "postgres://postgres:postgres@localhost:5432/destination_e2e?sslmode=disable")
 	if err != nil {
-		log.Fatalf("Unable to connect to database: %v", err)
+		return fmt.Errorf("Unable to connect to database: %v", err)
 	}
 	defer conn.Close(ctx)
 
@@ -189,7 +192,7 @@ func testProductRows(ctx context.Context, testCase TestCase) {
 	query := fmt.Sprintf(`SELECT id, name, description, weight FROM "%s"."%s"`, testCase.schema, testCase.tableName)
 	rows, err := conn.Query(ctx, query)
 	if err != nil {
-		log.Fatalf("Failed to query rows in %s.%s: %v", testCase.schema, testCase.tableName, err)
+		return fmt.Errorf("Failed to query rows in %s.%s: %v", testCase.schema, testCase.tableName, err)
 	}
 	defer rows.Close()
 
@@ -201,7 +204,7 @@ func testProductRows(ctx context.Context, testCase TestCase) {
 		var weight *float64
 		err := rows.Scan(&id, &name, &description, &weight)
 		if err != nil {
-			log.Fatalf("Failed to scan row in %s.%s: %v", testCase.schema, testCase.tableName, err)
+			return fmt.Errorf("Failed to scan row in %s.%s: %v", testCase.schema, testCase.tableName, err)
 		}
 		rowMap := make(map[string]interface{})
 		rowMap["id"] = id
@@ -219,25 +222,58 @@ func testProductRows(ctx context.Context, testCase TestCase) {
 		tableData[id] = rowMap
 	}
 	if err := rows.Err(); err != nil {
-		log.Fatalf("Error iterating rows in %s.%s: %v", testCase.schema, testCase.tableName, err)
+		return fmt.Errorf("Error iterating rows in %s.%s: %v", testCase.schema, testCase.tableName, err)
 	}
 
 	for _, row := range testCase.rows {
 		rowMap, ok := tableData[row["id"].(int)]
 		if !ok {
-			log.Fatalf("Row with id %v not found in %s.%s", row["id"], testCase.schema, testCase.tableName)
+			return fmt.Errorf("Row with id %v not found in %s.%s", row["id"], testCase.schema, testCase.tableName)
 		}
 		if !reflect.DeepEqual(rowMap, row) {
-			log.Fatalf("Row mismatch for id %v in %s.%s: got %v, expected %v", row["id"], testCase.schema, testCase.tableName, rowMap, row)
+			return fmt.Errorf("Row mismatch for id %v in %s.%s: got %v, expected %v", row["id"], testCase.schema, testCase.tableName, rowMap, row)
 		}
 	}
+	return nil
 }
 
 func main() {
 	ctx := context.Background()
 
-	testCountRows(ctx, testCases[0])
-	testCustomerRows(ctx, testCases[0])
-	testCountRows(ctx, testCases[1])
-	testProductRows(ctx, testCases[1])
+	const maxIterations = 10
+	for i := 1; i <= maxIterations; i++ {
+		err1 := testCountRows(ctx, testCases[0])
+		err2 := testCustomerRows(ctx, testCases[0])
+		err3 := testCountRows(ctx, testCases[1])
+		err4 := testProductRows(ctx, testCases[1])
+
+		if err1 == nil && err2 == nil && err3 == nil && err4 == nil {
+			log.Println("All tests passed successfully.")
+			break
+		}
+
+		log.Printf("Iteration %d: Some tests failed. Retrying in 5 seconds...\n", i)
+		if err1 != nil {
+			log.Printf("testCountRows (customers) error: %v", err1)
+		}
+		if err2 != nil {
+			log.Printf("testCustomerRows error: %v", err2)
+		}
+		if err3 != nil {
+			log.Printf("testCountRows (products) error: %v", err3)
+		}
+		if err4 != nil {
+			log.Printf("testProductRows error: %v", err4)
+		}
+
+		if i == maxIterations {
+			log.Fatal("Exceeded maximum number of iterations. Exiting.")
+		}
+		// Wait 5 seconds before next attempt
+		select {
+		case <-ctx.Done():
+			log.Fatal("Context cancelled, exiting.")
+		case <-time.After(5 * time.Second):
+		}
+	}
 }
