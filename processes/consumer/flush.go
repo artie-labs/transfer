@@ -56,7 +56,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 	}
 
 	// Flush will take everything in memory and call the destination to create temp tables.
-	var wg sync.WaitGroup
+	var topicWg sync.WaitGroup
 	for topic, tables := range topicToTables {
 		if args.Topic != "" && args.Topic != topic {
 			// If topic was specified and doesn't match this topic, we'll skip flushing this topic.
@@ -67,11 +67,15 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 		if !ok {
 			return fmt.Errorf("consumer not found for topic %q", topic)
 		}
+
+		topicWg.Add(1)
+
 		consumer.LockAndProcess(ctx, args.ShouldLock, func() error {
+			var tableWg sync.WaitGroup
 			for _, tableData := range tables {
-				wg.Add(1)
+				tableWg.Add(1)
 				go func(_tableData *models.TableData) {
-					defer wg.Done()
+					defer tableWg.Done()
 
 					if args.CoolDown != nil && _tableData.ShouldSkipFlush(*args.CoolDown) {
 						slog.Debug("Skipping flush because we are currently in a flush cooldown", slog.String("tableID", _tableData.GetTableID().String()))
@@ -103,6 +107,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 					}
 
 					what, err := retry.WithRetriesAndResult(retryCfg, func(_ int, _ error) (string, error) {
+						slog.Info("Flushing table", slog.String("tableID", _tableData.GetTableID().String()), slog.String("reason", args.Reason))
 						return flush(ctx, dest, _tableData, action, inMemDB.ClearTableConfig, consumer)
 					})
 
@@ -114,12 +119,13 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 					metricsClient.Timing("flush", time.Since(start), tags)
 				}(tableData)
 			}
-
+			tableWg.Wait()
+			topicWg.Done()
 			return nil
 		})
 	}
 
-	wg.Wait()
+	topicWg.Wait()
 	return nil
 }
 
