@@ -28,7 +28,7 @@ fi
 
 # Stop Docker services
 echo -e "${YELLOW}🐳 Stopping Docker services...${NC}"
-docker compose down -v
+docker compose down --volumes
 
 echo -e "${YELLOW}📋 Transfer service logs:${NC}"
 echo $(cat transfer.log)

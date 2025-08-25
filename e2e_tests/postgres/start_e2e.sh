@@ -35,7 +35,7 @@ done
 # Check Kafka
 echo -e "${YELLOW}🔍 Checking Kafka...${NC}"
 for i in {1..30}; do
-    if docker exec postgres-kafka-1 /kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null 2>&1; then
+    if docker exec postgres-kafka-1 /kafka/bin/kafka-topics.sh --bootstrap-server localhost:29092 --list >/dev/null 2>&1; then
         echo -e "${GREEN}✅ Kafka is ready${NC}"
         break
     fi
@@ -57,16 +57,26 @@ echo -e "${GREEN}✅ Test data published successfully${NC}"
 
 # Phase 3: Start transfer service
 echo -e "${YELLOW}⚡ Phase 3: Starting transfer service...${NC}"
+GROUP_ID="group_$(date +%Y_%m_%d_%H_%M_%S)"
+# Use a portable sed command for in-place replacement of groupID in config/e2e.yaml
+# This works on both GNU and BSD/macOS sed
+if sed --version >/dev/null 2>&1; then
+    # GNU sed
+    sed -i "s/^  groupID: .*/  groupID: ${GROUP_ID}/" config/e2e.yaml
+else
+    # BSD/macOS sed
+    sed -i '' "s/^  groupID: .*/  groupID: ${GROUP_ID}/" config/e2e.yaml
+fi
 cd ../../
-nohup go run main.go -c e2e_tests/postgres/config/e2e.yaml -v > e2e_tests/postgres/transfer.log 2>&1 &
+nohup go run main.go --config e2e_tests/postgres/config/e2e.yaml --verbose > e2e_tests/postgres/transfer.log 2>&1 &
 TRANSFER_PID=$!
 echo $TRANSFER_PID > e2e_tests/postgres/transfer.pid
 
 echo -e "${GREEN}🎉 Transfer service started with PID: $TRANSFER_PID${NC}"
 echo -e "${BLUE}📋 Logs are being written to: e2e_tests/postgres/transfer.log${NC}"
 echo -e "${YELLOW}⏳ Waiting for service to initialize...${NC}"
-sleep 1
+sleep 10
 
 echo -e "${GREEN}✅ E2E infrastructure is ready!${NC}"
-echo -e "${BLUE}📊 Run './test_e2e.sh' to validate data transfer${NC}"
+echo -e "${BLUE}📊 Run 'go run test.go' to validate data transfer${NC}"
 echo -e "${BLUE}🛑 Run './stop_e2e.sh' to clean up when done${NC}"
