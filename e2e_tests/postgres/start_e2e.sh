@@ -35,7 +35,7 @@ done
 # Check Kafka
 echo -e "${YELLOW}🔍 Checking Kafka...${NC}"
 for i in {1..30}; do
-    if docker exec postgres-kafka-1 /kafka/bin/kafka-topics.sh --bootstrap-server localhost:29092 --list >/dev/null 2>&1; then
+    if docker exec kafka /kafka/bin/kafka-topics.sh --bootstrap-server localhost:29092 --list >/dev/null 2>&1; then
         echo -e "${GREEN}✅ Kafka is ready${NC}"
         break
     fi
@@ -68,5 +68,6 @@ else
 fi
 
 echo -e "${GREEN}✅ E2E infrastructure is ready!${NC}"
+echo -e "${BLUE}🏃 Run 'go run ../../main.go --config config/e2e.yaml' to run transfer${NC}"
 echo -e "${BLUE}📊 Run 'go run test.go' to validate data transfer${NC}"
 echo -e "${BLUE}🛑 Run './stop_e2e.sh' to clean up when done${NC}"

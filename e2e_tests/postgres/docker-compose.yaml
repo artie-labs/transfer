@@ -17,6 +17,7 @@ services:
       - 3888:3888
   kafka:
     image: quay.io/debezium/kafka:2.0
+    container_name: kafka
     ports:
       - 9092:9092
       - 29092:29092
