@@ -1,0 +1,26 @@
+outputSource: postgres
+flushIntervalSeconds: 5
+kafka:
+  bootstrapServer: localhost:29092
+  groupID: group_e2e
+  disableTLS: true
+  topicConfigs:
+    - db: destination_e2e
+      tableName: customers
+      schema: artie
+      topic: "dbserver1.inventory.customers"
+      cdcFormat: debezium.postgres.wal2json
+      cdcKeyFormat: org.apache.kafka.connect.json.JsonConverter
+    - db: destination_e2e
+      tableName: products
+      schema: public
+      topic: "dbserver1.inventory.products"
+      cdcFormat: debezium.postgres.wal2json
+      cdcKeyFormat: org.apache.kafka.connect.json.JsonConverter
+postgres:
+  host: localhost
+  port: 5432
+  username: postgres
+  password: postgres
+  database: destination_e2e
+  disableSSL: true
