@@ -164,13 +164,13 @@ func flush(ctx context.Context, dest destination.Baseline, _tableData *models.Ta
 	return "success", nil
 }
 
-func FlushTopic(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, topic string, args Args) error {
-	consumer, err := kafkalib.GetConsumerFromContext(ctx, topic)
-	if err != nil {
-		return fmt.Errorf("failed to get consumer from context: %w", err)
-	}
+// func FlushTopic(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, topic string, args Args) error {
+// 	consumer, err := kafkalib.GetConsumerFromContext(ctx, topic)
+// 	if err != nil {
+// 		return fmt.Errorf("failed to get consumer from context: %w", err)
+// 	}
 
-	consumer.LockAndProcess(ctx, args.ShouldLock, func() error {
-		return nil
-	})
-}
+// 	consumer.LockAndProcess(ctx, args.ShouldLock, func() error {
+// 		return nil
+// 	})
+// }
