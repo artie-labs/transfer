@@ -31,6 +31,7 @@ require (
 	github.com/microsoft/go-mssqldb v1.8.0
 	github.com/samber/slog-multi v1.4.0
 	github.com/samber/slog-sentry/v2 v2.9.3
+	github.com/segmentio/kafka-go v0.4.49
 	github.com/snowflakedb/gosnowflake v1.13.3
 	github.com/stretchr/testify v1.10.0
 	github.com/twmb/franz-go v1.19.5
