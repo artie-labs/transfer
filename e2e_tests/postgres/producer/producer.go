@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/segmentio/kafka-go"
 )
 
@@ -25,7 +27,13 @@ type TopicMapping struct {
 
 func main() {
 	ctx := context.Background()
-	bootstrapServers := []string{"localhost:29092"}
+
+	settings, err := config.LoadSettings(os.Args, true)
+	if err != nil {
+		log.Fatal("Failed to initialize config", slog.Any("err", err))
+	}
+
+	bootstrapServers := []string{settings.Config.Kafka.BootstrapServer}
 
 	// Define topic mappings
 	topicMappings := []TopicMapping{
@@ -41,7 +49,19 @@ func main() {
 
 	log.Println("🚀 Starting Kafka producer for e2e test data...")
 
+	settingTopics := make(map[string]any)
+	for _, t := range settings.Config.Kafka.TopicConfigs {
+		settingTopics[t.Topic] = nil
+	}
+
 	for _, mapping := range topicMappings {
+		if _, ok := settingTopics[mapping.Topic]; !ok {
+			log.Fatalf("Topic %s not found in settings. Please add it to the config: %v", mapping.Topic, settingTopics)
+		}
+	}
+
+	for _, mapping := range topicMappings {
+
 		if err := publishFile(ctx, bootstrapServers, mapping); err != nil {
 			log.Fatalf("Failed to publish file %s to topic %s: %v", mapping.FilePath, mapping.Topic, err)
 		}

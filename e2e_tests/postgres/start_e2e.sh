@@ -48,7 +48,7 @@ done
 
 # Phase 2: Publish test data
 echo -e "${YELLOW}📤 Phase 2: Publishing test data to Kafka...${NC}"
-go run producer/producer.go
+go run producer/producer.go --config config/e2e.yaml
 if [ $? -ne 0 ]; then
     echo -e "${RED}❌ Failed to publish test data${NC}"
     exit 1
