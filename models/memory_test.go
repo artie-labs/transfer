@@ -5,7 +5,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/optimization"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,14 +13,14 @@ func TestTableData_Complete(t *testing.T) {
 	tableID := cdc.NewTableID("schema", "table")
 	{
 		// Does not exist
-		_, ok := db.TableData()[tableID]
+		_, ok := db.TableData()["topic"][tableID]
 		assert.False(t, ok)
 	}
 	{
 		// Exists after we created it.
 		td := db.GetOrCreateTableData(tableID, "topic")
 		assert.True(t, td.Empty())
-		_, ok := db.TableData()[tableID]
+		_, ok := db.TableData()["topic"][tableID]
 		assert.True(t, ok)
 		assert.Equal(t, "topic", td.topic)
 
@@ -39,7 +38,7 @@ func TestTableData_Complete(t *testing.T) {
 			// Wipe via ClearTableConfig(...)
 			td.SetTableData(&optimization.TableData{})
 			assert.False(t, td.Empty())
-			db.ClearTableConfig(tableID)
+			db.ClearTableConfig("topic", tableID)
 			assert.True(t, td.Empty())
 		}
 	}
