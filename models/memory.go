@@ -22,6 +22,10 @@ func (t *TableData) GetTableID() cdc.TableID {
 	return t.tableID
 }
 
+func (t *TableData) Topic() string {
+	return t.topic
+}
+
 func (t *TableData) Wipe() {
 	t.TableData = nil
 	t.lastFlushTime = time.Now()
@@ -51,50 +55,38 @@ func (t *TableData) SetTableData(td *optimization.TableData) {
 }
 
 type DatabaseData struct {
-	tableData map[cdc.TableID]*TableData
+	topicToTableData map[string]map[cdc.TableID]*TableData
 	sync.RWMutex
 }
 
 func NewMemoryDB() *DatabaseData {
-	tableData := make(map[cdc.TableID]*TableData)
-	return &DatabaseData{
-		tableData: tableData,
-	}
+	return &DatabaseData{topicToTableData: make(map[string]map[cdc.TableID]*TableData)}
 }
 
 func (d *DatabaseData) GetOrCreateTableData(tableID cdc.TableID, topic string) *TableData {
 	d.Lock()
 	defer d.Unlock()
 
-	if _, ok := d.tableData[tableID]; !ok {
+	if _, ok := d.topicToTableData[topic]; !ok {
+		d.topicToTableData[topic] = make(map[cdc.TableID]*TableData)
+	}
+
+	if _, ok := d.topicToTableData[topic][tableID]; !ok {
 		table := &TableData{
 			topic:   topic,
 			tableID: tableID,
 		}
 
-		d.tableData[tableID] = table
+		d.topicToTableData[topic][tableID] = table
 	}
 
-	return d.tableData[tableID]
+	return d.topicToTableData[topic][tableID]
 }
 
-func (d *DatabaseData) ClearTableConfig(tableID cdc.TableID) {
-	d.tableData[tableID].Wipe()
+func (d *DatabaseData) ClearTableConfig(topic string, tableID cdc.TableID) {
+	d.topicToTableData[topic][tableID].Wipe()
 }
 
-func (d *DatabaseData) TableData() map[cdc.TableID]*TableData {
-	return d.tableData
-}
-
-func (d *DatabaseData) GetTopicToTables() map[string][]*TableData {
-	out := make(map[string][]*TableData)
-	for _, v := range d.tableData {
-		if _, ok := out[v.topic]; !ok {
-			out[v.topic] = make([]*TableData, 0)
-		}
-
-		out[v.topic] = append(out[v.topic], v)
-	}
-
-	return out
+func (d *DatabaseData) TableData() map[string]map[cdc.TableID]*TableData {
+	return d.topicToTableData
 }

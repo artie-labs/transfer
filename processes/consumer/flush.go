@@ -35,7 +35,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 
 	// Read lock to examine the map of tables
 	inMemDB.RLock()
-	topicToTables := inMemDB.GetTopicToTables()
+	topicToTables := inMemDB.TableData()
 	inMemDB.RUnlock()
 
 	if args.Topic != "" {
@@ -129,7 +129,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 	return nil
 }
 
-func flush(ctx context.Context, dest destination.Baseline, _tableData *models.TableData, action string, clearTableConfig func(cdc.TableID), consumer *kafkalib.ConsumerProvider) (string, error) {
+func flush(ctx context.Context, dest destination.Baseline, _tableData *models.TableData, action string, clearTableConfig func(string, cdc.TableID), consumer *kafkalib.ConsumerProvider) (string, error) {
 	// This is added so that we have a new temporary table suffix for each merge / append.
 	_tableData.ResetTempTableSuffix()
 
@@ -162,4 +162,15 @@ func flush(ctx context.Context, dest destination.Baseline, _tableData *models.Ta
 	}
 
 	return "success", nil
+}
+
+func FlushTopic(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, topic string, args Args) error {
+	consumer, err := kafkalib.GetConsumerFromContext(ctx, topic)
+	if err != nil {
+		return fmt.Errorf("failed to get consumer from context: %w", err)
+	}
+
+	consumer.LockAndProcess(ctx, args.ShouldLock, func() error {
+		return nil
+	})
 }
