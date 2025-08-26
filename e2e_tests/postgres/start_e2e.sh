@@ -68,15 +68,16 @@ else
     sed -i '' "s/^  groupID: .*/  groupID: ${GROUP_ID}/" config/e2e.yaml
 fi
 cd ../../
-nohup go run main.go --config e2e_tests/postgres/config/e2e.yaml --verbose > e2e_tests/postgres/transfer.log 2>&1 &
+go run main.go --config e2e_tests/postgres/config/e2e.yaml --verbose 2>&1 &
 TRANSFER_PID=$!
 echo $TRANSFER_PID > e2e_tests/postgres/transfer.pid
 
 echo -e "${GREEN}🎉 Transfer service started with PID: $TRANSFER_PID${NC}"
 echo -e "${BLUE}📋 Logs are being written to: e2e_tests/postgres/transfer.log${NC}"
-sleep 10
-echo $(cat e2e_tests/postgres/transfer.log)
 echo -e "${YELLOW}⏳ Waiting for service to initialize...${NC}"
+sleep 10
+echo -e "${YELLOW} Killing transfer (PID: $TRANSFER_PID)"
+kill $TRANSFER_PID
 
 echo -e "${GREEN}✅ E2E infrastructure is ready!${NC}"
 echo -e "${BLUE}📊 Run 'go run test.go' to validate data transfer${NC}"
