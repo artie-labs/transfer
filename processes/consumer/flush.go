@@ -156,7 +156,7 @@ func flush(ctx context.Context, dest destination.Baseline, _tableData *models.Ta
 		}
 
 		slog.Info(fmt.Sprintf("%s success, clearing memory...", stringutil.CapitalizeFirstLetter(action)), slog.String("tableID", _tableData.GetTableID().String()))
-		clearTableConfig(_tableData.GetTableID())
+		clearTableConfig(_tableData.Topic(), _tableData.GetTableID())
 	} else {
 		slog.Info(fmt.Sprintf("%s success, not committing offset yet", stringutil.CapitalizeFirstLetter(action)), slog.String("tableID", _tableData.GetTableID().String()))
 	}
