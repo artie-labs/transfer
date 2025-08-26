@@ -22,12 +22,12 @@ jobs:
         working-directory: e2e_tests/postgres
         run: |
           ./start_e2e.sh
-      - name: build
+      - name: Compile
         run: |
           go build
       - name: Run transfer
         run: |
-          go run main.go --config e2e_tests/postgresconfig/e2e.yaml
+          go run main.go --config e2e_tests/postgres/config/e2e.yaml
         timeout-minutes: 1
       - name: Run tests
         working-directory: e2e_tests/postgres
