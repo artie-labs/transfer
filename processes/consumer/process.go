@@ -84,9 +84,8 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 	}
 
 	if shouldFlush {
-		err = Flush(ctx, inMemDB, dest, metricsClient, Args{
+		err = FlushTopic(ctx, inMemDB, dest, metricsClient, topicConfig.tc.Topic, Args{
 			Reason:     flushReason,
-			Topic:      topicConfig.tc.Topic,
 			ShouldLock: false,
 		})
 		if err != nil {

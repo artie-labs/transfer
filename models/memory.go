@@ -90,3 +90,27 @@ func (d *DatabaseData) ClearTableConfig(topic string, tableID cdc.TableID) {
 func (d *DatabaseData) TableData() map[string]map[cdc.TableID]*TableData {
 	return d.topicToTableData
 }
+
+func (d *DatabaseData) GetTablesForTopic(topic string) []*TableData {
+	d.RLock()
+	defer d.RUnlock()
+
+	var out []*TableData
+	for _, tbl := range d.topicToTableData[topic] {
+		out = append(out, tbl)
+	}
+
+	return out
+}
+
+func (d *DatabaseData) GetTopics() []string {
+	d.RLock()
+	defer d.RUnlock()
+
+	var topics []string
+	for topic := range d.topicToTableData {
+		topics = append(topics, topic)
+	}
+
+	return topics
+}
