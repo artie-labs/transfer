@@ -1,4 +1,5 @@
 outputSource: postgres
+flushIntervalSeconds: 5
 kafka:
   bootstrapServer: localhost:29092
   groupID: group_e2e

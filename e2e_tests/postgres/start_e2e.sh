@@ -74,8 +74,9 @@ echo $TRANSFER_PID > e2e_tests/postgres/transfer.pid
 
 echo -e "${GREEN}🎉 Transfer service started with PID: $TRANSFER_PID${NC}"
 echo -e "${BLUE}📋 Logs are being written to: e2e_tests/postgres/transfer.log${NC}"
-echo -e "${YELLOW}⏳ Waiting for service to initialize...${NC}"
 sleep 10
+echo $(cat e2e_tests/postgres/transfer.log)
+echo -e "${YELLOW}⏳ Waiting for service to initialize...${NC}"
 
 echo -e "${GREEN}✅ E2E infrastructure is ready!${NC}"
 echo -e "${BLUE}📊 Run 'go run test.go' to validate data transfer${NC}"
