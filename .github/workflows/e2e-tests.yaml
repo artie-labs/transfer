@@ -27,8 +27,8 @@ jobs:
           go build
       - name: Run transfer
         run: |
-          go run main.go --config e2e_tests/postgres/config/e2e.yaml
-        timeout-minutes: 1
+          go run main.go --config e2e_tests/postgres/config/e2e.yaml &
+          sleep 20
       - name: Run tests
         working-directory: e2e_tests/postgres
         run: |

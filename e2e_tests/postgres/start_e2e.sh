@@ -55,8 +55,7 @@ if [ $? -ne 0 ]; then
 fi
 echo -e "${GREEN}✅ Test data published successfully${NC}"
 
-# Phase 3: Start transfer service
-echo -e "${YELLOW}⚡ Phase 3: Starting transfer service...${NC}"
+# Phase 3: change consumer group for transfer
 GROUP_ID="group_$(date +%Y_%m_%d_%H_%M_%S)"
 # Use a portable sed command for in-place replacement of groupID in config/e2e.yaml
 # This works on both GNU and BSD/macOS sed
