@@ -56,16 +56,25 @@ const (
 	Hourly  PartitionFrequency = "hourly"
 )
 
-func (pf PartitionFrequency) Suffix(value time.Time) (string, error) {
+func (pf PartitionFrequency) Layout() string {
 	switch pf {
 	case Monthly:
-		return value.Format("_2006_01"), nil
+		return "_2006_01"
 	case Daily:
-		return value.Format("_2006_01_02"), nil
+		return "_2006_01_02"
 	case Hourly:
-		return value.Format("_2006_01_02_15"), nil
+		return "_2006_01_02_15"
 	}
-	return "", fmt.Errorf("invalid partition frequency: %q", pf)
+	return ""
+}
+
+func (pf PartitionFrequency) Suffix(value time.Time) (string, error) {
+	layout := pf.Layout()
+	if layout == "" {
+		return "", fmt.Errorf("invalid partition frequency: %q", pf)
+	}
+
+	return value.Format(layout), nil
 }
 
 type SoftPartitioning struct {
