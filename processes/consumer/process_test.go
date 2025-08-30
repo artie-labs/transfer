@@ -80,12 +80,11 @@ func TestProcessMessageFailures(t *testing.T) {
 		TopicToConfigFormatMap: tcFmtMap,
 	}
 
-	tcFmt, ok := tcFmtMap.GetTopicFmt(msg.Topic())
+	_, ok := tcFmtMap.GetTopicFmt(msg.Topic())
 	assert.True(t, ok)
 
 	tableName, err = args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{})
-	assert.ErrorContains(t, err, fmt.Sprintf("format: %s is not supported", tcFmt.tc.CDCKeyFormat), err.Error())
-	assert.ErrorContains(t, err, "cannot unmarshall key", err.Error())
+	assert.ErrorContains(t, err, `cannot unmarshal key "": format:  is not supported`)
 	assert.Equal(t, 0, len(memDB.TableData()))
 	assert.Empty(t, tableName)
 
@@ -200,7 +199,7 @@ func TestProcessMessageFailures(t *testing.T) {
 		}
 
 		tableName, err = args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{})
-		assert.ErrorContains(t, err, "cannot unmarshall event: failed to unmarshal json: invalid character 'o' in literal")
+		assert.ErrorContains(t, err, "cannot unmarshal event: failed to unmarshal json: invalid character 'o' in literal")
 		assert.Empty(t, tableName)
 		assert.True(t, td.NumberOfRows() > 0)
 	}
