@@ -75,7 +75,7 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, _
 }
 
 func buildTemporaryFilePath(tableData *optimization.TableData) string {
-	return fmt.Sprintf("/tmp/%d_%s.parquet", tableData.LatestCDCTs.UnixMilli(), stringutil.Random(4))
+	return fmt.Sprintf("/tmp/%d_%s.parquet", tableData.GetLatestTimestamp().UnixMilli(), stringutil.Random(4))
 }
 
 // WriteParquetFiles writes the table data to a parquet file at the specified path using Arrow and returns an error if any step of the writing process fails.
