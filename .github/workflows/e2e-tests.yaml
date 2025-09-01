@@ -1,0 +1,40 @@
+name: E2E Tests
+
+permissions:
+  contents: read
+
+on: [push]
+
+jobs:
+  e2e-tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Download dependencies
+        run: |
+          go mod download
+          go mod tidy -diff
+      - name: Start dependencies
+        working-directory: e2e_tests/postgres
+        run: |
+          ./start_e2e.sh
+      - name: Compile
+        run: |
+          go build
+      - name: Run transfer
+        run: |
+          go run main.go --config e2e_tests/postgres/config/e2e.yaml &
+          sleep 20
+      - name: Run tests
+        working-directory: e2e_tests/postgres
+        run: |
+          go run test.go
+      - name: Stop dependencies
+        if: always()
+        working-directory: e2e_tests/postgres
+        run: |
+          ./stop_e2e.sh
