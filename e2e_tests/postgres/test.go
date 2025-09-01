@@ -125,8 +125,7 @@ func testCountRows(ctx context.Context, testCase TestCase) error {
 
 	var count int
 	query := fmt.Sprintf(`SELECT COUNT(*) FROM "%s"."%s"`, testCase.schema, testCase.tableName)
-	err = conn.QueryRow(ctx, query).Scan(&count)
-	if err != nil {
+	if err = conn.QueryRow(ctx, query).Scan(&count); err != nil {
 		return fmt.Errorf("failed to count rows in %s.%s: %w", testCase.schema, testCase.tableName, err)
 	}
 
@@ -156,16 +155,16 @@ func testCustomerRows(ctx context.Context, testCase TestCase) error {
 		var firstName string
 		var lastName string
 		var email string
-		err := rows.Scan(&id, &firstName, &lastName, &email)
-		if err != nil {
+		if err = rows.Scan(&id, &firstName, &lastName, &email); err != nil {
 			return fmt.Errorf("failed to scan row in %s.%s: %v", testCase.schema, testCase.tableName, err)
 		}
-		rowMap := make(map[string]any)
-		rowMap["id"] = id
-		rowMap["first_name"] = firstName
-		rowMap["last_name"] = lastName
-		rowMap["email"] = email
-		tableData[id] = rowMap
+
+		tableData[id] = map[string]any{
+			"id":         id,
+			"first_name": firstName,
+			"last_name":  lastName,
+			"email":      email,
+		}
 	}
 	if err := rows.Err(); err != nil {
 		return fmt.Errorf("error iterating rows in %s.%s: %w", testCase.schema, testCase.tableName, err)
