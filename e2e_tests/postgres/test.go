@@ -17,6 +17,8 @@ type TestCase struct {
 	rows          []map[string]any
 }
 
+const dsn = "postgres://postgres:postgres@localhost:5432/destination_e2e?sslmode=disable"
+
 var (
 	testCases = []TestCase{
 		{
@@ -115,9 +117,9 @@ var (
 )
 
 func testCountRows(ctx context.Context, testCase TestCase) error {
-	conn, err := pgx.Connect(ctx, "postgres://postgres:postgres@localhost:5432/destination_e2e?sslmode=disable")
+	conn, err := pgx.Connect(ctx, dsn)
 	if err != nil {
-		return fmt.Errorf("unable to connect to database: %v", err)
+		return fmt.Errorf("unable to connect to database: %w", err)
 	}
 	defer conn.Close(ctx)
 
@@ -125,7 +127,7 @@ func testCountRows(ctx context.Context, testCase TestCase) error {
 	query := fmt.Sprintf(`SELECT COUNT(*) FROM "%s"."%s"`, testCase.schema, testCase.tableName)
 	err = conn.QueryRow(ctx, query).Scan(&count)
 	if err != nil {
-		return fmt.Errorf("failed to count rows in %s.%s: %v", testCase.schema, testCase.tableName, err)
+		return fmt.Errorf("failed to count rows in %s.%s: %w", testCase.schema, testCase.tableName, err)
 	}
 
 	if count != testCase.expectedCount {
@@ -135,20 +137,20 @@ func testCountRows(ctx context.Context, testCase TestCase) error {
 }
 
 func testCustomerRows(ctx context.Context, testCase TestCase) error {
-	conn, err := pgx.Connect(ctx, "postgres://postgres:postgres@localhost:5432/destination_e2e?sslmode=disable")
+	conn, err := pgx.Connect(ctx, dsn)
 	if err != nil {
-		return fmt.Errorf("unable to connect to database: %v", err)
+		return fmt.Errorf("unable to connect to database: %w", err)
 	}
 	defer conn.Close(ctx)
 
 	query := fmt.Sprintf(`SELECT id, first_name, last_name, email FROM "%s"."%s"`, testCase.schema, testCase.tableName)
 	rows, err := conn.Query(ctx, query)
 	if err != nil {
-		return fmt.Errorf("failed to query rows in %s.%s: %v", testCase.schema, testCase.tableName, err)
+		return fmt.Errorf("failed to query rows in %s.%s: %w", testCase.schema, testCase.tableName, err)
 	}
 	defer rows.Close()
 
-	tableData := make(map[int]map[string]interface{})
+	tableData := make(map[int]map[string]any)
 	for rows.Next() {
 		var id int
 		var firstName string
@@ -158,7 +160,7 @@ func testCustomerRows(ctx context.Context, testCase TestCase) error {
 		if err != nil {
 			return fmt.Errorf("failed to scan row in %s.%s: %v", testCase.schema, testCase.tableName, err)
 		}
-		rowMap := make(map[string]interface{})
+		rowMap := make(map[string]any)
 		rowMap["id"] = id
 		rowMap["first_name"] = firstName
 		rowMap["last_name"] = lastName
@@ -166,7 +168,7 @@ func testCustomerRows(ctx context.Context, testCase TestCase) error {
 		tableData[id] = rowMap
 	}
 	if err := rows.Err(); err != nil {
-		return fmt.Errorf("error iterating rows in %s.%s: %v", testCase.schema, testCase.tableName, err)
+		return fmt.Errorf("error iterating rows in %s.%s: %w", testCase.schema, testCase.tableName, err)
 	}
 
 	for _, row := range testCase.rows {
@@ -182,21 +184,22 @@ func testCustomerRows(ctx context.Context, testCase TestCase) error {
 }
 
 func testProductRows(ctx context.Context, testCase TestCase) error {
-	conn, err := pgx.Connect(ctx, "postgres://postgres:postgres@localhost:5432/destination_e2e?sslmode=disable")
+	conn, err := pgx.Connect(ctx, dsn)
 	if err != nil {
-		return fmt.Errorf("unable to connect to database: %v", err)
+		return fmt.Errorf("unable to connect to database: %w", err)
 	}
+
 	defer conn.Close(ctx)
 
 	// Store the whole table in a map keyed by id
 	query := fmt.Sprintf(`SELECT id, name, description, weight FROM "%s"."%s"`, testCase.schema, testCase.tableName)
 	rows, err := conn.Query(ctx, query)
 	if err != nil {
-		return fmt.Errorf("failed to query rows in %s.%s: %v", testCase.schema, testCase.tableName, err)
+		return fmt.Errorf("failed to query rows in %s.%s: %w", testCase.schema, testCase.tableName, err)
 	}
 	defer rows.Close()
 
-	tableData := make(map[int]map[string]interface{})
+	tableData := make(map[int]map[string]any)
 	for rows.Next() {
 		var id int
 		var name string
@@ -204,9 +207,9 @@ func testProductRows(ctx context.Context, testCase TestCase) error {
 		var weight *float64
 		err := rows.Scan(&id, &name, &description, &weight)
 		if err != nil {
-			return fmt.Errorf("failed to scan row in %s.%s: %v", testCase.schema, testCase.tableName, err)
+			return fmt.Errorf("failed to scan row in %s.%s: %w", testCase.schema, testCase.tableName, err)
 		}
-		rowMap := make(map[string]interface{})
+		rowMap := make(map[string]any)
 		rowMap["id"] = id
 		rowMap["name"] = name
 		if description != nil {
@@ -222,7 +225,7 @@ func testProductRows(ctx context.Context, testCase TestCase) error {
 		tableData[id] = rowMap
 	}
 	if err := rows.Err(); err != nil {
-		return fmt.Errorf("error iterating rows in %s.%s: %v", testCase.schema, testCase.tableName, err)
+		return fmt.Errorf("error iterating rows in %s.%s: %w", testCase.schema, testCase.tableName, err)
 	}
 
 	for _, row := range testCase.rows {
