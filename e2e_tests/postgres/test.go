@@ -204,10 +204,10 @@ func testProductRows(ctx context.Context, testCase TestCase) error {
 		var name string
 		var description *string
 		var weight *float64
-		err := rows.Scan(&id, &name, &description, &weight)
-		if err != nil {
+		if err := rows.Scan(&id, &name, &description, &weight); err != nil {
 			return fmt.Errorf("failed to scan row in %s.%s: %w", testCase.schema, testCase.tableName, err)
 		}
+
 		rowMap := make(map[string]any)
 		rowMap["id"] = id
 		rowMap["name"] = name
