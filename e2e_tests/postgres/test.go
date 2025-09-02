@@ -156,7 +156,7 @@ func testCustomerRows(ctx context.Context, testCase TestCase) error {
 		var lastName string
 		var email string
 		if err = rows.Scan(&id, &firstName, &lastName, &email); err != nil {
-			return fmt.Errorf("failed to scan row in %s.%s: %v", testCase.schema, testCase.tableName, err)
+			return fmt.Errorf("failed to scan row in %s.%s: %w", testCase.schema, testCase.tableName, err)
 		}
 
 		tableData[id] = map[string]any{
