@@ -54,9 +54,9 @@ type TableData struct {
 	// For Kafka, we only need the last message to commit the offset
 	PartitionsToLastMessage map[int]artie.Message
 
-	// This is used for the automatic schema detection
-	LatestCDCTs time.Time
-	approxSize  int
+	// [latestTimestamp] - This property is used for the automatic schema detection
+	latestTimestamp time.Time
+	approxSize      int
 	// containOtherOperations - this means the `TableData` object contains other events that arises from CREATE, UPDATE, REPLICATION
 	// if this value is false, that means it is only deletes. Which means we should not drop columns
 	containOtherOperations bool
@@ -71,6 +71,14 @@ type TableData struct {
 
 	// Name of the table in the destination
 	name string
+}
+
+func (t *TableData) SetLatestTimestamp(timestamp time.Time) {
+	t.latestTimestamp = timestamp
+}
+
+func (t *TableData) GetLatestTimestamp() time.Time {
+	return t.latestTimestamp
 }
 
 func (t *TableData) MultiStepMergeSettings() MultiStepMergeSettings {
