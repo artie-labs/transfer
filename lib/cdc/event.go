@@ -41,10 +41,6 @@ func NewTableID(schema, table string) TableID {
 	}
 }
 
-func (t TableID) IsEmpty() bool {
-	return t.Schema == "" && t.Table == ""
-}
-
 func (t TableID) String() string {
 	return fmt.Sprintf("%s.%s", t.Schema, t.Table)
 }
