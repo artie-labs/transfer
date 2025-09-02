@@ -112,12 +112,12 @@ func (s *SchemaEventPayload) GetFullTableName() string {
 }
 
 func (s *SchemaEventPayload) GetSourceMetadata() (string, error) {
-	json, err := json.Marshal(s.Payload.Source)
+	val, err := json.Marshal(s.Payload.Source)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to marshal source metadata: %w", err)
 	}
 
-	return string(json), nil
+	return string(val), nil
 }
 
 func (s *SchemaEventPayload) GetData(tc kafkalib.TopicConfig) (map[string]any, error) {

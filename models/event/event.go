@@ -191,7 +191,7 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 		if !strings.HasSuffix(tblName, constants.HistoryModeSuffix) {
 			// History mode will include a table suffix and operation column
 			tblName += constants.HistoryModeSuffix
-			slog.Warn(fmt.Sprintf("History mode is enabled, but table name does not have a %s suffix, so we're adding it...", constants.HistoryModeSuffix), slog.String("tblName", tblName))
+			slog.Warn(fmt.Sprintf("History mode is enabled, but table name does not have a %q suffix, so we're adding it...", constants.HistoryModeSuffix), slog.String("tblName", tblName))
 		}
 
 		// If this is already set, it's a no-op.
@@ -203,15 +203,15 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 	} else if tc.SoftPartitioning.Enabled {
 		maybeDatetime, ok := evtData[tc.SoftPartitioning.PartitionColumn]
 		if !ok {
-			return Event{}, fmt.Errorf("partition column %s not found in data", tc.SoftPartitioning.PartitionColumn)
+			return Event{}, fmt.Errorf("partition column %q not found in data", tc.SoftPartitioning.PartitionColumn)
 		}
 		actuallyDateTime, err := typing.AssertType[time.Time](maybeDatetime)
 		if err != nil {
-			return Event{}, fmt.Errorf("failed to assert datetime: %w for table %s schema %s", err, tc.TableName, tc.Schema)
+			return Event{}, fmt.Errorf("failed to assert datetime: %w for table %q schema %q", err, tc.TableName, tc.Schema)
 		}
 		suffix, err := tc.SoftPartitioning.PartitionFrequency.Suffix(actuallyDateTime)
 		if err != nil {
-			return Event{}, fmt.Errorf("failed to get partition frequency suffix: %w for table %s schema %s", err, tc.TableName, tc.Schema)
+			return Event{}, fmt.Errorf("failed to get partition frequency suffix: %w for table %q schema %q", err, tc.TableName, tc.Schema)
 		}
 		tblName = tblName + suffix
 	}
@@ -442,8 +442,7 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 	}
 
 	td.PartitionsToLastMessage[message.Partition()] = message
-
-	td.LatestCDCTs = e.executionTime
+	td.SetLatestTimestamp(e.executionTime)
 	flush, flushReason := td.ShouldFlush(cfg)
 	return flush, flushReason, nil
 }

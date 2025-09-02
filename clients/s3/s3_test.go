@@ -16,7 +16,10 @@ import (
 
 func TestBuildTemporaryFilePath(t *testing.T) {
 	ts := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
-	fp := buildTemporaryFilePath(&optimization.TableData{LatestCDCTs: ts})
+	td := &optimization.TableData{}
+	td.SetLatestTimestamp(ts)
+
+	fp := buildTemporaryFilePath(td)
 	assert.True(t, strings.HasPrefix(fp, "/tmp/1577836800000_"), fp)
 	assert.True(t, strings.HasSuffix(fp, ".parquet"), fp)
 }
