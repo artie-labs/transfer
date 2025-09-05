@@ -10,13 +10,13 @@ services:
     volumes:
       - ./sql/create_db.sql:/docker-entrypoint-initdb.d/create_db.sql
   zookeeper:
-    image: quay.io/debezium/zookeeper:2.0
+    image: quay.io/debezium/zookeeper:3.1
     ports:
       - 2181:2181
       - 2888:2888
       - 3888:3888
   kafka:
-    image: quay.io/debezium/kafka:2.0
+    image: quay.io/debezium/kafka:3.1
     container_name: kafka
     ports:
       - 9092:9092
