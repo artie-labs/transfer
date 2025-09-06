@@ -1,6 +1,7 @@
 package consumer
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
@@ -85,6 +86,8 @@ func (f *FlushTestSuite) TestShouldFlush() {
 }
 
 func (f *FlushTestSuite) TestMemoryConcurrency() {
+	ctx := context.WithValue(f.T().Context(), kafkalib.BuildContextKey("foo"), kafkalib.NewConsumerProviderForTest(f.fakeConsumer, "test-group"))
+
 	tableIDs := []cdc.TableID{
 		cdc.NewTableID("public", "dusty"),
 		cdc.NewTableID("public", "snowflake"),
@@ -128,7 +131,7 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 	}
 
 	f.fakeBaseline.MergeReturns(true, nil)
-	assert.NoError(f.T(), Flush(f.T().Context(), f.db, f.baseline, metrics.NullMetricsProvider{}, Args{}))
+	assert.NoError(f.T(), Flush(ctx, f.db, f.baseline, metrics.NullMetricsProvider{}, Args{ShouldLock: true}))
 	assert.Equal(f.T(), f.fakeConsumer.CommitMessagesCallCount(), len(tableIDs)) // Commit 3 times because 3 topics.
 
 	for i := range f.fakeConsumer.CommitMessagesCallCount() {

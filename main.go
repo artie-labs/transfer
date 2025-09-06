@@ -14,6 +14,7 @@ import (
 	"github.com/artie-labs/transfer/lib/cryptography"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/utils"
+	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"github.com/artie-labs/transfer/models"
@@ -85,6 +86,10 @@ func main() {
 	slog.Info("Starting...", slog.String("version", version))
 
 	inMemDB := models.NewMemoryDB()
+	ctx, err = kafkalib.InjectConsumerProvidersIntoContext(ctx, settings.Config.Kafka)
+	if err != nil {
+		logger.Fatal("Failed to inject consumer providers into context", slog.Any("err", err))
+	}
 
 	var wg sync.WaitGroup
 	wg.Add(1)

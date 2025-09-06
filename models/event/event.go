@@ -325,8 +325,6 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 
 	// Does the table exist?
 	td := inMemDB.GetOrCreateTableData(e.tableID, tc.Topic)
-	td.Lock()
-	defer td.Unlock()
 	if td.Empty() {
 		cols := &columns.Columns{}
 		if e.columns != nil {
@@ -434,7 +432,15 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 	}
 
 	td.InsertRow(pkValueString, e.data, e.deleted)
-	// Record the last message for this partition, so we can use this for committing the offset.
+
+	// Recording the last message we processed for this partition, so we can use this to commit the offset later.
+	if prev, ok := td.PartitionsToLastMessage[message.Partition()]; ok {
+		// This should never happen because we have a guardrail on the outerloop
+		if prev.Offset() > message.Offset() {
+			return false, "", fmt.Errorf("previous message offset %d is greater than the current message offset %d for partition %d", prev.Offset(), message.Offset(), message.Partition())
+		}
+	}
+
 	td.PartitionsToLastMessage[message.Partition()] = message
 	td.SetLatestTimestamp(e.executionTime)
 	flush, flushReason := td.ShouldFlush(cfg)
