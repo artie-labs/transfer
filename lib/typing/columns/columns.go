@@ -99,7 +99,17 @@ func (c *Column) ShouldBackfill() bool {
 	return c.defaultValue != nil && !c.backfilled
 }
 
+var lookupTable = map[string]string{
+	"CURRENT_DATE": "col_current_date",
+	"current_date": "col_current_date",
+}
+
 func (c *Column) Name() string {
+
+	if _, ok := lookupTable[c.name]; ok {
+		return lookupTable[c.name]
+	}
+
 	return c.name
 }
 
