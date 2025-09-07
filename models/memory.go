@@ -79,6 +79,9 @@ func (d *DatabaseData) GetOrCreateTableData(tableID cdc.TableID, topic string) *
 }
 
 func (d *DatabaseData) ClearTableConfig(tableID cdc.TableID) {
+	d.Lock()
+	defer d.Unlock()
+
 	d.tableData[tableID].Wipe()
 }
 
