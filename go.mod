@@ -38,6 +38,7 @@ require (
 	github.com/twpayne/go-geom v1.6.0
 	github.com/viant/bigquery v0.4.1
 	go.mongodb.org/mongo-driver v1.17.3
+	golang.org/x/sync v0.12.0
 	google.golang.org/api v0.228.0
 	google.golang.org/protobuf v1.36.6
 	gopkg.in/yaml.v3 v3.0.1
@@ -156,7 +157,6 @@ require (
 	golang.org/x/mod v0.24.0 // indirect
 	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/oauth2 v0.28.0 // indirect
-	golang.org/x/sync v0.12.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
 	golang.org/x/term v0.30.0 // indirect
 	golang.org/x/text v0.23.0 // indirect

@@ -4,17 +4,16 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"sync"
+	"sync/atomic"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/retry"
-	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 	"github.com/artie-labs/transfer/models"
+	"golang.org/x/sync/errgroup"
 )
 
 type Args struct {
@@ -53,25 +52,25 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 		return fmt.Errorf("failed to get consumer from context: %w", err)
 	}
 
-	var wg sync.WaitGroup
+	var grp errgroup.Group
+	var commitOffset atomic.Bool
 	err = consumer.LockAndProcess(ctx, shouldLock, func() error {
 		for _, table := range tables {
-			wg.Add(1)
-			go func(table *models.TableData) {
-				defer wg.Done()
+			// Also in the example: https://pkg.go.dev/golang.org/x/sync/errgroup#example-Group-Parallel
+			table := table // https://golang.org/doc/faq#closures_and_goroutines
+			grp.Go(func() error {
 				if args.CoolDown != nil && table.ShouldSkipFlush(*args.CoolDown) {
 					slog.Debug("Skipping flush because we are currently in a flush cooldown", slog.String("tableID", table.GetTableID().String()))
-					return
+					return nil
 				}
 
 				retryCfg, err := retry.NewJitterRetryConfig(1_000, 30_000, 15, retry.AlwaysRetry)
 				if err != nil {
-					slog.Error("Failed to create retry config", slog.Any("err", err))
-					return
+					return err
 				}
 
 				if table.Empty() {
-					return
+					return nil
 				}
 
 				action := "merge"
@@ -88,58 +87,73 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 					"reason":   args.Reason,
 				}
 
-				what, err := retry.WithRetriesAndResult(retryCfg, func(_ int, _ error) (string, error) {
+				result, err := retry.WithRetriesAndResult(retryCfg, func(_ int, _ error) (flushResult, error) {
 					slog.Info("Flushing table", slog.String("tableID", table.GetTableID().String()), slog.String("reason", args.Reason))
-					return flush(ctx, dest, table, action, inMemDB.ClearTableConfig, consumer)
+					return flush(ctx, dest, table, action, consumer)
 				})
 
 				if err != nil {
-					slog.Error(fmt.Sprintf("Failed to %s", action), slog.Any("err", err), slog.String("tableID", table.GetTableID().String()))
+					return fmt.Errorf("failed to %s for %q: %w", action, table.GetTableID().String(), err)
 				}
 
-				tags["what"] = what
+				// It's okay that this will get overwritten by other tables
+				// This is because MSM is only supported for a single table / topic.
+				commitOffset.Store(result.CommitOffset)
+				tags["what"] = result.What
 				metricsClient.Timing("flush", time.Since(start), tags)
-			}(table)
+				return nil
+			})
 		}
 
-		wg.Wait()
+		if err = grp.Wait(); err != nil {
+			return fmt.Errorf("failed to flush table: %w", err)
+		}
+
+		if commitOffset.Load() {
+			if err := consumer.CommitMessage(ctx); err != nil {
+				return fmt.Errorf("failed to commit message: %w", err)
+			}
+
+			for _, table := range tables {
+				slog.Info("Flush success, clearing memory...", slog.String("tableID", table.GetTableID().String()))
+				inMemDB.ClearTableConfig(table.GetTableID())
+			}
+		} else {
+			slog.Info("Not committing offset yet", slog.String("topic", topic))
+		}
+
 		return nil
 	})
 
 	return err
 }
 
-func flush(ctx context.Context, dest destination.Baseline, _tableData *models.TableData, action string, clearTableConfig func(cdc.TableID), consumer *kafkalib.ConsumerProvider) (string, error) {
+type flushResult struct {
+	What         string
+	CommitOffset bool
+}
+
+func flush(ctx context.Context, dest destination.Baseline, _tableData *models.TableData, action string, consumer *kafkalib.ConsumerProvider) (flushResult, error) {
 	// This is added so that we have a new temporary table suffix for each merge / append.
 	_tableData.ResetTempTableSuffix()
 
 	// Merge or Append depending on the mode.
-	var err error
-	commitTransaction := true
-	if _tableData.Mode() == config.History {
-		err = dest.Append(ctx, _tableData.TableData, false)
-	} else {
-		commitTransaction, err = dest.Merge(ctx, _tableData.TableData)
-	}
-
-	if err != nil {
-		return "merge_fail", fmt.Errorf("failed to flush %q: %w", _tableData.GetTableID().String(), err)
-	}
-
-	if commitTransaction {
-		for _, msg := range _tableData.PartitionsToLastMessage {
-			if err = consumer.CommitMessage(ctx, msg.GetMessage()); err != nil {
-				return "commit_fail", fmt.Errorf("failed to commit kafka offset: %w", err)
-			}
-
-			slog.Info("Successfully committed Kafka offset", slog.String("topic", msg.Topic()), slog.Int("partition", msg.Partition()), slog.Int64("offset", msg.Offset()))
+	switch _tableData.Mode() {
+	case config.History:
+		err := dest.Append(ctx, _tableData.TableData, false)
+		if err != nil {
+			return flushResult{What: "merge_fail"}, fmt.Errorf("failed to append: %w", err)
 		}
 
-		slog.Info(fmt.Sprintf("%s success, clearing memory...", stringutil.CapitalizeFirstLetter(action)), slog.String("tableID", _tableData.GetTableID().String()))
-		clearTableConfig(_tableData.GetTableID())
-	} else {
-		slog.Info(fmt.Sprintf("%s success, not committing offset yet", stringutil.CapitalizeFirstLetter(action)), slog.String("tableID", _tableData.GetTableID().String()))
+		return flushResult{What: "success", CommitOffset: true}, nil
+	case config.Replication:
+		commitTransaction, err := dest.Merge(ctx, _tableData.TableData)
+		if err != nil {
+			return flushResult{What: "merge_fail"}, fmt.Errorf("failed to merge: %w", err)
+		}
+
+		return flushResult{What: "success", CommitOffset: commitTransaction}, nil
 	}
 
-	return "success", nil
+	return flushResult{}, fmt.Errorf("invalid mode: %q", _tableData.Mode())
 }
