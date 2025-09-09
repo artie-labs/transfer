@@ -87,7 +87,6 @@ func (f *FlushTestSuite) TestShouldFlush() {
 
 func (f *FlushTestSuite) TestMemoryConcurrency() {
 	topicName := "foo"
-
 	consumer := kafkalib.NewConsumerProviderForTest(f.fakeConsumer, "test-group")
 	ctx := context.WithValue(f.T().Context(), kafkalib.BuildContextKey(topicName), consumer)
 
@@ -136,7 +135,7 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 
 	f.fakeBaseline.MergeReturns(true, nil)
 	assert.NoError(f.T(), Flush(ctx, f.db, f.baseline, metrics.NullMetricsProvider{}, []string{topicName}, Args{}))
-	assert.Equal(f.T(), f.fakeConsumer.CommitMessagesCallCount(), len(tableIDs)) // Commit 3 times because 3 topics.
+	assert.Equal(f.T(), f.fakeConsumer.CommitMessagesCallCount(), 1) // Commit only once because it's the same topic.
 
 	for i := range f.fakeConsumer.CommitMessagesCallCount() {
 		_, kafkaMessages := f.fakeConsumer.CommitMessagesArgsForCall(i)
