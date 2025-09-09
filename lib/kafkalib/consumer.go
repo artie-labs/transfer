@@ -36,9 +36,10 @@ func (c *ConsumerProvider) SetPartitionToAppliedOffsetTest(msg kafka.Message) {
 	c.partitionToAppliedOffset[msg.Partition] = msg
 }
 
-func NewConsumerProviderForTest(consumer Consumer, groupID string) *ConsumerProvider {
+func NewConsumerProviderForTest(consumer Consumer, topic string, groupID string) *ConsumerProvider {
 	return &ConsumerProvider{
 		Consumer:                 consumer,
+		topic:                    topic,
 		groupID:                  groupID,
 		partitionToAppliedOffset: make(map[int]kafka.Message),
 	}
