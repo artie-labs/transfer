@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"sync"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config"
@@ -14,6 +13,7 @@ import (
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 	"github.com/artie-labs/transfer/models"
+	"golang.org/x/sync/errgroup"
 )
 
 type Args struct {
@@ -52,25 +52,22 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 		return fmt.Errorf("failed to get consumer from context: %w", err)
 	}
 
-	var wg sync.WaitGroup
+	var grp errgroup.Group
 	err = consumer.LockAndProcess(ctx, shouldLock, func() error {
 		for _, table := range tables {
-			wg.Add(1)
-			go func(table *models.TableData) {
-				defer wg.Done()
+			grp.Go(func() error {
 				if args.CoolDown != nil && table.ShouldSkipFlush(*args.CoolDown) {
 					slog.Debug("Skipping flush because we are currently in a flush cooldown", slog.String("tableID", table.GetTableID().String()))
-					return
+					return nil
 				}
 
 				retryCfg, err := retry.NewJitterRetryConfig(1_000, 30_000, 15, retry.AlwaysRetry)
 				if err != nil {
-					slog.Error("Failed to create retry config", slog.Any("err", err))
-					return
+					return err
 				}
 
 				if table.Empty() {
-					return
+					return nil
 				}
 
 				action := "merge"
@@ -93,24 +90,26 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 				})
 
 				if err != nil {
-					slog.Error(fmt.Sprintf("Failed to %s", action), slog.Any("err", err), slog.String("tableID", table.GetTableID().String()))
+					return fmt.Errorf("failed to %s for %q: %w", action, table.GetTableID().String(), err)
 				}
 
 				if result.CommitOffset {
-					consumer.CommitMessage(ctx, result.Message)
+					if err := consumer.CommitMessage(ctx); err != nil {
+						return fmt.Errorf("failed to commit message: %w", err)
+					}
+
 					inMemDB.ClearTableConfig(table.GetTableID())
 				} else {
 					slog.Info(fmt.Sprintf("%s success, not committing offset yet", stringutil.CapitalizeFirstLetter(action)), slog.String("tableID", table.GetTableID().String()))
-
 				}
 
 				tags["what"] = result.What
 				metricsClient.Timing("flush", time.Since(start), tags)
-			}(table)
+				return nil
+			})
 		}
 
-		wg.Wait()
-		return nil
+		return grp.Wait()
 	})
 
 	return err

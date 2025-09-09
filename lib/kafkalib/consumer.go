@@ -23,7 +23,7 @@ type Consumer interface {
 type ConsumerProvider struct {
 	mu                       sync.Mutex
 	groupID                  string
-	partitionToAppliedOffset map[int]int64
+	partitionToAppliedOffset map[int]kafka.Message
 
 	Consumer
 }
@@ -32,7 +32,7 @@ func NewConsumerProviderForTest(consumer Consumer, groupID string) *ConsumerProv
 	return &ConsumerProvider{
 		Consumer:                 consumer,
 		groupID:                  groupID,
-		partitionToAppliedOffset: make(map[int]int64),
+		partitionToAppliedOffset: make(map[int]kafka.Message),
 	}
 }
 
@@ -54,7 +54,7 @@ func InjectConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) (contex
 		ctx = context.WithValue(ctx, BuildContextKey(topicConfig.Topic), &ConsumerProvider{
 			Consumer:                 kafka.NewReader(kafkaCfg),
 			groupID:                  cfg.GroupID,
-			partitionToAppliedOffset: make(map[int]int64),
+			partitionToAppliedOffset: make(map[int]kafka.Message),
 		})
 	}
 
@@ -83,8 +83,8 @@ func (c *ConsumerProvider) FetchMessageAndProcess(ctx context.Context, do func(k
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if offset, ok := c.partitionToAppliedOffset[msg.Partition]; ok {
-		if offset >= msg.Offset {
+	if appliedMsg, ok := c.partitionToAppliedOffset[msg.Partition]; ok {
+		if appliedMsg.Offset >= msg.Offset {
 			// We should skip this message because we have already processed it.
 			return nil
 		}
@@ -94,7 +94,7 @@ func (c *ConsumerProvider) FetchMessageAndProcess(ctx context.Context, do func(k
 		return fmt.Errorf("failed to process message: %w", err)
 	}
 
-	c.partitionToAppliedOffset[msg.Partition] = msg.Offset
+	c.partitionToAppliedOffset[msg.Partition] = msg
 	return nil
 }
 
@@ -108,8 +108,16 @@ func GetConsumerFromContext(ctx context.Context, topic string) (*ConsumerProvide
 	return consumer, nil
 }
 
-func (c *ConsumerProvider) CommitMessage(ctx context.Context, msg kafka.Message) error {
-	return c.Consumer.CommitMessages(ctx, msg)
+func (c *ConsumerProvider) CommitMessage(ctx context.Context) error {
+	var msgs []kafka.Message
+
+	// Gather all the messages across all the partitions we have seen
+	for _, msg := range c.partitionToAppliedOffset {
+		msgs = append(msgs, msg)
+	}
+
+	// Commit all of them
+	return c.Consumer.CommitMessages(ctx, msgs...)
 }
 
 func (c *ConsumerProvider) GetGroupID() string {
