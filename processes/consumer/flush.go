@@ -20,113 +20,93 @@ import (
 type Args struct {
 	// [coolDown] - Is used to skip the flush if the table has been recently flushed.
 	CoolDown *time.Duration
-	// [Topic] - This is the specific topic that you would like to flush.
-	Topic string
 	// [reason] - Is used to track the reason for the flush.
 	Reason string
-	// [ShouldLock] - If this is set to true, we will lock the consumer for the duration of the flush
-	ShouldLock bool
 }
 
-func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, args Args) error {
+func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, topics []string, args Args) error {
 	if inMemDB == nil {
 		return nil
 	}
 
-	// Read lock to examine the map of tables
-	inMemDB.RLock()
-	topicToTables := inMemDB.GetTopicToTables()
-	inMemDB.RUnlock()
-
-	if args.Topic != "" {
-		if _, ok := topicToTables[args.Topic]; !ok {
-			// Should never happen
-			return fmt.Errorf("topic %q does not exist in the in-memory database", args.Topic)
+	for _, topic := range topics {
+		if err := FlushSingleTopic(ctx, inMemDB, dest, metricsClient, args, topic, true); err != nil {
+			slog.Error("Failed to flush topic", slog.String("topic", topic), slog.Any("err", err))
 		}
 	}
 
-	topicsToConsumerProvider := make(map[string]*kafkalib.ConsumerProvider)
-	for topic := range topicToTables {
-		consumer, err := kafkalib.GetConsumerFromContext(ctx, topic)
-		if err != nil {
-			return fmt.Errorf("failed to get consumer from context: %w", err)
-		}
-
-		topicsToConsumerProvider[topic] = consumer
-	}
-
-	// Flush will take everything in memory and call the destination to create temp tables.
-	var topicWg sync.WaitGroup
-	for topic, tables := range topicToTables {
-		if args.Topic != "" && args.Topic != topic {
-			// If topic was specified and doesn't match this topic, we'll skip flushing this topic.
-			continue
-		}
-
-		consumer, ok := topicsToConsumerProvider[topic]
-		if !ok {
-			return fmt.Errorf("consumer not found for topic %q", topic)
-		}
-
-		topicWg.Add(1)
-
-		consumer.LockAndProcess(ctx, args.ShouldLock, func() error {
-			var tableWg sync.WaitGroup
-			for _, tableData := range tables {
-				tableWg.Add(1)
-				go func(_tableData *models.TableData) {
-					defer tableWg.Done()
-
-					if args.CoolDown != nil && _tableData.ShouldSkipFlush(*args.CoolDown) {
-						slog.Debug("Skipping flush because we are currently in a flush cooldown", slog.String("tableID", _tableData.GetTableID().String()))
-						return
-					}
-
-					retryCfg, err := retry.NewJitterRetryConfig(1_000, 30_000, 15, retry.AlwaysRetry)
-					if err != nil {
-						slog.Error("Failed to create retry config", slog.Any("err", err))
-						return
-					}
-
-					if _tableData.Empty() {
-						return
-					}
-
-					action := "merge"
-					if _tableData.Mode() == config.History {
-						action = "append"
-					}
-
-					start := time.Now()
-					tags := map[string]string{
-						"mode":     _tableData.Mode().String(),
-						"table":    _tableData.GetTableID().Table,
-						"database": _tableData.TopicConfig().Database,
-						"schema":   _tableData.TopicConfig().Schema,
-						"reason":   args.Reason,
-					}
-
-					what, err := retry.WithRetriesAndResult(retryCfg, func(_ int, _ error) (string, error) {
-						slog.Info("Flushing table", slog.String("tableID", _tableData.GetTableID().String()), slog.String("reason", args.Reason))
-						return flush(ctx, dest, _tableData, action, inMemDB.ClearTableConfig, consumer)
-					})
-
-					if err != nil {
-						slog.Error(fmt.Sprintf("Failed to %s", action), slog.Any("err", err), slog.String("tableID", _tableData.GetTableID().String()))
-					}
-
-					tags["what"] = what
-					metricsClient.Timing("flush", time.Since(start), tags)
-				}(tableData)
-			}
-			tableWg.Wait()
-			topicWg.Done()
-			return nil
-		})
-	}
-
-	topicWg.Wait()
 	return nil
+}
+
+func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, args Args, topic string, shouldLock bool) error {
+	if inMemDB == nil {
+		return nil
+	}
+
+	tables := inMemDB.GetTables(topic)
+	if len(tables) == 0 {
+		return nil
+	}
+
+	consumer, err := kafkalib.GetConsumerFromContext(ctx, topic)
+	if err != nil {
+		return fmt.Errorf("failed to get consumer from context: %w", err)
+	}
+
+	var wg sync.WaitGroup
+	err = consumer.LockAndProcess(ctx, shouldLock, func() error {
+		for _, table := range tables {
+			wg.Add(1)
+			go func(table *models.TableData) {
+				defer wg.Done()
+				if args.CoolDown != nil && table.ShouldSkipFlush(*args.CoolDown) {
+					slog.Debug("Skipping flush because we are currently in a flush cooldown", slog.String("tableID", table.GetTableID().String()))
+					return
+				}
+
+				retryCfg, err := retry.NewJitterRetryConfig(1_000, 30_000, 15, retry.AlwaysRetry)
+				if err != nil {
+					slog.Error("Failed to create retry config", slog.Any("err", err))
+					return
+				}
+
+				if table.Empty() {
+					return
+				}
+
+				action := "merge"
+				if table.Mode() == config.History {
+					action = "append"
+				}
+
+				start := time.Now()
+				tags := map[string]string{
+					"mode":     table.Mode().String(),
+					"table":    table.GetTableID().Table,
+					"database": table.TopicConfig().Database,
+					"schema":   table.TopicConfig().Schema,
+					"reason":   args.Reason,
+				}
+
+				what, err := retry.WithRetriesAndResult(retryCfg, func(_ int, _ error) (string, error) {
+					slog.Info("Flushing table", slog.String("tableID", table.GetTableID().String()), slog.String("reason", args.Reason))
+					return flush(ctx, dest, table, action, inMemDB.ClearTableConfig, consumer)
+				})
+
+				if err != nil {
+					slog.Error(fmt.Sprintf("Failed to %s", action), slog.Any("err", err), slog.String("tableID", table.GetTableID().String()))
+				}
+
+				tags["what"] = what
+				metricsClient.Timing("flush", time.Since(start), tags)
+			}(table)
+		}
+
+		wg.Wait()
+		return nil
+	})
+
+	return err
 }
 
 func flush(ctx context.Context, dest destination.Baseline, _tableData *models.TableData, action string, clearTableConfig func(cdc.TableID), consumer *kafkalib.ConsumerProvider) (string, error) {
