@@ -21,6 +21,15 @@ type Kafka struct {
 	DisableTLS      bool   `yaml:"disableTLS,omitempty"`
 }
 
+func (k *Kafka) Topics() []string {
+	var out []string
+	for _, topicConfig := range k.TopicConfigs {
+		out = append(out, topicConfig.Topic)
+	}
+
+	return out
+}
+
 func (k *Kafka) String() string {
 	// Don't log credentials.
 	return fmt.Sprintf("bootstrapServer=%s, groupID=%s, user_set=%v, pass_set=%v",

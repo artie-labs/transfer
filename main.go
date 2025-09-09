@@ -95,7 +95,7 @@ func main() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		pool.StartPool(ctx, inMemDB, dest, metricsClient, time.Duration(settings.Config.FlushIntervalSeconds)*time.Second)
+		pool.StartPool(ctx, inMemDB, dest, metricsClient, settings.Config.Kafka.Topics(), time.Duration(settings.Config.FlushIntervalSeconds)*time.Second)
 	}()
 
 	wg.Add(1)
