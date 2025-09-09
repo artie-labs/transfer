@@ -47,8 +47,7 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 
 	tables := inMemDB.GetTables(topic)
 	if len(tables) == 0 {
-		// Should never happen
-		return fmt.Errorf("topic %q does not exist in the in-memory database", topic)
+		return nil
 	}
 
 	consumer, err := kafkalib.GetConsumerFromContext(ctx, topic)
