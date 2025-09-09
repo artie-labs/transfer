@@ -3,6 +3,7 @@ package kafkalib
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sync"
 
 	"github.com/segmentio/kafka-go"
@@ -22,6 +23,7 @@ type Consumer interface {
 
 type ConsumerProvider struct {
 	mu                       sync.Mutex
+	topic                    string
 	groupID                  string
 	partitionToAppliedOffset map[int]kafka.Message
 
@@ -34,9 +36,10 @@ func (c *ConsumerProvider) SetPartitionToAppliedOffsetTest(msg kafka.Message) {
 	c.partitionToAppliedOffset[msg.Partition] = msg
 }
 
-func NewConsumerProviderForTest(consumer Consumer, groupID string) *ConsumerProvider {
+func NewConsumerProviderForTest(consumer Consumer, topic string, groupID string) *ConsumerProvider {
 	return &ConsumerProvider{
 		Consumer:                 consumer,
+		topic:                    topic,
 		groupID:                  groupID,
 		partitionToAppliedOffset: make(map[int]kafka.Message),
 	}
@@ -59,6 +62,7 @@ func InjectConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) (contex
 
 		ctx = context.WithValue(ctx, BuildContextKey(topicConfig.Topic), &ConsumerProvider{
 			Consumer:                 kafka.NewReader(kafkaCfg),
+			topic:                    topicConfig.Topic,
 			groupID:                  cfg.GroupID,
 			partitionToAppliedOffset: make(map[int]kafka.Message),
 		})
@@ -117,13 +121,20 @@ func GetConsumerFromContext(ctx context.Context, topic string) (*ConsumerProvide
 func (c *ConsumerProvider) CommitMessage(ctx context.Context) error {
 	var msgs []kafka.Message
 
+	partitionToOffset := make(map[int]int64)
 	// Gather all the messages across all the partitions we have seen
 	for _, msg := range c.partitionToAppliedOffset {
+		partitionToOffset[msg.Partition] = msg.Offset
 		msgs = append(msgs, msg)
 	}
 
 	// Commit all of them
-	return c.Consumer.CommitMessages(ctx, msgs...)
+	if err := c.Consumer.CommitMessages(ctx, msgs...); err != nil {
+		return fmt.Errorf("failed to commit messages: %w", err)
+	}
+
+	slog.Info("Committed messages", slog.String("topic", c.topic), slog.Any("partitionToOffset", partitionToOffset))
+	return nil
 }
 
 func (c *ConsumerProvider) GetGroupID() string {
