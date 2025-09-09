@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"sync/atomic"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config"
@@ -52,7 +53,7 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 	}
 
 	var grp errgroup.Group
-	var commitOffset bool
+	var commitOffset atomic.Bool
 	err = consumer.LockAndProcess(ctx, shouldLock, func() error {
 		for _, table := range tables {
 			// Also in the example: https://pkg.go.dev/golang.org/x/sync/errgroup#example-Group-Parallel
@@ -97,7 +98,7 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 
 				// It's okay that this will get overwritten by other tables
 				// This is because MSM is only supported for a single table / topic.
-				commitOffset = result.CommitOffset
+				commitOffset.Store(result.CommitOffset)
 				tags["what"] = result.What
 				metricsClient.Timing("flush", time.Since(start), tags)
 				return nil
@@ -108,7 +109,7 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 			return fmt.Errorf("failed to flush table: %w", err)
 		}
 
-		if commitOffset {
+		if commitOffset.Load() {
 			if err := consumer.CommitMessage(ctx); err != nil {
 				return fmt.Errorf("failed to commit message: %w", err)
 			}
