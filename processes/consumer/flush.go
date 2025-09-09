@@ -45,41 +45,6 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 	return nil
 }
 
-func flush(ctx context.Context, dest destination.Baseline, _tableData *models.TableData, action string, clearTableConfig func(cdc.TableID), consumer *kafkalib.ConsumerProvider) (string, error) {
-	// This is added so that we have a new temporary table suffix for each merge / append.
-	_tableData.ResetTempTableSuffix()
-
-	// Merge or Append depending on the mode.
-	var err error
-	commitTransaction := true
-	if _tableData.Mode() == config.History {
-		err = dest.Append(ctx, _tableData.TableData, false)
-	} else {
-		commitTransaction, err = dest.Merge(ctx, _tableData.TableData)
-	}
-
-	if err != nil {
-		return "merge_fail", fmt.Errorf("failed to flush %q: %w", _tableData.GetTableID().String(), err)
-	}
-
-	if commitTransaction {
-		for _, msg := range _tableData.PartitionsToLastMessage {
-			if err = consumer.CommitMessage(ctx, msg.GetMessage()); err != nil {
-				return "commit_fail", fmt.Errorf("failed to commit kafka offset: %w", err)
-			}
-
-			slog.Info("Successfully committed Kafka offset", slog.String("topic", msg.Topic()), slog.Int("partition", msg.Partition()), slog.Int64("offset", msg.Offset()))
-		}
-
-		slog.Info(fmt.Sprintf("%s success, clearing memory...", stringutil.CapitalizeFirstLetter(action)), slog.String("tableID", _tableData.GetTableID().String()))
-		clearTableConfig(_tableData.GetTableID())
-	} else {
-		slog.Info(fmt.Sprintf("%s success, not committing offset yet", stringutil.CapitalizeFirstLetter(action)), slog.String("tableID", _tableData.GetTableID().String()))
-	}
-
-	return "success", nil
-}
-
 func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, args Args, topic string) error {
 	if inMemDB == nil {
 		return nil
@@ -141,4 +106,39 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 	}
 
 	return nil
+}
+
+func flush(ctx context.Context, dest destination.Baseline, _tableData *models.TableData, action string, clearTableConfig func(cdc.TableID), consumer *kafkalib.ConsumerProvider) (string, error) {
+	// This is added so that we have a new temporary table suffix for each merge / append.
+	_tableData.ResetTempTableSuffix()
+
+	// Merge or Append depending on the mode.
+	var err error
+	commitTransaction := true
+	if _tableData.Mode() == config.History {
+		err = dest.Append(ctx, _tableData.TableData, false)
+	} else {
+		commitTransaction, err = dest.Merge(ctx, _tableData.TableData)
+	}
+
+	if err != nil {
+		return "merge_fail", fmt.Errorf("failed to flush %q: %w", _tableData.GetTableID().String(), err)
+	}
+
+	if commitTransaction {
+		for _, msg := range _tableData.PartitionsToLastMessage {
+			if err = consumer.CommitMessage(ctx, msg.GetMessage()); err != nil {
+				return "commit_fail", fmt.Errorf("failed to commit kafka offset: %w", err)
+			}
+
+			slog.Info("Successfully committed Kafka offset", slog.String("topic", msg.Topic()), slog.Int("partition", msg.Partition()), slog.Int64("offset", msg.Offset()))
+		}
+
+		slog.Info(fmt.Sprintf("%s success, clearing memory...", stringutil.CapitalizeFirstLetter(action)), slog.String("tableID", _tableData.GetTableID().String()))
+		clearTableConfig(_tableData.GetTableID())
+	} else {
+		slog.Info(fmt.Sprintf("%s success, not committing offset yet", stringutil.CapitalizeFirstLetter(action)), slog.String("tableID", _tableData.GetTableID().String()))
+	}
+
+	return "success", nil
 }
