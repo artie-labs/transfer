@@ -98,7 +98,6 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 
 			if err != nil {
 				slog.Error(fmt.Sprintf("Failed to %s", action), slog.Any("err", err), slog.String("tableID", tableData.GetTableID().String()))
-				return fmt.Errorf("failed to flush table: %w", err)
 			}
 
 			tags["what"] = what
