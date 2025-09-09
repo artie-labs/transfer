@@ -55,6 +55,8 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 	var commitOffset bool
 	err = consumer.LockAndProcess(ctx, shouldLock, func() error {
 		for _, table := range tables {
+			// Also in the example: https://pkg.go.dev/golang.org/x/sync/errgroup#example-Group-Parallel
+			table := table // https://golang.org/doc/faq#closures_and_goroutines
 			grp.Go(func() error {
 				if args.CoolDown != nil && table.ShouldSkipFlush(*args.CoolDown) {
 					slog.Debug("Skipping flush because we are currently in a flush cooldown", slog.String("tableID", table.GetTableID().String()))
