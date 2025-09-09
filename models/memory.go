@@ -101,3 +101,17 @@ func (d *DatabaseData) GetTopicToTables() map[string][]*TableData {
 
 	return out
 }
+
+func (d *DatabaseData) GetTables(topic string) []*TableData {
+	d.RLock()
+	defer d.RUnlock()
+
+	var out []*TableData
+	for _, v := range d.tableData {
+		if v.topic == topic {
+			out = append(out, v)
+		}
+	}
+
+	return out
+}
