@@ -28,6 +28,10 @@ type ConsumerProvider struct {
 	Consumer
 }
 
+func (c *ConsumerProvider) SetPartitionToAppliedOffsetTest(msg kafka.Message) {
+	c.partitionToAppliedOffset[msg.Partition] = msg
+}
+
 func NewConsumerProviderForTest(consumer Consumer, groupID string) *ConsumerProvider {
 	return &ConsumerProvider{
 		Consumer:                 consumer,

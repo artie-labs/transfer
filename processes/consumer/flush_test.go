@@ -87,7 +87,9 @@ func (f *FlushTestSuite) TestShouldFlush() {
 
 func (f *FlushTestSuite) TestMemoryConcurrency() {
 	topicName := "foo"
-	ctx := context.WithValue(f.T().Context(), kafkalib.BuildContextKey(topicName), kafkalib.NewConsumerProviderForTest(f.fakeConsumer, "test-group"))
+
+	consumer := kafkalib.NewConsumerProviderForTest(f.fakeConsumer, "test-group")
+	ctx := context.WithValue(f.T().Context(), kafkalib.BuildContextKey(topicName), consumer)
 
 	tableIDs := []cdc.TableID{
 		cdc.NewTableID("public", "dusty"),
@@ -117,6 +119,7 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 				assert.NoError(f.T(), err)
 
 				kafkaMsg := kafka.Message{Partition: 1, Offset: int64(i)}
+				consumer.SetPartitionToAppliedOffsetTest(kafkaMsg)
 				_, _, err = evt.Save(f.cfg, f.db, topicConfig, artie.NewMessage(kafkaMsg))
 				assert.NoError(f.T(), err)
 			}
