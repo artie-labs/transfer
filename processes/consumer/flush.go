@@ -22,8 +22,6 @@ type Args struct {
 	CoolDown *time.Duration
 	// [reason] - Is used to track the reason for the flush.
 	Reason string
-	// [ShouldLock] - If this is set to true, we will lock the consumer for the duration of the flush
-	ShouldLock bool
 }
 
 func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, topics []string, args Args) error {
