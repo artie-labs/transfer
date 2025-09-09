@@ -134,7 +134,7 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 	}
 
 	f.fakeBaseline.MergeReturns(true, nil)
-	assert.NoError(f.T(), Flush(ctx, f.db, f.baseline, metrics.NullMetricsProvider{}, []string{topicName}, Args{}))
+	assert.NoError(f.T(), Flush(ctx, f.db, f.baseline, metrics.NullMetricsProvider{}, []string{topicName}, Args{Reason: "testing"}))
 	assert.Equal(f.T(), f.fakeConsumer.CommitMessagesCallCount(), 1) // Commit only once because it's the same topic.
 
 	for i := range f.fakeConsumer.CommitMessagesCallCount() {
