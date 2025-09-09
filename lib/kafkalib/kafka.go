@@ -23,8 +23,8 @@ type Kafka struct {
 
 func (k *Kafka) Topics() []string {
 	var out []string
-	for _, topicConfig := range k.TopicConfigs {
-		out = append(out, topicConfig.Topic)
+	for _, config := range k.TopicConfigs {
+		out = append(out, config.Topic)
 	}
 
 	return out
