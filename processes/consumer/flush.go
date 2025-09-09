@@ -74,7 +74,6 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 
 			retryCfg, err := retry.NewJitterRetryConfig(1_000, 30_000, 15, retry.AlwaysRetry)
 			if err != nil {
-				slog.Error("Failed to create retry config", slog.Any("err", err))
 				return fmt.Errorf("failed to create retry config: %w", err)
 			}
 
