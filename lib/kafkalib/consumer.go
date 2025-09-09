@@ -29,6 +29,8 @@ type ConsumerProvider struct {
 }
 
 func (c *ConsumerProvider) SetPartitionToAppliedOffsetTest(msg kafka.Message) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.partitionToAppliedOffset[msg.Partition] = msg
 }
 
