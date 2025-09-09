@@ -12,12 +12,6 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-func SetKafkaConsumer(_topicToConsumer map[string]kafkalib.Consumer) {
-	topicToConsumer = &TopicToConsumer{
-		topicToConsumer: _topicToConsumer,
-	}
-}
-
 type FlushTestSuite struct {
 	suite.Suite
 	fakeConsumer *mocks.FakeConsumer
@@ -58,7 +52,6 @@ func (f *FlushTestSuite) SetupTest() {
 	f.baseline = f.fakeBaseline
 	f.db = models.NewMemoryDB()
 	f.fakeConsumer = &mocks.FakeConsumer{}
-	SetKafkaConsumer(map[string]kafkalib.Consumer{"foo": f.fakeConsumer})
 }
 
 func TestFlushTestSuite(t *testing.T) {

@@ -16,7 +16,6 @@ type TableData struct {
 	tableID cdc.TableID
 	*optimization.TableData
 	lastFlushTime time.Time
-	sync.Mutex
 }
 
 func (t *TableData) GetTableID() cdc.TableID {
@@ -69,7 +68,6 @@ func (d *DatabaseData) GetOrCreateTableData(tableID cdc.TableID, topic string) *
 
 	if _, ok := d.tableData[tableID]; !ok {
 		table := &TableData{
-			Mutex:   sync.Mutex{},
 			topic:   topic,
 			tableID: tableID,
 		}
@@ -83,6 +81,7 @@ func (d *DatabaseData) GetOrCreateTableData(tableID cdc.TableID, topic string) *
 func (d *DatabaseData) ClearTableConfig(tableID cdc.TableID) {
 	d.Lock()
 	defer d.Unlock()
+
 	d.tableData[tableID].Wipe()
 }
 

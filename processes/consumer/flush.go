@@ -10,6 +10,7 @@ import (
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination"
+	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/retry"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
@@ -23,6 +24,8 @@ type Args struct {
 	Topic string
 	// [reason] - Is used to track the reason for the flush.
 	Reason string
+	// [ShouldLock] - If this is set to true, we will lock the consumer for the duration of the flush
+	ShouldLock bool
 }
 
 func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, args Args) error {
@@ -42,69 +45,91 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 		}
 	}
 
+	topicsToConsumerProvider := make(map[string]*kafkalib.ConsumerProvider)
+	for topic := range topicToTables {
+		consumer, err := kafkalib.GetConsumerFromContext(ctx, topic)
+		if err != nil {
+			return fmt.Errorf("failed to get consumer from context: %w", err)
+		}
+
+		topicsToConsumerProvider[topic] = consumer
+	}
+
 	// Flush will take everything in memory and call the destination to create temp tables.
-	var wg sync.WaitGroup
+	var topicWg sync.WaitGroup
 	for topic, tables := range topicToTables {
 		if args.Topic != "" && args.Topic != topic {
 			// If topic was specified and doesn't match this topic, we'll skip flushing this topic.
 			continue
 		}
 
-		for _, tableData := range tables {
-			wg.Add(1)
-			go func(_tableData *models.TableData) {
-				defer wg.Done()
-
-				if args.CoolDown != nil && _tableData.ShouldSkipFlush(*args.CoolDown) {
-					slog.Debug("Skipping flush because we are currently in a flush cooldown", slog.String("tableID", _tableData.GetTableID().String()))
-					return
-				}
-
-				retryCfg, err := retry.NewJitterRetryConfig(1_000, 30_000, 15, retry.AlwaysRetry)
-				if err != nil {
-					slog.Error("Failed to create retry config", slog.Any("err", err))
-					return
-				}
-
-				_tableData.Lock()
-				defer _tableData.Unlock()
-				if _tableData.Empty() {
-					return
-				}
-
-				action := "merge"
-				if _tableData.Mode() == config.History {
-					action = "append"
-				}
-
-				start := time.Now()
-				tags := map[string]string{
-					"mode":     _tableData.Mode().String(),
-					"table":    _tableData.GetTableID().Table,
-					"database": _tableData.TopicConfig().Database,
-					"schema":   _tableData.TopicConfig().Schema,
-					"reason":   args.Reason,
-				}
-
-				what, err := retry.WithRetriesAndResult(retryCfg, func(_ int, _ error) (string, error) {
-					return flush(ctx, dest, _tableData, action, inMemDB.ClearTableConfig)
-				})
-
-				if err != nil {
-					slog.Error(fmt.Sprintf("Failed to %s", action), slog.Any("err", err), slog.String("tableID", _tableData.GetTableID().String()))
-				}
-
-				tags["what"] = what
-				metricsClient.Timing("flush", time.Since(start), tags)
-			}(tableData)
+		consumer, ok := topicsToConsumerProvider[topic]
+		if !ok {
+			return fmt.Errorf("consumer not found for topic %q", topic)
 		}
+
+		topicWg.Add(1)
+
+		consumer.LockAndProcess(ctx, args.ShouldLock, func() error {
+			var tableWg sync.WaitGroup
+			for _, tableData := range tables {
+				tableWg.Add(1)
+				go func(_tableData *models.TableData) {
+					defer tableWg.Done()
+
+					if args.CoolDown != nil && _tableData.ShouldSkipFlush(*args.CoolDown) {
+						slog.Debug("Skipping flush because we are currently in a flush cooldown", slog.String("tableID", _tableData.GetTableID().String()))
+						return
+					}
+
+					retryCfg, err := retry.NewJitterRetryConfig(1_000, 30_000, 15, retry.AlwaysRetry)
+					if err != nil {
+						slog.Error("Failed to create retry config", slog.Any("err", err))
+						return
+					}
+
+					if _tableData.Empty() {
+						return
+					}
+
+					action := "merge"
+					if _tableData.Mode() == config.History {
+						action = "append"
+					}
+
+					start := time.Now()
+					tags := map[string]string{
+						"mode":     _tableData.Mode().String(),
+						"table":    _tableData.GetTableID().Table,
+						"database": _tableData.TopicConfig().Database,
+						"schema":   _tableData.TopicConfig().Schema,
+						"reason":   args.Reason,
+					}
+
+					what, err := retry.WithRetriesAndResult(retryCfg, func(_ int, _ error) (string, error) {
+						slog.Info("Flushing table", slog.String("tableID", _tableData.GetTableID().String()), slog.String("reason", args.Reason))
+						return flush(ctx, dest, _tableData, action, inMemDB.ClearTableConfig, consumer)
+					})
+
+					if err != nil {
+						slog.Error(fmt.Sprintf("Failed to %s", action), slog.Any("err", err), slog.String("tableID", _tableData.GetTableID().String()))
+					}
+
+					tags["what"] = what
+					metricsClient.Timing("flush", time.Since(start), tags)
+				}(tableData)
+			}
+			tableWg.Wait()
+			topicWg.Done()
+			return nil
+		})
 	}
 
-	wg.Wait()
+	topicWg.Wait()
 	return nil
 }
 
-func flush(ctx context.Context, dest destination.Baseline, _tableData *models.TableData, action string, clearTableConfig func(cdc.TableID)) (string, error) {
+func flush(ctx context.Context, dest destination.Baseline, _tableData *models.TableData, action string, clearTableConfig func(cdc.TableID), consumer *kafkalib.ConsumerProvider) (string, error) {
 	// This is added so that we have a new temporary table suffix for each merge / append.
 	_tableData.ResetTempTableSuffix()
 
@@ -122,8 +147,12 @@ func flush(ctx context.Context, dest destination.Baseline, _tableData *models.Ta
 	}
 
 	if commitTransaction {
-		if err = commitOffset(ctx, _tableData.TopicConfig().Topic, _tableData.PartitionsToLastMessage); err != nil {
-			return "commit_fail", fmt.Errorf("failed to commit kafka offset: %w", err)
+		for _, msg := range _tableData.PartitionsToLastMessage {
+			if err = consumer.CommitMessage(ctx, msg.GetMessage()); err != nil {
+				return "commit_fail", fmt.Errorf("failed to commit kafka offset: %w", err)
+			}
+
+			slog.Info("Successfully committed Kafka offset", slog.String("topic", msg.Topic()), slog.Int("partition", msg.Partition()), slog.Int64("offset", msg.Offset()))
 		}
 
 		slog.Info(fmt.Sprintf("%s success, clearing memory...", stringutil.CapitalizeFirstLetter(action)), slog.String("tableID", _tableData.GetTableID().String()))
