@@ -13,7 +13,6 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/cryptography"
-	"github.com/artie-labs/transfer/lib/environ"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/stringutil"
@@ -341,20 +340,6 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 		}
 	}
 
-	kafkaCheck, err := environ.GetBoolEnv(constants.KafkaHWMEnvVar)
-	if err != nil {
-		return false, "", fmt.Errorf("failed to get kafka check: %w", err)
-	}
-
-	if kafkaCheck {
-		if msg, ok := td.PartitionsToLastMessage[message.Partition()]; ok {
-			if msg.Offset() > message.Offset() {
-				// This means that we already processed this message.
-				return false, "", nil
-			}
-		}
-	}
-
 	// Table columns
 	inMemoryColumns := td.ReadOnlyInMemoryCols()
 	// Update col if necessary
@@ -432,16 +417,6 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 	}
 
 	td.InsertRow(pkValueString, e.data, e.deleted)
-
-	// Recording the last message we processed for this partition, so we can use this to commit the offset later.
-	if prev, ok := td.PartitionsToLastMessage[message.Partition()]; ok {
-		// This should never happen because we have a guardrail on the outerloop
-		if prev.Offset() > message.Offset() {
-			return false, "", fmt.Errorf("previous message offset %d is greater than the current message offset %d for partition %d", prev.Offset(), message.Offset(), message.Partition())
-		}
-	}
-
-	td.PartitionsToLastMessage[message.Partition()] = message
 	td.SetLatestTimestamp(e.executionTime)
 	flush, flushReason := td.ShouldFlush(cfg)
 	return flush, flushReason, nil

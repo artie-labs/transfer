@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
@@ -50,9 +49,6 @@ type TableData struct {
 	primaryKeys []string
 
 	topicConfig kafkalib.TopicConfig
-	// Partition to the latest offset(s).
-	// For Kafka, we only need the last message to commit the offset
-	PartitionsToLastMessage map[int]artie.Message
 
 	// [latestTimestamp] - This property is used for the automatic schema detection
 	latestTimestamp time.Time
@@ -158,9 +154,8 @@ func NewTableData(inMemoryColumns *columns.Columns, mode config.Mode, primaryKey
 		primaryKeys:     primaryKeys,
 		topicConfig:     topicConfig,
 		// temporaryTableSuffix is being set in `ResetTempTableSuffix`
-		temporaryTableSuffix:    "",
-		PartitionsToLastMessage: map[int]artie.Message{},
-		name:                    name,
+		temporaryTableSuffix: "",
+		name:                 name,
 	}
 
 	if multiStepMergeSettings := topicConfig.MultiStepMergeSettings; multiStepMergeSettings != nil {
