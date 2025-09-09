@@ -10,7 +10,6 @@ import (
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/retry"
-	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 	"github.com/artie-labs/transfer/models"
 	"golang.org/x/sync/errgroup"
@@ -53,6 +52,7 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 	}
 
 	var grp errgroup.Group
+	var commitOffset bool
 	err = consumer.LockAndProcess(ctx, shouldLock, func() error {
 		for _, table := range tables {
 			grp.Go(func() error {
@@ -93,23 +93,32 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 					return fmt.Errorf("failed to %s for %q: %w", action, table.GetTableID().String(), err)
 				}
 
-				if result.CommitOffset {
-					if err := consumer.CommitMessage(ctx); err != nil {
-						return fmt.Errorf("failed to commit message: %w", err)
-					}
-
-					inMemDB.ClearTableConfig(table.GetTableID())
-				} else {
-					slog.Info(fmt.Sprintf("%s success, not committing offset yet", stringutil.CapitalizeFirstLetter(action)), slog.String("tableID", table.GetTableID().String()))
-				}
-
+				// It's okay that this will get overwritten by other tables
+				// This is because MSM is only supported for a single table / topic.
+				commitOffset = result.CommitOffset
 				tags["what"] = result.What
 				metricsClient.Timing("flush", time.Since(start), tags)
 				return nil
 			})
 		}
 
-		return grp.Wait()
+		if err = grp.Wait(); err != nil {
+			return fmt.Errorf("failed to flush table: %w", err)
+		}
+
+		if commitOffset {
+			if err := consumer.CommitMessage(ctx); err != nil {
+				return fmt.Errorf("failed to commit message: %w", err)
+			}
+
+			for _, table := range tables {
+				inMemDB.ClearTableConfig(table.GetTableID())
+			}
+		} else {
+			slog.Info("Not committing offset yet", slog.String("topic", topic))
+		}
+
+		return nil
 	})
 
 	return err
