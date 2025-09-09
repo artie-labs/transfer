@@ -58,7 +58,7 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 
 	var wg sync.WaitGroup
 
-	return consumer.LockAndProcess(ctx, shouldLock, func() error {
+	err = consumer.LockAndProcess(ctx, shouldLock, func() error {
 		for _, tableData := range tables {
 			wg.Add(1)
 			go func(_tableData *models.TableData) {
@@ -110,6 +110,8 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 
 		return nil
 	})
+
+	return err
 }
 
 func flush(ctx context.Context, dest destination.Baseline, _tableData *models.TableData, action string, clearTableConfig func(cdc.TableID), consumer *kafkalib.ConsumerProvider) (string, error) {
