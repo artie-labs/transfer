@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"sync"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/cdc"
@@ -55,48 +56,57 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 		return fmt.Errorf("failed to get consumer from context: %w", err)
 	}
 
+	var wg sync.WaitGroup
+
 	return consumer.LockAndProcess(ctx, shouldLock, func() error {
 		for _, tableData := range tables {
-			if args.CoolDown != nil && tableData.ShouldSkipFlush(*args.CoolDown) {
-				slog.Debug("Skipping flush because we are currently in a flush cooldown", slog.String("tableID", tableData.GetTableID().String()))
-				continue
-			}
+			wg.Add(1)
+			go func(_tableData *models.TableData) {
+				defer wg.Done()
+				if args.CoolDown != nil && _tableData.ShouldSkipFlush(*args.CoolDown) {
+					slog.Debug("Skipping flush because we are currently in a flush cooldown", slog.String("tableID", _tableData.GetTableID().String()))
+					return
+				}
 
-			if tableData.Empty() {
-				continue
-			}
+				retryCfg, err := retry.NewJitterRetryConfig(1_000, 30_000, 15, retry.AlwaysRetry)
+				if err != nil {
+					slog.Error("Failed to create retry config", slog.Any("err", err))
+					return
+				}
 
-			retryCfg, err := retry.NewJitterRetryConfig(1_000, 30_000, 15, retry.AlwaysRetry)
-			if err != nil {
-				return fmt.Errorf("failed to create retry config: %w", err)
-			}
+				if _tableData.Empty() {
+					return
+				}
 
-			action := "merge"
-			if tableData.Mode() == config.History {
-				action = "append"
-			}
+				action := "merge"
+				if _tableData.Mode() == config.History {
+					action = "append"
+				}
 
-			start := time.Now()
-			tags := map[string]string{
-				"mode":     tableData.Mode().String(),
-				"table":    tableData.GetTableID().Table,
-				"database": tableData.TopicConfig().Database,
-				"schema":   tableData.TopicConfig().Schema,
-				"reason":   args.Reason,
-			}
+				start := time.Now()
+				tags := map[string]string{
+					"mode":     _tableData.Mode().String(),
+					"table":    _tableData.GetTableID().Table,
+					"database": _tableData.TopicConfig().Database,
+					"schema":   _tableData.TopicConfig().Schema,
+					"reason":   args.Reason,
+				}
 
-			what, err := retry.WithRetriesAndResult(retryCfg, func(_ int, _ error) (string, error) {
-				slog.Info("Flushing table", slog.String("tableID", tableData.GetTableID().String()), slog.String("reason", args.Reason))
-				return flush(ctx, dest, tableData, action, inMemDB.ClearTableConfig, consumer)
-			})
+				what, err := retry.WithRetriesAndResult(retryCfg, func(_ int, _ error) (string, error) {
+					slog.Info("Flushing table", slog.String("tableID", _tableData.GetTableID().String()), slog.String("reason", args.Reason))
+					return flush(ctx, dest, _tableData, action, inMemDB.ClearTableConfig, consumer)
+				})
 
-			if err != nil {
-				slog.Error(fmt.Sprintf("Failed to %s", action), slog.Any("err", err), slog.String("tableID", tableData.GetTableID().String()))
-			}
+				if err != nil {
+					slog.Error(fmt.Sprintf("Failed to %s", action), slog.Any("err", err), slog.String("tableID", _tableData.GetTableID().String()))
+				}
 
-			tags["what"] = what
-			metricsClient.Timing("flush", time.Since(start), tags)
+				tags["what"] = what
+				metricsClient.Timing("flush", time.Since(start), tags)
+			}(tableData)
 		}
+
+		wg.Wait()
 
 		return nil
 	})
