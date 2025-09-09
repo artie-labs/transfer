@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"sync"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/cdc"
@@ -31,17 +30,12 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 		return nil
 	}
 
-	var wg sync.WaitGroup
 	for _, topic := range topics {
-		wg.Add(1)
 		if err := FlushSingleTopic(ctx, inMemDB, dest, metricsClient, args, topic, true); err != nil {
 			slog.Error("Failed to flush topic", slog.String("topic", topic), slog.Any("err", err))
 		}
-
-		wg.Done()
 	}
 
-	wg.Wait()
 	return nil
 }
 
