@@ -54,7 +54,6 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 	}
 
 	var wg sync.WaitGroup
-
 	err = consumer.LockAndProcess(ctx, shouldLock, func() error {
 		for _, table := range tables {
 			wg.Add(1)
