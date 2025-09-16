@@ -87,7 +87,7 @@ func (c Connection) Dialer(ctx context.Context, awsOptFns ...func(options *awsCf
 		// We don't need to disable TLS for AWS IAM since MSK will always enable TLS.
 		dialer.TLS = &tls.Config{}
 	case Plain:
-		if c.username != "" || c.password != "" {
+		if c.username != "" && c.password != "" {
 			dialer.SASLMechanism = plain.Mechanism{
 				Username: c.username,
 				Password: c.password,
@@ -130,7 +130,7 @@ func (c Connection) Transport(ctx context.Context, awsOptFns ...func(options *aw
 			transport.TLS = &tls.Config{}
 		}
 	case Plain:
-		if c.username != "" || c.password != "" {
+		if c.username != "" && c.password != "" {
 			transport.SASL = plain.Mechanism{
 				Username: c.username,
 				Password: c.password,
