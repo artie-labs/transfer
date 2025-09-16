@@ -4,22 +4,23 @@ import (
 	"cmp"
 	"fmt"
 	"log/slog"
+	"maps"
 	"sort"
 	"strings"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/artie"
-	"github.com/artie-labs/transfer/lib/cdc"
-	"github.com/artie-labs/transfer/lib/config"
-	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/cryptography"
-	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/artie-labs/transfer/lib/optimization"
-	"github.com/artie-labs/transfer/lib/stringutil"
-	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
-	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/artie-labs/transfer/lib/typing/columns"
-	"github.com/artie-labs/transfer/models"
+	"github.com/houssems/transfer/lib/artie"
+	"github.com/houssems/transfer/lib/cdc"
+	"github.com/houssems/transfer/lib/config"
+	"github.com/houssems/transfer/lib/config/constants"
+	"github.com/houssems/transfer/lib/cryptography"
+	"github.com/houssems/transfer/lib/kafkalib"
+	"github.com/houssems/transfer/lib/optimization"
+	"github.com/houssems/transfer/lib/stringutil"
+	"github.com/houssems/transfer/lib/telemetry/metrics/base"
+	"github.com/houssems/transfer/lib/typing"
+	"github.com/houssems/transfer/lib/typing/columns"
+	"github.com/houssems/transfer/models"
 )
 
 type Event struct {
@@ -162,6 +163,7 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 	}
 
 	evtData, err := event.GetData(tc)
+	maps.Copy(evtData, pkMap) // Ensure that primary keys are always included.
 	if err != nil {
 		return Event{}, fmt.Errorf("failed to get data: %w", err)
 	}
