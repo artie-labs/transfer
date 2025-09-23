@@ -20,6 +20,7 @@ import (
 	"github.com/artie-labs/transfer/models"
 	"github.com/artie-labs/transfer/processes/consumer"
 	"github.com/artie-labs/transfer/processes/pool"
+	"github.com/segmentio/kafka-go"
 )
 
 var (
@@ -95,7 +96,7 @@ func main() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		pool.StartPool(ctx, inMemDB, dest, metricsClient, settings.Config.Kafka.Topics(), time.Duration(settings.Config.FlushIntervalSeconds)*time.Second)
+		pool.StartPool[kafka.Message](ctx, inMemDB, dest, metricsClient, settings.Config.Kafka.Topics(), time.Duration(settings.Config.FlushIntervalSeconds)*time.Second)
 	}()
 
 	wg.Add(1)
@@ -103,7 +104,7 @@ func main() {
 		defer wg.Done()
 		switch settings.Config.Queue {
 		case constants.Kafka:
-			consumer.StartConsumer(ctx, settings.Config, inMemDB, dest, metricsClient)
+			consumer.StartKafkaGoConsumer(ctx, settings.Config, inMemDB, dest, metricsClient)
 		default:
 			logger.Fatal(fmt.Sprintf("Message queue: %q not supported", settings.Config.Queue))
 		}
