@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/segmentio/kafka-go"
+	"github.com/twmb/franz-go/pkg/kgo"
 )
 
 type Message interface {
@@ -64,4 +65,37 @@ func (m KafkaGoMessage) Value() []byte {
 
 func (m KafkaGoMessage) HighWaterMark() int64 {
 	return m.message.HighWaterMark
+}
+
+type FranzGoMessage struct {
+	message kgo.Record
+}
+
+
+func (m FranzGoMessage) GetMessage() kgo.Record {
+	return m.message
+}
+
+func (m FranzGoMessage) PublishTime() time.Time {
+	return m.message.Timestamp
+}
+
+func (m FranzGoMessage) Topic() string {
+	return m.message.Topic
+}
+
+func (m FranzGoMessage) Partition() int {
+	return int(m.message.Partition)
+}
+
+func (m FranzGoMessage) Offset() int64 {
+	return m.message.Offset
+}
+
+func (m FranzGoMessage) Key() []byte {
+	return m.message.Key
+}
+
+func (m FranzGoMessage) Value() []byte {
+	return m.message.Value
 }
