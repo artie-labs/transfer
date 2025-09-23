@@ -6,13 +6,14 @@ import (
 	"time"
 
 	"github.com/segmentio/kafka-go"
+	"github.com/twmb/franz-go/pkg/kgo"
 
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 )
 
 type MessageType interface {
-	kafka.Message
+	kafka.Message | kgo.Record
 }
 
 type Message[M MessageType] interface {
@@ -31,6 +32,8 @@ func NewMessage[M MessageType](msg M) (Message[M], error) {
 	switch m := any(msg).(type) {
 	case kafka.Message:
 		return any(KafkaGoMessage{message: m}).(Message[M]), nil
+	case kgo.Record:
+		return any(FranzGoMessage{message: m}).(Message[M]), nil
 	default:
 		return nil, fmt.Errorf("unsupported message type")
 	}
@@ -39,6 +42,13 @@ func NewMessage[M MessageType](msg M) (Message[M], error) {
 func BuildLogFields[M MessageType](msg M) ([]any, error) {
 	switch m := any(msg).(type) {
 	case kafka.Message:
+		return []any{
+			slog.String("topic", m.Topic),
+			slog.Int64("offset", m.Offset),
+			slog.String("key", string(m.Key)),
+			slog.String("value", string(m.Value)),
+		}, nil
+	case kgo.Record:
 		return []any{
 			slog.String("topic", m.Topic),
 			slog.Int64("offset", m.Offset),
@@ -100,5 +110,60 @@ func (m KafkaGoMessage) Key() []byte {
 }
 
 func (m KafkaGoMessage) Value() []byte {
+	return m.message.Value
+}
+
+
+type FranzGoMessage struct {
+	message kgo.Record
+}
+
+
+func (m FranzGoMessage) GetMessage() kgo.Record {
+	return m.message
+}
+
+// TODO: find another way to get high watermark
+func (m FranzGoMessage) EmitRowLag(metricsClient base.Client, mode config.Mode, groupID, table string) {
+	metricsClient.GaugeWithSample(
+		"row.lag",
+		float64(0),
+		map[string]string{
+			"mode":    mode.String(),
+			"groupID": groupID,
+			"table":   table,
+		},
+		0.5)
+}
+
+func (m FranzGoMessage) EmitIngestionLag(metricsClient base.Client, mode config.Mode, groupID, table string) {
+	metricsClient.Timing("ingestion.lag", time.Since(m.PublishTime()), map[string]string{
+		"mode":    mode.String(),
+		"groupID": groupID,
+		"table":   table,
+	})
+}
+
+func (m FranzGoMessage) PublishTime() time.Time {
+	return m.message.Timestamp
+}
+
+func (m FranzGoMessage) Topic() string {
+	return m.message.Topic
+}
+
+func (m FranzGoMessage) Partition() int {
+	return int(m.message.Partition)
+}
+
+func (m FranzGoMessage) Offset() int64 {
+	return m.message.Offset
+}
+
+func (m FranzGoMessage) Key() []byte {
+	return m.message.Key
+}
+
+func (m FranzGoMessage) Value() []byte {
 	return m.message.Value
 }
