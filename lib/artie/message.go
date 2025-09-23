@@ -71,6 +71,9 @@ type FranzGoMessage struct {
 	message kgo.Record
 }
 
+func NewFranzGoMessage(msg kgo.Record) FranzGoMessage {
+	return FranzGoMessage{message: msg}
+}
 
 func (m FranzGoMessage) GetMessage() kgo.Record {
 	return m.message
