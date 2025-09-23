@@ -17,7 +17,8 @@ func TestNewMessage(t *testing.T) {
 		Value:     []byte("kafka_value"),
 	}
 
-	msg := NewMessage(kafkaMsg)
+	msg, err := NewMessage(kafkaMsg)
+	assert.NoError(t, err)
 	assert.Equal(t, "test_topic", msg.Topic())
 	assert.Equal(t, 5, msg.Partition())
 	assert.Equal(t, keyString, string(msg.Key()))

@@ -44,12 +44,20 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 
 				err = kafkaConsumer.FetchMessageAndProcess(ctx, func(kafkaMsg kafka.Message) error {
 					if len(kafkaMsg.Value) == 0 {
-						slog.Debug("Found a tombstone message, skipping...", artie.BuildLogFields(kafkaMsg)...)
+						fields, err := artie.BuildLogFields(kafkaMsg)
+						if err != nil {
+							logger.Fatal("Failed to build log fields", slog.Any("err", err), slog.String("topic", kafkaMsg.Topic))
+						}
+						slog.Debug("Found a tombstone message, skipping...", fields...)
 						return nil
 					}
 
-					msg := artie.NewMessage(kafkaMsg)
-					args := processArgs{
+					msg, err := artie.NewMessage(kafkaMsg)
+					if err != nil {
+						logger.Fatal("Failed to create message", slog.Any("err", err), slog.String("topic", kafkaMsg.Topic))
+					}
+
+					args := processArgs[kafka.Message]{
 						Msg:                    msg,
 						GroupID:                kafkaConsumer.GetGroupID(),
 						TopicToConfigFormatMap: tcFmtMap,
