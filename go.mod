@@ -35,10 +35,11 @@ require (
 	github.com/segmentio/kafka-go/sasl/aws_msk_iam_v2 v0.1.0
 	github.com/snowflakedb/gosnowflake v1.13.3
 	github.com/stretchr/testify v1.10.0
+	github.com/twmb/franz-go v1.19.5
 	github.com/twpayne/go-geom v1.6.0
 	github.com/viant/bigquery v0.4.1
 	go.mongodb.org/mongo-driver v1.17.3
-	golang.org/x/sync v0.12.0
+	golang.org/x/sync v0.14.0
 	google.golang.org/api v0.228.0
 	google.golang.org/protobuf v1.36.6
 	gopkg.in/yaml.v3 v3.0.1
@@ -134,6 +135,7 @@ require (
 	github.com/samber/lo v1.49.1 // indirect
 	github.com/samber/slog-common v0.18.1 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
+	github.com/twmb/franz-go/pkg/kmsg v1.11.2 // indirect
 	github.com/viant/afs v1.25.1 // indirect
 	github.com/viant/parsly v0.3.3-0.20240717150634-e1afaedb691b // indirect
 	github.com/viant/scy v0.12.1 // indirect
@@ -151,15 +153,15 @@ require (
 	go.opentelemetry.io/otel v1.34.0 // indirect
 	go.opentelemetry.io/otel/metric v1.34.0 // indirect
 	go.opentelemetry.io/otel/trace v1.34.0 // indirect
-	golang.org/x/crypto v0.36.0 // indirect
+	golang.org/x/crypto v0.38.0 // indirect
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
 	golang.org/x/exp/typeparams v0.0.0-20231108232855-2478ac86f678 // indirect
 	golang.org/x/mod v0.24.0 // indirect
 	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/oauth2 v0.28.0 // indirect
-	golang.org/x/sys v0.31.0 // indirect
-	golang.org/x/term v0.30.0 // indirect
-	golang.org/x/text v0.23.0 // indirect
+	golang.org/x/sys v0.33.0 // indirect
+	golang.org/x/term v0.32.0 // indirect
+	golang.org/x/text v0.25.0 // indirect
 	golang.org/x/time v0.11.0 // indirect
 	golang.org/x/tools v0.31.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
