@@ -15,33 +15,33 @@ func BuildContextKey(topic string) ctxKey {
 	return ctxKey(fmt.Sprintf("consumer-%s", topic))
 }
 
-type Consumer interface {
+type Consumer[M any] interface {
 	Close() (err error)
-	FetchMessage(ctx context.Context) (kafka.Message, error)
-	CommitMessages(ctx context.Context, msgs ...kafka.Message) error
+	FetchMessage(ctx context.Context) (M, error)
+	CommitMessages(ctx context.Context, msgs ...M) error
 }
 
-type ConsumerProvider struct {
+type ConsumerProvider[M any] struct {
 	mu                       sync.Mutex
 	topic                    string
 	groupID                  string
-	partitionToAppliedOffset map[int]kafka.Message
+	partitionToAppliedOffset map[int]M
 
-	Consumer
+	Consumer[M]
 }
 
-func (c *ConsumerProvider) SetPartitionToAppliedOffsetTest(msg kafka.Message) {
+func (c *ConsumerProvider[M]) SetPartitionToAppliedOffsetTest(msg M) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.partitionToAppliedOffset[msg.Partition] = msg
+	c.partitionToAppliedOffset[getPartition(msg)] = msg
 }
 
-func NewConsumerProviderForTest(consumer Consumer, topic string, groupID string) *ConsumerProvider {
-	return &ConsumerProvider{
+func NewConsumerProviderForTest[M any](consumer Consumer[M], topic string, groupID string) *ConsumerProvider[M] {
+	return &ConsumerProvider[M]{
 		Consumer:                 consumer,
 		topic:                    topic,
 		groupID:                  groupID,
-		partitionToAppliedOffset: make(map[int]kafka.Message),
+		partitionToAppliedOffset: make(map[int]M),
 	}
 }
 
@@ -64,7 +64,7 @@ func InjectConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) (contex
 			WatchPartitionChanges: true,
 		}
 
-		ctx = context.WithValue(ctx, BuildContextKey(topicConfig.Topic), &ConsumerProvider{
+		ctx = context.WithValue(ctx, BuildContextKey(topicConfig.Topic), &ConsumerProvider[kafka.Message]{
 			Consumer:                 kafka.NewReader(kafkaCfg),
 			topic:                    topicConfig.Topic,
 			groupID:                  cfg.GroupID,
@@ -75,7 +75,7 @@ func InjectConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) (contex
 	return ctx, nil
 }
 
-func (c *ConsumerProvider) LockAndProcess(ctx context.Context, lock bool, do func() error) error {
+func (c *ConsumerProvider[M]) LockAndProcess(ctx context.Context, lock bool, do func() error) error {
 	if lock {
 		c.mu.Lock()
 		defer c.mu.Unlock()
@@ -88,7 +88,7 @@ func (c *ConsumerProvider) LockAndProcess(ctx context.Context, lock bool, do fun
 	return nil
 }
 
-func (c *ConsumerProvider) FetchMessageAndProcess(ctx context.Context, do func(kafka.Message) error) error {
+func (c *ConsumerProvider[M]) FetchMessageAndProcess(ctx context.Context, do func(M) error) error {
 	msg, err := c.Consumer.FetchMessage(ctx)
 	if err != nil {
 		return NewFetchMessageError(err)
@@ -97,8 +97,8 @@ func (c *ConsumerProvider) FetchMessageAndProcess(ctx context.Context, do func(k
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if appliedMsg, ok := c.partitionToAppliedOffset[msg.Partition]; ok {
-		if appliedMsg.Offset >= msg.Offset {
+	if appliedMsg, ok := c.partitionToAppliedOffset[getPartition(msg)]; ok {
+		if getOffset(appliedMsg) >= getOffset(msg) {
 			// We should skip this message because we have already processed it.
 			return nil
 		}
@@ -108,13 +108,13 @@ func (c *ConsumerProvider) FetchMessageAndProcess(ctx context.Context, do func(k
 		return fmt.Errorf("failed to process message: %w", err)
 	}
 
-	c.partitionToAppliedOffset[msg.Partition] = msg
+	c.partitionToAppliedOffset[getPartition(msg)] = msg
 	return nil
 }
 
-func GetConsumerFromContext(ctx context.Context, topic string) (*ConsumerProvider, error) {
+func GetConsumerFromContext[M any](ctx context.Context, topic string) (*ConsumerProvider[M], error) {
 	value := ctx.Value(BuildContextKey(topic))
-	consumer, ok := value.(*ConsumerProvider)
+	consumer, ok := value.(*ConsumerProvider[M])
 	if !ok {
 		return nil, fmt.Errorf("consumer not found for topic %q, got: %T", topic, value)
 	}
@@ -122,13 +122,13 @@ func GetConsumerFromContext(ctx context.Context, topic string) (*ConsumerProvide
 	return consumer, nil
 }
 
-func (c *ConsumerProvider) CommitMessage(ctx context.Context) error {
-	var msgs []kafka.Message
+func (c *ConsumerProvider[M]) CommitMessage(ctx context.Context) error {
+	var msgs []M
 
 	partitionToOffset := make(map[int]int64)
 	// Gather all the messages across all the partitions we have seen
 	for _, msg := range c.partitionToAppliedOffset {
-		partitionToOffset[msg.Partition] = msg.Offset
+		partitionToOffset[getPartition(msg)] = getOffset(msg)
 		msgs = append(msgs, msg)
 	}
 
@@ -141,6 +141,24 @@ func (c *ConsumerProvider) CommitMessage(ctx context.Context) error {
 	return nil
 }
 
-func (c *ConsumerProvider) GetGroupID() string {
+func (c *ConsumerProvider[M]) GetGroupID() string {
 	return c.groupID
+}
+
+func getPartition[M any](msg M) int {
+	switch m := any(msg).(type) {
+	case kafka.Message:
+		return m.Partition
+	default:
+		return 0
+	}
+}
+
+func getOffset[M any](msg M) int64 {
+	switch m := any(msg).(type) {
+	case kafka.Message:
+		return m.Offset
+	default:
+		return 0
+	}
 }

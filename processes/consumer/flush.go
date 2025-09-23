@@ -23,13 +23,13 @@ type Args struct {
 	Reason string
 }
 
-func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, topics []string, args Args) error {
+func Flush[M any](ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, topics []string, args Args) error {
 	if inMemDB == nil {
 		return nil
 	}
 
 	for _, topic := range topics {
-		if err := FlushSingleTopic(ctx, inMemDB, dest, metricsClient, args, topic, true); err != nil {
+		if err := FlushSingleTopic[M](ctx, inMemDB, dest, metricsClient, args, topic, true); err != nil {
 			slog.Error("Failed to flush topic", slog.String("topic", topic), slog.Any("err", err))
 		}
 	}
@@ -37,7 +37,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 	return nil
 }
 
-func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, args Args, topic string, shouldLock bool) error {
+func FlushSingleTopic[M any](ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, args Args, topic string, shouldLock bool) error {
 	if inMemDB == nil {
 		return nil
 	}
@@ -47,7 +47,7 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 		return nil
 	}
 
-	consumer, err := kafkalib.GetConsumerFromContext(ctx, topic)
+	consumer, err := kafkalib.GetConsumerFromContext[M](ctx, topic)
 	if err != nil {
 		return fmt.Errorf("failed to get consumer from context: %w", err)
 	}
@@ -92,7 +92,7 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 
 				result, err := retry.WithRetriesAndResult(retryCfg, func(_ int, _ error) (flushResult, error) {
 					slog.Info("Flushing table", slog.String("tableID", table.GetTableID().String()), slog.String("reason", args.Reason))
-					return flush(ctx, dest, table, action, consumer)
+					return flush(ctx, dest, table)
 				})
 
 				if err != nil {
@@ -134,7 +134,7 @@ type flushResult struct {
 	CommitOffset bool
 }
 
-func flush(ctx context.Context, dest destination.Baseline, _tableData *models.TableData, action string, consumer *kafkalib.ConsumerProvider) (flushResult, error) {
+func flush(ctx context.Context, dest destination.Baseline, _tableData *models.TableData) (flushResult, error) {
 	// This is added so that we have a new temporary table suffix for each merge / append.
 	_tableData.ResetTempTableSuffix()
 

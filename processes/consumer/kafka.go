@@ -18,7 +18,7 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
-func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client) {
+func StartKafkaGoConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client) {
 	tcFmtMap := NewTcFmtMap()
 	var topics []string
 	for _, topicConfig := range cfg.Kafka.TopicConfigs {
@@ -37,7 +37,7 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 		go func(topic string) {
 			defer wg.Done()
 			for {
-				kafkaConsumer, err := kafkalib.GetConsumerFromContext(ctx, topic)
+				kafkaConsumer, err := kafkalib.GetConsumerFromContext[kafka.Message](ctx, topic)
 				if err != nil {
 					logger.Fatal("Failed to get consumer from context", slog.Any("err", err))
 				}
