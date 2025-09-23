@@ -14,13 +14,13 @@ import (
 	"github.com/artie-labs/transfer/models/event"
 )
 
-type processArgs struct {
-	Msg                    artie.Message
+type processArgs[M artie.MessageType] struct {
+	Msg                    artie.Message[M]
 	GroupID                string
 	TopicToConfigFormatMap *TcFmtMap
 }
 
-func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client) (cdc.TableID, error) {
+func (p processArgs[M]) process(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client) (cdc.TableID, error) {
 	if p.TopicToConfigFormatMap == nil {
 		return cdc.TableID{}, fmt.Errorf("failed to process, topicConfig is nil")
 	}
@@ -77,7 +77,7 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 		evt.EmitExecutionTimeLag(metricsClient)
 	}
 
-	shouldFlush, flushReason, err := evt.Save(cfg, inMemDB, topicConfig.tc, p.Msg)
+	shouldFlush, flushReason, err := evt.Save(cfg, inMemDB, topicConfig.tc)
 	if err != nil {
 		tags["what"] = "save_fail"
 		return cdc.TableID{}, fmt.Errorf("event failed to save: %w", err)

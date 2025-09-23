@@ -44,8 +44,9 @@ func TestProcessMessageFailures(t *testing.T) {
 		Time:          time.Time{},
 	}
 
-	msg := artie.NewMessage(kafkaMsg)
-	args := processArgs{
+	msg, err := artie.NewMessage(kafkaMsg)
+	assert.NoError(t, err)
+	args := processArgs[kafka.Message]{
 		Msg:     msg,
 		GroupID: "foo",
 	}
@@ -74,7 +75,7 @@ func TestProcessMessageFailures(t *testing.T) {
 		Format: &mgo,
 	})
 
-	args = processArgs{
+	args = processArgs[kafka.Message]{
 		Msg:                    msg,
 		GroupID:                "foo",
 		TopicToConfigFormatMap: tcFmtMap,
@@ -163,8 +164,10 @@ func TestProcessMessageFailures(t *testing.T) {
 	kafkaMessage.Key = []byte(fmt.Sprintf("Struct{id=%v}", 1004))
 	kafkaMessage.Value = []byte(val)
 
-	args = processArgs{
-		Msg:                    artie.NewMessage(kafkaMessage),
+	msg, err = artie.NewMessage(kafkaMessage)
+	assert.NoError(t, err)
+	args = processArgs[kafka.Message]{
+		Msg:                    msg,
 		GroupID:                "foo",
 		TopicToConfigFormatMap: tcFmtMap,
 	}
@@ -192,8 +195,10 @@ func TestProcessMessageFailures(t *testing.T) {
 	}
 	{
 		kafkaMessage.Value = []byte("not a json object")
-		args = processArgs{
-			Msg:                    artie.NewMessage(kafkaMessage),
+		msg, err := artie.NewMessage(kafkaMessage)
+		assert.NoError(t, err)
+		args = processArgs[kafka.Message]{
+			Msg:                    msg,
 			GroupID:                "foo",
 			TopicToConfigFormatMap: tcFmtMap,
 		}
@@ -224,7 +229,8 @@ func TestProcessMessageSkip(t *testing.T) {
 		Time:          time.Time{},
 	}
 
-	msg := artie.NewMessage(kafkaMsg)
+	msg, err := artie.NewMessage(kafkaMsg)
+	assert.NoError(t, err)
 
 	var mgo mongo.Debezium
 	const (
@@ -330,8 +336,10 @@ func TestProcessMessageSkip(t *testing.T) {
 			kafkaMessage.Value = []byte(val)
 		}
 
-		args := processArgs{
-			Msg:                    artie.NewMessage(kafkaMessage),
+		msg, err := artie.NewMessage(kafkaMessage)
+		assert.NoError(t, err)
+		args := processArgs[kafka.Message]{
+			Msg:                    msg,
 			GroupID:                "foo",
 			TopicToConfigFormatMap: tcFmtMap,
 		}

@@ -1,6 +1,7 @@
 package artie
 
 import (
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -10,29 +11,55 @@ import (
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 )
 
-type Message struct {
-	message kafka.Message
+type MessageType interface {
+	kafka.Message
 }
 
-func (m Message) GetMessage() kafka.Message {
-	return m.message
+type Message[M MessageType] interface {
+	GetMessage() M
+	EmitRowLag(metricsClient base.Client, mode config.Mode, groupID, table string)
+	EmitIngestionLag(metricsClient base.Client, mode config.Mode, groupID, table string)
+	PublishTime() time.Time
+	Topic() string
+	Partition() int
+	Offset() int64
+	Key() []byte
+	Value() []byte
 }
 
-func BuildLogFields(msg kafka.Message) []any {
-	return []any{
-		slog.String("topic", msg.Topic),
-		slog.Int64("offset", msg.Offset),
-		slog.String("key", string(msg.Key)),
-		slog.String("value", string(msg.Value)),
+func NewMessage[M MessageType](msg M) (Message[M], error) {
+	switch m := any(msg).(type) {
+	case kafka.Message:
+		return any(KafkaGoMessage{message: m}).(Message[M]), nil
+	default:
+		return nil, fmt.Errorf("unsupported message type")
 	}
 }
 
-func NewMessage(msg kafka.Message) Message {
-	return Message{message: msg}
+func BuildLogFields[M MessageType](msg M) ([]any, error) {
+	switch m := any(msg).(type) {
+	case kafka.Message:
+		return []any{
+			slog.String("topic", m.Topic),
+			slog.Int64("offset", m.Offset),
+			slog.String("key", string(m.Key)),
+			slog.String("value", string(m.Value)),
+		}, nil
+	default:
+		return nil, fmt.Errorf("unsupported message type %v", m)
+	}
+}
+
+type KafkaGoMessage struct {
+	message kafka.Message
+}
+
+func (m KafkaGoMessage) GetMessage() kafka.Message {
+	return m.message
 }
 
 // EmitRowLag will diff against the partition's high watermark and the message's offset
-func (m Message) EmitRowLag(metricsClient base.Client, mode config.Mode, groupID, table string) {
+func (m KafkaGoMessage) EmitRowLag(metricsClient base.Client, mode config.Mode, groupID, table string) {
 	metricsClient.GaugeWithSample(
 		"row.lag",
 		float64(m.message.HighWaterMark-m.message.Offset),
@@ -44,7 +71,7 @@ func (m Message) EmitRowLag(metricsClient base.Client, mode config.Mode, groupID
 		0.5)
 }
 
-func (m Message) EmitIngestionLag(metricsClient base.Client, mode config.Mode, groupID, table string) {
+func (m KafkaGoMessage) EmitIngestionLag(metricsClient base.Client, mode config.Mode, groupID, table string) {
 	metricsClient.Timing("ingestion.lag", time.Since(m.PublishTime()), map[string]string{
 		"mode":    mode.String(),
 		"groupID": groupID,
@@ -52,26 +79,26 @@ func (m Message) EmitIngestionLag(metricsClient base.Client, mode config.Mode, g
 	})
 }
 
-func (m Message) PublishTime() time.Time {
+func (m KafkaGoMessage) PublishTime() time.Time {
 	return m.message.Time
 }
 
-func (m Message) Topic() string {
+func (m KafkaGoMessage) Topic() string {
 	return m.message.Topic
 }
 
-func (m Message) Partition() int {
+func (m KafkaGoMessage) Partition() int {
 	return m.message.Partition
 }
 
-func (m Message) Offset() int64 {
+func (m KafkaGoMessage) Offset() int64 {
 	return m.message.Offset
 }
 
-func (m Message) Key() []byte {
+func (m KafkaGoMessage) Key() []byte {
 	return m.message.Key
 }
 
-func (m Message) Value() []byte {
+func (m KafkaGoMessage) Value() []byte {
 	return m.message.Value
 }
