@@ -1,6 +1,10 @@
 package maputil
 
-import "sort"
+import (
+	"iter"
+	"slices"
+	"sort"
+)
 
 type SortedStringsMap[T any] struct {
 	keys []string
@@ -30,5 +34,17 @@ func (s *SortedStringsMap[T]) Get(key string) (T, bool) {
 }
 
 func (s *SortedStringsMap[T]) Keys() []string {
-	return s.keys
+	return slices.Clone(s.keys)
+}
+
+func (s *SortedStringsMap[T]) All() iter.Seq2[string, T] {
+	return func(yield func(string, T) bool) {
+		for _, key := range s.keys {
+			if value, ok := s.Get(key); ok {
+				if !yield(key, value) {
+					break
+				}
+			}
+		}
+	}
 }
