@@ -68,11 +68,12 @@ func (m KafkaGoMessage) HighWaterMark() int64 {
 }
 
 type FranzGoMessage struct {
-	message kgo.Record
+	message       kgo.Record
+	highWatermark int64
 }
 
-func NewFranzGoMessage(msg kgo.Record) FranzGoMessage {
-	return FranzGoMessage{message: msg}
+func NewFranzGoMessage(msg kgo.Record, highWatermark int64) FranzGoMessage {
+	return FranzGoMessage{message: msg, highWatermark: highWatermark}
 }
 
 func (m FranzGoMessage) GetMessage() kgo.Record {
@@ -101,4 +102,8 @@ func (m FranzGoMessage) Key() []byte {
 
 func (m FranzGoMessage) Value() []byte {
 	return m.message.Value
+}
+
+func (m FranzGoMessage) HighWaterMark() int64 {
+	return m.highWatermark
 }

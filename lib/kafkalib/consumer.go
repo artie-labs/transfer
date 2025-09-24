@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"log/slog"
 	"sync"
+	"time"
 
 	"github.com/artie-labs/transfer/lib/artie"
+	"github.com/artie-labs/transfer/lib/kafkalib/fgo"
 	"github.com/segmentio/kafka-go"
+	"github.com/twmb/franz-go/pkg/kgo"
 )
 
 type ctxKey string
@@ -87,6 +90,80 @@ func InjectConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) (contex
 
 		ctx = context.WithValue(ctx, BuildContextKey(topicConfig.Topic), &ConsumerProvider{
 			Consumer:                 &KafkaGoConsumer{kafka.NewReader(kafkaCfg)},
+			topic:                    topicConfig.Topic,
+			groupID:                  cfg.GroupID,
+			partitionToAppliedOffset: make(map[int]artie.Message),
+		})
+	}
+
+	return ctx, nil
+}
+
+func InjectFranzGoConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) (context.Context, error) {
+	kafkaConn := NewConnection(cfg.EnableAWSMSKIAM, cfg.DisableTLS, cfg.Username, cfg.Password, DefaultTimeout)
+
+	brokers := cfg.BootstrapServers(true)
+	clientOpts, err := kafkaConn.ClientOptions(ctx, brokers)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Kafka client options: %w", err)
+	}
+
+	clientOpts = append(clientOpts,
+		kgo.ConsumerGroup(cfg.GroupID),
+		kgo.ConsumeTopics(cfg.Topics()...), // Consume ALL topics with one client
+		kgo.DisableAutoCommit(),
+		// Set session timeout for consumer group heartbeats
+		kgo.SessionTimeout(10*time.Second),
+		// Set heartbeat interval
+		kgo.HeartbeatInterval(3*time.Second),
+		// Ensure we allow time for rebalancing
+		kgo.RebalanceTimeout(30*time.Second),
+		// Consumer group lifecycle callbacks with detailed logging
+		kgo.OnPartitionsAssigned(func(ctx context.Context, c *kgo.Client, assigned map[string][]int32) {
+			for topic, partitions := range assigned {
+				slog.Info("🎉 Partitions assigned",
+					slog.String("topic", topic),
+					slog.Any("partitions", partitions),
+					slog.String("groupID", cfg.GroupID))
+				// Check group metadata during assignment for debugging
+				actualGroupID, generation := c.GroupMetadata()
+				slog.Info("Group metadata during assignment",
+					slog.String("actualGroupID", actualGroupID),
+					slog.Int("generation", int(generation)))
+			}
+		}),
+		kgo.OnPartitionsRevoked(func(ctx context.Context, c *kgo.Client, revoked map[string][]int32) {
+			for topic, partitions := range revoked {
+				slog.Info("Partitions revoked",
+					slog.String("topic", topic),
+					slog.Any("partitions", partitions),
+					slog.String("groupID", cfg.GroupID))
+			}
+		}),
+		kgo.OnPartitionsLost(func(ctx context.Context, c *kgo.Client, lost map[string][]int32) {
+			for topic, partitions := range lost {
+				slog.Warn("⚠️ Partitions lost",
+					slog.String("topic", topic),
+					slog.Any("partitions", partitions),
+					slog.String("groupID", cfg.GroupID))
+			}
+		}),
+	)
+
+	client, err := kgo.NewClient(clientOpts...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Kafka client: %w", err)
+	}
+	slog.Info("🚀 Created shared Kafka consumer",
+		slog.Any("topics", cfg.Topics()),
+		slog.String("groupID", cfg.GroupID),
+		slog.Any("brokers", brokers))
+
+	ctx = context.WithValue(ctx, ctxKey("franz-go-client"), client)
+
+	for _, topicConfig := range cfg.TopicConfigs {
+		ctx = context.WithValue(ctx, BuildContextKey(topicConfig.Topic), &ConsumerProvider{
+			Consumer:                 fgo.NewFranzGoConsumer(client, cfg.GroupID),
 			topic:                    topicConfig.Topic,
 			groupID:                  cfg.GroupID,
 			partitionToAppliedOffset: make(map[int]artie.Message),
