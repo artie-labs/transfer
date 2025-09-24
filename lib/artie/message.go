@@ -33,9 +33,16 @@ func NewMessage[M MessageType](msg M) (Message[M], error) {
 	case kafka.Message:
 		return any(KafkaGoMessage{message: m}).(Message[M]), nil
 	case kgo.Record:
-		return any(FranzGoMessage{message: m}).(Message[M]), nil
+		return any(FranzGoMessage{message: m, highWatermark: 0}).(Message[M]), nil
 	default:
 		return nil, fmt.Errorf("unsupported message type")
+	}
+}
+
+func NewFranzGoMessage(record kgo.Record, highWatermark int64) FranzGoMessage {
+	return FranzGoMessage{
+		message:       record,
+		highWatermark: highWatermark,
 	}
 }
 
@@ -113,21 +120,19 @@ func (m KafkaGoMessage) Value() []byte {
 	return m.message.Value
 }
 
-
 type FranzGoMessage struct {
-	message kgo.Record
+	message       kgo.Record
+	highWatermark int64
 }
-
 
 func (m FranzGoMessage) GetMessage() kgo.Record {
 	return m.message
 }
 
-// TODO: find another way to get high watermark
 func (m FranzGoMessage) EmitRowLag(metricsClient base.Client, mode config.Mode, groupID, table string) {
 	metricsClient.GaugeWithSample(
 		"row.lag",
-		float64(0),
+		float64(m.highWatermark-m.message.Offset),
 		map[string]string{
 			"mode":    mode.String(),
 			"groupID": groupID,

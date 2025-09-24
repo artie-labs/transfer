@@ -10,7 +10,9 @@ import (
 )
 
 const keyString = "Struct{id=12}"
+
 var now = time.Now()
+
 func TestNewMessage(t *testing.T) {
 	kafkaMsg := kafka.Message{
 		Topic:     "test_topic",
