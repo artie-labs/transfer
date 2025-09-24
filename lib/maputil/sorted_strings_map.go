@@ -15,7 +15,6 @@ func NewSortedStringsMap[T any]() *SortedStringsMap[T] {
 }
 
 func (s *SortedStringsMap[T]) Add(key string, value T) {
-	// Update keys, and then sort the value.
 	if _, ok := s.data[key]; !ok {
 		s.keys = append(s.keys, key)
 		// This can be more efficient in the future once we get more usage.
