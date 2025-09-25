@@ -11,11 +11,7 @@ import (
 )
 
 type Message struct {
-	message kafka.Message
-}
-
-func (m Message) GetMessage() kafka.Message {
-	return m.message
+	kafka.Message
 }
 
 func BuildLogFields(msg kafka.Message) []any {
@@ -28,14 +24,14 @@ func BuildLogFields(msg kafka.Message) []any {
 }
 
 func NewMessage(msg kafka.Message) Message {
-	return Message{message: msg}
+	return Message{msg}
 }
 
 // EmitRowLag will diff against the partition's high watermark and the message's offset
 func (m Message) EmitRowLag(metricsClient base.Client, mode config.Mode, groupID, table string) {
 	metricsClient.GaugeWithSample(
 		"row.lag",
-		float64(m.message.HighWaterMark-m.message.Offset),
+		float64(m.HighWaterMark-m.Offset),
 		map[string]string{
 			"mode":    mode.String(),
 			"groupID": groupID,
@@ -53,25 +49,5 @@ func (m Message) EmitIngestionLag(metricsClient base.Client, mode config.Mode, g
 }
 
 func (m Message) PublishTime() time.Time {
-	return m.message.Time
-}
-
-func (m Message) Topic() string {
-	return m.message.Topic
-}
-
-func (m Message) Partition() int {
-	return m.message.Partition
-}
-
-func (m Message) Offset() int64 {
-	return m.message.Offset
-}
-
-func (m Message) Key() []byte {
-	return m.message.Key
-}
-
-func (m Message) Value() []byte {
-	return m.message.Value
+	return m.Time
 }
