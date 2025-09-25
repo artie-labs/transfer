@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"fmt"
 	"log/slog"
+	"maps"
 	"sort"
 	"strings"
 	"time"
@@ -165,6 +166,7 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 	if err != nil {
 		return Event{}, fmt.Errorf("failed to get data: %w", err)
 	}
+	maps.Copy(evtData, pkMap) // Ensure that primary keys are always included.
 
 	if tc.IncludeArtieOperation {
 		evtData[constants.OperationColumnMarker] = string(event.Operation())
