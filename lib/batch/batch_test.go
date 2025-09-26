@@ -138,19 +138,21 @@ func TestBySize(t *testing.T) {
 	}
 	{
 		// Non-empty slice + all items exactly fit into one batch:
-		batches, items, _, err := testBySize([]string{"foo", "bar", "baz", "qux"}, 12, true, goodEncoder)
+		batches, items, skipped, err := testBySize([]string{"foo", "bar", "baz", "qux"}, 12, true, goodEncoder)
 		assert.NoError(t, err)
 		assert.Len(t, batches, 1)
 		assert.Len(t, items, 1)
+		assert.Equal(t, 0, skipped)
 		assert.Equal(t, [][]byte{[]byte("foo"), []byte("bar"), []byte("baz"), []byte("qux")}, batches[0])
 		assert.Equal(t, []string{"foo", "bar", "baz", "qux"}, items[0])
 	}
 	{
 		// Non-empty slice + all items exactly fit into just under one batch:
-		batches, items, _, err := testBySize([]string{"foo", "bar", "baz", "qux"}, 13, true, goodEncoder)
+		batches, items, skipped, err := testBySize([]string{"foo", "bar", "baz", "qux"}, 13, true, goodEncoder)
 		assert.NoError(t, err)
 		assert.Len(t, batches, 1)
 		assert.Len(t, items, 1)
+		assert.Equal(t, 0, skipped)
 		assert.Equal(t, [][]byte{[]byte("foo"), []byte("bar"), []byte("baz"), []byte("qux")}, batches[0])
 		assert.Equal(t, []string{"foo", "bar", "baz", "qux"}, items[0])
 	}
