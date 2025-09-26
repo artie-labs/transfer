@@ -201,7 +201,7 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 		return bytes, nil
 	}
 
-	err = batch.BySize(tableData.Rows(), s.maxRequestBytesSize, false, encoder, func(chunk [][]byte, _ []optimization.Row) error {
+	skipped, err := batch.BySize(tableData.Rows(), s.maxRequestBytesSize, false, encoder, func(chunk [][]byte, _ []optimization.Row) error {
 		result, err := managedStream.AppendRows(ctx, chunk)
 		if err != nil {
 			return fmt.Errorf("failed to append rows: %w", err)
@@ -251,7 +251,7 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 	}
 
 	// Verify that we wrote all expected rows
-	expectedRows := uint64(tableData.NumberOfRows())
+	expectedRows := uint64(int(tableData.NumberOfRows()) - skipped)
 	if uint64(rowCount) != expectedRows {
 		return fmt.Errorf("row count mismatch after write, expected: %d, got: %d", expectedRows, rowCount)
 	}
