@@ -45,15 +45,15 @@ func TestBySize(t *testing.T) {
 		return nil, fmt.Errorf("failed to encode %q", value)
 	}
 
-	testBySize := func(in []string, maxSizeBytes int, failIfRowExceedsMaxSizeBytes bool, encoder func(value string) ([]byte, error)) ([][][]byte, [][]string, error) {
+	testBySize := func(in []string, maxSizeBytes int, failIfRowExceedsMaxSizeBytes bool, encoder func(value string) ([]byte, error)) ([][][]byte, [][]string, int, error) {
 		batches := [][][]byte{}
 		items := [][]string{}
-		err := BySize(in, maxSizeBytes, failIfRowExceedsMaxSizeBytes, encoder, func(batch [][]byte, batchItems []string) error {
+		skipped, err := BySize(in, maxSizeBytes, failIfRowExceedsMaxSizeBytes, encoder, func(batch [][]byte, batchItems []string) error {
 			batches = append(batches, batch)
 			items = append(items, batchItems)
 			return nil
 		})
-		return batches, items, err
+		return batches, items, skipped, err
 	}
 
 	badYield := func(batch [][]byte, items []string) error {
@@ -66,44 +66,46 @@ func TestBySize(t *testing.T) {
 
 	{
 		// Empty slice:
-		batches, items, err := testBySize([]string{}, 10, true, panicEncoder)
+		batches, items, _, err := testBySize([]string{}, 10, true, panicEncoder)
 		assert.NoError(t, err)
 		assert.Empty(t, batches)
 		assert.Empty(t, items)
 	}
 	{
 		// Non-empty slice + bad encoder:
-		_, _, err := testBySize([]string{"foo", "bar"}, 10, true, badEncoder)
+		_, _, _, err := testBySize([]string{"foo", "bar"}, 10, true, badEncoder)
 		assert.ErrorContains(t, err, `failed to encode item 0: failed to encode "foo"`)
 	}
 	{
 		// Non-empty slice + two items that are < maxSizeBytes + yield returns error.
-		err := BySize([]string{"foo", "bar"}, 10, true, goodEncoder, badYield)
+		_, err := BySize([]string{"foo", "bar"}, 10, true, goodEncoder, badYield)
 		assert.ErrorContains(t, err, "yield failed for [foo bar]")
 	}
 	{
 		// Non-empty slice + two items that are = maxSizeBytes + yield returns error.
-		err := BySize([]string{"foo", "bar"}, 6, true, goodEncoder, badYield)
+		_, err := BySize([]string{"foo", "bar"}, 6, true, goodEncoder, badYield)
 		assert.ErrorContains(t, err, "yield failed for [foo bar]")
 	}
 	{
 		// Non-empty slice + two items that are > maxSizeBytes + yield returns error.
-		err := BySize([]string{"foo", "bar-baz"}, 8, true, goodEncoder, badYield)
+		_, err := BySize([]string{"foo", "bar-baz"}, 8, true, goodEncoder, badYield)
 		assert.ErrorContains(t, err, "yield failed for [foo]")
 	}
 	{
 		// Non-empty slice + item is larger than maxSizeBytes
 		{
 			// failIfRowExceedsMaxSizeBytes = true
-			_, _, err := testBySize([]string{"foo", "i-am-23-characters-long", "bar"}, 20, true, goodEncoder)
+			_, _, _, err := testBySize([]string{"foo", "i-am-23-characters-long", "bar"}, 20, true, goodEncoder)
 			assert.ErrorContains(t, err, "item 1 is larger (23 bytes) than maxSizeBytes (20 bytes)")
 		}
 		{
 			// failIfRowExceedsMaxSizeBytes = false
-			batches, items, err := testBySize([]string{"foo", "i-am-23-characters-long", "bar", "i-am-20-characters--"}, 20, false, goodEncoder)
+			batches, items, skipped, err := testBySize([]string{"foo", "i-am-23-characters-long", "bar", "i-am-20-characters--"}, 20, false, goodEncoder)
 			assert.NoError(t, err)
 			assert.Len(t, batches, 2)
 			assert.Len(t, items, 2)
+			assert.Equal(t, 1, skipped)
+
 			// First batch should have foo and bar
 			assert.Equal(t, [][]byte{[]byte("foo"), []byte("bar")}, batches[0])
 			assert.Equal(t, []string{"foo", "bar"}, items[0])
@@ -114,7 +116,7 @@ func TestBySize(t *testing.T) {
 	}
 	{
 		// Non-empty slice + item equal to maxSizeBytes:
-		batches, items, err := testBySize([]string{"foo", "i-am-23-characters-long", "bar"}, 23, true, goodEncoder)
+		batches, items, _, err := testBySize([]string{"foo", "i-am-23-characters-long", "bar"}, 23, true, goodEncoder)
 		assert.NoError(t, err)
 		assert.Len(t, batches, 3)
 		assert.Len(t, items, 3)
@@ -127,7 +129,7 @@ func TestBySize(t *testing.T) {
 	}
 	{
 		// Non-empty slice + one item:
-		batches, items, err := testBySize([]string{"foo"}, 100, true, goodEncoder)
+		batches, items, _, err := testBySize([]string{"foo"}, 100, true, goodEncoder)
 		assert.NoError(t, err)
 		assert.Len(t, batches, 1)
 		assert.Len(t, items, 1)
@@ -136,7 +138,7 @@ func TestBySize(t *testing.T) {
 	}
 	{
 		// Non-empty slice + all items exactly fit into one batch:
-		batches, items, err := testBySize([]string{"foo", "bar", "baz", "qux"}, 12, true, goodEncoder)
+		batches, items, _, err := testBySize([]string{"foo", "bar", "baz", "qux"}, 12, true, goodEncoder)
 		assert.NoError(t, err)
 		assert.Len(t, batches, 1)
 		assert.Len(t, items, 1)
@@ -145,7 +147,7 @@ func TestBySize(t *testing.T) {
 	}
 	{
 		// Non-empty slice + all items exactly fit into just under one batch:
-		batches, items, err := testBySize([]string{"foo", "bar", "baz", "qux"}, 13, true, goodEncoder)
+		batches, items, _, err := testBySize([]string{"foo", "bar", "baz", "qux"}, 13, true, goodEncoder)
 		assert.NoError(t, err)
 		assert.Len(t, batches, 1)
 		assert.Len(t, items, 1)
