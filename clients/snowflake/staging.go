@@ -76,6 +76,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		}
 	}()
 
+	var tableStageName string
 	if s.useExternalStage() {
 		s3Client, err := s.GetS3Client()
 		if err != nil {
@@ -92,17 +93,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		if err != nil {
 			return fmt.Errorf("failed to upload file to S3: %w", err)
 		}
-	} else {
-		// Upload the CSV file to Snowflake internal stage
-		tableStageName := addPrefixToTableName(tempTableID, "%")
-		putQuery := fmt.Sprintf("PUT 'file://%s' @%s", file.FilePath, tableStageName)
-		if _, err = s.ExecContext(ctx, putQuery); err != nil {
-			return fmt.Errorf("failed to run PUT for temporary table: %w", err)
-		}
-	}
 
-	tableStageName := addPrefixToTableName(tempTableID, "%")
-	if s.useExternalStage() {
 		castedTableID, ok := tempTableID.(dialect.TableIdentifier)
 		if !ok {
 			return fmt.Errorf("failed to cast table identifier: %w", err)
@@ -110,6 +101,13 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 
 		// Fix the S3 path by ensuring there's a slash between the stage name and the file name
 		tableStageName = fmt.Sprintf("%s.%s.%s/", castedTableID.Database(), castedTableID.Schema(), filepath.Join(s.config.Snowflake.ExternalStage.Name, s.config.Snowflake.ExternalStage.Prefix))
+	} else {
+		// Upload the CSV file to Snowflake internal stage
+		tableStageName := addPrefixToTableName(tempTableID, "%")
+		putQuery := fmt.Sprintf("PUT 'file://%s' @%s", file.FilePath, tableStageName)
+		if _, err = s.ExecContext(ctx, putQuery); err != nil {
+			return fmt.Errorf("failed to run PUT for temporary table: %w", err)
+		}
 	}
 
 	copyCommand := s.dialect().BuildCopyIntoTableQuery(tempTableID, tableData.ReadOnlyInMemoryCols().ValidColumns(), tableStageName, file.FileName)
