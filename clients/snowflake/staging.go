@@ -98,7 +98,6 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 			return fmt.Errorf("failed to cast table identifier: %w", err)
 		}
 
-		// Fix the S3 path by ensuring there's a slash between the stage name and the file name
 		tableStageName = fmt.Sprintf("%s.%s.%s/", castedTableID.Database(), castedTableID.Schema(), s.config.Snowflake.ExternalStage.Name)
 	} else {
 		// Upload the CSV file to Snowflake internal stage
