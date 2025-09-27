@@ -2,6 +2,7 @@ package dialect
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -42,9 +43,9 @@ func (SnowflakeDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (st
 	return fmt.Sprintf("DESC TABLE %s", tableID.FullyQualifiedName()), nil, nil
 }
 
-func (SnowflakeDialect) BuildCreateStageQuery(dbName string, schemaName string, stageName string, bucket string, credentialsClause string) string {
+func (SnowflakeDialect) BuildCreateStageQuery(dbName string, schemaName string, stageName string, bucket string, prefix string, credentialsClause string) string {
 	base := fmt.Sprintf(`CREATE OR REPLACE STAGE %s.%s.%s URL = 's3://%s' FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='%s' EMPTY_FIELD_AS_NULL=FALSE)`,
-		dbName, schemaName, stageName, bucket, constants.NullValuePlaceholder)
+		dbName, schemaName, stageName, filepath.Join(bucket, prefix), constants.NullValuePlaceholder)
 
 	if credentialsClause != "" {
 		return fmt.Sprintf(`%s CREDENTIALS = ( %s )`, base, credentialsClause)
