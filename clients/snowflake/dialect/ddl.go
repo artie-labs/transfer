@@ -42,9 +42,14 @@ func (SnowflakeDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (st
 	return fmt.Sprintf("DESC TABLE %s", tableID.FullyQualifiedName()), nil, nil
 }
 
-func (SnowflakeDialect) BuildCreateStageQuery(dbName string, schemaName string, stageName string, bucket string, credentialsClause string) string {
-	base := fmt.Sprintf(`CREATE OR REPLACE STAGE %s.%s.%s URL = 's3://%s' FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='%s' EMPTY_FIELD_AS_NULL=FALSE)`,
-		dbName, schemaName, stageName, bucket, constants.NullValuePlaceholder)
+func (SnowflakeDialect) BuildCreateStageQuery(dbName string, schemaName string, stageName string, bucket string, prefix string, credentialsClause string) string {
+	s3Path := fmt.Sprintf("s3://%s", bucket)
+	if prefix != "" {
+		s3Path = fmt.Sprintf("%s/%s", s3Path, prefix)
+	}
+
+	base := fmt.Sprintf(`CREATE OR REPLACE STAGE %s.%s.%s URL = '%s' FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='%s' EMPTY_FIELD_AS_NULL=FALSE)`,
+		dbName, schemaName, stageName, s3Path, constants.NullValuePlaceholder)
 
 	if credentialsClause != "" {
 		return fmt.Sprintf(`%s CREDENTIALS = ( %s )`, base, credentialsClause)
