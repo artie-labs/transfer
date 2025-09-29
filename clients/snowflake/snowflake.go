@@ -170,6 +170,7 @@ func (s *Store) ensureExternalStageExists(ctx context.Context) error {
 					dbAndSchemaPair.Schema,
 					s.config.Snowflake.ExternalStage.Name,
 					s.config.Snowflake.ExternalStage.Bucket,
+					s.config.Snowflake.ExternalStage.Prefix,
 					s.config.Snowflake.ExternalStage.CredentialsClause,
 				)
 				if _, err := s.ExecContext(ctx, createStageQuery); err != nil {
