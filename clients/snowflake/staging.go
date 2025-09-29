@@ -17,6 +17,7 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/artie-labs/transfer/lib/typing/values"
 )
 
@@ -45,7 +46,7 @@ func castColValStaging(colVal any, colKind typing.KindDetails, _ config.SharedDe
 
 	value, err := values.ToString(colVal, colKind)
 	if err != nil {
-		if typing.IsParseError(err) {
+		if ext.IsParseError(err) {
 			return shared.ValueConvertResponse{Value: constants.NullValuePlaceholder}, nil
 		}
 
