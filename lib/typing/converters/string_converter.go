@@ -139,7 +139,8 @@ type DateConverter struct{}
 func (DateConverter) Convert(value any) (string, error) {
 	_time, err := ext.ParseDateFromAny(value)
 	if err != nil {
-		return "", fmt.Errorf("failed to cast colVal as date, colVal: '%v', err: %w", value, err)
+		return "", nil
+		// return "", fmt.Errorf("failed to cast colVal as date, colVal: '%v', err: %w", value, err)
 	}
 
 	return _time.Format(time.DateOnly), nil
