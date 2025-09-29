@@ -1,9 +1,6 @@
 package typing
 
 import (
-	"encoding/json"
-	"strings"
-
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
 
@@ -95,21 +92,4 @@ func NewDecimalDetailsFromTemplate(details KindDetails, decimalDetails decimal.D
 	}
 
 	return details
-}
-
-// IsJSON - We also need to check if the string is a JSON string or not
-// If it could be one, it will start with { and end with }.
-// Once there, we will then check if it's a JSON string or not.
-// This is an optimization since JSON string checking is expensive.
-func IsJSON(str string) bool {
-	str = strings.TrimSpace(str)
-	if len(str) == 0 {
-		return false
-	}
-
-	firstChar := str[0]
-	if firstChar != '{' && firstChar != '[' {
-		return false
-	}
-	return json.Valid([]byte(str))
 }

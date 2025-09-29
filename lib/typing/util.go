@@ -1,6 +1,10 @@
 package typing
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+	"strings"
+)
 
 func AssertType[T any](val any) (T, error) {
 	castedVal, ok := val.(T)
@@ -31,4 +35,21 @@ func DefaultValueFromPtr[T any](value *T, defaultValue T) T {
 	}
 
 	return *value
+}
+
+// IsJSON - We also need to check if the string is a JSON string or not
+// If it could be one, it will start with { and end with }.
+// Once there, we will then check if it's a JSON string or not.
+// This is an optimization since JSON string checking is expensive.
+func IsJSON(str string) bool {
+	str = strings.TrimSpace(str)
+	if len(str) == 0 {
+		return false
+	}
+
+	firstChar := str[0]
+	if firstChar != '{' && firstChar != '[' {
+		return false
+	}
+	return json.Valid([]byte(str))
 }
