@@ -26,7 +26,7 @@ func TestToStringOpts(t *testing.T) {
 		{
 			// Layout override
 			val, err := ToStringOpts(time.Date(2021, time.January, 1, 0, 0, 0, 999_999_999, time.UTC), typing.TimestampNTZ, converters.GetStringConverterOpts{
-				TimestampNTZLayoutOverride: ext.RFC3339MicrosecondNoTZ,
+				TimestampNTZLayoutOverride: typing.RFC3339MicrosecondNoTZ,
 			})
 			assert.NoError(t, err)
 			assert.Equal(t, "2021-01-01T00:00:00.999999", val)
@@ -43,7 +43,7 @@ func TestToStringOpts(t *testing.T) {
 		{
 			// Layout override
 			val, err := ToStringOpts(time.Date(2021, time.January, 1, 0, 0, 0, 999_999_999, time.UTC), typing.TimestampTZ, converters.GetStringConverterOpts{
-				TimestampTZLayoutOverride: ext.RFC3339Microsecond,
+				TimestampTZLayoutOverride: typing.RFC3339Microsecond,
 			})
 			assert.NoError(t, err)
 			assert.Equal(t, "2021-01-01T00:00:00.999999Z", val)

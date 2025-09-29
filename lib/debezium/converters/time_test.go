@@ -121,12 +121,12 @@ func TestTime_Convert(t *testing.T) {
 	{
 		val, err := Time{}.Convert(int64(54_720_321))
 		assert.NoError(t, err)
-		assert.Equal(t, "15:12:00.321", val.(time.Time).Format(ext.PostgresTimeFormatNoTZ))
+		assert.Equal(t, "15:12:00.321", val.(time.Time).Format(typing.PostgresTimeFormatNoTZ))
 	}
 	{
 		val, err := Time{}.Convert(int64(54_720_123))
 		assert.NoError(t, err)
-		assert.Equal(t, "15:12:00.123", val.(time.Time).Format(ext.PostgresTimeFormatNoTZ))
+		assert.Equal(t, "15:12:00.123", val.(time.Time).Format(typing.PostgresTimeFormatNoTZ))
 	}
 }
 
@@ -141,7 +141,7 @@ func TestNanoTime_Converter(t *testing.T) {
 		// Valid
 		val, err := NanoTime{}.Convert(int64(54_720_000_009_000))
 		assert.NoError(t, err)
-		assert.Equal(t, "15:12:00.000009", val.(time.Time).Format(ext.PostgresTimeFormatNoTZ))
+		assert.Equal(t, "15:12:00.000009", val.(time.Time).Format(typing.PostgresTimeFormatNoTZ))
 	}
 }
 
