@@ -3,6 +3,8 @@ package ext
 import (
 	"fmt"
 	"time"
+
+	"github.com/artie-labs/transfer/lib/typing"
 )
 
 // ParseTimeExactMatch will return an error if it was not an exact match.
@@ -38,7 +40,7 @@ func ParseDateFromAny(val any) (time.Time, error) {
 			return ts, nil
 		}
 
-		return time.Time{}, fmt.Errorf("unsupported value: %q", convertedVal)
+		return time.Time{}, typing.NewParseError(fmt.Sprintf("unsupported value: %q", convertedVal), typing.UnsupportedDateLayout)
 	default:
 		return time.Time{}, fmt.Errorf("unsupported type: %T", convertedVal)
 	}

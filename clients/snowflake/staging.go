@@ -45,6 +45,10 @@ func castColValStaging(colVal any, colKind typing.KindDetails, _ config.SharedDe
 
 	value, err := values.ToString(colVal, colKind)
 	if err != nil {
+		if typing.IsParseError(err) {
+			return shared.ValueConvertResponse{Value: constants.NullValuePlaceholder}, nil
+		}
+
 		return shared.ValueConvertResponse{}, err
 	}
 
