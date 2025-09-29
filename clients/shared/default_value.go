@@ -16,7 +16,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 func DefaultValue(column columns.Column, dialect sql.Dialect) (any, error) {
@@ -33,28 +32,28 @@ func DefaultValue(column columns.Column, dialect sql.Dialect) (any, error) {
 
 		return dialect.EscapeStruct(string(value)), nil
 	case typing.Date.Kind:
-		_time, err := ext.ParseDateFromAny(column.DefaultValue())
+		_time, err := typing.ParseDateFromAny(column.DefaultValue())
 		if err != nil {
 			return nil, fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", column.DefaultValue(), err)
 		}
 
 		return sql.QuoteLiteral(_time.Format(time.DateOnly)), nil
 	case typing.Time.Kind:
-		_time, err := ext.ParseTimeFromAny(column.DefaultValue())
+		_time, err := typing.ParseTimeFromAny(column.DefaultValue())
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", column.DefaultValue(), err)
 		}
 
-		return sql.QuoteLiteral(_time.Format(ext.PostgresTimeFormatNoTZ)), nil
+		return sql.QuoteLiteral(_time.Format(typing.PostgresTimeFormatNoTZ)), nil
 	case typing.TimestampNTZ.Kind:
-		_time, err := ext.ParseTimestampNTZFromAny(column.DefaultValue())
+		_time, err := typing.ParseTimestampNTZFromAny(column.DefaultValue())
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", column.DefaultValue(), err)
 		}
 
-		return sql.QuoteLiteral(_time.Format(ext.RFC3339NoTZ)), nil
+		return sql.QuoteLiteral(_time.Format(typing.RFC3339NoTZ)), nil
 	case typing.TimestampTZ.Kind:
-		_time, err := ext.ParseTimestampTZFromAny(column.DefaultValue())
+		_time, err := typing.ParseTimestampTZFromAny(column.DefaultValue())
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", column.DefaultValue(), err)
 		}
