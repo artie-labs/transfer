@@ -12,7 +12,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/converters"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 func parseValue(colVal any, colKind columns.Column) (any, error) {
@@ -27,28 +26,28 @@ func parseValue(colVal any, colKind columns.Column) (any, error) {
 	colValString := fmt.Sprint(colVal)
 	switch colKind.KindDetails.Kind {
 	case typing.Date.Kind:
-		_time, err := ext.ParseDateFromAny(colVal)
+		_time, err := typing.ParseDateFromAny(colVal)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", colVal, err)
 		}
 
 		return _time, nil
 	case typing.Time.Kind:
-		_time, err := ext.ParseTimeFromAny(colVal)
+		_time, err := typing.ParseTimeFromAny(colVal)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", colVal, err)
 		}
 
 		return _time, nil
 	case typing.TimestampNTZ.Kind:
-		_time, err := ext.ParseTimestampNTZFromAny(colVal)
+		_time, err := typing.ParseTimestampNTZFromAny(colVal)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", colVal, err)
 		}
 
 		return _time, nil
 	case typing.TimestampTZ.Kind:
-		_time, err := ext.ParseTimestampTZFromAny(colVal)
+		_time, err := typing.ParseTimestampTZFromAny(colVal)
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", colVal, err)
 		}
