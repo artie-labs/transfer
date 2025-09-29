@@ -37,6 +37,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 	return nil
 }
 
+// TODO: Write a test for [FlushSingleTopic]
 func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, args Args, topic string, shouldLock bool) error {
 	if inMemDB == nil {
 		return nil
@@ -55,15 +56,18 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 	var grp errgroup.Group
 	var commitOffset atomic.Bool
 	err = consumer.LockAndProcess(ctx, shouldLock, func() error {
+		// If there are more tables, let's ensure that ALL tables in this topic are flushable.
+		// If not, let's hold off and wait for the next flush cycle. This is to avoid a situation where we flush a fraction of the tables in this topic
+		// And commit the offset (when we shouldn't), or clear memory of all the tables in this topic (when we shouldn't).
 		for _, table := range tables {
-			// Also in the example: https://pkg.go.dev/golang.org/x/sync/errgroup#example-Group-Parallel
-			table := table // https://golang.org/doc/faq#closures_and_goroutines
-			grp.Go(func() error {
-				if args.CoolDown != nil && table.ShouldSkipFlush(*args.CoolDown) {
-					slog.Debug("Skipping flush because we are currently in a flush cooldown", slog.String("tableID", table.GetTableID().String()))
-					return nil
-				}
+			if args.CoolDown != nil && table.ShouldSkipFlush(*args.CoolDown) {
+				slog.Debug("Skipping flush because we are currently in a flush cooldown", slog.String("tableID", table.GetTableID().String()))
+				return nil
+			}
+		}
 
+		for _, table := range tables {
+			grp.Go(func() error {
 				retryCfg, err := retry.NewJitterRetryConfig(1_000, 30_000, 15, retry.AlwaysRetry)
 				if err != nil {
 					return err
