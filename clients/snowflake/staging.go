@@ -37,13 +37,22 @@ func replaceExceededValues(colVal string, kindDetails typing.KindDetails) string
 	return colVal
 }
 
-func castColValStaging(colVal any, colKind typing.KindDetails, _ config.SharedDestinationSettings) (shared.ValueConvertResponse, error) {
+func castColValStaging(colVal any, colKind typing.KindDetails, config config.SharedDestinationSettings) (shared.ValueConvertResponse, error) {
 	if colVal == nil {
 		return shared.ValueConvertResponse{Value: constants.NullValuePlaceholder}, nil
 	}
 
 	value, err := values.ToString(colVal, colKind)
 	if err != nil {
+		if config.SkipBadTimestamps {
+			if parseError, ok := typing.BuildParseError(err); ok {
+				if parseError.GetKind() == typing.UnsupportedDateLayout {
+					slog.Info("Skipping a bad timestamp, returning null", slog.Any("err", err), slog.Any("value", colVal))
+					return shared.ValueConvertResponse{Value: constants.NullValuePlaceholder}, nil
+				}
+			}
+		}
+
 		return shared.ValueConvertResponse{}, err
 	}
 

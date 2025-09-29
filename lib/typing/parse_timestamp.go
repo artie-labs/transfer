@@ -38,7 +38,7 @@ func ParseDateFromAny(val any) (time.Time, error) {
 			return ts, nil
 		}
 
-		return time.Time{}, fmt.Errorf("unsupported value: %q", convertedVal)
+		return time.Time{}, NewParseError(fmt.Sprintf("unsupported value: %q", convertedVal), UnsupportedDateLayout)
 	default:
 		return time.Time{}, fmt.Errorf("unsupported type: %T", convertedVal)
 	}

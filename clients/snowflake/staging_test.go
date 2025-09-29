@@ -73,6 +73,20 @@ func (s *SnowflakeTestSuite) TestCastColValStaging() {
 		assert.NoError(s.T(), err)
 		assert.Equal(s.T(), "foo", result.Value)
 	}
+	{
+		// Bad timestamp
+		{
+			// Config is enabled, so we won't error, we'll just return null.
+			result, err := castColValStaging("foo", typing.Date, config.SharedDestinationSettings{SkipBadTimestamps: true})
+			assert.NoError(s.T(), err)
+			assert.Equal(s.T(), constants.NullValuePlaceholder, result.Value)
+		}
+		{
+			// Config is disabled, so we'll error.
+			_, err := castColValStaging("foo", typing.Date, config.SharedDestinationSettings{SkipBadTimestamps: false})
+			assert.Error(s.T(), err)
+		}
+	}
 }
 
 // runTestCaseWithReset runs a test case with a fresh store state
