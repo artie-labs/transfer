@@ -20,3 +20,15 @@ func AssertTypeOptional[T any](val any) (T, error) {
 
 	return AssertType[T](val)
 }
+
+func ToPtr[T any](v T) *T {
+	return &v
+}
+
+func DefaultValueFromPtr[T any](value *T, defaultValue T) T {
+	if value == nil {
+		return defaultValue
+	}
+
+	return *value
+}
