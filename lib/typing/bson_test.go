@@ -1,4 +1,4 @@
-package mongo
+package typing
 
 import (
 	"encoding/json"
