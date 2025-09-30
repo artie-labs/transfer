@@ -10,6 +10,7 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/artie-labs/transfer/models"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -62,10 +63,12 @@ func (f *FlushTestSuite) TestFlushSingleTopic_MultipleTablesSuccess() {
 		cdc.NewTableID("public", "products"),
 	}
 
+	var tableDatas []*models.TableData
 	for _, tableID := range tableIDs {
 		td := f.db.GetOrCreateTableData(tableID, topicName)
 		td.SetTableData(optimization.NewTableData(&columns.Columns{}, config.Replication, []string{"id"}, topicConfig, tableID.Table))
 		td.InsertRow("1", map[string]any{"id": 1, "data": "test"}, false)
+		tableDatas = append(tableDatas, td)
 	}
 
 	f.fakeBaseline.MergeReturns(true, nil)
@@ -74,8 +77,7 @@ func (f *FlushTestSuite) TestFlushSingleTopic_MultipleTablesSuccess() {
 	assert.Equal(f.T(), 3, f.fakeBaseline.MergeCallCount())
 	assert.Equal(f.T(), 1, f.fakeConsumer.CommitMessagesCallCount())
 
-	for _, tableID := range tableIDs {
-		td := f.db.GetOrCreateTableData(tableID, topicName)
+	for _, td := range tableDatas {
 		assert.True(f.T(), td.Empty())
 	}
 }
@@ -91,17 +93,18 @@ func (f *FlushTestSuite) TestFlushSingleTopic_MultipleTablesWithCooldown() {
 		cdc.NewTableID("public", "products"),
 	}
 
+	var tableDatas []*models.TableData
 	for _, tableID := range tableIDs {
 		td := f.db.GetOrCreateTableData(tableID, topicName)
 		td.SetTableData(optimization.NewTableData(&columns.Columns{}, config.Replication, []string{"id"}, topicConfig, tableID.Table))
 		td.InsertRow("1", map[string]any{"id": 1, "data": "test"}, false)
+		tableDatas = append(tableDatas, td)
 	}
 
 	// Set cooldown on one table by simulating a recent flush
-	td := f.db.GetOrCreateTableData(tableIDs[1], topicName)
-	td.Wipe()
-	td.SetTableData(optimization.NewTableData(&columns.Columns{}, config.Replication, []string{"id"}, topicConfig, tableIDs[1].Table))
-	td.InsertRow("1", map[string]any{"id": 1, "data": "test"}, false)
+	tableDatas[1].Wipe()
+	tableDatas[1].SetTableData(optimization.NewTableData(&columns.Columns{}, config.Replication, []string{"id"}, topicConfig, tableIDs[1].Table))
+	tableDatas[1].InsertRow("1", map[string]any{"id": 1, "data": "test"}, false)
 
 	cooldown := 10 * time.Second
 	assert.NoError(f.T(), FlushSingleTopic(ctx, f.db, f.baseline, metrics.NullMetricsProvider{}, Args{CoolDown: &cooldown, Reason: "test"}, topicName, false))
@@ -111,8 +114,7 @@ func (f *FlushTestSuite) TestFlushSingleTopic_MultipleTablesWithCooldown() {
 	assert.Equal(f.T(), 0, f.fakeConsumer.CommitMessagesCallCount())
 
 	// All tables should still have data
-	for _, tableID := range tableIDs {
-		td := f.db.GetOrCreateTableData(tableID, topicName)
+	for _, td := range tableDatas {
 		assert.False(f.T(), td.Empty())
 	}
 }
