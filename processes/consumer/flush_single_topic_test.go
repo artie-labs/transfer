@@ -15,15 +15,11 @@ import (
 )
 
 func (f *FlushTestSuite) TestFlushSingleTopic_NilDB() {
-	ctx := f.T().Context()
-	err := FlushSingleTopic(ctx, nil, f.baseline, metrics.NullMetricsProvider{}, Args{Reason: "test"}, "topic", false)
-	assert.NoError(f.T(), err)
+	assert.NoError(f.T(), FlushSingleTopic(f.T().Context(), nil, f.baseline, metrics.NullMetricsProvider{}, Args{Reason: "test"}, "topic", false))
 }
 
 func (f *FlushTestSuite) TestFlushSingleTopic_NoTables() {
-	ctx := f.T().Context()
-	err := FlushSingleTopic(ctx, f.db, f.baseline, metrics.NullMetricsProvider{}, Args{Reason: "test"}, "topic", false)
-	assert.NoError(f.T(), err)
+	assert.NoError(f.T(), FlushSingleTopic(f.T().Context(), f.db, f.baseline, metrics.NullMetricsProvider{}, Args{Reason: "test"}, "topic", false))
 }
 
 func (f *FlushTestSuite) TestFlushSingleTopic_Success() {
@@ -37,8 +33,7 @@ func (f *FlushTestSuite) TestFlushSingleTopic_Success() {
 	td.InsertRow("1", map[string]any{"id": 1, "name": "Alice"}, false)
 
 	f.fakeBaseline.MergeReturns(true, nil)
-	err := FlushSingleTopic(ctx, f.db, f.baseline, metrics.NullMetricsProvider{}, Args{Reason: "test"}, topicName, false)
-	assert.NoError(f.T(), err)
+	assert.NoError(f.T(), FlushSingleTopic(ctx, f.db, f.baseline, metrics.NullMetricsProvider{}, Args{Reason: "test"}, topicName, false))
 	assert.Equal(f.T(), 1, f.fakeBaseline.MergeCallCount())
 	assert.Equal(f.T(), 1, f.fakeConsumer.CommitMessagesCallCount())
 	assert.True(f.T(), td.Empty())
@@ -52,8 +47,7 @@ func (f *FlushTestSuite) TestFlushSingleTopic_EmptyTable() {
 	tableID := cdc.NewTableID("public", "empty")
 	f.db.GetOrCreateTableData(tableID, topicName)
 
-	err := FlushSingleTopic(ctx, f.db, f.baseline, metrics.NullMetricsProvider{}, Args{Reason: "test"}, topicName, false)
-	assert.NoError(f.T(), err)
+	assert.NoError(f.T(), FlushSingleTopic(ctx, f.db, f.baseline, metrics.NullMetricsProvider{}, Args{Reason: "test"}, topicName, false))
 	assert.Equal(f.T(), 0, f.fakeBaseline.MergeCallCount())
 	assert.Equal(f.T(), 0, f.fakeConsumer.CommitMessagesCallCount())
 }
