@@ -37,7 +37,6 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 	return nil
 }
 
-// TODO: Write a test for [FlushSingleTopic]
 func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, args Args, topic string, shouldLock bool) error {
 	if inMemDB == nil {
 		return nil
