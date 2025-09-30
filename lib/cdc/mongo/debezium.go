@@ -11,7 +11,6 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
-	"github.com/artie-labs/transfer/lib/typing/mongo"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -29,7 +28,7 @@ func (Debezium) GetEventFromBytes(bytes []byte) (cdc.Event, error) {
 
 	// Now marshal before & after string.
 	if schemaEventPayload.Payload.Before != nil {
-		before, err := mongo.JSONEToMap([]byte(*schemaEventPayload.Payload.Before))
+		before, err := typing.JSONEToMap([]byte(*schemaEventPayload.Payload.Before))
 		if err != nil {
 			return nil, err
 		}
@@ -38,7 +37,7 @@ func (Debezium) GetEventFromBytes(bytes []byte) (cdc.Event, error) {
 	}
 
 	if schemaEventPayload.Payload.After != nil {
-		after, err := mongo.JSONEToMap([]byte(*schemaEventPayload.Payload.After))
+		after, err := typing.JSONEToMap([]byte(*schemaEventPayload.Payload.After))
 		if err != nil {
 			return nil, fmt.Errorf("failed to call mongo JSONEToMap: %w", err)
 		}
@@ -77,7 +76,7 @@ func (Debezium) GetPrimaryKey(key []byte, tc kafkalib.TopicConfig) (map[string]a
 		return nil, err
 	}
 
-	kvMap, err = mongo.JSONEToMap(kvMapBytes)
+	kvMap, err = typing.JSONEToMap(kvMapBytes)
 	if err != nil {
 		return nil, err
 	}
