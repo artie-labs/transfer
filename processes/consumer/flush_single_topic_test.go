@@ -2,7 +2,6 @@ package consumer
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/cdc"
@@ -138,7 +137,7 @@ func (f *FlushTestSuite) TestFlushSingleTopic_HistoryMode() {
 	assert.True(f.T(), td.Empty())
 }
 
-func (f *FlushTestSuite) TestFlushSingleTopic_MergeError() {
+func (f *FlushTestSuite) TestFlushSingleTopic_MergeNoCommit() {
 	topicName := "test-topic"
 	consumer := kafkalib.NewConsumerProviderForTest(f.fakeConsumer, topicName, "test-group")
 	ctx := context.WithValue(f.T().Context(), kafkalib.BuildContextKey(topicName), consumer)
@@ -148,9 +147,10 @@ func (f *FlushTestSuite) TestFlushSingleTopic_MergeError() {
 	td.SetTableData(optimization.NewTableData(&columns.Columns{}, config.Replication, []string{"id"}, topicConfig, tableID.Table))
 	td.InsertRow("1", map[string]any{"id": 1, "name": "Alice"}, false)
 
-	f.fakeBaseline.MergeReturns(false, fmt.Errorf("merge failed"))
-	err := FlushSingleTopic(ctx, f.db, f.baseline, metrics.NullMetricsProvider{}, Args{Reason: "test"}, topicName, false)
-	assert.ErrorContains(f.T(), err, "merge failed")
+	// Merge succeeds but returns false (don't commit offset)
+	f.fakeBaseline.MergeReturns(false, nil)
+	assert.NoError(f.T(), FlushSingleTopic(ctx, f.db, f.baseline, metrics.NullMetricsProvider{}, Args{Reason: "test"}, topicName, false))
+	assert.Equal(f.T(), 1, f.fakeBaseline.MergeCallCount())
 	assert.Equal(f.T(), 0, f.fakeConsumer.CommitMessagesCallCount())
 	assert.False(f.T(), td.Empty())
 }
