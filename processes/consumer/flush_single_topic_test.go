@@ -104,8 +104,7 @@ func (f *FlushTestSuite) TestFlushSingleTopic_MultipleTablesWithCooldown() {
 	td.InsertRow("1", map[string]any{"id": 1, "data": "test"}, false)
 
 	cooldown := 10 * time.Second
-	err := FlushSingleTopic(ctx, f.db, f.baseline, metrics.NullMetricsProvider{}, Args{CoolDown: &cooldown, Reason: "test"}, topicName, false)
-	assert.NoError(f.T(), err)
+	assert.NoError(f.T(), FlushSingleTopic(ctx, f.db, f.baseline, metrics.NullMetricsProvider{}, Args{CoolDown: &cooldown, Reason: "test"}, topicName, false))
 
 	// No tables should have been flushed
 	assert.Equal(f.T(), 0, f.fakeBaseline.MergeCallCount())
@@ -129,8 +128,7 @@ func (f *FlushTestSuite) TestFlushSingleTopic_HistoryMode() {
 	td.InsertRow("1", map[string]any{"id": 1, "event": "login"}, false)
 
 	f.fakeBaseline.AppendReturns(nil)
-	err := FlushSingleTopic(ctx, f.db, f.baseline, metrics.NullMetricsProvider{}, Args{Reason: "test"}, topicName, false)
-	assert.NoError(f.T(), err)
+	assert.NoError(f.T(), FlushSingleTopic(ctx, f.db, f.baseline, metrics.NullMetricsProvider{}, Args{Reason: "test"}, topicName, false))
 	assert.Equal(f.T(), 1, f.fakeBaseline.AppendCallCount())
 	assert.Equal(f.T(), 0, f.fakeBaseline.MergeCallCount())
 	assert.Equal(f.T(), 1, f.fakeConsumer.CommitMessagesCallCount())
