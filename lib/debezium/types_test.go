@@ -11,7 +11,6 @@ import (
 	"github.com/artie-labs/transfer/lib/debezium/converters"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 func TestField_ShouldSetDefaultValue(t *testing.T) {
@@ -344,7 +343,7 @@ func TestField_ParseValue(t *testing.T) {
 				field := Field{Type: Int64, DebeziumType: dbzType}
 				value, err := field.ParseValue(int64(1_725_058_799_000))
 				assert.NoError(t, err)
-				assert.Equal(t, "2024-08-30T22:59:59.000", value.(time.Time).Format(ext.RFC3339MillisecondNoTZ))
+				assert.Equal(t, "2024-08-30T22:59:59.000", value.(time.Time).Format(typing.RFC3339MillisecondNoTZ))
 			}
 		}
 		{

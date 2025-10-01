@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 type Time struct{}
@@ -96,7 +95,7 @@ func (z ZonedTimestamp) Convert(value any) (any, error) {
 type TimeWithTimezone struct{}
 
 func (t TimeWithTimezone) layout() string {
-	return "15:04:05.999999" + ext.TimezoneOffsetFormat
+	return "15:04:05.999999" + typing.TimezoneOffsetFormat
 }
 
 func (t TimeWithTimezone) ToKindDetails() typing.KindDetails {

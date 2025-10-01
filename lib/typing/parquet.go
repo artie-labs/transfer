@@ -12,7 +12,6 @@ import (
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/typing/converters/primitives"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 func millisecondsAfterMidnight(t time.Time) int32 {
@@ -130,7 +129,7 @@ func (kd KindDetails) ParseValueForArrow(value any) (any, error) {
 
 		return castedValue.String(), nil
 	case Time.Kind:
-		_time, err := ext.ParseTimeFromAny(value)
+		_time, err := ParseTimeFromAny(value)
 		if err != nil {
 			return nil, fmt.Errorf("failed to cast value to time: %w", err)
 		}
@@ -139,7 +138,7 @@ func (kd KindDetails) ParseValueForArrow(value any) (any, error) {
 		// https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#time-millis
 		return millisecondsAfterMidnight(_time), nil
 	case Date.Kind:
-		_time, err := ext.ParseDateFromAny(value)
+		_time, err := ParseDateFromAny(value)
 		if err != nil {
 			return nil, fmt.Errorf("failed to cast value to date: %w", err)
 		}
@@ -147,14 +146,14 @@ func (kd KindDetails) ParseValueForArrow(value any) (any, error) {
 		// Days since epoch
 		return int32(_time.UnixMilli() / (24 * time.Hour.Milliseconds())), nil
 	case TimestampTZ.Kind:
-		_time, err := ext.ParseTimestampTZFromAny(value)
+		_time, err := ParseTimestampTZFromAny(value)
 		if err != nil {
 			return nil, fmt.Errorf("failed to cast value to timestamp: %w", err)
 		}
 
 		return _time.UnixMilli(), nil
 	case TimestampNTZ.Kind:
-		_time, err := ext.ParseTimestampNTZFromAny(value)
+		_time, err := ParseTimestampNTZFromAny(value)
 		if err != nil {
 			return nil, fmt.Errorf("failed to cast value to timestamp: %w", err)
 		}

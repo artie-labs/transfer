@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/artie-labs/transfer/lib/optimization"
-	"github.com/artie-labs/transfer/lib/typing/ext"
+	"github.com/artie-labs/transfer/lib/typing"
 )
 
 func buildDistinctDates(colName string, rows []optimization.Row) ([]string, error) {
@@ -18,7 +18,7 @@ func buildDistinctDates(colName string, rows []optimization.Row) ([]string, erro
 			return nil, fmt.Errorf("column %q does not exist in row: %v", colName, row)
 		}
 
-		_time, err := ext.ParseDateFromAny(val)
+		_time, err := typing.ParseDateFromAny(val)
 		if err != nil {
 			return nil, fmt.Errorf("column %q is not a time column, value: %v, err: %w", colName, val, err)
 		}

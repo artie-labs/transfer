@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,7 +19,7 @@ func TestTimestamp_Converter(t *testing.T) {
 		// Valid conversion
 		converted, err := Timestamp{}.Convert(int64(1_725_058_799_089))
 		assert.NoError(t, err)
-		assert.Equal(t, "2024-08-30T22:59:59.089", converted.(time.Time).Format(ext.RFC3339NoTZ))
+		assert.Equal(t, "2024-08-30T22:59:59.089", converted.(time.Time).Format(typing.RFC3339NoTZ))
 	}
 }
 
@@ -35,7 +34,7 @@ func TestMicroTimestamp_Converter(t *testing.T) {
 		// Valid conversion
 		converted, err := MicroTimestamp{}.Convert(int64(1_712_609_795_827_923))
 		assert.NoError(t, err)
-		assert.Equal(t, "2024-04-08T20:56:35.827923", converted.(time.Time).Format(ext.RFC3339NoTZ))
+		assert.Equal(t, "2024-04-08T20:56:35.827923", converted.(time.Time).Format(typing.RFC3339NoTZ))
 	}
 }
 
@@ -50,6 +49,6 @@ func TestNanoTimestamp_Converter(t *testing.T) {
 		// Valid conversion
 		converted, err := NanoTimestamp{}.Convert(int64(1_712_609_795_827_001_000))
 		assert.NoError(t, err)
-		assert.Equal(t, "2024-04-08T20:56:35.827001", converted.(time.Time).Format(ext.RFC3339NoTZ))
+		assert.Equal(t, "2024-04-08T20:56:35.827001", converted.(time.Time).Format(typing.RFC3339NoTZ))
 	}
 }

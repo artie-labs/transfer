@@ -18,7 +18,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	libconverters "github.com/artie-labs/transfer/lib/typing/converters"
-	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 // columnToTableFieldSchema returns a [*storagepb.TableFieldSchema] suitable for transferring data of the type that the column specifies.
@@ -197,7 +196,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 
 			message.Set(field, protoreflect.ValueOfString(castedValue))
 		case typing.Date.Kind:
-			_time, err := ext.ParseDateFromAny(value)
+			_time, err := typing.ParseDateFromAny(value)
 			if err != nil {
 				return nil, fmt.Errorf("failed to cast value for column: %q, err: %w", column.Name(), err)
 			}
@@ -205,21 +204,21 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 			daysSinceEpoch := _time.Unix() / (60 * 60 * 24)
 			message.Set(field, protoreflect.ValueOfInt32(int32(daysSinceEpoch)))
 		case typing.Time.Kind:
-			_time, err := ext.ParseTimeFromAny(value)
+			_time, err := typing.ParseTimeFromAny(value)
 			if err != nil {
 				return nil, fmt.Errorf("failed to cast value for column: %q, err: %w", column.Name(), err)
 			}
 
 			message.Set(field, protoreflect.ValueOfInt64(encodePacked64TimeMicros(_time)))
 		case typing.TimestampNTZ.Kind:
-			_time, err := ext.ParseTimestampNTZFromAny(value)
+			_time, err := typing.ParseTimestampNTZFromAny(value)
 			if err != nil {
 				return nil, fmt.Errorf("failed to cast value for column: %q, err: %w", column.Name(), err)
 			}
 
 			message.Set(field, protoreflect.ValueOfInt64(encodePacked64DatetimeMicros(_time)))
 		case typing.TimestampTZ.Kind:
-			_time, err := ext.ParseTimestampTZFromAny(value)
+			_time, err := typing.ParseTimestampTZFromAny(value)
 			if err != nil {
 				return nil, fmt.Errorf("failed to cast value for column: %q, err: %w", column.Name(), err)
 			}
