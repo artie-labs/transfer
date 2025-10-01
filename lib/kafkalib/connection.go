@@ -10,6 +10,7 @@ import (
 	awsCfg "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/segmentio/kafka-go"
 	"github.com/segmentio/kafka-go/sasl/aws_msk_iam_v2"
+	"github.com/segmentio/kafka-go/sasl/plain"
 	"github.com/segmentio/kafka-go/sasl/scram"
 )
 
@@ -47,6 +48,11 @@ func (c Connection) Mechanism() Mechanism {
 		return AwsMskIam
 	}
 
+	// support azure event hub
+	if c.username == "$ConnectionString" {
+		return Plain
+	}
+
 	if c.username != "" && c.password != "" {
 		return ScramSha512
 	}
@@ -81,7 +87,15 @@ func (c Connection) Dialer(ctx context.Context, awsOptFns ...func(options *awsCf
 		// We don't need to disable TLS for AWS IAM since MSK will always enable TLS.
 		dialer.TLS = &tls.Config{}
 	case Plain:
-		// No mechanism
+		if c.username != "" && c.password != "" {
+			dialer.SASLMechanism = plain.Mechanism{
+				Username: c.username,
+				Password: c.password,
+			}
+			if !c.disableTLS {
+				dialer.TLS = &tls.Config{}
+			}
+		}
 	default:
 		return nil, fmt.Errorf("unsupported kafka mechanism: %s", c.Mechanism())
 	}
@@ -116,7 +130,15 @@ func (c Connection) Transport(ctx context.Context, awsOptFns ...func(options *aw
 			transport.TLS = &tls.Config{}
 		}
 	case Plain:
-		// No mechanism
+		if c.username != "" && c.password != "" {
+			transport.SASL = plain.Mechanism{
+				Username: c.username,
+				Password: c.password,
+			}
+			if !c.disableTLS {
+				transport.TLS = &tls.Config{}
+			}
+		}
 	default:
 		return nil, fmt.Errorf("unsupported kafka mechanism: %s", c.Mechanism())
 	}
