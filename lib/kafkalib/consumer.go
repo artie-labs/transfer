@@ -58,6 +58,10 @@ func InjectConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) (contex
 			Dialer:  dialer,
 			Topic:   topicConfig.Topic,
 			Brokers: cfg.BootstrapServers(true),
+
+			// This will ensure that we're watching metadata updates from Kafka.
+			// When there's a partition change, we'll rediscover and refresh our assignment and connections automatically without a restart.
+			WatchPartitionChanges: true,
 		}
 
 		ctx = context.WithValue(ctx, BuildContextKey(topicConfig.Topic), &ConsumerProvider{
