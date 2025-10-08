@@ -231,7 +231,7 @@ func LoadStore(ctx context.Context, cfg config.Config) (*Store, error) {
 	}
 
 	if err := store.Validate(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to validate s3: %w", err)
 	}
 
 	return &store, nil
