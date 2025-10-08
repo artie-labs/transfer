@@ -14,7 +14,6 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination"
-	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/environ"
 	"github.com/artie-labs/transfer/lib/kafkalib"
@@ -228,52 +227,7 @@ func (s *Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier,
 }
 
 func (s *Store) SweepTemporaryTables(ctx context.Context) error {
-	if s.config.IsStagingTableReuseEnabled() {
-		return s.sweepWithStagingTableReuse(ctx)
-	} else {
-		return shared.Sweep(ctx, s, s.config.TopicConfigs(), s.dialect().BuildSweepQuery)
-	}
-}
-
-func (s *Store) sweepWithStagingTableReuse(ctx context.Context) error {
-	slog.Info("Looking to see if there are any reusable staging tables to clean up...")
-
-	for _, dbAndSchemaPair := range kafkalib.GetUniqueDatabaseAndSchemaPairs(s.config.TopicConfigs()) {
-		query, args := s.dialect().BuildSweepQuery(dbAndSchemaPair.Database, dbAndSchemaPair.Schema)
-		rows, err := s.QueryContext(ctx, query, args...)
-		if err != nil {
-			return err
-		}
-
-		for rows.Next() {
-			var tableSchema, tableName string
-			if err = rows.Scan(&tableSchema, &tableName); err != nil {
-				return err
-			}
-
-			if ddl.ShouldDeleteFromName(tableName) {
-				tableID := s.IdentifierFor(dbAndSchemaPair, tableName)
-
-				if shared.IsReusableStagingTable(tableName, s.config.GetStagingTableSuffix()) {
-					if err = s.TruncateStagingTable(ctx, tableID); err != nil {
-						return fmt.Errorf("failed to truncate staging table %q: %w", tableName, err)
-					}
-					slog.Info("Truncated reusable staging table", slog.String("tableName", tableName))
-				} else {
-					if err = ddl.DropTemporaryTable(ctx, s, tableID, true); err != nil {
-						return fmt.Errorf("failed to drop temporary table %q: %w", tableName, err)
-					}
-					slog.Info("Dropped temporary table", slog.String("tableName", tableName))
-				}
-			}
-		}
-
-		if err = rows.Err(); err != nil {
-			return fmt.Errorf("failed to iterate over rows: %w", err)
-		}
-	}
-
-	return nil
+	return shared.Sweep(ctx, s, s.config.TopicConfigs(), s.dialect().BuildSweepQuery)
 }
 
 func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
