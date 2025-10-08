@@ -110,8 +110,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		tableStageName = fmt.Sprintf("%s.%s.%s/", castedTableID.Database(), castedTableID.Schema(), s.config.Snowflake.ExternalStage.Name)
 	} else {
 		// Upload the CSV file to Snowflake internal stage
-		putQuery := fmt.Sprintf("PUT 'file://%s' @%s", file.FilePath, tableStageName)
-		if _, err = s.ExecContext(ctx, putQuery); err != nil {
+		if _, err = s.ExecContext(ctx, fmt.Sprintf("PUT 'file://%s' @%s", file.FilePath, tableStageName)); err != nil {
 			return fmt.Errorf("failed to run PUT for temporary table: %w", err)
 		}
 	}
