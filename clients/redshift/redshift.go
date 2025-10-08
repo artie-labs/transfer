@@ -3,6 +3,7 @@ package redshift
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -13,11 +14,13 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination"
+	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/environ"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 type Store struct {
@@ -65,16 +68,128 @@ func (s *Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) erro
 }
 
 func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, _ bool) error {
-	return shared.Append(ctx, s, tableData, types.AdditionalSettings{})
+	if tableData.ShouldSkipUpdate() {
+		return nil
+	}
+
+	if s.config.IsStagingTableReuseEnabled() {
+		tableID := s.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name())
+		tableConfig, err := s.GetTableConfig(ctx, tableID, tableData.TopicConfig().DropDeletedColumns)
+		if err != nil {
+			return fmt.Errorf("failed to get table config: %w", err)
+		}
+
+		// Handle schema evolution (no column dropping for append)
+		_, targetKeysMissing := columns.DiffAndFilter(
+			tableData.ReadOnlyInMemoryCols().GetColumns(),
+			tableConfig.GetColumns(),
+			tableData.BuildColumnsToKeep(),
+		)
+
+		if tableConfig.CreateTable() {
+			if err := shared.CreateTable(ctx, s, tableData.Mode(), tableConfig, types.AdditionalSettings{}.ColumnSettings, tableID, false, targetKeysMissing); err != nil {
+				return fmt.Errorf("failed to create table: %w", err)
+			}
+		} else {
+			if err := shared.AlterTableAddColumns(ctx, s, tableConfig, types.AdditionalSettings{}.ColumnSettings, tableID, targetKeysMissing); err != nil {
+				return fmt.Errorf("failed to add columns for table %q: %w", tableID.Table(), err)
+			}
+		}
+
+		// Merge columns from destination
+		if err := tableData.MergeColumnsFromDestination(tableConfig.GetColumns()...); err != nil {
+			return fmt.Errorf("failed to merge columns from destination: %w for table %q", err, tableData.Name())
+		}
+
+		// Use reusable staging table for Redshift
+		if err := s.PrepareReusableStagingTable(ctx, tableData, tableConfig, tableID, tableID); err != nil {
+			return fmt.Errorf("failed to prepare reusable staging table: %w", err)
+		}
+	} else {
+		return shared.Append(ctx, s, tableData, types.AdditionalSettings{})
+	}
+
+	return nil
 }
 
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
-	if err := shared.Merge(ctx, s, tableData, types.MergeOpts{
-		// We are adding SELECT DISTINCT here for the temporary table as an extra guardrail.
-		// Redshift does not enforce any row uniqueness and there could be potential LOAD errors which will cause duplicate rows to arise.
+	if tableData.ShouldSkipUpdate() {
+		return true, nil
+	}
+
+	// Check if staging table reuse is enabled
+	if s.config.IsStagingTableReuseEnabled() {
+		return s.mergeWithStagingTableReuse(ctx, tableData)
+	} else {
+		// Use original behavior
+		if err := shared.Merge(ctx, s, tableData, types.MergeOpts{
+			// We are adding SELECT DISTINCT here for the temporary table as an extra guardrail.
+			// Redshift does not enforce any row uniqueness and there could be potential LOAD errors which will cause duplicate rows to arise.
+			SubQueryDedupe: true,
+		}); err != nil {
+			return false, fmt.Errorf("failed to merge: %w", err)
+		}
+		return true, nil
+	}
+}
+
+// mergeWithStagingTableReuse - implements merge with staging table reuse
+func (s *Store) mergeWithStagingTableReuse(ctx context.Context, tableData *optimization.TableData) (bool, error) {
+	tableID := s.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name())
+	tableConfig, err := s.GetTableConfig(ctx, tableID, tableData.TopicConfig().DropDeletedColumns)
+	if err != nil {
+		return false, fmt.Errorf("failed to get table config: %w", err)
+	}
+
+	// Handle schema evolution (with column dropping for merge)
+	srcKeysMissing, targetKeysMissing := columns.DiffAndFilter(
+		tableData.ReadOnlyInMemoryCols().GetColumns(),
+		tableConfig.GetColumns(),
+		tableData.BuildColumnsToKeep(),
+	)
+
+	if tableConfig.CreateTable() {
+		if err := shared.CreateTable(ctx, s, tableData.Mode(), tableConfig, types.AdditionalSettings{}.ColumnSettings, tableID, false, targetKeysMissing); err != nil {
+			return false, fmt.Errorf("failed to create table: %w", err)
+		}
+	} else {
+		if err := shared.AlterTableAddColumns(ctx, s, tableConfig, types.AdditionalSettings{}.ColumnSettings, tableID, targetKeysMissing); err != nil {
+			return false, fmt.Errorf("failed to add columns for table %q: %w", tableID.Table(), err)
+		}
+	}
+
+	// Handle column dropping (only for merge operations)
+	if err := shared.AlterTableDropColumns(ctx, s, tableConfig, tableID, srcKeysMissing, tableData.GetLatestTimestamp(), tableData.ContainOtherOperations()); err != nil {
+		return false, fmt.Errorf("failed to drop columns for table %q: %w", tableID.Table(), err)
+	}
+
+	// Merge columns from destination
+	if err := tableData.MergeColumnsFromDestination(tableConfig.GetColumns()...); err != nil {
+		return false, fmt.Errorf("failed to merge columns from destination: %w for table %q", err, tableData.Name())
+	}
+
+	// Use reusable staging table for Redshift
+	temporaryTableID := shared.TempTableIDWithSuffix(tableID, tableData.TempTableSuffix())
+
+	// Handle staging table reuse with truncation instead of drop
+	if err = s.PrepareReusableStagingTable(ctx, tableData, tableConfig, temporaryTableID, tableID); err != nil {
+		return false, fmt.Errorf("failed to prepare reusable staging table: %w", err)
+	}
+
+	// Use shared merge execution logic
+	// SubQueryDedupe for Redshift
+	subQuery := s.Dialect().BuildDedupeTableQuery(temporaryTableID, tableData.PrimaryKeys())
+
+	opts := types.MergeOpts{
 		SubQueryDedupe: true,
-	}); err != nil {
-		return false, fmt.Errorf("failed to merge: %w", err)
+	}
+	if err := shared.ExecuteMergeOperations(ctx, s, tableData, tableID, subQuery, opts); err != nil {
+		return false, fmt.Errorf("failed to execute merge operations: %w", err)
+	}
+
+	// Truncate staging table instead of dropping it
+	if err = s.TruncateStagingTable(ctx, temporaryTableID); err != nil {
+		slog.Warn("Failed to truncate staging table", slog.Any("err", err), slog.String("tableName", temporaryTableID.FullyQualifiedName()))
 	}
 
 	return true, nil
@@ -113,7 +228,52 @@ func (s *Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier,
 }
 
 func (s *Store) SweepTemporaryTables(ctx context.Context) error {
-	return shared.Sweep(ctx, s, s.config.TopicConfigs(), s.dialect().BuildSweepQuery)
+	if s.config.IsStagingTableReuseEnabled() {
+		return s.sweepWithStagingTableReuse(ctx)
+	} else {
+		return shared.Sweep(ctx, s, s.config.TopicConfigs(), s.dialect().BuildSweepQuery)
+	}
+}
+
+func (s *Store) sweepWithStagingTableReuse(ctx context.Context) error {
+	slog.Info("Looking to see if there are any reusable staging tables to clean up...")
+
+	for _, dbAndSchemaPair := range kafkalib.GetUniqueDatabaseAndSchemaPairs(s.config.TopicConfigs()) {
+		query, args := s.dialect().BuildSweepQuery(dbAndSchemaPair.Database, dbAndSchemaPair.Schema)
+		rows, err := s.QueryContext(ctx, query, args...)
+		if err != nil {
+			return err
+		}
+
+		for rows.Next() {
+			var tableSchema, tableName string
+			if err = rows.Scan(&tableSchema, &tableName); err != nil {
+				return err
+			}
+
+			if ddl.ShouldDeleteFromName(tableName) {
+				tableID := s.IdentifierFor(dbAndSchemaPair, tableName)
+
+				if shared.IsReusableStagingTable(tableName, s.config.GetStagingTableSuffix()) {
+					if err = s.TruncateStagingTable(ctx, tableID); err != nil {
+						return fmt.Errorf("failed to truncate staging table %q: %w", tableName, err)
+					}
+					slog.Info("Truncated reusable staging table", slog.String("tableName", tableName))
+				} else {
+					if err = ddl.DropTemporaryTable(ctx, s, tableID, true); err != nil {
+						return fmt.Errorf("failed to drop temporary table %q: %w", tableName, err)
+					}
+					slog.Info("Dropped temporary table", slog.String("tableName", tableName))
+				}
+			}
+		}
+
+		if err = rows.Err(); err != nil {
+			return fmt.Errorf("failed to iterate over rows: %w", err)
+		}
+	}
+
+	return nil
 }
 
 func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
