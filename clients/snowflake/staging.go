@@ -28,7 +28,7 @@ func replaceExceededValues(colVal string, kindDetails typing.KindDetails) string
 			return fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker)
 		}
 	case typing.String.Kind:
-		maxLength := typing.DefaultValueFromPtr[int32](kindDetails.OptionalStringPrecision, maxLobLength)
+		maxLength := typing.DefaultValueFromPtr(kindDetails.OptionalStringPrecision, maxLobLength)
 		if int32(len(colVal)) > maxLength {
 			return constants.ExceededValueMarker
 		}
@@ -53,7 +53,7 @@ func castColValStaging(colVal any, colKind typing.KindDetails, config config.Sha
 			}
 		}
 
-		return shared.ValueConvertResponse{}, err
+		return shared.ValueConvertResponse{}, fmt.Errorf("failed to convert value to string: %w", err)
 	}
 
 	return shared.ValueConvertResponse{Value: replaceExceededValues(value, colKind)}, nil
@@ -66,7 +66,7 @@ func (s Store) useExternalStage() bool {
 func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
 		if err := shared.CreateTempTable(ctx, s, tableData, dwh, additionalSettings.ColumnSettings, tempTableID); err != nil {
-			return err
+			return fmt.Errorf("failed to create temp table: %w", err)
 		}
 	}
 
