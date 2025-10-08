@@ -37,21 +37,21 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 		metricsClient.Timing("process.message", time.Since(st), tags)
 	}()
 
-	topicConfig, ok := p.TopicToConfigFormatMap.GetTopicFmt(p.Msg.Topic())
+	topicConfig, ok := p.TopicToConfigFormatMap.GetTopicFmt(p.Msg.Topic)
 	if !ok {
 		tags["what"] = "failed_topic_lookup"
-		return cdc.TableID{}, fmt.Errorf("failed to get topic name: %q", p.Msg.Topic())
+		return cdc.TableID{}, fmt.Errorf("failed to get topic name: %q", p.Msg.Topic)
 	}
 
 	tags["database"] = topicConfig.tc.Database
 	tags["schema"] = topicConfig.tc.Schema
-	pkMap, err := topicConfig.GetPrimaryKey(p.Msg.Key(), topicConfig.tc)
+	pkMap, err := topicConfig.GetPrimaryKey(p.Msg.Key, topicConfig.tc)
 	if err != nil {
 		tags["what"] = "marshall_pk_err"
-		return cdc.TableID{}, fmt.Errorf("cannot unmarshal key %q: %w", string(p.Msg.Key()), err)
+		return cdc.TableID{}, fmt.Errorf("cannot unmarshal key %q: %w", string(p.Msg.Key), err)
 	}
 
-	_event, err := topicConfig.GetEventFromBytes(p.Msg.Value())
+	_event, err := topicConfig.GetEventFromBytes(p.Msg.Value)
 	if err != nil {
 		tags["what"] = "marshal_value_err"
 		return cdc.TableID{}, fmt.Errorf("cannot unmarshal event: %w", err)

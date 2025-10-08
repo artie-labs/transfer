@@ -18,8 +18,8 @@ func TestNewMessage(t *testing.T) {
 	}
 
 	msg := NewMessage(kafkaMsg)
-	assert.Equal(t, "test_topic", msg.Topic())
-	assert.Equal(t, 5, msg.Partition())
-	assert.Equal(t, keyString, string(msg.Key()))
-	assert.Equal(t, "kafka_value", string(msg.Value()))
+	assert.Equal(t, "test_topic", msg.Topic)
+	assert.Equal(t, 5, msg.Partition)
+	assert.Equal(t, keyString, string(msg.Key))
+	assert.Equal(t, "kafka_value", string(msg.Value))
 }
