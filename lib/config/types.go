@@ -42,6 +42,13 @@ type SharedDestinationSettings struct {
 	SkipBadTimestamps bool `yaml:"skipBadTimestamps"`
 }
 
+type StagingTableReuseConfig struct {
+	// Enable staging table reuse with truncation instead of drop
+	Enabled bool `yaml:"enabled"`
+	// Pattern for reusable staging table names (default: "_staging")
+	TableNameSuffix string `yaml:"tableNameSuffix,omitempty"`
+}
+
 type Reporting struct {
 	Sentry            *Sentry `yaml:"sentry"`
 	EmitExecutionTime bool    `yaml:"emitExecutionTime"`
@@ -71,6 +78,7 @@ type Config struct {
 	Iceberg    *Iceberg    `yaml:"iceberg,omitempty"`
 
 	SharedDestinationSettings SharedDestinationSettings `yaml:"sharedDestinationSettings"`
+	StagingTableReuse         *StagingTableReuseConfig  `yaml:"stagingTableReuse,omitempty"`
 	Reporting                 Reporting                 `yaml:"reporting"`
 	Telemetry                 struct {
 		Metrics struct {
