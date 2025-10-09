@@ -227,7 +227,7 @@ func (IntegerConverter) Convert(value any) (string, error) {
 	case *decimal.Decimal:
 		return parsedVal.String(), nil
 	default:
-		return "", fmt.Errorf("unexpected value: '%v', type: %T", value, value)
+		return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.UnexpectedValue)
 	}
 }
 
