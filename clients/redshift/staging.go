@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"strings"
 
 	"github.com/artie-labs/transfer/clients/redshift/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -251,11 +249,17 @@ func (s *Store) ValidateStagingTableSchema(ctx context.Context, tableID sql.Tabl
 }
 
 func (s *Store) TruncateStagingTable(ctx context.Context, tableID sql.TableIdentifier) error {
-	if strings.Contains(strings.ToLower(tableID.Table()), constants.ArtiePrefix) {
-		sqlCommand := s.Dialect().BuildTruncateTableQuery(tableID)
-		if _, err := s.ExecContext(ctx, sqlCommand); err != nil {
-			return fmt.Errorf("failed to truncate staging table: %w", err)
-		}
+	config := s.GetConfig()
+	stagingTableSuffix := config.GetStagingTableSuffix()
+
+	if !shared.IsReusableStagingTable(tableID.Table(), stagingTableSuffix) {
+		return fmt.Errorf("table %q is not a valid staging table - refusing to truncate", tableID.FullyQualifiedName())
 	}
+
+	sqlCommand := s.Dialect().BuildTruncateTableQuery(tableID)
+	if _, err := s.ExecContext(ctx, sqlCommand); err != nil {
+		return fmt.Errorf("failed to truncate staging table: %w", err)
+	}
+
 	return nil
 }
