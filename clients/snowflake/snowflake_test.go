@@ -40,7 +40,7 @@ func (s *SnowflakeTestSuite) TestDropTable() {
 	tableID := s.identifierFor(tableData)
 	{
 		// Deleting without disabling drop protection
-		assert.ErrorContains(s.T(), s.stageStore.DropTable(s.T().Context(), tableID), "not allowed to be dropped")
+		assert.ErrorContains(s.T(), s.stageStore.DropTable(s.T().Context(), tableID), "is not a temporary table")
 	}
 	{
 		// Deleting with disabling drop protection
