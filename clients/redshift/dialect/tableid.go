@@ -12,6 +12,7 @@ type TableIdentifier struct {
 	schema                string
 	table                 string
 	disableDropProtection bool
+	temporaryTable        bool
 }
 
 func NewTableIdentifier(schema, table string) TableIdentifier {
@@ -47,4 +48,13 @@ func (ti TableIdentifier) WithDisableDropProtection(disableDropProtection bool) 
 
 func (ti TableIdentifier) AllowToDrop() bool {
 	return ti.disableDropProtection
+}
+
+func (ti TableIdentifier) WithTemporaryTable(temp bool) sql.TableIdentifier {
+	ti.temporaryTable = temp
+	return ti
+}
+
+func (ti TableIdentifier) TemporaryTable() bool {
+	return ti.temporaryTable
 }
