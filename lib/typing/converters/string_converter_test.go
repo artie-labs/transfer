@@ -172,7 +172,7 @@ func TestFloatConverter_Convert(t *testing.T) {
 func TestIntegerConverter_Convert(t *testing.T) {
 	{
 		// Various numbers
-		for _, val := range []any{42, int8(42), int16(42), int32(42), int64(42), float32(42), float64(42)} {
+		for _, val := range []any{42, int8(42), int16(42), int32(42), int64(42), float32(42), float64(42), "42"} {
 			parsedVal, err := IntegerConverter{}.Convert(val)
 			assert.NoError(t, err)
 			assert.Equal(t, "42", parsedVal)

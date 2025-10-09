@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -226,6 +227,13 @@ func (IntegerConverter) Convert(value any) (string, error) {
 		return fmt.Sprint(parsedVal), nil
 	case *decimal.Decimal:
 		return parsedVal.String(), nil
+	case string:
+		// If it's a string, does it parse properly to an integer? If so, that's fine.
+		if _, err := strconv.ParseInt(parsedVal, 10, 64); err != nil {
+			return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.UnexpectedValue)
+		}
+
+		return parsedVal, nil
 	default:
 		return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.UnexpectedValue)
 	}
