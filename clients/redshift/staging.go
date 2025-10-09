@@ -238,6 +238,10 @@ func (s *Store) ValidateStagingTableSchema(ctx context.Context, tableID sql.Tabl
 		currentColumns[colName] = dataType
 	}
 
+	if err := rows.Err(); err != nil {
+		return false, fmt.Errorf("error while getting columns when validating staging table schema: %w", err)
+	}
+
 	for _, expectedCol := range expectedColumns {
 		if _, exists := currentColumns[expectedCol.Name()]; !exists {
 			return false, nil
