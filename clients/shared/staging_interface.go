@@ -16,7 +16,7 @@ func GenerateReusableStagingTableName(baseTableName string, suffix string) strin
 }
 
 type ReusableStagingTableManager interface {
-	PrepareReusableStagingTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, stagingTableID sql.TableIdentifier, parentTableID sql.TableIdentifier) error
+	PrepareReusableStagingTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, stagingTableID sql.TableIdentifier, parentTableID sql.TableIdentifier, opts types.AdditionalSettings) error
 
 	CheckStagingTableExists(ctx context.Context, tableID sql.TableIdentifier) (bool, error)
 

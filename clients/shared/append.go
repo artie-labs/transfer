@@ -57,6 +57,7 @@ func Append(ctx context.Context, dest destination.Destination, tableData *optimi
 					),
 				),
 				tableID,
+				opts,
 			)
 		} else {
 			return fmt.Errorf("destination %v does not support staging table reuse", dest)
