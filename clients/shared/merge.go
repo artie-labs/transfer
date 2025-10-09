@@ -71,10 +71,13 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 	var subQuery string
 	if config.IsStagingTableReuseEnabled() {
 		if stagingManager, ok := dest.(ReusableStagingTableManager); ok {
-			stagingTableSuffix := config.GetStagingTableSuffix()
-			stagingTableName := GenerateReusableStagingTableName(tableID.Table(), stagingTableSuffix)
-			stagingTableID := dest.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), stagingTableName)
-
+			stagingTableID := dest.IdentifierFor(
+				tableData.TopicConfig().BuildDatabaseAndSchemaPair(),
+				GenerateReusableStagingTableName(
+					tableID.Table(),
+					config.GetStagingTableSuffix(),
+				),
+			)
 			if err = stagingManager.PrepareReusableStagingTable(ctx, tableData, tableConfig, stagingTableID, tableID); err != nil {
 				return fmt.Errorf("failed to prepare reusable staging table: %w", err)
 			}

@@ -8,5 +8,5 @@ func (c *Config) GetStagingTableSuffix() string {
 	if c.StagingTableReuse != nil && c.StagingTableReuse.TableNameSuffix != "" {
 		return c.StagingTableReuse.TableNameSuffix
 	}
-	return "_staging" // default suffix
+	return "staging" // default suffix
 }

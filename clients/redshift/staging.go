@@ -251,7 +251,7 @@ func (s *Store) TruncateStagingTable(ctx context.Context, tableID sql.TableIdent
 	config := s.GetConfig()
 	stagingTableSuffix := config.GetStagingTableSuffix()
 
-	if !shared.IsReusableStagingTable(tableID.Table(), stagingTableSuffix) {
+	if tableID.Table() != shared.GenerateReusableStagingTableName(tableID.Table(), stagingTableSuffix) {
 		return fmt.Errorf("table %q is not a valid staging table - refusing to truncate", tableID.FullyQualifiedName())
 	}
 
