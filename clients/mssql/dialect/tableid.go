@@ -39,15 +39,6 @@ func (ti TableIdentifier) FullyQualifiedName() string {
 	return fmt.Sprintf("%s.%s", _dialect.QuoteIdentifier(ti.schema), ti.EscapedTable())
 }
 
-func (ti TableIdentifier) WithDisableDropProtection(disableDropProtection bool) sql.TableIdentifier {
-	ti.disableDropProtection = disableDropProtection
-	return ti
-}
-
-func (ti TableIdentifier) AllowToDrop() bool {
-	return ti.disableDropProtection
-}
-
 func (ti TableIdentifier) WithTemporaryTable(temp bool) sql.TableIdentifier {
 	ti.temporaryTable = temp
 	return ti
