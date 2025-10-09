@@ -70,12 +70,6 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 	config := dest.GetConfig()
 	if config.IsStagingTableReuseEnabled() {
 		if stagingManager, ok := dest.(ReusableStagingTableManager); ok {
-			defer func() {
-				if truncateErr := stagingManager.TruncateStagingTable(ctx, temporaryTableID); truncateErr != nil {
-					slog.Warn("Failed to truncate staging table", slog.Any("err", truncateErr), slog.String("tableName", temporaryTableID.FullyQualifiedName()))
-				}
-			}()
-
 			if err = stagingManager.PrepareReusableStagingTable(ctx, tableData, tableConfig, temporaryTableID, tableID); err != nil {
 				return fmt.Errorf("failed to prepare reusable staging table: %w", err)
 			}

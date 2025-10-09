@@ -9,7 +9,6 @@ import (
 
 	"github.com/artie-labs/transfer/clients/redshift/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -115,13 +114,14 @@ func (s *Store) PrepareReusableStagingTable(ctx context.Context, tableData *opti
 			return fmt.Errorf("failed to validate staging table schema: %w", err)
 		}
 
+		// Don't handle leftover rows in staging table, always truncate or drop before merging
 		if !compatible {
-			// Schema has changed - need to merge existing data, truncate, and alter
-			if err := s.HandleStagingTableSchemaChange(ctx, tableData, tableConfig, tempTableID, parentTableID); err != nil {
-				return fmt.Errorf("failed to handle staging table schema change: %w", err)
+			err := s.DropTable(ctx, tempTableID)
+			if err != nil {
+				return fmt.Errorf("failed to drop staging table: %w", err)
 			}
+			return s.PrepareReusableStagingTable(ctx, tableData, tableConfig, tempTableID, parentTableID)
 		} else {
-			// Schema is compatible - just truncate and reuse
 			if err := s.TruncateStagingTable(ctx, tempTableID); err != nil {
 				return fmt.Errorf("failed to truncate staging table: %w", err)
 			}
@@ -253,66 +253,5 @@ func (s *Store) TruncateStagingTable(ctx context.Context, tableID sql.TableIdent
 			return fmt.Errorf("failed to truncate staging table: %w", err)
 		}
 	}
-	return nil
-}
-
-func (s *Store) HandleStagingTableSchemaChange(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, tempTableID sql.TableIdentifier, parentTableID sql.TableIdentifier) error {
-	hasData, err := s.StagingTableHasData(ctx, tempTableID)
-	if err != nil {
-		return fmt.Errorf("failed to check if staging table has data: %w", err)
-	}
-
-	if hasData {
-		if err := s.MergeStagingDataToTarget(ctx, tempTableID, parentTableID, tableData); err != nil {
-			return fmt.Errorf("failed to merge staging data to target: %w", err)
-		}
-	}
-
-	if err := s.TruncateStagingTable(ctx, tempTableID); err != nil {
-		return fmt.Errorf("failed to truncate staging table: %w", err)
-	}
-
-	if err := s.AlterStagingTableSchema(ctx, tempTableID, tableData.ReadOnlyInMemoryCols().ValidColumns()); err != nil {
-		return fmt.Errorf("failed to alter staging table schema: %w", err)
-	}
-
-	return nil
-}
-
-func (s *Store) StagingTableHasData(ctx context.Context, tableID sql.TableIdentifier) (bool, error) {
-	query := `SELECT EXISTS (SELECT 1 FROM ` + tableID.FullyQualifiedName() + ` LIMIT 1)`
-	var hasData bool
-	err := s.QueryRowContext(ctx, query).Scan(&hasData)
-	return hasData, err
-}
-
-func (s *Store) MergeStagingDataToTarget(ctx context.Context, stagingTableID sql.TableIdentifier, targetTableID sql.TableIdentifier, tableData *optimization.TableData) error {
-	// Build the subquery (use dedupe for Redshift)
-	subQuery := s.Dialect().BuildDedupeTableQuery(stagingTableID, tableData.PrimaryKeys())
-	opts := types.MergeOpts{
-		SubQueryDedupe: true,
-	}
-	return shared.ExecuteMergeOperations(ctx, s, tableData, targetTableID, subQuery, opts)
-}
-
-func (s *Store) AlterStagingTableSchema(ctx context.Context, tableID sql.TableIdentifier, allColumns []columns.Column) error {
-	dropQuery := s.Dialect().BuildDropTableQuery(tableID)
-	if _, err := s.ExecContext(ctx, dropQuery); err != nil {
-		return fmt.Errorf("failed to drop staging table: %w", err)
-	}
-
-	var targetKeys []columns.Column
-	for _, col := range allColumns {
-		if !col.ShouldSkip() {
-			targetKeys = append(targetKeys, col)
-		}
-	}
-
-	tableConfig := types.NewDestinationTableConfig(targetKeys, false)
-
-	if err := shared.CreateTable(ctx, s, config.Replication, tableConfig, types.AdditionalSettings{}.ColumnSettings, tableID, false, targetKeys); err != nil {
-		return fmt.Errorf("failed to recreate staging table with new schema: %w", err)
-	}
-
 	return nil
 }

@@ -17,12 +17,4 @@ type ReusableStagingTableManager interface {
 	ValidateStagingTableSchema(ctx context.Context, tableID sql.TableIdentifier, expectedColumns []columns.Column) (bool, error)
 
 	TruncateStagingTable(ctx context.Context, tableID sql.TableIdentifier) error
-
-	HandleStagingTableSchemaChange(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, tempTableID sql.TableIdentifier, parentTableID sql.TableIdentifier) error
-
-	StagingTableHasData(ctx context.Context, tableID sql.TableIdentifier) (bool, error)
-
-	MergeStagingDataToTarget(ctx context.Context, stagingTableID sql.TableIdentifier, targetTableID sql.TableIdentifier, tableData *optimization.TableData) error
-
-	AlterStagingTableSchema(ctx context.Context, tableID sql.TableIdentifier, newColumns []columns.Column) error
 }
