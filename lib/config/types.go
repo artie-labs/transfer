@@ -40,6 +40,7 @@ type SharedDestinationSettings struct {
 	EnableMergeAssertion bool `yaml:"enableMergeAssertion,omitempty"`
 	// [SkipBadTimestamps] - If enabled, we'll skip over bad timestamp (or alike) values instead of throwing an error.
 	SkipBadTimestamps bool `yaml:"skipBadTimestamps"`
+	SkipBadIntegers   bool `yaml:"skipBadIntegers"`
 }
 
 type Reporting struct {
