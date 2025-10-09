@@ -13,6 +13,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestEnsureRedshiftStagingCompliance(t *testing.T) {
+	var store *Store
+	_, ok := interface{}(store).(shared.ReusableStagingTableManager)
+	assert.True(t, ok)
+}
+
 func TestTempTableIDWithSuffix(t *testing.T) {
 	trimTTL := func(tableName string) string {
 		lastUnderscore := strings.LastIndex(tableName, "_")

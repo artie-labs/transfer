@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/artie-labs/transfer/clients/redshift/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -97,4 +98,90 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID
 	}
 
 	return file.FilePath, additionalOutput.ColumnToNewLengthMap, nil
+}
+
+func (s *Store) PrepareReusableStagingTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, stagingTableID sql.TableIdentifier, parentTableID sql.TableIdentifier, opts types.AdditionalSettings) error {
+	exists, err := s.CheckStagingTableExists(ctx, stagingTableID)
+	if err != nil {
+		return fmt.Errorf("failed to check if staging table exists: %w", err)
+	}
+
+	if exists {
+		compatible, err := s.ValidateStagingTableSchema(ctx, stagingTableID, tableData.ReadOnlyInMemoryCols().ValidColumns())
+		if err != nil {
+			return fmt.Errorf("failed to validate staging table schema: %w", err)
+		}
+
+		// Don't handle leftover rows in staging table, always truncate or drop before merging
+		if !compatible {
+			if err := s.DropTable(ctx, stagingTableID); err != nil {
+				return fmt.Errorf("failed to drop staging table: %w", err)
+			}
+			return s.PrepareReusableStagingTable(ctx, tableData, tableConfig, stagingTableID, parentTableID, opts)
+		} else {
+			err := s.TruncateTable(ctx, stagingTableID)
+			if err != nil {
+				return fmt.Errorf("failed to truncate staging table: %w", err)
+			}
+		}
+	} else {
+		if err := shared.CreateTempTable(ctx, s, tableData, tableConfig, opts.ColumnSettings, stagingTableID); err != nil {
+			return fmt.Errorf("failed to create staging table: %w", err)
+		}
+	}
+
+	return s.PrepareTemporaryTable(ctx, tableData, tableConfig, stagingTableID, parentTableID, opts, false)
+}
+
+func (s *Store) CheckStagingTableExists(ctx context.Context, tableID sql.TableIdentifier) (bool, error) {
+	redshiftTableID, ok := tableID.(dialect.TableIdentifier)
+	if !ok {
+		return false, fmt.Errorf("failed to cast table identifier to Redshift TableIdentifier")
+	}
+
+	query := `SELECT EXISTS (
+		SELECT 1 FROM information_schema.tables
+		WHERE table_schema = $1 AND table_name = $2
+	)`
+
+	var exists bool
+	err := s.QueryRowContext(ctx, query, redshiftTableID.Schema(), redshiftTableID.Table()).Scan(&exists)
+	return exists, err
+}
+
+func (s *Store) ValidateStagingTableSchema(ctx context.Context, tableID sql.TableIdentifier, expectedColumns []columns.Column) (bool, error) {
+	redshiftTableID, ok := tableID.(dialect.TableIdentifier)
+	if !ok {
+		return false, fmt.Errorf("failed to cast table identifier to Redshift TableIdentifier")
+	}
+
+	query := `SELECT column_name, data_type FROM information_schema.columns
+		WHERE table_schema = $1 AND table_name = $2 ORDER BY ordinal_position`
+
+	rows, err := s.QueryContext(ctx, query, redshiftTableID.Schema(), redshiftTableID.Table())
+	if err != nil {
+		return false, fmt.Errorf("failed to query table schema: %w", err)
+	}
+	defer rows.Close()
+
+	currentColumns := make(map[string]string)
+	for rows.Next() {
+		var colName, dataType string
+		if err := rows.Scan(&colName, &dataType); err != nil {
+			return false, fmt.Errorf("failed to scan column info: %w", err)
+		}
+		currentColumns[colName] = dataType
+	}
+
+	if err := rows.Err(); err != nil {
+		return false, fmt.Errorf("error while getting columns when validating staging table schema: %w", err)
+	}
+
+	for _, expectedCol := range expectedColumns {
+		if _, exists := currentColumns[expectedCol.Name()]; !exists {
+			return false, nil
+		}
+	}
+
+	return true, nil
 }

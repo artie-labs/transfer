@@ -66,14 +66,44 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 	}
 
 	temporaryTableID := TempTableIDWithSuffix(dest.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name()), tableData.TempTableSuffix())
-	defer func() {
-		if dropErr := ddl.DropTemporaryTable(ctx, dest, temporaryTableID, false); dropErr != nil {
-			slog.Warn("Failed to drop temporary table", slog.Any("err", dropErr), slog.String("tableName", temporaryTableID.FullyQualifiedName()))
-		}
-	}()
 
-	if err = dest.PrepareTemporaryTable(ctx, tableData, tableConfig, temporaryTableID, tableID, types.AdditionalSettings{ColumnSettings: opts.ColumnSettings}, true); err != nil {
-		return fmt.Errorf("failed to prepare temporary table: %w", err)
+	config := dest.GetConfig()
+	var subQuery string
+	if config.IsStagingTableReuseEnabled() {
+		if stagingManager, ok := dest.(ReusableStagingTableManager); ok {
+			stagingTableID := dest.IdentifierFor(
+				tableData.TopicConfig().BuildDatabaseAndSchemaPair(),
+				GenerateReusableStagingTableName(
+					tableID.Table(),
+					config.GetStagingTableSuffix(),
+				),
+			).WithTemporaryTable(true)
+			if err = stagingManager.PrepareReusableStagingTable(ctx, tableData, tableConfig, stagingTableID, tableID, types.AdditionalSettings{ColumnSettings: opts.ColumnSettings}); err != nil {
+				return fmt.Errorf("failed to prepare reusable staging table: %w", err)
+			}
+
+			subQuery = stagingTableID.FullyQualifiedName()
+			if opts.SubQueryDedupe {
+				subQuery = dest.Dialect().BuildDedupeTableQuery(stagingTableID, tableData.PrimaryKeys())
+			}
+		} else {
+			return fmt.Errorf("destination %T does not support staging table reuse", dest)
+		}
+	} else {
+		defer func() {
+			if dropErr := ddl.DropTemporaryTable(ctx, dest, temporaryTableID, false); dropErr != nil {
+				slog.Warn("Failed to drop temporary table", slog.Any("err", dropErr), slog.String("tableName", temporaryTableID.FullyQualifiedName()))
+			}
+		}()
+
+		if err = dest.PrepareTemporaryTable(ctx, tableData, tableConfig, temporaryTableID, tableID, types.AdditionalSettings{ColumnSettings: opts.ColumnSettings}, true); err != nil {
+			return fmt.Errorf("failed to prepare temporary table: %w", err)
+		}
+
+		subQuery = temporaryTableID.FullyQualifiedName()
+		if opts.SubQueryDedupe {
+			subQuery = dest.Dialect().BuildDedupeTableQuery(temporaryTableID, tableData.PrimaryKeys())
+		}
 	}
 
 	// Now iterate over all the in-memory cols and see which ones require a backfill.
@@ -110,11 +140,6 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 		if backfillErr != nil {
 			return fmt.Errorf("failed to backfill col: %s, default value: %v, err: %w", col.Name(), col.DefaultValue(), backfillErr)
 		}
-	}
-
-	subQuery := temporaryTableID.FullyQualifiedName()
-	if opts.SubQueryDedupe {
-		subQuery = dest.Dialect().BuildDedupeTableQuery(temporaryTableID, tableData.PrimaryKeys())
 	}
 
 	if subQuery == "" {
