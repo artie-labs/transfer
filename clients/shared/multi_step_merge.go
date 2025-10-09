@@ -32,7 +32,7 @@ func MultiStepMerge(ctx context.Context, dest destination.Destination, tableData
 	}
 
 	msmTableID := dest.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), fmt.Sprintf("%s_%s_msm", constants.ArtiePrefix, tableData.Name()))
-	msmTableID.WithTemporaryTable(true)
+	msmTableID = msmTableID.WithTemporaryTable(true)
 	targetTableID := dest.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name())
 	targetTableConfig, err := dest.GetTableConfig(ctx, targetTableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
