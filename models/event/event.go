@@ -212,6 +212,13 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 		if err != nil {
 			return Event{}, fmt.Errorf("failed to get partition frequency suffix: %w for table %q schema %q", err, tc.TableName, tc.Schema)
 		}
+		if tc.SoftPartitioning.MaxPartitions > 0 {
+			partitionDistance := tc.SoftPartitioning.PartitionFrequency.PartitionDistance(actuallyDateTime, event.GetExecutionTime())
+			// for e.g. if execution time is 2025-10, actuallyDateTime is 2023-10 and MaxPartitions is 12, then we should write to the compacted table.
+			if partitionDistance > tc.SoftPartitioning.MaxPartitions {
+				suffix = kafkalib.CompactedTableSuffix
+			}
+		}
 		tblName = tblName + suffix
 	}
 
