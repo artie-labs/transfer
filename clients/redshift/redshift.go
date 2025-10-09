@@ -68,19 +68,10 @@ func (s *Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) erro
 }
 
 func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, _ bool) error {
-	if tableData.ShouldSkipUpdate() {
-		return nil
-	}
-
-	// Use shared Append function which now handles staging table reuse
 	return shared.Append(ctx, s, tableData, types.AdditionalSettings{})
 }
 
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
-	if tableData.ShouldSkipUpdate() {
-		return true, nil
-	}
-
 	if err := shared.Merge(ctx, s, tableData, types.MergeOpts{
 		// We are adding SELECT DISTINCT here for the temporary table as an extra guardrail.
 		// Redshift does not enforce any row uniqueness and there could be potential LOAD errors which will cause duplicate rows to arise.
