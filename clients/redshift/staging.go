@@ -100,7 +100,7 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID
 	return file.FilePath, additionalOutput.ColumnToNewLengthMap, nil
 }
 
-func (s *Store) PrepareReusableStagingTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, stagingTableID sql.TableIdentifier, parentTableID sql.TableIdentifier) error {
+func (s *Store) PrepareReusableStagingTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, stagingTableID sql.TableIdentifier, parentTableID sql.TableIdentifier, opts types.AdditionalSettings) error {
 	exists, err := s.CheckStagingTableExists(ctx, stagingTableID)
 	if err != nil {
 		return fmt.Errorf("failed to check if staging table exists: %w", err)
@@ -117,85 +117,19 @@ func (s *Store) PrepareReusableStagingTable(ctx context.Context, tableData *opti
 			if err := s.DropTable(ctx, stagingTableID); err != nil {
 				return fmt.Errorf("failed to drop staging table: %w", err)
 			}
-			return s.PrepareReusableStagingTable(ctx, tableData, tableConfig, stagingTableID, parentTableID)
+			return s.PrepareReusableStagingTable(ctx, tableData, tableConfig, stagingTableID, parentTableID, opts)
 		} else {
 			if err := s.TruncateStagingTable(ctx, stagingTableID); err != nil {
 				return fmt.Errorf("failed to truncate staging table: %w", err)
 			}
 		}
 	} else {
-		if err := shared.CreateTempTable(ctx, s, tableData, tableConfig, types.AdditionalSettings{}.ColumnSettings, stagingTableID); err != nil {
+		if err := shared.CreateTempTable(ctx, s, tableData, tableConfig, opts.ColumnSettings, stagingTableID); err != nil {
 			return fmt.Errorf("failed to create staging table: %w", err)
 		}
 	}
 
-	return s.loadDataIntoStagingTable(ctx, tableData, tableConfig, stagingTableID, parentTableID)
-}
-
-func (s *Store) loadDataIntoStagingTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, stagingTableID sql.TableIdentifier, parentTableID sql.TableIdentifier) error {
-	fp, colToNewLengthMap, err := s.loadTemporaryTable(tableData, stagingTableID)
-	if err != nil {
-		return fmt.Errorf("failed to load temporary table: %w", err)
-	}
-
-	for colName, newValue := range colToNewLengthMap {
-		// Try to upsert columns first. If this fails, we won't need to update the destination table.
-		if err = tableConfig.UpsertColumn(colName, columns.UpsertColumnArg{StringPrecision: typing.ToPtr(newValue)}); err != nil {
-			return fmt.Errorf("failed to update table config with new string precision: %w", err)
-		}
-
-		if err = tableData.InMemoryColumns().UpsertColumn(colName, columns.UpsertColumnArg{StringPrecision: typing.ToPtr(newValue)}); err != nil {
-			return fmt.Errorf("failed to update table data with new string precision: %w", err)
-		}
-
-		if _, err = s.ExecContext(ctx, s.dialect().BuildIncreaseStringPrecisionQuery(parentTableID, colName, newValue)); err != nil {
-			return fmt.Errorf("failed to increase string precision for table %q: %w", parentTableID.FullyQualifiedName(), err)
-		}
-	}
-
-	defer func() {
-		// Remove file regardless of outcome to avoid fs build up.
-		if removeErr := os.RemoveAll(fp); removeErr != nil {
-			slog.Warn("Failed to delete temp file", slog.Any("err", removeErr), slog.String("filePath", fp))
-		}
-	}()
-
-	s3Client, err := s.BuildS3Client(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to build s3 client: %w", err)
-	}
-
-	s3Uri, err := s3Client.UploadLocalFileToS3(ctx, s.bucket, s.optionalS3Prefix, fp)
-	if err != nil {
-		return fmt.Errorf("failed to upload %q to s3: %w", fp, err)
-	}
-
-	var cols []string
-	for _, col := range tableData.ReadOnlyInMemoryCols().ValidColumns() {
-		cols = append(cols, col.Name())
-	}
-
-	credentialsClause, err := s.BuildCredentialsClause(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to build credentials clause: %w", err)
-	}
-
-	copyStmt := s.dialect().BuildCopyStatement(stagingTableID, cols, s3Uri, credentialsClause)
-	if _, err = s.ExecContext(ctx, copyStmt); err != nil {
-		return fmt.Errorf("failed to run COPY for temporary table: %w", err)
-	}
-
-	// Ref: https://docs.aws.amazon.com/redshift/latest/dg/PG_LAST_COPY_COUNT.html
-	var rowsLoaded int64
-	if err = s.QueryRowContext(ctx, `SELECT pg_last_copy_count();`).Scan(&rowsLoaded); err != nil {
-		return fmt.Errorf("failed to check rows loaded: %w", err)
-	}
-
-	if rowsLoaded != int64(tableData.NumberOfRows()) {
-		return fmt.Errorf("expected %d rows to be loaded, but got %d", tableData.NumberOfRows(), rowsLoaded)
-	}
-
-	return nil
+	return s.PrepareTemporaryTable(ctx, tableData, tableConfig, stagingTableID, parentTableID, opts, false)
 }
 
 func (s *Store) CheckStagingTableExists(ctx context.Context, tableID sql.TableIdentifier) (bool, error) {
