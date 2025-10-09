@@ -55,7 +55,7 @@ func Append(ctx context.Context, dest destination.Destination, tableData *optimi
 						tableID.Table(),
 						config.GetStagingTableSuffix(),
 					),
-				),
+				).WithTemporaryTable(true),
 				tableID,
 				opts,
 			)

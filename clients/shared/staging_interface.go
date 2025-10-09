@@ -21,6 +21,4 @@ type ReusableStagingTableManager interface {
 	CheckStagingTableExists(ctx context.Context, tableID sql.TableIdentifier) (bool, error)
 
 	ValidateStagingTableSchema(ctx context.Context, tableID sql.TableIdentifier, expectedColumns []columns.Column) (bool, error)
-
-	TruncateStagingTable(ctx context.Context, tableID sql.TableIdentifier) error
 }

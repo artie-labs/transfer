@@ -119,7 +119,8 @@ func (s *Store) PrepareReusableStagingTable(ctx context.Context, tableData *opti
 			}
 			return s.PrepareReusableStagingTable(ctx, tableData, tableConfig, stagingTableID, parentTableID, opts)
 		} else {
-			if err := s.TruncateStagingTable(ctx, stagingTableID); err != nil {
+			err := s.TruncateTable(ctx, stagingTableID)
+			if err != nil {
 				return fmt.Errorf("failed to truncate staging table: %w", err)
 			}
 		}
@@ -183,20 +184,4 @@ func (s *Store) ValidateStagingTableSchema(ctx context.Context, tableID sql.Tabl
 	}
 
 	return true, nil
-}
-
-func (s *Store) TruncateStagingTable(ctx context.Context, tableID sql.TableIdentifier) error {
-	config := s.GetConfig()
-	stagingTableSuffix := config.GetStagingTableSuffix()
-
-	if tableID.Table() != shared.GenerateReusableStagingTableName(tableID.Table(), stagingTableSuffix) {
-		return fmt.Errorf("table %q is not a valid staging table - refusing to truncate", tableID.FullyQualifiedName())
-	}
-
-	sqlCommand := s.Dialect().BuildTruncateTableQuery(tableID)
-	if _, err := s.ExecContext(ctx, sqlCommand); err != nil {
-		return fmt.Errorf("failed to truncate staging table: %w", err)
-	}
-
-	return nil
 }

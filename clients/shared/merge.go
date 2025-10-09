@@ -77,7 +77,7 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 					tableID.Table(),
 					config.GetStagingTableSuffix(),
 				),
-			)
+			).WithTemporaryTable(true)
 			if err = stagingManager.PrepareReusableStagingTable(ctx, tableData, tableConfig, stagingTableID, tableID, types.AdditionalSettings{ColumnSettings: opts.ColumnSettings}); err != nil {
 				return fmt.Errorf("failed to prepare reusable staging table: %w", err)
 			}
