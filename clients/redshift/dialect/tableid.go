@@ -9,10 +9,9 @@ import (
 var _dialect = RedshiftDialect{}
 
 type TableIdentifier struct {
-	schema                string
-	table                 string
-	disableDropProtection bool
-	temporaryTable        bool
+	schema         string
+	table          string
+	temporaryTable bool
 }
 
 func NewTableIdentifier(schema, table string) TableIdentifier {
@@ -39,15 +38,6 @@ func (ti TableIdentifier) FullyQualifiedName() string {
 	// Redshift is Postgres compatible, so when establishing a connection, we'll specify a database.
 	// Thus, we only need to specify schema and table name here.
 	return fmt.Sprintf("%s.%s", ti.schema, ti.EscapedTable())
-}
-
-func (ti TableIdentifier) WithDisableDropProtection(disableDropProtection bool) sql.TableIdentifier {
-	ti.disableDropProtection = disableDropProtection
-	return ti
-}
-
-func (ti TableIdentifier) AllowToDrop() bool {
-	return ti.disableDropProtection
 }
 
 func (ti TableIdentifier) WithTemporaryTable(temp bool) sql.TableIdentifier {
