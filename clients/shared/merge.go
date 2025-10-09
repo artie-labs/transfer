@@ -193,9 +193,11 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 			if err != nil {
 				return fmt.Errorf("failed to get rows affected: %w", err)
 			}
+
 			totalRowsAffected += rowsAffected
 		}
 
+		// [totalRowsAffected] may be higher if the table contains duplicate rows.
 		if rows := tableData.NumberOfRows(); rows > uint(totalRowsAffected) {
 			return fmt.Errorf("expected %d rows to be affected, got %d", rows, totalRowsAffected)
 		}
