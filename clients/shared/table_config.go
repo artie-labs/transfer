@@ -29,17 +29,6 @@ type GetTableCfgArgs struct {
 	// Description of the column (used to annotate whether we need to backfill or not)
 	ColumnNameForComment string
 	DropDeletedColumns   bool
-	// Original table name before any processing (soft partitioning, history mode, etc.)
-	OriginalTableName string
-}
-
-// GetOriginalTableName returns the original table name before any processing (soft partitioning, history mode, etc.)
-func (g GetTableCfgArgs) GetOriginalTableName() string {
-	if g.OriginalTableName != "" {
-		return g.OriginalTableName
-	}
-	// Fallback to the processed table name from TableID
-	return g.TableID.Table()
 }
 
 func (g GetTableCfgArgs) GetTableConfig(ctx context.Context) (*types.DestinationTableConfig, error) {

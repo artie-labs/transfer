@@ -33,8 +33,7 @@ func MultiStepMerge(ctx context.Context, dest destination.Destination, tableData
 
 	msmTableID := dest.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), fmt.Sprintf("%s_%s_msm", constants.ArtiePrefix, tableData.Name()))
 	targetTableID := dest.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name())
-	originalTableName := tableData.TopicConfig().TableName
-	targetTableConfig, err := dest.GetTableConfig(ctx, targetTableID, tableData.TopicConfig().DropDeletedColumns, originalTableName)
+	targetTableConfig, err := dest.GetTableConfig(ctx, targetTableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
 		return false, fmt.Errorf("failed to get table config: %w", err)
 	}
@@ -51,7 +50,7 @@ func MultiStepMerge(ctx context.Context, dest destination.Destination, tableData
 		}
 	}
 
-	msmTableConfig, err := dest.GetTableConfig(ctx, msmTableID, tableData.TopicConfig().DropDeletedColumns, originalTableName)
+	msmTableConfig, err := dest.GetTableConfig(ctx, msmTableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
 		return false, fmt.Errorf("failed to get table config: %w", err)
 	}

@@ -26,31 +26,11 @@ func TestGetTableConfig(t *testing.T) {
 	cm.AddTable(fakeTableID, tableCfg)
 
 	actualTableCfg, err := GetTableCfgArgs{
-		Destination:       &mocks.FakeDestination{},
-		TableID:           fakeTableID,
-		ConfigMap:         cm,
-		OriginalTableName: "test_table",
+		Destination: &mocks.FakeDestination{},
+		TableID:     fakeTableID,
+		ConfigMap:   cm,
 	}.GetTableConfig(t.Context())
 
 	assert.NoError(t, err)
 	assert.Equal(t, tableCfg, actualTableCfg)
-}
-
-func TestGetTableCfgArgs_GetOriginalTableName(t *testing.T) {
-	fakeTableID := &mocks.FakeTableIdentifier{}
-	fakeTableID.TableReturns("processed_table_name")
-
-	// Test with original table name set
-	args := GetTableCfgArgs{
-		Destination:       &mocks.FakeDestination{},
-		TableID:           fakeTableID,
-		ConfigMap:         &types.DestinationTableConfigMap{},
-		OriginalTableName: "original_table_name",
-	}
-
-	assert.Equal(t, "original_table_name", args.GetOriginalTableName())
-
-	// Test fallback to processed table name
-	args.OriginalTableName = ""
-	assert.Equal(t, "processed_table_name", args.GetOriginalTableName())
 }

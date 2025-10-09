@@ -51,7 +51,7 @@ func (s *Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) erro
 	return nil
 }
 
-func (s *Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier, dropDeletedColumns bool, originalTableName string) (*types.DestinationTableConfig, error) {
+func (s *Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
 	return shared.GetTableCfgArgs{
 		Destination:           s,
 		TableID:               tableID,
@@ -60,7 +60,6 @@ func (s *Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier,
 		ColumnNameForDataType: "type",
 		ColumnNameForComment:  "comment",
 		DropDeletedColumns:    dropDeletedColumns,
-		OriginalTableName:     originalTableName,
 	}.GetTableConfig(ctx)
 }
 

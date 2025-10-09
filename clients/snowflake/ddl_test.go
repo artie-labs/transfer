@@ -110,7 +110,7 @@ func (s *SnowflakeTestSuite) TestGetTableConfig() {
 	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "customers", Schema: "public", TableName: "orders22"}, "foo")
 	s.mockDB.ExpectQuery(`DESC TABLE "CUSTOMERS"."PUBLIC"."FOO"`).WillReturnError(fmt.Errorf("Table '%s' does not exist or not authorized", fqName))
 
-	tableConfig, err := s.stageStore.GetTableConfig(s.T().Context(), s.identifierFor(tableData), tableData.TopicConfig().DropDeletedColumns, "orders22")
+	tableConfig, err := s.stageStore.GetTableConfig(s.T().Context(), s.identifierFor(tableData), tableData.TopicConfig().DropDeletedColumns)
 	assert.NotNil(s.T(), tableConfig, "config is nil")
 	assert.NoError(s.T(), err)
 
