@@ -10,7 +10,3 @@ func (c *Config) GetStagingTableSuffix() string {
 	}
 	return "_staging" // default suffix
 }
-
-func (c *Config) GetStagingTableReuseConfig() *StagingTableReuseConfig {
-	return c.StagingTableReuse
-}
