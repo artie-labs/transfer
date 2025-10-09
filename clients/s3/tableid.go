@@ -8,11 +8,11 @@ import (
 )
 
 type TableIdentifier struct {
-	database              string
-	schema                string
-	table                 string
-	nameSeparator         string
-	disableDropProtection bool
+	database       string
+	schema         string
+	table          string
+	nameSeparator  string
+	temporaryTable bool
 }
 
 func NewTableIdentifier(database, schema, table string, nameSeparator string) TableIdentifier {
@@ -44,11 +44,11 @@ func (ti TableIdentifier) FullyQualifiedName() string {
 	return strings.Join([]string{ti.database, ti.schema, ti.EscapedTable()}, ti.nameSeparator)
 }
 
-func (ti TableIdentifier) WithDisableDropProtection(disableDropProtection bool) sql.TableIdentifier {
-	ti.disableDropProtection = disableDropProtection
+func (ti TableIdentifier) WithTemporaryTable(temp bool) sql.TableIdentifier {
+	ti.temporaryTable = temp
 	return ti
 }
 
-func (ti TableIdentifier) AllowToDrop() bool {
-	return ti.disableDropProtection
+func (ti TableIdentifier) TemporaryTable() bool {
+	return ti.temporaryTable
 }

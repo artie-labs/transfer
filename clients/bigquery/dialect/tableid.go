@@ -9,10 +9,10 @@ import (
 var _dialect = BigQueryDialect{}
 
 type TableIdentifier struct {
-	projectID             string
-	dataset               string
-	table                 string
-	disableDropProtection bool
+	projectID      string
+	dataset        string
+	table          string
+	temporaryTable bool
 }
 
 func NewTableIdentifier(projectID, dataset, table string) TableIdentifier {
@@ -53,11 +53,11 @@ func (ti TableIdentifier) FullyQualifiedName() string {
 	)
 }
 
-func (ti TableIdentifier) WithDisableDropProtection(disableDropProtection bool) sql.TableIdentifier {
-	ti.disableDropProtection = disableDropProtection
+func (ti TableIdentifier) WithTemporaryTable(temp bool) sql.TableIdentifier {
+	ti.temporaryTable = temp
 	return ti
 }
 
-func (ti TableIdentifier) AllowToDrop() bool {
-	return ti.disableDropProtection
+func (ti TableIdentifier) TemporaryTable() bool {
+	return ti.temporaryTable
 }

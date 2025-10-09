@@ -13,6 +13,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestEnsureRedshiftStagingCompliance(t *testing.T) {
+	var store *Store
+	_, ok := interface{}(store).(shared.ReusableStagingTableManager)
+	assert.True(t, ok)
+}
+
 func TestTempTableIDWithSuffix(t *testing.T) {
 	trimTTL := func(tableName string) string {
 		lastUnderscore := strings.LastIndex(tableName, "_")
@@ -25,6 +31,7 @@ func TestTempTableIDWithSuffix(t *testing.T) {
 
 	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "db", Schema: "schema"}, "table")
 	tableID := (&Store{}).IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name())
-	tempTableName := shared.TempTableIDWithSuffix(tableID, "sUfFiX").FullyQualifiedName()
-	assert.Equal(t, `schema."table___artie_suffix"`, trimTTL(tempTableName))
+	tempTableID := shared.TempTableIDWithSuffix(tableID, "sUfFiX")
+	assert.Equal(t, `schema."table___artie_suffix"`, trimTTL(tempTableID.FullyQualifiedName()))
+	assert.True(t, tempTableID.TemporaryTable())
 }

@@ -101,7 +101,7 @@ func testSoftDeleteMerge(ctx context.Context, store *postgres.Store) error {
 		return fmt.Errorf("expected delete marker to be true")
 	}
 
-	return store.DropTable(ctx, tableID.WithDisableDropProtection(true))
+	return store.DropTable(ctx, tableID.WithTemporaryTable(true))
 }
 
 func testRegularMerge(ctx context.Context, store *postgres.Store) error {
@@ -189,7 +189,7 @@ func testRegularMerge(ctx context.Context, store *postgres.Store) error {
 		return fmt.Errorf("expected 'updated_1', got %q", value)
 	}
 
-	return store.DropTable(ctx, tableID.WithDisableDropProtection(true))
+	return store.DropTable(ctx, tableID.WithTemporaryTable(true))
 }
 
 func verifyRowCount(ctx context.Context, store *postgres.Store, tableName string, expected int) error {

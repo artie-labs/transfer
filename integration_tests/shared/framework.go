@@ -150,7 +150,7 @@ func (tf *TestFramework) VerifyDataContent(ctx context.Context, rowCount int) er
 }
 
 func (tf *TestFramework) Cleanup(ctx context.Context, tableID sql.TableIdentifier) error {
-	dropTableID := tableID.WithDisableDropProtection(true)
+	dropTableID := tableID.WithTemporaryTable(true)
 	if tf.iceberg != nil {
 		return tf.iceberg.DropTable(ctx, dropTableID)
 	}

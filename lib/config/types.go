@@ -40,6 +40,15 @@ type SharedDestinationSettings struct {
 	EnableMergeAssertion bool `yaml:"enableMergeAssertion,omitempty"`
 	// [SkipBadTimestamps] - If enabled, we'll skip over bad timestamp (or alike) values instead of throwing an error.
 	SkipBadTimestamps bool `yaml:"skipBadTimestamps"`
+	// [SkipBadIntegers] - If enabled, we'll skip over bad integer values instead of throwing an error.
+	SkipBadIntegers bool `yaml:"skipBadIntegers"`
+}
+
+type StagingTableReuseConfig struct {
+	// Enable staging table reuse with truncation instead of drop
+	Enabled bool `yaml:"enabled"`
+	// Pattern for reusable staging table names (default: "_staging")
+	TableNameSuffix string `yaml:"tableNameSuffix,omitempty"`
 }
 
 type Reporting struct {
@@ -71,6 +80,7 @@ type Config struct {
 	Iceberg    *Iceberg    `yaml:"iceberg,omitempty"`
 
 	SharedDestinationSettings SharedDestinationSettings `yaml:"sharedDestinationSettings"`
+	StagingTableReuse         *StagingTableReuseConfig  `yaml:"stagingTableReuse,omitempty"`
 	Reporting                 Reporting                 `yaml:"reporting"`
 	Telemetry                 struct {
 		Metrics struct {
