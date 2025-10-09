@@ -66,14 +66,26 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 	}
 
 	temporaryTableID := TempTableIDWithSuffix(dest.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name()), tableData.TempTableSuffix())
-	defer func() {
-		if dropErr := ddl.DropTemporaryTable(ctx, dest, temporaryTableID, false); dropErr != nil {
-			slog.Warn("Failed to drop temporary table", slog.Any("err", dropErr), slog.String("tableName", temporaryTableID.FullyQualifiedName()))
-		}
-	}()
 
-	if err = dest.PrepareTemporaryTable(ctx, tableData, tableConfig, temporaryTableID, tableID, types.AdditionalSettings{ColumnSettings: opts.ColumnSettings}, true); err != nil {
-		return fmt.Errorf("failed to prepare temporary table: %w", err)
+	config := dest.GetConfig()
+	if config.IsStagingTableReuseEnabled() {
+		if stagingManager, ok := dest.(ReusableStagingTableManager); ok {
+			if err = stagingManager.PrepareReusableStagingTable(ctx, tableData, tableConfig, temporaryTableID, tableID); err != nil {
+				return fmt.Errorf("failed to prepare reusable staging table: %w", err)
+			}
+		} else {
+			return fmt.Errorf("destination does not support staging table reuse")
+		}
+	} else {
+		defer func() {
+			if dropErr := ddl.DropTemporaryTable(ctx, dest, temporaryTableID, false); dropErr != nil {
+				slog.Warn("Failed to drop temporary table", slog.Any("err", dropErr), slog.String("tableName", temporaryTableID.FullyQualifiedName()))
+			}
+		}()
+
+		if err = dest.PrepareTemporaryTable(ctx, tableData, tableConfig, temporaryTableID, tableID, types.AdditionalSettings{ColumnSettings: opts.ColumnSettings}, true); err != nil {
+			return fmt.Errorf("failed to prepare temporary table: %w", err)
+		}
 	}
 
 	// Now iterate over all the in-memory cols and see which ones require a backfill.
@@ -117,5 +129,17 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 		subQuery = dest.Dialect().BuildDedupeTableQuery(temporaryTableID, tableData.PrimaryKeys())
 	}
 
-	return ExecuteMergeOperations(ctx, dest, tableData, tableID, subQuery, opts)
+	if err := ExecuteMergeOperations(ctx, dest, tableData, tableID, subQuery, opts); err != nil {
+		return err
+	}
+
+	if config.IsStagingTableReuseEnabled() {
+		if stagingManager, ok := dest.(ReusableStagingTableManager); ok {
+			if truncateErr := stagingManager.TruncateStagingTable(ctx, temporaryTableID); truncateErr != nil {
+				slog.Warn("Failed to truncate staging table", slog.Any("err", truncateErr), slog.String("tableName", temporaryTableID.FullyQualifiedName()))
+			}
+		}
+	}
+
+	return nil
 }

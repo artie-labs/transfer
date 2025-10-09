@@ -3,7 +3,6 @@ package redshift
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"os"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -34,6 +33,9 @@ type Store struct {
 	_awsS3Client    awslib.S3Client
 	db.Store
 }
+
+// Compile-time check to ensure Store implements ReusableStagingTableManager
+var _ shared.ReusableStagingTableManager = (*Store)(nil)
 
 func (s Store) GetConfig() config.Config {
 	return s.config
@@ -116,81 +118,13 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (b
 		return true, nil
 	}
 
-	// Check if staging table reuse is enabled
-	if s.config.IsStagingTableReuseEnabled() {
-		return s.mergeWithStagingTableReuse(ctx, tableData)
-	} else {
-		// Use original behavior
-		if err := shared.Merge(ctx, s, tableData, types.MergeOpts{
-			// We are adding SELECT DISTINCT here for the temporary table as an extra guardrail.
-			// Redshift does not enforce any row uniqueness and there could be potential LOAD errors which will cause duplicate rows to arise.
-			SubQueryDedupe: true,
-		}); err != nil {
-			return false, fmt.Errorf("failed to merge: %w", err)
-		}
-		return true, nil
-	}
-}
-
-// mergeWithStagingTableReuse - implements merge with staging table reuse
-func (s *Store) mergeWithStagingTableReuse(ctx context.Context, tableData *optimization.TableData) (bool, error) {
-	tableID := s.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name())
-	tableConfig, err := s.GetTableConfig(ctx, tableID, tableData.TopicConfig().DropDeletedColumns)
-	if err != nil {
-		return false, fmt.Errorf("failed to get table config: %w", err)
-	}
-
-	// Handle schema evolution (with column dropping for merge)
-	srcKeysMissing, targetKeysMissing := columns.DiffAndFilter(
-		tableData.ReadOnlyInMemoryCols().GetColumns(),
-		tableConfig.GetColumns(),
-		tableData.BuildColumnsToKeep(),
-	)
-
-	if tableConfig.CreateTable() {
-		if err := shared.CreateTable(ctx, s, tableData.Mode(), tableConfig, types.AdditionalSettings{}.ColumnSettings, tableID, false, targetKeysMissing); err != nil {
-			return false, fmt.Errorf("failed to create table: %w", err)
-		}
-	} else {
-		if err := shared.AlterTableAddColumns(ctx, s, tableConfig, types.AdditionalSettings{}.ColumnSettings, tableID, targetKeysMissing); err != nil {
-			return false, fmt.Errorf("failed to add columns for table %q: %w", tableID.Table(), err)
-		}
-	}
-
-	// Handle column dropping (only for merge operations)
-	if err := shared.AlterTableDropColumns(ctx, s, tableConfig, tableID, srcKeysMissing, tableData.GetLatestTimestamp(), tableData.ContainOtherOperations()); err != nil {
-		return false, fmt.Errorf("failed to drop columns for table %q: %w", tableID.Table(), err)
-	}
-
-	// Merge columns from destination
-	if err := tableData.MergeColumnsFromDestination(tableConfig.GetColumns()...); err != nil {
-		return false, fmt.Errorf("failed to merge columns from destination: %w for table %q", err, tableData.Name())
-	}
-
-	// Use reusable staging table for Redshift
-	temporaryTableID := shared.TempTableIDWithSuffix(tableID, tableData.TempTableSuffix())
-
-	// Handle staging table reuse with truncation instead of drop
-	if err = s.PrepareReusableStagingTable(ctx, tableData, tableConfig, temporaryTableID, tableID); err != nil {
-		return false, fmt.Errorf("failed to prepare reusable staging table: %w", err)
-	}
-
-	// Use shared merge execution logic
-	// SubQueryDedupe for Redshift
-	subQuery := s.Dialect().BuildDedupeTableQuery(temporaryTableID, tableData.PrimaryKeys())
-
-	opts := types.MergeOpts{
+	if err := shared.Merge(ctx, s, tableData, types.MergeOpts{
+		// We are adding SELECT DISTINCT here for the temporary table as an extra guardrail.
+		// Redshift does not enforce any row uniqueness and there could be potential LOAD errors which will cause duplicate rows to arise.
 		SubQueryDedupe: true,
+	}); err != nil {
+		return false, fmt.Errorf("failed to merge: %w", err)
 	}
-	if err := shared.ExecuteMergeOperations(ctx, s, tableData, tableID, subQuery, opts); err != nil {
-		return false, fmt.Errorf("failed to execute merge operations: %w", err)
-	}
-
-	// Truncate staging table instead of dropping it
-	if err = s.TruncateStagingTable(ctx, temporaryTableID); err != nil {
-		slog.Warn("Failed to truncate staging table", slog.Any("err", err), slog.String("tableName", temporaryTableID.FullyQualifiedName()))
-	}
-
 	return true, nil
 }
 
