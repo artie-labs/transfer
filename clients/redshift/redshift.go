@@ -18,7 +18,6 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
-	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 type Store struct {
@@ -73,44 +72,8 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, _
 		return nil
 	}
 
-	if s.config.IsStagingTableReuseEnabled() {
-		tableID := s.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name())
-		tableConfig, err := s.GetTableConfig(ctx, tableID, tableData.TopicConfig().DropDeletedColumns)
-		if err != nil {
-			return fmt.Errorf("failed to get table config: %w", err)
-		}
-
-		// Handle schema evolution (no column dropping for append)
-		_, targetKeysMissing := columns.DiffAndFilter(
-			tableData.ReadOnlyInMemoryCols().GetColumns(),
-			tableConfig.GetColumns(),
-			tableData.BuildColumnsToKeep(),
-		)
-
-		if tableConfig.CreateTable() {
-			if err := shared.CreateTable(ctx, s, tableData.Mode(), tableConfig, types.AdditionalSettings{}.ColumnSettings, tableID, false, targetKeysMissing); err != nil {
-				return fmt.Errorf("failed to create table: %w", err)
-			}
-		} else {
-			if err := shared.AlterTableAddColumns(ctx, s, tableConfig, types.AdditionalSettings{}.ColumnSettings, tableID, targetKeysMissing); err != nil {
-				return fmt.Errorf("failed to add columns for table %q: %w", tableID.Table(), err)
-			}
-		}
-
-		// Merge columns from destination
-		if err := tableData.MergeColumnsFromDestination(tableConfig.GetColumns()...); err != nil {
-			return fmt.Errorf("failed to merge columns from destination: %w for table %q", err, tableData.Name())
-		}
-
-		// Use reusable staging table for Redshift
-		if err := s.PrepareReusableStagingTable(ctx, tableData, tableConfig, tableID, tableID); err != nil {
-			return fmt.Errorf("failed to prepare reusable staging table: %w", err)
-		}
-	} else {
-		return shared.Append(ctx, s, tableData, types.AdditionalSettings{})
-	}
-
-	return nil
+	// Use shared Append function which now handles staging table reuse
+	return shared.Append(ctx, s, tableData, types.AdditionalSettings{})
 }
 
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {

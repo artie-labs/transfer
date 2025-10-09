@@ -48,13 +48,22 @@ func Append(ctx context.Context, dest destination.Destination, tableData *optimi
 		tempTableID = opts.TempTableID
 	}
 
-	return dest.PrepareTemporaryTable(
-		ctx,
-		tableData,
-		tableConfig,
-		tempTableID,
-		tableID,
-		opts,
-		opts.UseTempTable,
-	)
+	config := dest.GetConfig()
+	if config.IsStagingTableReuseEnabled() {
+		if stagingManager, ok := dest.(ReusableStagingTableManager); ok {
+			return stagingManager.PrepareReusableStagingTable(ctx, tableData, tableConfig, tempTableID, tableID)
+		} else {
+			return fmt.Errorf("destination does not support staging table reuse")
+		}
+	} else {
+		return dest.PrepareTemporaryTable(
+			ctx,
+			tableData,
+			tableConfig,
+			tempTableID,
+			tableID,
+			opts,
+			opts.UseTempTable,
+		)
+	}
 }
