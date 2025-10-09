@@ -51,9 +51,10 @@ type StaticColumn struct {
 type PartitionFrequency string
 
 const (
-	Monthly PartitionFrequency = "monthly"
-	Daily   PartitionFrequency = "daily"
-	Hourly  PartitionFrequency = "hourly"
+	Monthly              PartitionFrequency = "monthly"
+	Daily                PartitionFrequency = "daily"
+	Hourly               PartitionFrequency = "hourly"
+	CompactedTableSuffix string             = "_default"
 )
 
 func (pf PartitionFrequency) Layout() string {
