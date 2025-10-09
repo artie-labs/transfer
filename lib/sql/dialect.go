@@ -22,8 +22,6 @@ type TableIdentifier interface {
 	Table() string
 	WithTable(table string) TableIdentifier
 	FullyQualifiedName() string
-	WithDisableDropProtection(disableDropProtection bool) TableIdentifier
-	AllowToDrop() bool
 	WithTemporaryTable(temp bool) TableIdentifier
 	TemporaryTable() bool
 }

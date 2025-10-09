@@ -37,7 +37,7 @@ func NewDestinationTypes(dest destination.Destination, topicConfig kafkalib.Topi
 
 func (d DestinationTypes) Run(ctx context.Context) error {
 	defer func() {
-		tableID := d.tableID.WithDisableDropProtection(true)
+		tableID := d.tableID.WithTemporaryTable(true)
 		if err := d.destination.DropTable(ctx, tableID); err != nil {
 			logger.Fatal("Failed to drop table", slog.Any("err", err))
 		}

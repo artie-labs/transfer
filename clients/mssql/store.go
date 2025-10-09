@@ -37,8 +37,8 @@ func getSchema(schema string) string {
 }
 
 func (s *Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error {
-	if !tableID.AllowToDrop() {
-		return fmt.Errorf("table %q is not allowed to be dropped", tableID.FullyQualifiedName())
+	if !tableID.TemporaryTable() {
+		return fmt.Errorf("table %q is not a temporary table, so it cannot be dropped", tableID.FullyQualifiedName())
 	}
 
 	if _, err := s.ExecContext(ctx, s.Dialect().BuildDropTableQuery(tableID)); err != nil {
