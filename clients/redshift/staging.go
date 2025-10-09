@@ -132,10 +132,10 @@ func (s *Store) PrepareReusableStagingTable(ctx context.Context, tableData *opti
 		}
 	}
 
-	return s.loadDataIntoStagingTable(ctx, tableData, stagingTableID, parentTableID)
+	return s.loadDataIntoStagingTable(ctx, tableData, tableConfig, stagingTableID, parentTableID)
 }
 
-func (s *Store) loadDataIntoStagingTable(ctx context.Context, tableData *optimization.TableData, stagingTableID sql.TableIdentifier, parentTableID sql.TableIdentifier) error {
+func (s *Store) loadDataIntoStagingTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, stagingTableID sql.TableIdentifier, parentTableID sql.TableIdentifier) error {
 	fp, colToNewLengthMap, err := s.loadTemporaryTable(tableData, stagingTableID)
 	if err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
@@ -143,8 +143,12 @@ func (s *Store) loadDataIntoStagingTable(ctx context.Context, tableData *optimiz
 
 	for colName, newValue := range colToNewLengthMap {
 		// Try to upsert columns first. If this fails, we won't need to update the destination table.
-		if err = tableData.InMemoryColumns().UpsertColumn(colName, columns.UpsertColumnArg{StringPrecision: typing.ToPtr(newValue)}); err != nil {
+		if err = tableConfig.UpsertColumn(colName, columns.UpsertColumnArg{StringPrecision: typing.ToPtr(newValue)}); err != nil {
 			return fmt.Errorf("failed to update table config with new string precision: %w", err)
+		}
+
+		if err = tableData.InMemoryColumns().UpsertColumn(colName, columns.UpsertColumnArg{StringPrecision: typing.ToPtr(newValue)}); err != nil {
+			return fmt.Errorf("failed to update table data with new string precision: %w", err)
 		}
 
 		if _, err = s.ExecContext(ctx, s.dialect().BuildIncreaseStringPrecisionQuery(parentTableID, colName, newValue)); err != nil {
