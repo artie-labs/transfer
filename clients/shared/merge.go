@@ -68,10 +68,20 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 	temporaryTableID := TempTableIDWithSuffix(dest.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name()), tableData.TempTableSuffix())
 
 	config := dest.GetConfig()
+	var subQuery string
 	if config.IsStagingTableReuseEnabled() {
 		if stagingManager, ok := dest.(ReusableStagingTableManager); ok {
-			if err = stagingManager.PrepareReusableStagingTable(ctx, tableData, tableConfig, temporaryTableID, tableID); err != nil {
+			stagingTableSuffix := config.GetStagingTableSuffix()
+			stagingTableName := GenerateReusableStagingTableName(tableID.Table(), stagingTableSuffix)
+			stagingTableID := dest.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), stagingTableName)
+
+			if err = stagingManager.PrepareReusableStagingTable(ctx, tableData, tableConfig, stagingTableID, tableID); err != nil {
 				return fmt.Errorf("failed to prepare reusable staging table: %w", err)
+			}
+
+			subQuery = stagingTableID.FullyQualifiedName()
+			if opts.SubQueryDedupe {
+				subQuery = dest.Dialect().BuildDedupeTableQuery(stagingTableID, tableData.PrimaryKeys())
 			}
 		} else {
 			return fmt.Errorf("destination does not support staging table reuse")
@@ -85,6 +95,11 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 
 		if err = dest.PrepareTemporaryTable(ctx, tableData, tableConfig, temporaryTableID, tableID, types.AdditionalSettings{ColumnSettings: opts.ColumnSettings}, true); err != nil {
 			return fmt.Errorf("failed to prepare temporary table: %w", err)
+		}
+
+		subQuery = temporaryTableID.FullyQualifiedName()
+		if opts.SubQueryDedupe {
+			subQuery = dest.Dialect().BuildDedupeTableQuery(temporaryTableID, tableData.PrimaryKeys())
 		}
 	}
 
@@ -122,11 +137,6 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 		if backfillErr != nil {
 			return fmt.Errorf("failed to backfill col: %s, default value: %v, err: %w", col.Name(), col.DefaultValue(), backfillErr)
 		}
-	}
-
-	subQuery := temporaryTableID.FullyQualifiedName()
-	if opts.SubQueryDedupe {
-		subQuery = dest.Dialect().BuildDedupeTableQuery(temporaryTableID, tableData.PrimaryKeys())
 	}
 
 	return ExecuteMergeOperations(ctx, dest, tableData, tableID, subQuery, opts)

@@ -42,20 +42,23 @@ func Append(ctx context.Context, dest destination.Destination, tableData *optimi
 		return fmt.Errorf("failed to merge columns from destination: %w", err)
 	}
 
-	tempTableID := tableID
-	if opts.UseTempTable {
-		// Override tableID with tempTableID if we're using a temporary table
-		tempTableID = opts.TempTableID
-	}
-
 	config := dest.GetConfig()
 	if config.IsStagingTableReuseEnabled() {
 		if stagingManager, ok := dest.(ReusableStagingTableManager); ok {
-			return stagingManager.PrepareReusableStagingTable(ctx, tableData, tableConfig, tempTableID, tableID)
+			stagingTableSuffix := config.GetStagingTableSuffix()
+			stagingTableName := GenerateReusableStagingTableName(tableID.Table(), stagingTableSuffix)
+			stagingTableID := dest.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), stagingTableName)
+
+			return stagingManager.PrepareReusableStagingTable(ctx, tableData, tableConfig, stagingTableID, tableID)
 		} else {
 			return fmt.Errorf("destination does not support staging table reuse")
 		}
 	} else {
+		tempTableID := tableID
+		if opts.UseTempTable {
+			// Override tableID with tempTableID if we're using a temporary table
+			tempTableID = opts.TempTableID
+		}
 		return dest.PrepareTemporaryTable(
 			ctx,
 			tableData,

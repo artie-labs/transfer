@@ -10,7 +10,7 @@ import (
 )
 
 type ReusableStagingTableManager interface {
-	PrepareReusableStagingTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, tempTableID sql.TableIdentifier, parentTableID sql.TableIdentifier) error
+	PrepareReusableStagingTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, stagingTableID sql.TableIdentifier, parentTableID sql.TableIdentifier) error
 
 	CheckStagingTableExists(ctx context.Context, tableID sql.TableIdentifier) (bool, error)
 

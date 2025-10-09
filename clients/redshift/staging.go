@@ -102,41 +102,41 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID
 	return file.FilePath, additionalOutput.ColumnToNewLengthMap, nil
 }
 
-func (s *Store) PrepareReusableStagingTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, tempTableID sql.TableIdentifier, parentTableID sql.TableIdentifier) error {
-	exists, err := s.CheckStagingTableExists(ctx, tempTableID)
+func (s *Store) PrepareReusableStagingTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, stagingTableID sql.TableIdentifier, parentTableID sql.TableIdentifier) error {
+	exists, err := s.CheckStagingTableExists(ctx, stagingTableID)
 	if err != nil {
 		return fmt.Errorf("failed to check if staging table exists: %w", err)
 	}
 
 	if exists {
-		compatible, err := s.ValidateStagingTableSchema(ctx, tempTableID, tableData.ReadOnlyInMemoryCols().ValidColumns())
+		compatible, err := s.ValidateStagingTableSchema(ctx, stagingTableID, tableData.ReadOnlyInMemoryCols().ValidColumns())
 		if err != nil {
 			return fmt.Errorf("failed to validate staging table schema: %w", err)
 		}
 
 		// Don't handle leftover rows in staging table, always truncate or drop before merging
 		if !compatible {
-			err := s.DropTable(ctx, tempTableID)
+			err := s.DropTable(ctx, stagingTableID)
 			if err != nil {
 				return fmt.Errorf("failed to drop staging table: %w", err)
 			}
-			return s.PrepareReusableStagingTable(ctx, tableData, tableConfig, tempTableID, parentTableID)
+			return s.PrepareReusableStagingTable(ctx, tableData, tableConfig, stagingTableID, parentTableID)
 		} else {
-			if err := s.TruncateStagingTable(ctx, tempTableID); err != nil {
+			if err := s.TruncateStagingTable(ctx, stagingTableID); err != nil {
 				return fmt.Errorf("failed to truncate staging table: %w", err)
 			}
 		}
 	} else {
-		if err := shared.CreateTempTable(ctx, s, tableData, tableConfig, types.AdditionalSettings{}.ColumnSettings, tempTableID); err != nil {
+		if err := shared.CreateTempTable(ctx, s, tableData, tableConfig, types.AdditionalSettings{}.ColumnSettings, stagingTableID); err != nil {
 			return fmt.Errorf("failed to create staging table: %w", err)
 		}
 	}
 
-	return s.loadDataIntoStagingTable(ctx, tableData, tempTableID, parentTableID)
+	return s.loadDataIntoStagingTable(ctx, tableData, stagingTableID, parentTableID)
 }
 
-func (s *Store) loadDataIntoStagingTable(ctx context.Context, tableData *optimization.TableData, tempTableID sql.TableIdentifier, parentTableID sql.TableIdentifier) error {
-	fp, colToNewLengthMap, err := s.loadTemporaryTable(tableData, tempTableID)
+func (s *Store) loadDataIntoStagingTable(ctx context.Context, tableData *optimization.TableData, stagingTableID sql.TableIdentifier, parentTableID sql.TableIdentifier) error {
+	fp, colToNewLengthMap, err := s.loadTemporaryTable(tableData, stagingTableID)
 	if err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
 	}
@@ -179,7 +179,7 @@ func (s *Store) loadDataIntoStagingTable(ctx context.Context, tableData *optimiz
 		return fmt.Errorf("failed to build credentials clause: %w", err)
 	}
 
-	copyStmt := s.dialect().BuildCopyStatement(tempTableID, cols, s3Uri, credentialsClause)
+	copyStmt := s.dialect().BuildCopyStatement(stagingTableID, cols, s3Uri, credentialsClause)
 	if _, err = s.ExecContext(ctx, copyStmt); err != nil {
 		return fmt.Errorf("failed to run COPY for temporary table: %w", err)
 	}
