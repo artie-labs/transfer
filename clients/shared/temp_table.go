@@ -28,7 +28,7 @@ func TempTableIDWithSuffix(tableID sql.TableIdentifier, suffix string) sql.Table
 		suffix,
 		time.Now().Add(constants.TemporaryTableTTL).Unix(),
 	)
-	return tableID.WithTable(tempTable)
+	return tableID.WithTable(tempTable).WithTemporaryTable(true)
 }
 
 type File struct {
