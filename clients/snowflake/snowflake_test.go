@@ -47,7 +47,7 @@ func (s *SnowflakeTestSuite) TestDropTable() {
 		snowflakeTableID, ok := tableID.(dialect.TableIdentifier)
 		assert.True(s.T(), ok)
 
-		snowflakeTableID = snowflakeTableID.WithDisableDropProtection(true).(dialect.TableIdentifier)
+		snowflakeTableID = snowflakeTableID.WithTemporaryTable(true).(dialect.TableIdentifier)
 
 		// Set up expectation for DROP TABLE query
 		s.mockDB.ExpectExec(`DROP TABLE IF EXISTS "CUSTOMER"."PUBLIC"."__ARTIE_FOO"`).WillReturnResult(sqlmock.NewResult(0, 0))
