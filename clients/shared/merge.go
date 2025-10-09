@@ -87,7 +87,7 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 				subQuery = dest.Dialect().BuildDedupeTableQuery(stagingTableID, tableData.PrimaryKeys())
 			}
 		} else {
-			return fmt.Errorf("destination does not support staging table reuse")
+			return fmt.Errorf("destination %v does not support staging table reuse", dest)
 		}
 	} else {
 		defer func() {
