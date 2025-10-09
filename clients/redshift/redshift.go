@@ -79,6 +79,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (b
 	}); err != nil {
 		return false, fmt.Errorf("failed to merge: %w", err)
 	}
+
 	return true, nil
 }
 
