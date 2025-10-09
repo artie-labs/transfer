@@ -114,8 +114,7 @@ func (s *Store) PrepareReusableStagingTable(ctx context.Context, tableData *opti
 
 		// Don't handle leftover rows in staging table, always truncate or drop before merging
 		if !compatible {
-			err := s.DropTable(ctx, stagingTableID)
-			if err != nil {
+			if err := s.DropTable(ctx, stagingTableID); err != nil {
 				return fmt.Errorf("failed to drop staging table: %w", err)
 			}
 			return s.PrepareReusableStagingTable(ctx, tableData, tableConfig, stagingTableID, parentTableID)
