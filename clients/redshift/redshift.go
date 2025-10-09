@@ -33,9 +33,6 @@ type Store struct {
 	db.Store
 }
 
-// Compile-time check to ensure Store implements ReusableStagingTableManager
-var _ shared.ReusableStagingTableManager = (*Store)(nil)
-
 func (s Store) GetConfig() config.Config {
 	return s.config
 }
