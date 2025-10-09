@@ -45,13 +45,21 @@ func Append(ctx context.Context, dest destination.Destination, tableData *optimi
 	config := dest.GetConfig()
 	if config.IsStagingTableReuseEnabled() {
 		if stagingManager, ok := dest.(ReusableStagingTableManager); ok {
-			stagingTableSuffix := config.GetStagingTableSuffix()
-			stagingTableName := GenerateReusableStagingTableName(tableID.Table(), stagingTableSuffix)
-			stagingTableID := dest.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), stagingTableName)
-
-			return stagingManager.PrepareReusableStagingTable(ctx, tableData, tableConfig, stagingTableID, tableID)
+			return stagingManager.PrepareReusableStagingTable(
+				ctx,
+				tableData,
+				tableConfig,
+				dest.IdentifierFor(
+					tableData.TopicConfig().BuildDatabaseAndSchemaPair(),
+					GenerateReusableStagingTableName(
+						tableID.Table(),
+						config.GetStagingTableSuffix(),
+					),
+				),
+				tableID,
+			)
 		} else {
-			return fmt.Errorf("destination does not support staging table reuse")
+			return fmt.Errorf("destination %v does not support staging table reuse", dest)
 		}
 	} else {
 		tempTableID := tableID
