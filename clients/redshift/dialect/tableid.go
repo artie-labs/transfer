@@ -9,9 +9,9 @@ import (
 var _dialect = RedshiftDialect{}
 
 type TableIdentifier struct {
-	schema                string
-	table                 string
-	disableDropProtection bool
+	schema         string
+	table          string
+	temporaryTable bool
 }
 
 func NewTableIdentifier(schema, table string) TableIdentifier {
@@ -40,11 +40,11 @@ func (ti TableIdentifier) FullyQualifiedName() string {
 	return fmt.Sprintf("%s.%s", ti.schema, ti.EscapedTable())
 }
 
-func (ti TableIdentifier) WithDisableDropProtection(disableDropProtection bool) sql.TableIdentifier {
-	ti.disableDropProtection = disableDropProtection
+func (ti TableIdentifier) WithTemporaryTable(temp bool) sql.TableIdentifier {
+	ti.temporaryTable = temp
 	return ti
 }
 
-func (ti TableIdentifier) AllowToDrop() bool {
-	return ti.disableDropProtection
+func (ti TableIdentifier) TemporaryTable() bool {
+	return ti.temporaryTable
 }

@@ -40,14 +40,14 @@ func (s *SnowflakeTestSuite) TestDropTable() {
 	tableID := s.identifierFor(tableData)
 	{
 		// Deleting without disabling drop protection
-		assert.ErrorContains(s.T(), s.stageStore.DropTable(s.T().Context(), tableID), "not allowed to be dropped")
+		assert.ErrorContains(s.T(), s.stageStore.DropTable(s.T().Context(), tableID), "is not a temporary table")
 	}
 	{
 		// Deleting with disabling drop protection
 		snowflakeTableID, ok := tableID.(dialect.TableIdentifier)
 		assert.True(s.T(), ok)
 
-		snowflakeTableID = snowflakeTableID.WithDisableDropProtection(true).(dialect.TableIdentifier)
+		snowflakeTableID = snowflakeTableID.WithTemporaryTable(true).(dialect.TableIdentifier)
 
 		// Set up expectation for DROP TABLE query
 		s.mockDB.ExpectExec(`DROP TABLE IF EXISTS "CUSTOMER"."PUBLIC"."__ARTIE_FOO"`).WillReturnResult(sqlmock.NewResult(0, 0))
