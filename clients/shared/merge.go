@@ -36,7 +36,7 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 	stop := hb.Start()
 	defer stop()
 
-	tableConfig, err := dest.GetTableConfig(ctx, tableID, tableData.TopicConfig().DropDeletedColumns)
+	tableConfig, err := dest.GetTableConfig(ctx, tableID, tableData.TopicConfig().DropDeletedColumns, tableData.TopicConfig().TableName)
 	if err != nil {
 		return fmt.Errorf("failed to get table config: %w", err)
 	}

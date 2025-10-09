@@ -100,7 +100,7 @@ func (s *Store) dialect() dialect.RedshiftDialect {
 	return dialect.RedshiftDialect{}
 }
 
-func (s *Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
+func (s *Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier, dropDeletedColumns bool, originalTableName string) (*types.DestinationTableConfig, error) {
 	return shared.GetTableCfgArgs{
 		Destination:           s,
 		TableID:               tableID,
@@ -109,6 +109,7 @@ func (s *Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier,
 		ColumnNameForDataType: "data_type",
 		ColumnNameForComment:  "description",
 		DropDeletedColumns:    dropDeletedColumns,
+		OriginalTableName:     originalTableName,
 	}.GetTableConfig(ctx)
 }
 

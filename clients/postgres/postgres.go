@@ -92,7 +92,7 @@ func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primary
 	return fmt.Errorf("dedupe not implemented for PostgreSQL")
 }
 
-func (s *Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
+func (s *Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier, dropDeletedColumns bool, originalTableName string) (*types.DestinationTableConfig, error) {
 	return shared.GetTableCfgArgs{
 		Destination:           s,
 		TableID:               tableID,
@@ -100,5 +100,6 @@ func (s *Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier,
 		ColumnNameForName:     "column_name",
 		ColumnNameForDataType: "data_type",
 		DropDeletedColumns:    dropDeletedColumns,
+		OriginalTableName:     originalTableName,
 	}.GetTableConfig(ctx)
 }
