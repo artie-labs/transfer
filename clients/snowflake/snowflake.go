@@ -20,6 +20,11 @@ import (
 	"github.com/artie-labs/transfer/lib/sql"
 )
 
+func init() {
+	// Snowflake's logger is noisy, disable it since we're going to use our own.
+	_ = gosnowflake.GetLogger().SetLogLevel("fatal")
+}
+
 type Store struct {
 	db.Store
 	configMap *types.DestinationTableConfigMap
