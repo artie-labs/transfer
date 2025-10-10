@@ -40,7 +40,7 @@ func (e *EventsTestSuite) TestSaveEvent() {
 		anotherCol:                          13.37,
 	}, nil)
 
-	event, err := ToMemoryEvent(mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication)
+	event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication)
 	assert.NoError(e.T(), err)
 
 	_, _, err = event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafka.Message{}))
@@ -94,7 +94,7 @@ func (e *EventsTestSuite) TestEvent_SaveCasing() {
 		"anotherCOL":                        13.37,
 	}, nil)
 
-	event, err := ToMemoryEvent(mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication)
+	event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication)
 	assert.NoError(e.T(), err)
 
 	_, _, err = event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafka.Message{}))
@@ -136,7 +136,7 @@ func (e *EventsTestSuite) TestEventSaveOptionalSchema() {
 		"json_object_string":     typing.String,
 	}, nil)
 
-	event, err := ToMemoryEvent(mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication)
+	event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication)
 	assert.NoError(e.T(), err)
 
 	kafkaMsg := kafka.Message{}
@@ -184,7 +184,7 @@ func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 	}, nil)
 	mockEvent.GetColumnsReturns(&cols, nil)
 
-	evt, err := ToMemoryEvent(mockEvent, map[string]any{"col_1": "123"}, topicConfig, config.Replication)
+	evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"col_1": "123"}, topicConfig, config.Replication)
 	assert.NoError(e.T(), err)
 
 	_, _, err = evt.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafka.Message{}))
@@ -243,7 +243,7 @@ func (e *EventsTestSuite) TestEventSaveColumns() {
 		"created_at_date_string":            "2023-01-01",
 	}, nil)
 
-	event, err := ToMemoryEvent(mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication)
+	event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication)
 	assert.NoError(e.T(), err)
 
 	_, _, err = event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafka.Message{}))
@@ -292,7 +292,7 @@ func (e *EventsTestSuite) TestEventSaveTestDeleteFlag() {
 		constants.OnlySetDeleteColumnMarker: true,
 	}, nil)
 
-	event, err := ToMemoryEvent(mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication)
+	event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication)
 	assert.NoError(e.T(), err)
 	_, _, err = event.Save(e.cfg, e.db, topicConfig, artie.NewMessage(kafka.Message{}))
 	assert.NoError(e.T(), err)
