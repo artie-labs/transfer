@@ -31,34 +31,22 @@ type GetTableCfgArgs struct {
 	DropDeletedColumns   bool
 }
 
-func (g GetTableCfgArgs) GetTableConfig(ctx context.Context) (*types.DestinationTableConfig, error) {
-	if tableConfig := g.ConfigMap.GetTableConfig(g.TableID); tableConfig != nil {
-		return tableConfig, nil
-	}
-
+func (g GetTableCfgArgs) query(ctx context.Context) ([]columns.Column, error) {
 	query, args, err := g.Destination.Dialect().BuildDescribeTableQuery(g.TableID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate describe table query: %w", err)
 	}
 
 	rows, err := g.Destination.QueryContext(ctx, query, args...)
-	defer func() {
-		if rows != nil {
-			if err = rows.Close(); err != nil {
-				slog.Warn("Failed to close the row", slog.Any("err", err))
-			}
-		}
-	}()
-
 	if err != nil {
 		if g.Destination.Dialect().IsTableDoesNotExistErr(err) {
-			// This branch is currently only used by Snowflake.
-			// Swallow the error, make sure all the metadata is created
-			err = nil
-		} else {
-			return nil, fmt.Errorf("failed to query %T, err: %w, query: %q", g.Destination, err, query)
+			return nil, nil
 		}
+
+		return nil, fmt.Errorf("failed to query %T, err: %w, query: %q", g.Destination, err, query)
 	}
+
+	defer rows.Close()
 
 	var cols []columns.Column
 	for rows.Next() {
@@ -103,6 +91,23 @@ func (g GetTableCfgArgs) GetTableConfig(ctx context.Context) (*types.Destination
 		}
 
 		cols = append(cols, col)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed to get rows: %w", err)
+	}
+
+	return cols, nil
+}
+
+func (g GetTableCfgArgs) GetTableConfig(ctx context.Context) (*types.DestinationTableConfig, error) {
+	if tableConfig := g.ConfigMap.GetTableConfig(g.TableID); tableConfig != nil {
+		return tableConfig, nil
+	}
+
+	cols, err := g.query(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query: %w", err)
 	}
 
 	tableCfg := types.NewDestinationTableConfig(cols, g.DropDeletedColumns)
