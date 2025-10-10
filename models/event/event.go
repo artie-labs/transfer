@@ -440,29 +440,30 @@ func BuildSoftPartitionSuffix(
 	if err != nil {
 		return "", fmt.Errorf("failed to get partition frequency suffix: %w for table %q schema %q", err, tc.TableName, tc.Schema)
 	}
-	// only works for full destinations, not just Baseline
+
+	sp := tc.SoftPartitioning
+	if sp.PartitionFrequency == "" {
+		return "", fmt.Errorf("partition frequency is required")
+	}
+
+	// Check if partition is in the future
+	distance := sp.PartitionFrequency.PartitionDistance(partitionColumnValue, executionTime)
+	if distance < 0 {
+		return "", fmt.Errorf("partition time %v for column %q is in the future of execution time %v", partitionColumnValue, sp.PartitionColumn, executionTime)
+	}
+
+	// Only works for full destinations, not just Baseline
 	if destWithTableConfig, ok := dest.(destination.Destination); ok {
-		// Check if we should write to compacted table
-		sp := tc.SoftPartitioning
-		if sp.PartitionFrequency == "" {
-			return "", fmt.Errorf("partition frequency is required")
+		// Check if partitioned table exists; if not, route to compacted table
+		partitionedTableName := tblName + suffix
+		tableID := dest.IdentifierFor(kafkalib.DatabaseAndSchemaPair{Database: tc.Database, Schema: tc.Schema}, partitionedTableName)
+		tableConfig, err := destWithTableConfig.GetTableConfig(ctx, tableID, false)
+		if err != nil {
+			return "", fmt.Errorf("failed to get table config: %w", err)
 		}
-		distance := sp.PartitionFrequency.PartitionDistance(partitionColumnValue, executionTime)
-		if distance == 0 {
-			// Same partition, use base suffix
-		} else if distance < 0 {
-			return "", fmt.Errorf("partition time %v for column %q is in the future of execution time %v", partitionColumnValue, sp.PartitionColumn, executionTime)
-		} else {
-			partitionedTableName := tblName + suffix
-			tableID := dest.IdentifierFor(kafkalib.DatabaseAndSchemaPair{Database: tc.Database, Schema: tc.Schema}, partitionedTableName)
-			tableConfig, err := destWithTableConfig.GetTableConfig(ctx, tableID, false)
-			if err != nil {
-				return "", fmt.Errorf("failed to get table config: %w", err)
-			}
-			// tableConfig.CreateTable() will return true if the table doesn't exist.
-			if tableConfig.CreateTable() {
-				suffix = kafkalib.CompactedTableSuffix
-			}
+		// tableConfig.CreateTable() will return true if the table doesn't exist.
+		if tableConfig.CreateTable() {
+			suffix = kafkalib.CompactedTableSuffix
 		}
 	}
 	return suffix, nil

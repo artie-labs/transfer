@@ -392,6 +392,8 @@ func (e *EventsTestSuite) TestToMemoryEventWithSoftPartitioning() {
 		mockEvent.GetOptionalSchemaReturns(map[string]typing.KindDetails{
 			"created_at": typing.Time,
 		}, nil)
+		// Mock execution time to be same or after the created_at time
+		mockEvent.GetExecutionTimeReturns(createdAt.Add(1 * time.Hour))
 
 		event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, tc, config.Replication)
 		assert.NoError(e.T(), err)
@@ -503,7 +505,9 @@ func (e *EventsTestSuite) TestBuildSoftPartitionSuffix() {
 
 		// Create a mock destination that returns existing table config
 		mockDest := &mocks.FakeDestination{}
-		mockTableConfig := types.NewDestinationTableConfig(nil, false) // Table exists (not empty columns)
+		// Create a non-empty column list to indicate the table exists
+		col := columns.NewColumn("id", typing.String)
+		mockTableConfig := types.NewDestinationTableConfig([]columns.Column{col}, false)
 		mockDest.GetTableConfigReturns(mockTableConfig, nil)
 
 		suffix, err := BuildSoftPartitionSuffix(ctx, tc, baseTime, executionTime, "users", mockDest)
@@ -542,7 +546,7 @@ func (e *EventsTestSuite) TestBuildSoftPartitionSuffix() {
 		assert.Equal(e.T(), kafkalib.CompactedTableSuffix, suffix, "Should return compacted suffix when table should be created")
 	})
 
-	e.T().Run("Soft partitioning with MaxPartitions but distance = 0", func(t *testing.T) {
+	e.T().Run("Soft partitioning with MaxPartitions but distance = 0 and table doesn't exist", func(t *testing.T) {
 		tc := kafkalib.TopicConfig{
 			Database:  "customer",
 			TableName: "users",
@@ -566,9 +570,38 @@ func (e *EventsTestSuite) TestBuildSoftPartitionSuffix() {
 		suffix, err := BuildSoftPartitionSuffix(ctx, tc, sameTime, executionTime, "users", mockDest)
 		assert.NoError(e.T(), err)
 
+		assert.Equal(e.T(), kafkalib.CompactedTableSuffix, suffix, "Should return compacted suffix when table doesn't exist, even when distance = 0")
+	})
+
+	e.T().Run("Soft partitioning with MaxPartitions and distance = 0 and table exists", func(t *testing.T) {
+		tc := kafkalib.TopicConfig{
+			Database:  "customer",
+			TableName: "users",
+			Schema:    "public",
+			SoftPartitioning: kafkalib.SoftPartitioning{
+				Enabled:            true,
+				PartitionFrequency: kafkalib.Daily,
+				PartitionColumn:    "created_at",
+				MaxPartitions:      5,
+			},
+		}
+
+		// Use same time for partition and execution (distance = 0)
+		sameTime := baseTime
+		executionTime := sameTime
+
+		mockDest := &mocks.FakeDestination{}
+		// Create a non-empty column list to indicate the table exists
+		col := columns.NewColumn("id", typing.String)
+		mockTableConfig := types.NewDestinationTableConfig([]columns.Column{col}, false)
+		mockDest.GetTableConfigReturns(mockTableConfig, nil)
+
+		suffix, err := BuildSoftPartitionSuffix(ctx, tc, sameTime, executionTime, "users", mockDest)
+		assert.NoError(e.T(), err)
+
 		expectedSuffix, err := kafkalib.Daily.Suffix(sameTime)
 		assert.NoError(e.T(), err)
-		assert.Equal(e.T(), expectedSuffix, suffix, "Should return base suffix when distance = 0")
+		assert.Equal(e.T(), expectedSuffix, suffix, "Should return time-based suffix when table exists and distance = 0")
 	})
 
 	e.T().Run("Error cases", func(t *testing.T) {
