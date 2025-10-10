@@ -3,6 +3,7 @@ package kafkalib
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -195,6 +196,7 @@ func TestSoftPartitioning_Validate(t *testing.T) {
 				Enabled:            true,
 				PartitionFrequency: Daily,
 				PartitionColumn:    "col",
+				MaxPartitions:      10,
 			},
 			wantErr: false,
 		},
@@ -204,6 +206,7 @@ func TestSoftPartitioning_Validate(t *testing.T) {
 				Enabled:            true,
 				PartitionFrequency: Monthly,
 				PartitionColumn:    "col",
+				MaxPartitions:      10,
 			},
 			wantErr: false,
 		},
@@ -213,8 +216,31 @@ func TestSoftPartitioning_Validate(t *testing.T) {
 				Enabled:            true,
 				PartitionFrequency: Hourly,
 				PartitionColumn:    "col",
+				MaxPartitions:      10,
 			},
 			wantErr: false,
+		},
+		{
+			name: "enabled but maxPartitions is 0",
+			sp: SoftPartitioning{
+				Enabled:            true,
+				PartitionFrequency: Daily,
+				PartitionColumn:    "col",
+				MaxPartitions:      0,
+			},
+			wantErr: true,
+			errMsg:  "maxPartitions must be greater than 0",
+		},
+		{
+			name: "enabled but maxPartitions is negative",
+			sp: SoftPartitioning{
+				Enabled:            true,
+				PartitionFrequency: Daily,
+				PartitionColumn:    "col",
+				MaxPartitions:      -1,
+			},
+			wantErr: true,
+			errMsg:  "maxPartitions must be greater than 0",
 		},
 	}
 
@@ -231,4 +257,193 @@ func TestSoftPartitioning_Validate(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestPartitionFrequency_PartitionDistance(t *testing.T) {
+	// Test data: January 1, 2024 12:00:00
+	baseTime := time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)
+
+	t.Run("Monthly", func(t *testing.T) {
+		tests := []struct {
+			name     string
+			from     time.Time
+			now      time.Time
+			expected int
+		}{
+			{
+				name:     "same month",
+				from:     baseTime,
+				now:      baseTime,
+				expected: 0,
+			},
+			{
+				name:     "one month later",
+				from:     baseTime,
+				now:      time.Date(2024, 2, 1, 12, 0, 0, 0, time.UTC),
+				expected: 1,
+			},
+			{
+				name:     "one month earlier",
+				from:     time.Date(2024, 2, 1, 12, 0, 0, 0, time.UTC),
+				now:      baseTime,
+				expected: -1,
+			},
+			{
+				name:     "12 months later (one year)",
+				from:     baseTime,
+				now:      time.Date(2025, 1, 1, 12, 0, 0, 0, time.UTC),
+				expected: 12,
+			},
+			{
+				name:     "cross year boundary",
+				from:     time.Date(2023, 12, 1, 12, 0, 0, 0, time.UTC),
+				now:      time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC),
+				expected: 1,
+			},
+			{
+				name:     "multiple years",
+				from:     time.Date(2022, 6, 1, 12, 0, 0, 0, time.UTC),
+				now:      time.Date(2024, 3, 1, 12, 0, 0, 0, time.UTC),
+				expected: 21, // (2024-2022)*12 + (3-6) = 24 - 3 = 21
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				result := Monthly.PartitionDistance(tt.from, tt.now)
+				assert.Equal(t, tt.expected, result, "PartitionDistance(%v, %v) = %d, want %d", tt.from, tt.now, result, tt.expected)
+			})
+		}
+	})
+
+	t.Run("Daily", func(t *testing.T) {
+		tests := []struct {
+			name     string
+			from     time.Time
+			now      time.Time
+			expected int
+		}{
+			{
+				name:     "same day",
+				from:     baseTime,
+				now:      baseTime,
+				expected: 0,
+			},
+			{
+				name:     "one day later",
+				from:     baseTime,
+				now:      time.Date(2024, 1, 2, 12, 0, 0, 0, time.UTC),
+				expected: 1,
+			},
+			{
+				name:     "one day earlier",
+				from:     time.Date(2024, 1, 2, 12, 0, 0, 0, time.UTC),
+				now:      baseTime,
+				expected: -1,
+			},
+			{
+				name:     "7 days later (one week)",
+				from:     baseTime,
+				now:      time.Date(2024, 1, 8, 12, 0, 0, 0, time.UTC),
+				expected: 7,
+			},
+			{
+				name:     "30 days later",
+				from:     baseTime,
+				now:      time.Date(2024, 1, 31, 12, 0, 0, 0, time.UTC),
+				expected: 30,
+			},
+			{
+				name:     "cross month boundary",
+				from:     time.Date(2024, 1, 31, 12, 0, 0, 0, time.UTC),
+				now:      time.Date(2024, 2, 1, 12, 0, 0, 0, time.UTC),
+				expected: 1,
+			},
+			{
+				name:     "partial day difference (should round down)",
+				from:     baseTime,
+				now:      time.Date(2024, 1, 1, 18, 0, 0, 0, time.UTC), // 6 hours later
+				expected: 0,                                            // Less than 24 hours, so 0 days
+			},
+			{
+				name:     "exactly 24 hours later",
+				from:     baseTime,
+				now:      time.Date(2024, 1, 2, 12, 0, 0, 0, time.UTC),
+				expected: 1,
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				result := Daily.PartitionDistance(tt.from, tt.now)
+				assert.Equal(t, tt.expected, result, "PartitionDistance(%v, %v) = %d, want %d", tt.from, tt.now, result, tt.expected)
+			})
+		}
+	})
+
+	t.Run("Hourly", func(t *testing.T) {
+		tests := []struct {
+			name     string
+			from     time.Time
+			now      time.Time
+			expected int
+		}{
+			{
+				name:     "same hour",
+				from:     baseTime,
+				now:      baseTime,
+				expected: 0,
+			},
+			{
+				name:     "one hour later",
+				from:     baseTime,
+				now:      time.Date(2024, 1, 1, 13, 0, 0, 0, time.UTC),
+				expected: 1,
+			},
+			{
+				name:     "one hour earlier",
+				from:     time.Date(2024, 1, 1, 13, 0, 0, 0, time.UTC),
+				now:      baseTime,
+				expected: -1,
+			},
+			{
+				name:     "24 hours later (one day)",
+				from:     baseTime,
+				now:      time.Date(2024, 1, 2, 12, 0, 0, 0, time.UTC),
+				expected: 24,
+			},
+			{
+				name:     "partial hour difference (should round down)",
+				from:     baseTime,
+				now:      time.Date(2024, 1, 1, 12, 30, 0, 0, time.UTC), // 30 minutes later
+				expected: 0,                                             // Less than 1 hour, so 0 hours
+			},
+			{
+				name:     "exactly 1 hour later",
+				from:     baseTime,
+				now:      time.Date(2024, 1, 1, 13, 0, 0, 0, time.UTC),
+				expected: 1,
+			},
+			{
+				name:     "cross day boundary",
+				from:     time.Date(2024, 1, 1, 23, 0, 0, 0, time.UTC),
+				now:      time.Date(2024, 1, 2, 1, 0, 0, 0, time.UTC),
+				expected: 2,
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				result := Hourly.PartitionDistance(tt.from, tt.now)
+				assert.Equal(t, tt.expected, result, "PartitionDistance(%v, %v) = %d, want %d", tt.from, tt.now, result, tt.expected)
+			})
+		}
+	})
+
+	t.Run("Invalid partition frequency", func(t *testing.T) {
+		// Test with an invalid partition frequency
+		invalidPF := PartitionFrequency("invalid")
+		result := invalidPF.PartitionDistance(baseTime, baseTime)
+		assert.Equal(t, 0, result, "Invalid partition frequency should return 0")
+	})
 }

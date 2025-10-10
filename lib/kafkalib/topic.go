@@ -51,9 +51,10 @@ type StaticColumn struct {
 type PartitionFrequency string
 
 const (
-	Monthly PartitionFrequency = "monthly"
-	Daily   PartitionFrequency = "daily"
-	Hourly  PartitionFrequency = "hourly"
+	Monthly              PartitionFrequency = "monthly"
+	Daily                PartitionFrequency = "daily"
+	Hourly               PartitionFrequency = "hourly"
+	CompactedTableSuffix string             = "_default"
 )
 
 func (pf PartitionFrequency) Layout() string {
@@ -77,6 +78,23 @@ func (pf PartitionFrequency) Suffix(value time.Time) (string, error) {
 	return value.Format(layout), nil
 }
 
+// Positive distance means the from time is in a past partition of now.
+// Negative distance means the from time is in a future partition of now.
+// 0 means the from time is in the same partitionas now.
+func (pf PartitionFrequency) PartitionDistance(from, now time.Time) int {
+	switch pf {
+	case Monthly:
+		fromYear, fromMonth, _ := from.Date()
+		nowYear, nowMonth, _ := now.Date()
+		return (nowYear-fromYear)*12 + int(nowMonth-fromMonth)
+	case Daily:
+		return int(now.Sub(from).Hours() / 24)
+	case Hourly:
+		return int(now.Sub(from).Hours())
+	}
+	return 0
+}
+
 type SoftPartitioning struct {
 	Enabled            bool               `yaml:"enabled" json:"enabled"`
 	PartitionFrequency PartitionFrequency `yaml:"partitionFrequency" json:"partitionFrequency"`
@@ -97,6 +115,9 @@ func (sp SoftPartitioning) Validate() error {
 	}
 	if sp.PartitionColumn == "" {
 		return fmt.Errorf("partition column is required")
+	}
+	if sp.MaxPartitions <= 0 {
+		return fmt.Errorf("maxPartitions must be greater than 0")
 	}
 	return nil
 }
