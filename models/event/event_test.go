@@ -613,7 +613,7 @@ func (e *EventsTestSuite) TestBuildSoftPartitionSuffix() {
 			suffix, err := BuildSoftPartitionSuffix(ctx, tc, pastTime, executionTime, "users", mockDest)
 			assert.Error(e.T(), err)
 			assert.Equal(e.T(), "", suffix)
-			assert.Contains(e.T(), err.Error(), "failed to check if should write to compacted table")
+			assert.Contains(e.T(), err.Error(), "failed to get table config")
 		})
 	})
 }
