@@ -196,6 +196,7 @@ func TestSoftPartitioning_Validate(t *testing.T) {
 				Enabled:            true,
 				PartitionFrequency: Daily,
 				PartitionColumn:    "col",
+				MaxPartitions:      10,
 			},
 			wantErr: false,
 		},
@@ -205,6 +206,7 @@ func TestSoftPartitioning_Validate(t *testing.T) {
 				Enabled:            true,
 				PartitionFrequency: Monthly,
 				PartitionColumn:    "col",
+				MaxPartitions:      10,
 			},
 			wantErr: false,
 		},
@@ -214,8 +216,31 @@ func TestSoftPartitioning_Validate(t *testing.T) {
 				Enabled:            true,
 				PartitionFrequency: Hourly,
 				PartitionColumn:    "col",
+				MaxPartitions:      10,
 			},
 			wantErr: false,
+		},
+		{
+			name: "enabled but maxPartitions is 0",
+			sp: SoftPartitioning{
+				Enabled:            true,
+				PartitionFrequency: Daily,
+				PartitionColumn:    "col",
+				MaxPartitions:      0,
+			},
+			wantErr: true,
+			errMsg:  "maxPartitions must be greater than 0",
+		},
+		{
+			name: "enabled but maxPartitions is negative",
+			sp: SoftPartitioning{
+				Enabled:            true,
+				PartitionFrequency: Daily,
+				PartitionColumn:    "col",
+				MaxPartitions:      -1,
+			},
+			wantErr: true,
+			errMsg:  "maxPartitions must be greater than 0",
 		},
 	}
 
