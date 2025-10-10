@@ -36,10 +36,6 @@ func (d *DestinationTableConfig) CreateTable() bool {
 	return d.createTable
 }
 
-func (d *DestinationTableConfig) DropDeletedColumns() bool {
-	return d.dropDeletedColumns
-}
-
 func (d *DestinationTableConfig) GetColumns() []columns.Column {
 	return d.columns.GetColumns()
 }

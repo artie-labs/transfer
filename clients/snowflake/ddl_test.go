@@ -116,7 +116,6 @@ func (s *SnowflakeTestSuite) TestGetTableConfig() {
 
 	assert.True(s.T(), tableConfig.CreateTable())
 	assert.Len(s.T(), tableConfig.GetColumns(), 0)
-	assert.False(s.T(), tableConfig.DropDeletedColumns())
 
 	// Verify all expectations were met
 	assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
