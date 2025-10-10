@@ -78,7 +78,12 @@ func (g GetTableCfgArgs) GetTableConfig(ctx context.Context) (*types.Destination
 }
 
 func (g GetTableCfgArgs) buildColumnFromRow(row map[string]any) (columns.Column, error) {
-	kindDetails, err := g.Destination.Dialect().KindForDataType(row[g.ColumnNameForDataType])
+	kindColName, err := typing.AssertType[string](row[g.ColumnNameForDataType])
+	if err != nil {
+		return columns.Column{}, fmt.Errorf("failed to get kind column name: %w", err)
+	}
+
+	kindDetails, err := g.Destination.Dialect().KindForDataType(kindColName)
 	if err != nil {
 		return columns.Column{}, fmt.Errorf("failed to get kind details: %w", err)
 	}
@@ -87,12 +92,22 @@ func (g GetTableCfgArgs) buildColumnFromRow(row map[string]any) (columns.Column,
 		return columns.Column{}, fmt.Errorf("failed to get kind details: unable to map type: %q to dwh type", row[g.ColumnNameForDataType])
 	}
 
-	col := columns.NewColumn(row[g.ColumnNameForName], kindDetails)
+	colName, err := typing.AssertType[string](row[g.ColumnNameForName])
+	if err != nil {
+		return columns.Column{}, fmt.Errorf("failed to get column name: %w", err)
+	}
+
+	col := columns.NewColumn(colName, kindDetails)
 	strategy := g.Destination.Dialect().GetDefaultValueStrategy()
 	switch strategy {
 	case sql.Backfill:
 		// We need to check to make sure the comment is not an empty string
-		if comment, ok := row[g.ColumnNameForComment]; ok && comment != "" {
+		comment, err := typing.AssertTypeOptional[string](row[g.ColumnNameForComment])
+		if err != nil {
+			return columns.Column{}, fmt.Errorf("failed to get comment: %w", err)
+		}
+
+		if comment != "" {
 			var _colComment constants.ColComment
 			if err = json.Unmarshal([]byte(comment), &_colComment); err != nil {
 				// This may happen if the company is using column comments.
