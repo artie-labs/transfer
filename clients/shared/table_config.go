@@ -72,9 +72,9 @@ func (g GetTableCfgArgs) GetTableConfig(ctx context.Context) (*types.Destination
 		var columnNameList []string
 		// Scan needs an array of pointers to the values it is setting
 		// This creates the object and sets the values correctly
-		values := make([]interface{}, len(colTypes))
+		values := make([]any, len(colTypes))
 		for idx, column := range colTypes {
-			values[idx] = new(interface{})
+			values[idx] = new(any)
 			columnNameList = append(columnNameList, strings.ToLower(column.Name()))
 		}
 
@@ -84,7 +84,7 @@ func (g GetTableCfgArgs) GetTableConfig(ctx context.Context) (*types.Destination
 
 		row := make(map[string]string)
 		for idx, val := range values {
-			interfaceVal, ok := val.(*interface{})
+			interfaceVal, ok := val.(*any)
 			if !ok || interfaceVal == nil {
 				return nil, errors.New("invalid value")
 			}
