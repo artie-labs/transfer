@@ -2,6 +2,7 @@ package event
 
 import (
 	"cmp"
+	"context"
 	"fmt"
 	"log/slog"
 	"sort"
@@ -13,8 +14,10 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/cryptography"
+	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
+	sqllib "github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -427,4 +430,26 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 	td.SetLatestTimestamp(e.executionTime)
 	flush, flushReason := td.ShouldFlush(cfg)
 	return flush, flushReason, nil
+}
+
+func ShouldWriteToCompactedTable(ctx context.Context, dest destination.Destination, tableID sqllib.TableIdentifier, sp kafkalib.SoftPartitioning, partitionColumnValue, executionTime time.Time, tableName string) (bool, error) {
+	if !sp.Enabled {
+		return false, nil
+	}
+	if sp.PartitionFrequency == "" {
+		return false, fmt.Errorf("partition frequency is required")
+	}
+	distance := sp.PartitionFrequency.PartitionDistance(partitionColumnValue, executionTime)
+	if distance == 0 {
+		return false, nil
+	} else if distance < 0 {
+		return false, fmt.Errorf("partition time %v for column %q is in the future of execution time %v", partitionColumnValue, sp.PartitionColumn, executionTime)
+	} else {
+		tableConfig, err := dest.GetTableConfig(ctx, tableID, false)
+		if err != nil {
+			return false, fmt.Errorf("failed to get table config: %w", err)
+		}
+		// tableConfig.CreateTable() will return true if the table doesn't exist.
+		return tableConfig.CreateTable(), nil
+	}
 }
