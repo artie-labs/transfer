@@ -108,8 +108,8 @@ func (g GetTableCfgArgs) buildColumnFromRow(row map[string]any) (columns.Column,
 		}
 
 		if comment != "" {
-			var _colComment constants.ColComment
-			if err = json.Unmarshal([]byte(comment), &_colComment); err != nil {
+			var payload constants.ColComment
+			if err = json.Unmarshal([]byte(comment), &payload); err != nil {
 				// This may happen if the company is using column comments.
 				slog.Warn("Failed to unmarshal comment, so marking it as backfilled so we don't try to overwrite it",
 					slog.Any("err", err),
@@ -117,7 +117,7 @@ func (g GetTableCfgArgs) buildColumnFromRow(row map[string]any) (columns.Column,
 				)
 				col.SetBackfilled(true)
 			} else {
-				col.SetBackfilled(_colComment.Backfilled)
+				col.SetBackfilled(payload.Backfilled)
 			}
 		}
 	case sql.Native:
