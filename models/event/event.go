@@ -17,7 +17,6 @@ import (
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
-	sqllib "github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -211,23 +210,9 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 		if err != nil {
 			return Event{}, fmt.Errorf("failed to assert datetime: %w for table %q schema %q", err, tc.TableName, tc.Schema)
 		}
-		suffix, err := tc.SoftPartitioning.PartitionFrequency.Suffix(actuallyDateTime)
+		suffix, err := BuildSoftPartitionSuffix(ctx, tc, actuallyDateTime, event.GetExecutionTime(), tblName, dest)
 		if err != nil {
-			return Event{}, fmt.Errorf("failed to get partition frequency suffix: %w for table %q schema %q", err, tc.TableName, tc.Schema)
-		}
-		if tc.SoftPartitioning.MaxPartitions > 0 {
-			// only works for full destinations, not just Baseline
-			if destWithTableConfig, ok := dest.(destination.Destination); ok {
-				partitionedTableName := tblName + suffix
-				tableID := dest.IdentifierFor(kafkalib.DatabaseAndSchemaPair{Database: tc.Database, Schema: tc.Schema}, partitionedTableName)
-				shouldWriteToCompactedTable, err := ShouldWriteToCompactedTable(ctx, destWithTableConfig, tableID, tc.SoftPartitioning, actuallyDateTime, event.GetExecutionTime(), tblName)
-				if err != nil {
-					return Event{}, fmt.Errorf("failed to check if should write to compacted table: %w", err)
-				}
-				if shouldWriteToCompactedTable {
-					suffix = kafkalib.CompactedTableSuffix
-				}
-			}
+			return Event{}, fmt.Errorf("failed to calculate soft partition suffix: %w", err)
 		}
 		tblName = tblName + suffix
 	}
@@ -439,24 +424,50 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 	return flush, flushReason, nil
 }
 
-func ShouldWriteToCompactedTable(ctx context.Context, dest destination.Destination, tableID sqllib.TableIdentifier, sp kafkalib.SoftPartitioning, partitionColumnValue, executionTime time.Time, tableName string) (bool, error) {
-	if !sp.Enabled {
-		return false, nil
+func BuildSoftPartitionSuffix(
+	ctx context.Context,
+	tc kafkalib.TopicConfig,
+	partitionColumnValue time.Time,
+	executionTime time.Time,
+	tblName string,
+	dest destination.Baseline,
+) (string, error) {
+	if !tc.SoftPartitioning.Enabled {
+		return "", nil
 	}
-	if sp.PartitionFrequency == "" {
-		return false, fmt.Errorf("partition frequency is required")
+
+	suffix, err := tc.SoftPartitioning.PartitionFrequency.Suffix(partitionColumnValue)
+	if err != nil {
+		return "", fmt.Errorf("failed to get partition frequency suffix: %w for table %q schema %q", err, tc.TableName, tc.Schema)
 	}
-	distance := sp.PartitionFrequency.PartitionDistance(partitionColumnValue, executionTime)
-	if distance == 0 {
-		return false, nil
-	} else if distance < 0 {
-		return false, fmt.Errorf("partition time %v for column %q is in the future of execution time %v", partitionColumnValue, sp.PartitionColumn, executionTime)
-	} else {
-		tableConfig, err := dest.GetTableConfig(ctx, tableID, false)
-		if err != nil {
-			return false, fmt.Errorf("failed to get table config: %w", err)
+
+	if tc.SoftPartitioning.MaxPartitions > 0 {
+		// only works for full destinations, not just Baseline
+		if destWithTableConfig, ok := dest.(destination.Destination); ok {
+			// Check if we should write to compacted table
+			sp := tc.SoftPartitioning
+			if sp.PartitionFrequency == "" {
+				return "", fmt.Errorf("partition frequency is required")
+			}
+			distance := sp.PartitionFrequency.PartitionDistance(partitionColumnValue, executionTime)
+			if distance == 0 {
+				// Same partition, use base suffix
+			} else if distance < 0 {
+				return "", fmt.Errorf("partition time %v for column %q is in the future of execution time %v", partitionColumnValue, sp.PartitionColumn, executionTime)
+			} else {
+				partitionedTableName := tblName + suffix
+				tableID := dest.IdentifierFor(kafkalib.DatabaseAndSchemaPair{Database: tc.Database, Schema: tc.Schema}, partitionedTableName)
+				tableConfig, err := destWithTableConfig.GetTableConfig(ctx, tableID, false)
+				if err != nil {
+					return "", fmt.Errorf("failed to get table config: %w", err)
+				}
+				// tableConfig.CreateTable() will return true if the table doesn't exist.
+				if tableConfig.CreateTable() {
+					suffix = kafkalib.CompactedTableSuffix
+				}
+			}
 		}
-		// tableConfig.CreateTable() will return true if the table doesn't exist.
-		return tableConfig.CreateTable(), nil
 	}
+
+	return suffix, nil
 }
