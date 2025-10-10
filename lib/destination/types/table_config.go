@@ -40,10 +40,6 @@ func (d *DestinationTableConfig) GetColumns() []columns.Column {
 	return d.columns.GetColumns()
 }
 
-func (d *DestinationTableConfig) UpdateColumn(col columns.Column) {
-	d.columns.UpdateColumn(col)
-}
-
 func (d *DestinationTableConfig) UpsertColumn(colName string, arg columns.UpsertColumnArg) error {
 	return d.columns.UpsertColumn(colName, arg)
 }

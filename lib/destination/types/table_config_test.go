@@ -47,37 +47,6 @@ func TestDwhTableConfig_ShouldDeleteColumn(t *testing.T) {
 	}
 }
 
-// TestDwhTableConfig_ColumnsConcurrency this file is meant to test the concurrency methods of .Columns()
-// In this test, we spin up 5 parallel Go-routines each making 100 calls to .Columns() and assert the validity of the data.
-func TestDwhTableConfig_ColumnsConcurrency(t *testing.T) {
-	var cols []columns.Column
-	cols = append(cols, columns.NewColumn("foo", typing.Struct))
-	cols = append(cols, columns.NewColumn("bar", typing.String))
-	cols = append(cols, columns.NewColumn("boolean", typing.Boolean))
-
-	dwhTableCfg := types.NewDestinationTableConfig(cols, false)
-
-	var wg sync.WaitGroup
-	for i := 0; i < 5; i++ {
-		wg.Add(1)
-		go func(tableCfg *types.DestinationTableConfig) {
-			defer wg.Done()
-			for j := 0; j < 100; j++ {
-				assert.Len(t, tableCfg.GetColumns(), 3)
-				kindDetails := typing.Integer
-				if (j % 2) == 0 {
-					kindDetails = typing.Array
-				}
-
-				tableCfg.UpdateColumn(columns.NewColumn("foo", kindDetails))
-				assert.Len(t, tableCfg.GetColumns(), 3)
-			}
-		}(dwhTableCfg)
-	}
-
-	wg.Wait()
-}
-
 func TestDwhTableConfig_MutateInMemoryColumns(t *testing.T) {
 	tc := types.NewDestinationTableConfig(nil, false)
 	for _, col := range []string{"a", "b", "c", "d", "e"} {
