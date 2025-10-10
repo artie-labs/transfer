@@ -44,8 +44,7 @@ func (g GetTableCfgArgs) GetTableConfig(ctx context.Context) (*types.Destination
 	rows, err := g.Destination.QueryContext(ctx, query, args...)
 	defer func() {
 		if rows != nil {
-			err = rows.Close()
-			if err != nil {
+			if err = rows.Close(); err != nil {
 				slog.Warn("Failed to close the row", slog.Any("err", err))
 			}
 		}
@@ -62,7 +61,7 @@ func (g GetTableCfgArgs) GetTableConfig(ctx context.Context) (*types.Destination
 	}
 
 	var cols []columns.Column
-	for rows != nil && rows.Next() {
+	for rows.Next() {
 		// figure out what columns were returned
 		// the column names will be the JSON object field keys
 		colTypes, err := rows.ColumnTypes()
