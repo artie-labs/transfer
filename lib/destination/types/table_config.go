@@ -44,8 +44,8 @@ func (d *DestinationTableConfig) UpsertColumn(colName string, arg columns.Upsert
 	return d.columns.UpsertColumn(colName, arg)
 }
 
-func (d *DestinationTableConfig) MutateInMemoryColumns(columnOp constants.ColumnOperation, cols ...columns.Column) {
-	switch columnOp {
+func (d *DestinationTableConfig) MutateInMemoryColumns(op constants.ColumnOperation, cols ...columns.Column) {
+	switch op {
 	case constants.AddColumn:
 		for _, col := range cols {
 			d.columns.AddColumn(col)
