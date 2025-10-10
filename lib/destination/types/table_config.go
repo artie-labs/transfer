@@ -3,7 +3,6 @@ package types
 import (
 	"log/slog"
 	"maps"
-	"sync"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -18,7 +17,6 @@ type DestinationTableConfig struct {
 
 	// Whether to drop deleted columns in the destination or not.
 	dropDeletedColumns bool
-	sync.RWMutex
 }
 
 func NewDestinationTableConfig(cols []columns.Column, dropDeletedColumns bool) *DestinationTableConfig {
@@ -31,30 +29,18 @@ func NewDestinationTableConfig(cols []columns.Column, dropDeletedColumns bool) *
 }
 
 func (d *DestinationTableConfig) SetColumnsToDeleteForTest(cols map[string]time.Time) {
-	d.Lock()
-	defer d.Unlock()
-
 	d.columnsToDelete = cols
 }
 
 func (d *DestinationTableConfig) CreateTable() bool {
-	d.RLock()
-	defer d.RUnlock()
-
 	return d.createTable
 }
 
 func (d *DestinationTableConfig) DropDeletedColumns() bool {
-	d.RLock()
-	defer d.RUnlock()
-
 	return d.dropDeletedColumns
 }
 
 func (d *DestinationTableConfig) GetColumns() []columns.Column {
-	d.RLock()
-	defer d.RUnlock()
-
 	return d.columns.GetColumns()
 }
 
@@ -67,8 +53,6 @@ func (d *DestinationTableConfig) UpsertColumn(colName string, arg columns.Upsert
 }
 
 func (d *DestinationTableConfig) MutateInMemoryColumns(columnOp constants.ColumnOperation, cols ...columns.Column) {
-	d.Lock()
-	defer d.Unlock()
 	switch columnOp {
 	case constants.AddColumn:
 		for _, col := range cols {
@@ -90,8 +74,6 @@ func (d *DestinationTableConfig) MutateInMemoryColumns(columnOp constants.Column
 
 // ReadOnlyColumnsToDelete returns a read only version of the columns that need to be deleted.
 func (d *DestinationTableConfig) ReadOnlyColumnsToDelete() map[string]time.Time {
-	d.RLock()
-	defer d.RUnlock()
 	return maps.Clone(d.columnsToDelete)
 }
 
@@ -117,8 +99,5 @@ func (d *DestinationTableConfig) ShouldDeleteColumn(colName string, cdcTime time
 }
 
 func (d *DestinationTableConfig) AddColumnsToDelete(colName string, ts time.Time) {
-	d.Lock()
-	defer d.Unlock()
-
 	d.columnsToDelete[colName] = ts
 }
