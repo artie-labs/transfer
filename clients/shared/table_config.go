@@ -3,10 +3,8 @@ package shared
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log/slog"
-	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
@@ -31,73 +29,28 @@ type GetTableCfgArgs struct {
 	DropDeletedColumns   bool
 }
 
-func (g GetTableCfgArgs) GetTableConfig(ctx context.Context) (*types.DestinationTableConfig, error) {
-	if tableConfig := g.ConfigMap.GetTableConfig(g.TableID); tableConfig != nil {
-		return tableConfig, nil
-	}
-
+func (g GetTableCfgArgs) query(ctx context.Context) ([]columns.Column, error) {
 	query, args, err := g.Destination.Dialect().BuildDescribeTableQuery(g.TableID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate describe table query: %w", err)
 	}
 
-	rows, err := g.Destination.QueryContext(ctx, query, args...)
-	defer func() {
-		if rows != nil {
-			err = rows.Close()
-			if err != nil {
-				slog.Warn("Failed to close the row", slog.Any("err", err))
-			}
-		}
-	}()
-
+	sqlRows, err := g.Destination.QueryContext(ctx, query, args...)
 	if err != nil {
 		if g.Destination.Dialect().IsTableDoesNotExistErr(err) {
-			// This branch is currently only used by Snowflake.
-			// Swallow the error, make sure all the metadata is created
-			err = nil
-		} else {
-			return nil, fmt.Errorf("failed to query %T, err: %w, query: %q", g.Destination, err, query)
+			return nil, nil
 		}
+
+		return nil, fmt.Errorf("failed to query %T, err: %w, query: %q", g.Destination, err, query)
+	}
+
+	rows, err := sql.RowsToObjects(sqlRows)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert rows to map slice: %w", err)
 	}
 
 	var cols []columns.Column
-	for rows != nil && rows.Next() {
-		// figure out what columns were returned
-		// the column names will be the JSON object field keys
-		colTypes, err := rows.ColumnTypes()
-		if err != nil {
-			return nil, err
-		}
-
-		var columnNameList []string
-		// Scan needs an array of pointers to the values it is setting
-		// This creates the object and sets the values correctly
-		values := make([]interface{}, len(colTypes))
-		for idx, column := range colTypes {
-			values[idx] = new(interface{})
-			columnNameList = append(columnNameList, strings.ToLower(column.Name()))
-		}
-
-		if err = rows.Scan(values...); err != nil {
-			return nil, err
-		}
-
-		row := make(map[string]string)
-		for idx, val := range values {
-			interfaceVal, ok := val.(*interface{})
-			if !ok || interfaceVal == nil {
-				return nil, errors.New("invalid value")
-			}
-
-			var value string
-			if *interfaceVal != nil {
-				value = strings.ToLower(fmt.Sprint(*interfaceVal))
-			}
-
-			row[columnNameList[idx]] = value
-		}
-
+	for _, row := range rows {
 		col, err := g.buildColumnFromRow(row)
 		if err != nil {
 			return nil, fmt.Errorf("failed to build column from row: %w", err)
@@ -106,13 +59,31 @@ func (g GetTableCfgArgs) GetTableConfig(ctx context.Context) (*types.Destination
 		cols = append(cols, col)
 	}
 
+	return cols, nil
+}
+
+func (g GetTableCfgArgs) GetTableConfig(ctx context.Context) (*types.DestinationTableConfig, error) {
+	if tableConfig := g.ConfigMap.GetTableConfig(g.TableID); tableConfig != nil {
+		return tableConfig, nil
+	}
+
+	cols, err := g.query(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query: %w", err)
+	}
+
 	tableCfg := types.NewDestinationTableConfig(cols, g.DropDeletedColumns)
 	g.ConfigMap.AddTable(g.TableID, tableCfg)
 	return tableCfg, nil
 }
 
-func (g GetTableCfgArgs) buildColumnFromRow(row map[string]string) (columns.Column, error) {
-	kindDetails, err := g.Destination.Dialect().KindForDataType(row[g.ColumnNameForDataType])
+func (g GetTableCfgArgs) buildColumnFromRow(row map[string]any) (columns.Column, error) {
+	kindColName, err := typing.AssertType[string](row[g.ColumnNameForDataType])
+	if err != nil {
+		return columns.Column{}, fmt.Errorf("failed to get kind column name: %w", err)
+	}
+
+	kindDetails, err := g.Destination.Dialect().KindForDataType(kindColName)
 	if err != nil {
 		return columns.Column{}, fmt.Errorf("failed to get kind details: %w", err)
 	}
@@ -121,14 +92,24 @@ func (g GetTableCfgArgs) buildColumnFromRow(row map[string]string) (columns.Colu
 		return columns.Column{}, fmt.Errorf("failed to get kind details: unable to map type: %q to dwh type", row[g.ColumnNameForDataType])
 	}
 
-	col := columns.NewColumn(row[g.ColumnNameForName], kindDetails)
+	colName, err := typing.AssertType[string](row[g.ColumnNameForName])
+	if err != nil {
+		return columns.Column{}, fmt.Errorf("failed to get column name: %w", err)
+	}
+
+	col := columns.NewColumn(colName, kindDetails)
 	strategy := g.Destination.Dialect().GetDefaultValueStrategy()
 	switch strategy {
 	case sql.Backfill:
 		// We need to check to make sure the comment is not an empty string
-		if comment, ok := row[g.ColumnNameForComment]; ok && comment != "" {
-			var _colComment constants.ColComment
-			if err = json.Unmarshal([]byte(comment), &_colComment); err != nil {
+		comment, err := typing.AssertTypeOptional[string](row[g.ColumnNameForComment])
+		if err != nil {
+			return columns.Column{}, fmt.Errorf("failed to get comment: %w", err)
+		}
+
+		if comment != "" {
+			var payload constants.ColComment
+			if err = json.Unmarshal([]byte(comment), &payload); err != nil {
 				// This may happen if the company is using column comments.
 				slog.Warn("Failed to unmarshal comment, so marking it as backfilled so we don't try to overwrite it",
 					slog.Any("err", err),
@@ -136,13 +117,15 @@ func (g GetTableCfgArgs) buildColumnFromRow(row map[string]string) (columns.Colu
 				)
 				col.SetBackfilled(true)
 			} else {
-				col.SetBackfilled(_colComment.Backfilled)
+				col.SetBackfilled(payload.Backfilled)
 			}
 		}
 	case sql.Native:
-		if value, ok := row["default_value"]; ok && value != "" {
+		val, ok := row["default_value"]
+		if ok && val != nil {
 			col.SetBackfilled(true)
 		}
+
 	case sql.NotImplemented:
 		// We don't need to do anything here.
 	default:
