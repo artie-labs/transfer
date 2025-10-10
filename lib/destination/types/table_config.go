@@ -77,16 +77,14 @@ func (d *DestinationTableConfig) ShouldDeleteColumn(colName string, cdcTime time
 		return false
 	}
 
-	colsToDelete := d.ReadOnlyColumnsToDelete()
-	if ts, ok := colsToDelete[colName]; ok {
+	if ts, ok := d.columnsToDelete[colName]; ok {
 		// If the CDC time is greater than this timestamp, then we should delete it.
 		return cdcTime.After(ts)
 	}
 
-	delTime := time.Now().UTC().Add(constants.DeletionConfidencePadding)
+	delTime := time.Now().Add(constants.DeletionConfidencePadding)
 	slog.Info("Column added to columnsToDelete", slog.String("name", colName), slog.Time("deleteAfterTime", delTime))
-
-	d.AddColumnsToDelete(colName, delTime)
+	d.columnsToDelete[colName] = delTime
 	return false
 }
 
