@@ -125,7 +125,7 @@ func buildFilteredColumns(event cdc.Event, tc kafkalib.TopicConfig) (*columns.Co
 	return cols, nil
 }
 
-func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfig, cfgMode config.Mode) (Event, error) {
+func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfig, cfgMode config.Mode) (Event, error) {
 	cols, err := buildFilteredColumns(event, tc)
 	if err != nil {
 		return Event{}, fmt.Errorf("failed to build filtered columns: %w", err)
@@ -216,10 +216,17 @@ func ToMemoryEvent(event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfi
 			return Event{}, fmt.Errorf("failed to get partition frequency suffix: %w for table %q schema %q", err, tc.TableName, tc.Schema)
 		}
 		if tc.SoftPartitioning.MaxPartitions > 0 {
-			partitionDistance := tc.SoftPartitioning.PartitionFrequency.PartitionDistance(actuallyDateTime, event.GetExecutionTime())
-			// for e.g. if execution time is 2025-10, actuallyDateTime is 2023-10 and MaxPartitions is 12, then we should write to the compacted table.
-			if partitionDistance > tc.SoftPartitioning.MaxPartitions {
-				suffix = kafkalib.CompactedTableSuffix
+			// only works for full destinations, not just Baseline
+			if destWithTableConfig, ok := dest.(destination.Destination); ok {
+				partitionedTableName := tblName + suffix
+				tableID := dest.IdentifierFor(kafkalib.DatabaseAndSchemaPair{Database: tc.Database, Schema: tc.Schema}, partitionedTableName)
+				shouldWriteToCompactedTable, err := ShouldWriteToCompactedTable(ctx, destWithTableConfig, tableID, tc.SoftPartitioning, actuallyDateTime, event.GetExecutionTime(), tblName)
+				if err != nil {
+					return Event{}, fmt.Errorf("failed to check if should write to compacted table: %w", err)
+				}
+				if shouldWriteToCompactedTable {
+					suffix = kafkalib.CompactedTableSuffix
+				}
 			}
 		}
 		tblName = tblName + suffix
