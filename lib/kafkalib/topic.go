@@ -116,8 +116,8 @@ func (sp SoftPartitioning) Validate() error {
 	if sp.PartitionColumn == "" {
 		return fmt.Errorf("partition column is required")
 	}
-	if sp.MaxPartitions < 0 {
-		return fmt.Errorf("maxPartitions cannot be negative")
+	if sp.MaxPartitions <= 0 {
+		return fmt.Errorf("maxPartitions must be greater than 0")
 	}
 	return nil
 }
