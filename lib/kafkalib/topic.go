@@ -82,6 +82,7 @@ type SoftPartitioning struct {
 	PartitionFrequency PartitionFrequency `yaml:"partitionFrequency" json:"partitionFrequency"`
 	PartitionColumn    string             `yaml:"partitionColumn" json:"partitionColumn"`
 	PartitionSchema    string             `yaml:"partitionSchema" json:"partitionSchema"`
+	MaxPartitions      int                `yaml:"maxPartitions" json:"maxPartitions"`
 }
 
 func (sp SoftPartitioning) Validate() error {
