@@ -121,9 +121,11 @@ func (g GetTableCfgArgs) buildColumnFromRow(row map[string]any) (columns.Column,
 			}
 		}
 	case sql.Native:
-		if value, ok := row["default_value"]; ok && value != "" {
+		val, ok := row["default_value"]
+		if ok && val != nil {
 			col.SetBackfilled(true)
 		}
+
 	case sql.NotImplemented:
 		// We don't need to do anything here.
 	default:
