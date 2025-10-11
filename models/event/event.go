@@ -437,6 +437,7 @@ func BuildSoftPartitionSuffix(
 		return "", nil
 	}
 	suffix, err := tc.SoftPartitioning.PartitionFrequency.Suffix(partitionColumnValue)
+	slog.Info("soft partition partitionsuffix", "suffix", suffix)
 	if err != nil {
 		return "", fmt.Errorf("failed to get partition frequency suffix: %w for table %q schema %q", err, tc.TableName, tc.Schema)
 	}
@@ -448,6 +449,7 @@ func BuildSoftPartitionSuffix(
 			return "", fmt.Errorf("partition frequency is required")
 		}
 		distance := sp.PartitionFrequency.PartitionDistance(partitionColumnValue, executionTime)
+		slog.Info("soft partitiondistance", "distance", distance)
 		if distance == 0 {
 			// Same partition, use base suffix
 		} else if distance < 0 {
@@ -465,5 +467,6 @@ func BuildSoftPartitionSuffix(
 			}
 		}
 	}
+	slog.Info("soft partition final suffix", "suffix", suffix)
 	return suffix, nil
 }
