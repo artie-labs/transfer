@@ -62,12 +62,12 @@ func TestProcessMessageFailures(t *testing.T) {
 
 	var mgo mongo.Debezium
 	tcFmtMap := NewTcFmtMap()
-	tcFmtMap.Add(msg.Topic(), TopicConfigFormatter{
+	tcFmtMap.Add(msg.Topic, TopicConfigFormatter{
 		tc: kafkalib.TopicConfig{
 			Database:     db,
 			TableName:    table,
 			Schema:       schema,
-			Topic:        msg.Topic(),
+			Topic:        msg.Topic,
 			CDCFormat:    "",
 			CDCKeyFormat: "",
 		},
@@ -80,7 +80,7 @@ func TestProcessMessageFailures(t *testing.T) {
 		TopicToConfigFormatMap: tcFmtMap,
 	}
 
-	_, ok := tcFmtMap.GetTopicFmt(msg.Topic())
+	_, ok := tcFmtMap.GetTopicFmt(msg.Topic)
 	assert.True(t, ok)
 
 	tableName, err = args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{})
@@ -92,14 +92,14 @@ func TestProcessMessageFailures(t *testing.T) {
 		Database:     db,
 		TableName:    table,
 		Schema:       schema,
-		Topic:        msg.Topic(),
+		Topic:        msg.Topic,
 		CDCFormat:    "",
 		CDCKeyFormat: "org.apache.kafka.connect.storage.StringConverter",
 	}
 	tc.Load()
 
 	// Add will just replace the prev setting.
-	tcFmtMap.Add(msg.Topic(), TopicConfigFormatter{
+	tcFmtMap.Add(msg.Topic, TopicConfigFormatter{
 		tc:     tc,
 		Format: &mgo,
 	})
@@ -158,7 +158,7 @@ func TestProcessMessageFailures(t *testing.T) {
 	}
 }`
 
-	kafkaMessage := msg.GetMessage()
+	kafkaMessage := msg.Message
 	memoryDB := memDB
 	kafkaMessage.Key = []byte(fmt.Sprintf("Struct{id=%v}", 1004))
 	kafkaMessage.Value = []byte(val)
@@ -173,7 +173,7 @@ func TestProcessMessageFailures(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, tableID, actualTableID)
 
-	td := memoryDB.GetOrCreateTableData(tableID, msg.Topic())
+	td := memoryDB.GetOrCreateTableData(tableID, msg.Topic)
 	// Check that there are corresponding row(s) in the memory DB
 	assert.Len(t, td.Rows(), 1)
 
@@ -234,12 +234,12 @@ func TestProcessMessageSkip(t *testing.T) {
 	)
 
 	tcFmtMap := NewTcFmtMap()
-	tcFmtMap.Add(msg.Topic(), TopicConfigFormatter{
+	tcFmtMap.Add(msg.Topic, TopicConfigFormatter{
 		tc: kafkalib.TopicConfig{
 			Database:     db,
 			TableName:    table,
 			Schema:       schema,
-			Topic:        msg.Topic(),
+			Topic:        msg.Topic,
 			CDCFormat:    "",
 			CDCKeyFormat: "",
 		},
@@ -250,7 +250,7 @@ func TestProcessMessageSkip(t *testing.T) {
 		Database:          db,
 		TableName:         table,
 		Schema:            schema,
-		Topic:             msg.Topic(),
+		Topic:             msg.Topic,
 		CDCFormat:         "",
 		CDCKeyFormat:      "org.apache.kafka.connect.storage.StringConverter",
 		SkippedOperations: "d",
@@ -258,7 +258,7 @@ func TestProcessMessageSkip(t *testing.T) {
 	tc.Load()
 
 	// Add will just replace the prev setting.
-	tcFmtMap.Add(msg.Topic(), TopicConfigFormatter{
+	tcFmtMap.Add(msg.Topic, TopicConfigFormatter{
 		tc:     tc,
 		Format: &mgo,
 	})
@@ -324,7 +324,7 @@ func TestProcessMessageSkip(t *testing.T) {
 	for _, val := range vals {
 		idx += 1
 
-		kafkaMessage := msg.GetMessage()
+		kafkaMessage := msg.Message
 		kafkaMessage.Key = []byte(fmt.Sprintf("Struct{id=%v}", idx))
 		if val != "" {
 			kafkaMessage.Value = []byte(val)
@@ -336,7 +336,7 @@ func TestProcessMessageSkip(t *testing.T) {
 			TopicToConfigFormatMap: tcFmtMap,
 		}
 
-		td := memoryDB.GetOrCreateTableData(tableID, msg.Topic())
+		td := memoryDB.GetOrCreateTableData(tableID, msg.Topic)
 		assert.Equal(t, 0, int(td.NumberOfRows()))
 
 		actualTableID, err := args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{})
