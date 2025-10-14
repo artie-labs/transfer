@@ -44,6 +44,8 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
+replace github.com/segmentio/kafka-go => github.com/artie-labs/kafka-go v0.0.0-20251014212512-e327e5cd1151
+
 require (
 	cloud.google.com/go v0.121.6 // indirect
 	cloud.google.com/go/auth v0.16.5 // indirect
