@@ -124,6 +124,7 @@ type UpsertColumnArg struct {
 	PrimaryKey      *bool
 	Backfilled      *bool
 	StringPrecision *int32
+	Place           string
 }
 
 // UpsertColumn - just a wrapper around UpdateColumn and AddColumn
@@ -161,7 +162,7 @@ func (c *Columns) UpsertColumn(colName string, arg UpsertColumnArg) error {
 
 		c.UpdateColumn(col)
 	} else {
-		slog.Info("Adding a new column", slog.String("colName", colName))
+		slog.Info("Adding a new column", slog.String("colName", colName), slog.String("place", arg.Place))
 		_col := Column{
 			name:        colName,
 			KindDetails: typing.Invalid,

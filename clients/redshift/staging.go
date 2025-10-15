@@ -23,7 +23,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 
 	for colName, newValue := range colToNewLengthMap {
 		// Try to upsert columns first. If this fails, we won't need to update the destination table.
-		if err = tableConfig.UpsertColumn(colName, columns.UpsertColumnArg{StringPrecision: typing.ToPtr(newValue)}); err != nil {
+		if err = tableConfig.UpsertColumn(colName, columns.UpsertColumnArg{StringPrecision: typing.ToPtr(newValue), Place: "PrepareTemporaryTable"}); err != nil {
 			return fmt.Errorf("failed to update table config with new string precision: %w", err)
 		}
 
@@ -94,6 +94,7 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID
 	for colName, newLength := range additionalOutput.ColumnToNewLengthMap {
 		tableData.InMemoryColumns().UpsertColumn(colName, columns.UpsertColumnArg{
 			StringPrecision: typing.ToPtr(newLength),
+			Place:           "loadTemporaryTable",
 		})
 	}
 

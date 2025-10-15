@@ -118,6 +118,7 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 			if backfillErr == nil {
 				err = tableConfig.UpsertColumn(col.Name(), columns.UpsertColumnArg{
 					Backfilled: typing.ToPtr(true),
+					Place:      "Merge (Backfill)",
 				})
 
 				if err != nil {

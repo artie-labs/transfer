@@ -154,6 +154,7 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 				columns.EscapeName(pk),
 				columns.UpsertColumnArg{
 					PrimaryKey: typing.ToPtr(true),
+					Place:      "ToMemoryEvent",
 				},
 			)
 
