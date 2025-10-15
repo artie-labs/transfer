@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"slices"
 	"strconv"
 	"time"
 
 	bigQueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
 	redshiftDialect "github.com/artie-labs/transfer/clients/redshift/dialect"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -97,6 +99,11 @@ func BackfillColumn(ctx context.Context, dest destination.Destination, column co
 		if disable {
 			return nil
 		}
+	}
+
+	// Artie columns that should not be backfilled.
+	if slices.Contains(constants.ArtieColumns, column.Name()) {
+		return nil
 	}
 
 	dialect := dest.Dialect()
