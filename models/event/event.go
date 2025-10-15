@@ -207,7 +207,7 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 		if !ok {
 			return Event{}, fmt.Errorf("partition column %q not found in data", tc.SoftPartitioning.PartitionColumn)
 		}
-		actuallyDateTime, err := typing.AssertType[time.Time](maybeDatetime)
+		actuallyDateTime, err := typing.ParseTimestampTZFromAny(maybeDatetime)
 		if err != nil {
 			return Event{}, fmt.Errorf("failed to assert datetime: %w for table %q schema %q", err, tc.TableName, tc.Schema)
 		}
