@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"slices"
 	"time"
 
 	"github.com/artie-labs/transfer/lib"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -109,6 +111,10 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 	// Now iterate over all the in-memory cols and see which ones require a backfill.
 	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
 		if col.ShouldSkip() {
+			continue
+		}
+		// Skip Artie specific columns
+		if slices.Contains(constants.ArtieColumns, col.Name()) {
 			continue
 		}
 

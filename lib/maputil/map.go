@@ -3,6 +3,7 @@ package maputil
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/artie-labs/transfer/lib/typing"
 )
@@ -47,4 +48,22 @@ func GetTypeFromMap[T any](obj map[string]any, key string) (T, error) {
 	}
 
 	return typing.AssertType[T](value)
+}
+
+// GetCaseInsensitiveValue performs a case-insensitive lookup in the map
+func GetCaseInsensitiveValue(m map[string]any, key string) (any, bool) {
+	// First try exact match
+	if value, ok := m[key]; ok {
+		return value, true
+	}
+
+	// Then try case-insensitive match
+	lowerKey := strings.ToLower(key)
+	for k, v := range m {
+		if strings.ToLower(k) == lowerKey {
+			return v, true
+		}
+	}
+
+	return nil, false
 }
