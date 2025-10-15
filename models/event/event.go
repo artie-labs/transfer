@@ -203,6 +203,7 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 		delete(evtData, constants.DeleteColumnMarker)
 		delete(evtData, constants.OnlySetDeleteColumnMarker)
 	} else if tc.SoftPartitioning.Enabled {
+		// TODO: cache exact match or fix upstream to pass the column name from source table
 		maybeDatetime, ok := maputil.GetCaseInsensitiveValue(evtData, tc.SoftPartitioning.PartitionColumn)
 		if !ok {
 			return Event{}, fmt.Errorf("partition column %q not found in data", tc.SoftPartitioning.PartitionColumn)
