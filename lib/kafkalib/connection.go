@@ -64,6 +64,7 @@ func (c Connection) Dialer(ctx context.Context, awsOptFns ...func(options *awsCf
 	dialer := &kafka.Dialer{
 		Timeout:   c.timeout,
 		DualStack: true,
+		KeepAlive: 30 * time.Second,
 	}
 
 	switch c.Mechanism() {
