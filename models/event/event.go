@@ -453,7 +453,12 @@ func BuildSoftPartitionSuffix(
 		if distance == 0 {
 			// Same partition, use base suffix
 		} else if distance < 0 {
-			return "", fmt.Errorf("partition time %v for column %q is in the future of execution time %v", partitionColumnValue, sp.PartitionColumn, executionTime)
+			slog.Warn(
+				"partition time is in the future of execution time, writing to future partition",
+				slog.String("partition_column", sp.PartitionColumn),
+				slog.Time("partition_time", partitionColumnValue),
+				slog.Time("execution_time", executionTime),
+			)
 		} else {
 			partitionedTableName := tblName + suffix
 			tableID := dest.IdentifierFor(kafkalib.DatabaseAndSchemaPair{Database: tc.Database, Schema: tc.Schema}, partitionedTableName)
