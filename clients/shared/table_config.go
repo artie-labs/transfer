@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
@@ -97,7 +98,8 @@ func (g GetTableCfgArgs) buildColumnFromRow(row map[string]any) (columns.Column,
 		return columns.Column{}, fmt.Errorf("failed to get column name: %w", err)
 	}
 
-	col := columns.NewColumn(colName, kindDetails)
+	// Column name must be lowercased.
+	col := columns.NewColumn(strings.ToLower(colName), kindDetails)
 	strategy := g.Destination.Dialect().GetDefaultValueStrategy()
 	switch strategy {
 	case sql.Backfill:
