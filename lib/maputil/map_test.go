@@ -170,3 +170,71 @@ func TestGetTypeFromMap(t *testing.T) {
 	}
 
 }
+
+func TestGetCaseInsensitiveValue(t *testing.T) {
+	testCases := []struct {
+		name          string
+		m             map[string]any
+		key           string
+		expectedValue any
+		expectedFound bool
+	}{
+		{
+			name:          "exact match",
+			m:             map[string]any{"foo": "bar", "baz": 123},
+			key:           "foo",
+			expectedValue: "bar",
+			expectedFound: true,
+		},
+		{
+			name:          "case insensitive match",
+			m:             map[string]any{"Foo": "bar", "BAZ": 123},
+			key:           "foo",
+			expectedValue: "bar",
+			expectedFound: true,
+		},
+		{
+			name:          "case insensitive match with different case",
+			m:             map[string]any{"foo": "bar", "BAZ": 123},
+			key:           "FOO",
+			expectedValue: "bar",
+			expectedFound: true,
+		},
+		{
+			name:          "no match",
+			m:             map[string]any{"foo": "bar", "baz": 123},
+			key:           "qux",
+			expectedValue: nil,
+			expectedFound: false,
+		},
+		{
+			name:          "empty map",
+			m:             map[string]any{},
+			key:           "foo",
+			expectedValue: nil,
+			expectedFound: false,
+		},
+		{
+			name:          "nil map",
+			m:             nil,
+			key:           "foo",
+			expectedValue: nil,
+			expectedFound: false,
+		},
+		{
+			name:          "multiple case variations",
+			m:             map[string]any{"Created_At": "2023-01-01", "updated_at": "2023-01-02", "DELETED_AT": "2023-01-03"},
+			key:           "created_at",
+			expectedValue: "2023-01-01",
+			expectedFound: true,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			value, found := GetCaseInsensitiveValue(testCase.m, testCase.key)
+			assert.Equal(t, testCase.expectedFound, found)
+			assert.Equal(t, testCase.expectedValue, value)
+		})
+	}
+}
