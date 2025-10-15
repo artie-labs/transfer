@@ -3,6 +3,7 @@ package columns
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"slices"
 	"strconv"
 	"strings"
@@ -160,6 +161,7 @@ func (c *Columns) UpsertColumn(colName string, arg UpsertColumnArg) error {
 
 		c.UpdateColumn(col)
 	} else {
+		slog.Info("Adding a new column", slog.String("colName", colName))
 		_col := Column{
 			name:        colName,
 			KindDetails: typing.Invalid,
