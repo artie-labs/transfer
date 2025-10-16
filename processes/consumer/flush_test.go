@@ -42,8 +42,7 @@ func (f *FlushTestSuite) TestMemoryBasic() {
 		evt, err := event.ToMemoryEvent(f.T().Context(), f.baseline, mockEvent, map[string]any{"id": fmt.Sprintf("pk-%d", i)}, topicConfig, config.Replication)
 		assert.NoError(f.T(), err)
 
-		kafkaMsg := kafka.Message{Partition: 1, Offset: 1}
-		_, _, err = evt.Save(f.cfg, f.db, topicConfig, artie.NewMessage(kafkaMsg))
+		_, _, err = evt.Save(f.cfg, f.db, topicConfig)
 		assert.NoError(f.T(), err)
 
 		td := f.db.GetOrCreateTableData(expectedTableID, topicConfig.Topic)
@@ -72,8 +71,7 @@ func (f *FlushTestSuite) TestShouldFlush() {
 		evt, err := event.ToMemoryEvent(f.T().Context(), f.baseline, mockEvent, map[string]any{"id": fmt.Sprintf("pk-%d", i)}, kafkalib.TopicConfig{}, config.Replication)
 		assert.NoError(f.T(), err)
 
-		kafkaMsg := kafka.Message{Partition: 1, Offset: int64(i)}
-		flush, flushReason, err = evt.Save(f.cfg, f.db, topicConfig, artie.NewMessage(kafkaMsg))
+		flush, flushReason, err = evt.Save(f.cfg, f.db, topicConfig)
 		assert.NoError(f.T(), err)
 
 		if flush {
@@ -118,8 +116,9 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 				assert.NoError(f.T(), err)
 
 				kafkaMsg := kafka.Message{Partition: 1, Offset: int64(i)}
-				consumer.SetPartitionToAppliedOffsetTest(kafkaMsg)
-				_, _, err = evt.Save(f.cfg, f.db, topicConfig, artie.NewMessage(kafkaMsg))
+				msg := artie.NewKafkaGoMessage(kafkaMsg)
+				consumer.SetPartitionToAppliedOffsetTest(msg)
+				_, _, err = evt.Save(f.cfg, f.db, topicConfig)
 				assert.NoError(f.T(), err)
 			}
 		}(tableIDs[idx])
@@ -142,6 +141,6 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 		assert.Equal(f.T(), len(kafkaMessages), 1) // There's only 1 partition right now
 
 		// Within each partition, the offset should be 4 (i < 5 from above).
-		assert.Equal(f.T(), kafkaMessages[0].Offset, int64(4))
+		assert.Equal(f.T(), kafkaMessages[0].Offset(), int64(4))
 	}
 }

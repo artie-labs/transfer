@@ -44,7 +44,7 @@ func TestProcessMessageFailures(t *testing.T) {
 		Time:          time.Time{},
 	}
 
-	msg := artie.NewMessage(kafkaMsg)
+	msg := artie.NewKafkaGoMessage(kafkaMsg)
 	args := processArgs{
 		Msg:     msg,
 		GroupID: "foo",
@@ -164,7 +164,7 @@ func TestProcessMessageFailures(t *testing.T) {
 	kafkaMessage.Value = []byte(val)
 
 	args = processArgs{
-		Msg:                    artie.NewMessage(kafkaMessage),
+		Msg:                    artie.NewKafkaGoMessage(kafkaMessage),
 		GroupID:                "foo",
 		TopicToConfigFormatMap: tcFmtMap,
 	}
@@ -192,8 +192,9 @@ func TestProcessMessageFailures(t *testing.T) {
 	}
 	{
 		kafkaMessage.Value = []byte("not a json object")
+		msg := artie.NewKafkaGoMessage(kafkaMessage)
 		args = processArgs{
-			Msg:                    artie.NewMessage(kafkaMessage),
+			Msg:                    msg,
 			GroupID:                "foo",
 			TopicToConfigFormatMap: tcFmtMap,
 		}
@@ -224,7 +225,7 @@ func TestProcessMessageSkip(t *testing.T) {
 		Time:          time.Time{},
 	}
 
-	msg := artie.NewMessage(kafkaMsg)
+	msg := artie.NewKafkaGoMessage(kafkaMsg)
 
 	var mgo mongo.Debezium
 	const (
@@ -330,8 +331,9 @@ func TestProcessMessageSkip(t *testing.T) {
 			kafkaMessage.Value = []byte(val)
 		}
 
+		msg := artie.NewKafkaGoMessage(kafkaMessage)
 		args := processArgs{
-			Msg:                    artie.NewMessage(kafkaMessage),
+			Msg:                    msg,
 			GroupID:                "foo",
 			TopicToConfigFormatMap: tcFmtMap,
 		}

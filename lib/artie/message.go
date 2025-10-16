@@ -5,73 +5,63 @@ import (
 	"time"
 
 	"github.com/segmentio/kafka-go"
-
-	"github.com/artie-labs/transfer/lib/config"
-	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 )
 
-type Message struct {
-	message kafka.Message
+type Message interface {
+	PublishTime() time.Time
+	Topic() string
+	Partition() int
+	Offset() int64
+	Key() []byte
+	Value() []byte
+	HighWaterMark() int64
 }
 
-func (m Message) GetMessage() kafka.Message {
-	return m.message
-}
-
-func BuildLogFields(msg kafka.Message) []any {
+func BuildLogFields(msg Message) []any {
 	return []any{
-		slog.String("topic", msg.Topic),
-		slog.Int64("offset", msg.Offset),
-		slog.String("key", string(msg.Key)),
-		slog.String("value", string(msg.Value)),
+		slog.String("topic", msg.Topic()),
+		slog.Int64("offset", msg.Offset()),
+		slog.String("key", string(msg.Key())),
+		slog.String("value", string(msg.Value())),
 	}
 }
 
-func NewMessage(msg kafka.Message) Message {
-	return Message{message: msg}
+type KafkaGoMessage struct {
+	message kafka.Message
 }
 
-// EmitRowLag will diff against the partition's high watermark and the message's offset
-func (m Message) EmitRowLag(metricsClient base.Client, mode config.Mode, groupID, table string) {
-	metricsClient.GaugeWithSample(
-		"row.lag",
-		float64(m.message.HighWaterMark-m.message.Offset),
-		map[string]string{
-			"mode":    mode.String(),
-			"groupID": groupID,
-			"table":   table,
-		},
-		0.5)
+func NewKafkaGoMessage(msg kafka.Message) KafkaGoMessage {
+	return KafkaGoMessage{message: msg}
 }
 
-func (m Message) EmitIngestionLag(metricsClient base.Client, mode config.Mode, groupID, table string) {
-	metricsClient.Timing("ingestion.lag", time.Since(m.PublishTime()), map[string]string{
-		"mode":    mode.String(),
-		"groupID": groupID,
-		"table":   table,
-	})
+func (m KafkaGoMessage) GetMessage() kafka.Message {
+	return m.message
 }
 
-func (m Message) PublishTime() time.Time {
+func (m KafkaGoMessage) PublishTime() time.Time {
 	return m.message.Time
 }
 
-func (m Message) Topic() string {
+func (m KafkaGoMessage) Topic() string {
 	return m.message.Topic
 }
 
-func (m Message) Partition() int {
+func (m KafkaGoMessage) Partition() int {
 	return m.message.Partition
 }
 
-func (m Message) Offset() int64 {
+func (m KafkaGoMessage) Offset() int64 {
 	return m.message.Offset
 }
 
-func (m Message) Key() []byte {
+func (m KafkaGoMessage) Key() []byte {
 	return m.message.Key
 }
 
-func (m Message) Value() []byte {
+func (m KafkaGoMessage) Value() []byte {
 	return m.message.Value
+}
+
+func (m KafkaGoMessage) HighWaterMark() int64 {
+	return m.message.HighWaterMark
 }
