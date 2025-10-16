@@ -12,6 +12,13 @@ const (
 	Replication Mode = "replication"
 )
 
+type KafkaClient string
+
+const (
+	KafkaGoClient KafkaClient = "kafka-go"
+	FranzGoClient KafkaClient = "franz-go"
+)
+
 type Sentry struct {
 	DSN string `yaml:"dsn"`
 }
@@ -57,9 +64,10 @@ type Reporting struct {
 }
 
 type Config struct {
-	Mode   Mode                      `yaml:"mode"`
-	Output constants.DestinationKind `yaml:"outputSource"`
-	Queue  constants.QueueKind       `yaml:"queue"`
+	KafkaClient KafkaClient               `yaml:"kafkaClient,omitempty"`
+	Mode        Mode                      `yaml:"mode"`
+	Output      constants.DestinationKind `yaml:"outputSource"`
+	Queue       constants.QueueKind       `yaml:"queue"`
 
 	// Flush rules
 	FlushIntervalSeconds int  `yaml:"flushIntervalSeconds"`
