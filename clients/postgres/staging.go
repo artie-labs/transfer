@@ -130,7 +130,7 @@ func parseValue(value any, col columns.Column) (any, error) {
 	case typing.Struct.Kind:
 		// If it's the toast placeholder value, wrap it in quotes so it's valid json
 		if value == constants.ToastUnavailableValuePlaceholder {
-			return fmt.Sprintf(`"%s"`, value), nil
+			return fmt.Sprintf(`%q`, value), nil
 		}
 		return value, nil
 	default:
