@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/artie-labs/transfer/lib/artie"
+	"github.com/artie-labs/transfer/lib/artie/metrics"
 	"github.com/artie-labs/transfer/lib/cdc/format"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination"
@@ -15,7 +16,6 @@ import (
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 	"github.com/artie-labs/transfer/models"
-	"github.com/segmentio/kafka-go"
 )
 
 func StartKafkaGoConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client) {
@@ -37,27 +37,18 @@ func StartKafkaGoConsumer(ctx context.Context, cfg config.Config, inMemDB *model
 		go func(topic string) {
 			defer wg.Done()
 			for {
-				kafkaConsumer, err := kafkalib.GetConsumerFromContext[kafka.Message](ctx, topic)
+				kafkaConsumer, err := kafkalib.GetConsumerFromContext(ctx, topic)
 				if err != nil {
 					logger.Fatal("Failed to get consumer from context", slog.Any("err", err))
 				}
 
-				err = kafkaConsumer.FetchMessageAndProcess(ctx, func(kafkaMsg kafka.Message) error {
-					if len(kafkaMsg.Value) == 0 {
-						fields, err := artie.BuildLogFields(kafkaMsg)
-						if err != nil {
-							logger.Fatal("Failed to build log fields", slog.Any("err", err), slog.String("topic", kafkaMsg.Topic))
-						}
-						slog.Debug("Found a tombstone message, skipping...", fields...)
+				err = kafkaConsumer.FetchMessageAndProcess(ctx, func(msg artie.Message) error {
+					if len(msg.Value()) == 0 {
+						slog.Debug("Found a tombstone message, skipping...", artie.BuildLogFields(msg)...)
 						return nil
 					}
 
-					msg, err := artie.NewMessage(kafkaMsg)
-					if err != nil {
-						logger.Fatal("Failed to create message", slog.Any("err", err), slog.String("topic", kafkaMsg.Topic))
-					}
-
-					args := processArgs[kafka.Message]{
+					args := processArgs{
 						Msg:                    msg,
 						GroupID:                kafkaConsumer.GetGroupID(),
 						TopicToConfigFormatMap: tcFmtMap,
@@ -65,11 +56,11 @@ func StartKafkaGoConsumer(ctx context.Context, cfg config.Config, inMemDB *model
 
 					tableID, err := args.process(ctx, cfg, inMemDB, dest, metricsClient)
 					if err != nil {
-						logger.Fatal("Failed to process message", slog.Any("err", err), slog.String("topic", kafkaMsg.Topic))
+						logger.Fatal("Failed to process message", slog.Any("err", err), slog.String("topic", msg.Topic()))
 					}
 
-					msg.EmitIngestionLag(metricsClient, cfg.Mode, kafkaConsumer.GetGroupID(), tableID.Table)
-					msg.EmitRowLag(metricsClient, cfg.Mode, kafkaConsumer.GetGroupID(), tableID.Table)
+					metrics.EmitIngestionLag(msg, metricsClient, cfg.Mode, kafkaConsumer.GetGroupID(), tableID.Table)
+					metrics.EmitRowLag(msg, metricsClient, cfg.Mode, kafkaConsumer.GetGroupID(), tableID.Table)
 
 					return nil
 				})

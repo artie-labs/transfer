@@ -14,13 +14,13 @@ import (
 	"github.com/artie-labs/transfer/models/event"
 )
 
-type processArgs[M artie.MessageType] struct {
-	Msg                    artie.Message[M]
+type processArgs struct {
+	Msg                    artie.Message
 	GroupID                string
 	TopicToConfigFormatMap *TcFmtMap
 }
 
-func (p processArgs[M]) process(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client) (cdc.TableID, error) {
+func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client) (cdc.TableID, error) {
 	if p.TopicToConfigFormatMap == nil {
 		return cdc.TableID{}, fmt.Errorf("failed to process, topicConfig is nil")
 	}
@@ -84,7 +84,7 @@ func (p processArgs[M]) process(ctx context.Context, cfg config.Config, inMemDB 
 	}
 
 	if shouldFlush {
-		err = FlushSingleTopic[M](ctx, inMemDB, dest, metricsClient, Args{Reason: flushReason}, topicConfig.tc.Topic, false)
+		err = FlushSingleTopic(ctx, inMemDB, dest, metricsClient, Args{Reason: flushReason}, topicConfig.tc.Topic, false)
 		if err != nil {
 			tags["what"] = "flush_fail"
 		}

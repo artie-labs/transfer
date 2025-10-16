@@ -8,6 +8,7 @@ import (
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -115,7 +116,8 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 				assert.NoError(f.T(), err)
 
 				kafkaMsg := kafka.Message{Partition: 1, Offset: int64(i)}
-				consumer.SetPartitionToAppliedOffsetTest(kafkaMsg)
+				msg := artie.NewKafkaGoMessage(kafkaMsg)
+				consumer.SetPartitionToAppliedOffsetTest(msg)
 				_, _, err = evt.Save(f.cfg, f.db, topicConfig)
 				assert.NoError(f.T(), err)
 			}
@@ -131,7 +133,7 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 	}
 
 	f.fakeBaseline.MergeReturns(true, nil)
-	assert.NoError(f.T(), Flush[kafka.Message](ctx, f.db, f.baseline, metrics.NullMetricsProvider{}, []string{topicName}, Args{Reason: "testing"}))
+	assert.NoError(f.T(), Flush(ctx, f.db, f.baseline, metrics.NullMetricsProvider{}, []string{topicName}, Args{Reason: "testing"}))
 	assert.Equal(f.T(), f.fakeConsumer.CommitMessagesCallCount(), 1) // Commit only once because it's the same topic.
 
 	for i := range f.fakeConsumer.CommitMessagesCallCount() {
@@ -139,6 +141,6 @@ func (f *FlushTestSuite) TestMemoryConcurrency() {
 		assert.Equal(f.T(), len(kafkaMessages), 1) // There's only 1 partition right now
 
 		// Within each partition, the offset should be 4 (i < 5 from above).
-		assert.Equal(f.T(), kafkaMessages[0].Offset, int64(4))
+		assert.Equal(f.T(), kafkaMessages[0].Offset(), int64(4))
 	}
 }

@@ -9,13 +9,12 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/models"
-	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/suite"
 )
 
 type FlushTestSuite struct {
 	suite.Suite
-	fakeConsumer *mocks.FakeConsumer[kafka.Message]
+	fakeConsumer *mocks.FakeConsumer
 	cfg          config.Config
 	db           *models.DatabaseData
 	fakeBaseline *mocks.FakeBaseline
@@ -52,7 +51,7 @@ func (f *FlushTestSuite) SetupTest() {
 	f.fakeBaseline = &mocks.FakeBaseline{}
 	f.baseline = f.fakeBaseline
 	f.db = models.NewMemoryDB()
-	f.fakeConsumer = &mocks.FakeConsumer[kafka.Message]{}
+	f.fakeConsumer = &mocks.FakeConsumer{}
 }
 
 func TestFlushTestSuite(t *testing.T) {

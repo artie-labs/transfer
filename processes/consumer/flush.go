@@ -23,13 +23,13 @@ type Args struct {
 	Reason string
 }
 
-func Flush[M any](ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, topics []string, args Args) error {
+func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, topics []string, args Args) error {
 	if inMemDB == nil {
 		return nil
 	}
 
 	for _, topic := range topics {
-		if err := FlushSingleTopic[M](ctx, inMemDB, dest, metricsClient, args, topic, true); err != nil {
+		if err := FlushSingleTopic(ctx, inMemDB, dest, metricsClient, args, topic, true); err != nil {
 			slog.Error("Failed to flush topic", slog.String("topic", topic), slog.Any("err", err))
 		}
 	}
@@ -37,7 +37,7 @@ func Flush[M any](ctx context.Context, inMemDB *models.DatabaseData, dest destin
 	return nil
 }
 
-func FlushSingleTopic[M any](ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, args Args, topic string, shouldLock bool) error {
+func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, args Args, topic string, shouldLock bool) error {
 	if inMemDB == nil {
 		return nil
 	}
@@ -47,7 +47,7 @@ func FlushSingleTopic[M any](ctx context.Context, inMemDB *models.DatabaseData, 
 		return nil
 	}
 
-	consumer, err := kafkalib.GetConsumerFromContext[M](ctx, topic)
+	consumer, err := kafkalib.GetConsumerFromContext(ctx, topic)
 	if err != nil {
 		return fmt.Errorf("failed to get consumer from context: %w", err)
 	}
