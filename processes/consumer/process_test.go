@@ -158,7 +158,16 @@ func TestProcessMessageFailures(t *testing.T) {
 	}
 }`
 
-	kafkaMessage := msg.GetMessage()
+	kafkaMessage := kafka.Message{
+		Topic:         "foo",
+		Partition:     0,
+		Offset:        0,
+		HighWaterMark: 0,
+		Key:           nil,
+		Value:         nil,
+		Headers:       nil,
+		Time:          time.Time{},
+	}
 	memoryDB := memDB
 	kafkaMessage.Key = []byte(fmt.Sprintf("Struct{id=%v}", 1004))
 	kafkaMessage.Value = []byte(val)
@@ -325,7 +334,16 @@ func TestProcessMessageSkip(t *testing.T) {
 	for _, val := range vals {
 		idx += 1
 
-		kafkaMessage := msg.GetMessage()
+		kafkaMessage := kafka.Message{
+			Topic:         "foo",
+			Partition:     0,
+			Offset:        0,
+			HighWaterMark: 0,
+			Key:           nil,
+			Value:         nil,
+			Headers:       nil,
+			Time:          time.Time{},
+		}
 		kafkaMessage.Key = []byte(fmt.Sprintf("Struct{id=%v}", idx))
 		if val != "" {
 			kafkaMessage.Value = []byte(val)

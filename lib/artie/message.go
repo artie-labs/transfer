@@ -31,7 +31,7 @@ type KafkaGoMessage struct {
 	message kafka.Message
 }
 
-func NewKafkaGoMessage(msg kafka.Message) KafkaGoMessage {
+func NewKafkaGoMessage(msg kafka.Message) Message {
 	return KafkaGoMessage{message: msg}
 }
 
@@ -72,7 +72,7 @@ type FranzGoMessage struct {
 	highWatermark int64
 }
 
-func NewFranzGoMessage(msg kgo.Record, highWatermark int64) FranzGoMessage {
+func NewFranzGoMessage(msg kgo.Record, highWatermark int64) Message {
 	return FranzGoMessage{message: msg, highWatermark: highWatermark}
 }
 
