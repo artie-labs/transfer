@@ -81,7 +81,14 @@ func (PostgresDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (str
 }
 
 func (p PostgresDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
-	return fmt.Sprintf("COALESCE(%s, '') NOT LIKE '%s'", sql.QuoteTableAliasColumn(tableAlias, column, p), "%"+constants.ToastUnavailableValuePlaceholder+"%")
+	quotedColumn := sql.QuoteTableAliasColumn(tableAlias, column, p)
+
+	// For JSONB columns, we need to cast to text before using NOT LIKE
+	if column.KindDetails.Kind == typing.Struct.Kind || column.KindDetails.Kind == typing.Array.Kind {
+		return fmt.Sprintf("COALESCE(%s::text, '') NOT LIKE '%s'", quotedColumn, "%"+constants.ToastUnavailableValuePlaceholder+"%")
+	}
+
+	return fmt.Sprintf("COALESCE(%s, '') NOT LIKE '%s'", quotedColumn, "%"+constants.ToastUnavailableValuePlaceholder+"%")
 }
 
 func (PostgresDialect) GetDefaultValueStrategy() sql.DefaultValueStrategy {
