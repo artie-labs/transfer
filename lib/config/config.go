@@ -71,6 +71,7 @@ func readFileToConfig(pathToConfig string) (*Config, error) {
 	config.BufferRows = cmp.Or(config.BufferRows, defaultBufferPoolSize)
 	config.FlushSizeKb = cmp.Or(config.FlushSizeKb, defaultFlushSizeKb)
 	config.Mode = cmp.Or(config.Mode, Replication)
+	config.KafkaClient = cmp.Or(config.KafkaClient, KafkaGoClient)
 
 	return &config, nil
 }
