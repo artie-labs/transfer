@@ -26,16 +26,21 @@ type KafkaGoConsumer struct {
 	*kafka.Reader
 }
 
-func (c KafkaGoConsumer) CommitMessages(ctx context.Context, msgs ...artie.Message) error {
+func (k KafkaGoConsumer) CommitMessages(ctx context.Context, msgs ...artie.Message) error {
+	// TODO: Find a better way to get an array of kafka.Message without allocating a new slice.
 	kafkaMsgs := make([]kafka.Message, len(msgs))
 	for i, msg := range msgs {
-		kafkaMsgs[i] = msg.(artie.KafkaGoMessage).GetMessage()
+		if kMsg, ok := msg.(artie.KafkaGoMessage); ok {
+			kafkaMsgs[i] = kMsg.GetMessage()
+		} else {
+			return fmt.Errorf("message is not of type artie.KafkaGoMessage: %T", msg)
+		}
 	}
-	return c.Reader.CommitMessages(ctx, kafkaMsgs...)
+	return k.Reader.CommitMessages(ctx, kafkaMsgs...)
 }
 
-func (c KafkaGoConsumer) FetchMessage(ctx context.Context) (artie.Message, error) {
-	msg, err := c.Reader.FetchMessage(ctx)
+func (k KafkaGoConsumer) FetchMessage(ctx context.Context) (artie.Message, error) {
+	msg, err := k.Reader.FetchMessage(ctx)
 	if err != nil {
 		return nil, err
 	}
