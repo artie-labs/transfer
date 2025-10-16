@@ -7,6 +7,7 @@ import (
 	"github.com/artie-labs/transfer/clients/bigquery/converters"
 	"github.com/artie-labs/transfer/clients/postgres/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -126,6 +127,12 @@ func parseValue(value any, col columns.Column) (any, error) {
 		return converters.Int64Converter{}.Convert(value)
 	case typing.Boolean.Kind:
 		return converters.BooleanConverter{}.Convert(value)
+	case typing.Struct.Kind:
+		// If it's the toast placeholder value, wrap it in quotes so it's valid json
+		if value == constants.ToastUnavailableValuePlaceholder {
+			return fmt.Sprintf(`"%s"`, value), nil
+		}
+		return value, nil
 	default:
 		return value, nil
 	}
