@@ -150,8 +150,7 @@ func (f *FranzGoConsumer) CommitMessages(ctx context.Context, msgs ...artie.Mess
 	})
 
 	if commitError != nil {
-		slog.Error("Commit failed via callback", slog.Any("err", commitError))
-		return commitError
+		return fmt.Errorf("commit failed via callback: %w", commitError)
 	}
 
 	if slog.Default().Enabled(ctx, slog.LevelDebug) {
