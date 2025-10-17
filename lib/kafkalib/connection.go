@@ -179,8 +179,9 @@ func (c Connection) ClientOptions(ctx context.Context, brokers []string, awsOptF
 		}
 
 		opts = append(opts, kgo.SASL(fgoAws.Auth{
-			AccessKey: creds.AccessKeyID,
-			SecretKey: creds.SecretAccessKey,
+			AccessKey:    creds.AccessKeyID,
+			SecretKey:    creds.SecretAccessKey,
+			SessionToken: creds.SessionToken,
 		}.AsManagedStreamingIAMMechanism()))
 		// AWS MSK always requires TLS
 		opts = append(opts, kgo.Dialer((&tls.Dialer{Config: &tls.Config{}}).DialContext))
