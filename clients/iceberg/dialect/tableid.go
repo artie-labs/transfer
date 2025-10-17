@@ -24,6 +24,10 @@ func (ti TableIdentifier) Namespace() string {
 	return strings.ToLower(ti.namespace)
 }
 
+func (ti TableIdentifier) Schema() string {
+	return ti.Namespace()
+}
+
 func (ti TableIdentifier) EscapedTable() string {
 	return _dialect.QuoteIdentifier(ti.table)
 }
