@@ -2,6 +2,7 @@ package fgo
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -74,18 +75,11 @@ func (f *FranzGoConsumer) FetchMessage(ctx context.Context) (artie.Message, erro
 		if ctx.Err() != context.DeadlineExceeded {
 			slog.Warn("Error polling fetches", slog.Int("numErrors", len(errs)), slog.Any("errs", errs))
 		}
-		if len(errs) == 1 {
-			return nil, errs[0].Err
+		var combinedErrors []error
+		for _, err := range errs {
+			combinedErrors = append(combinedErrors, err.Err)
 		}
-		var combinedErr error
-		for i, err := range errs {
-			if i == 0 {
-				combinedErr = err.Err
-			} else {
-				combinedErr = fmt.Errorf("%w; %w", combinedErr, err.Err)
-			}
-		}
-		return nil, combinedErr
+		return nil, errors.Join(combinedErrors...)
 	}
 
 	// Since HWM is a field on the Partition and not on every kgo.Record,
