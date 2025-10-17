@@ -16,7 +16,7 @@ func (e FetchMessageError) Error() string {
 	return fmt.Sprintf("failed to fetch message: %v", e.Err)
 }
 
-func IsFetchMessageError(err error) bool {
-	_, ok := err.(FetchMessageError)
-	return ok
+func IsFetchMessageError(err error) (FetchMessageError, bool) {
+	fetchMessageError, ok := err.(FetchMessageError)
+	return fetchMessageError, ok
 }
