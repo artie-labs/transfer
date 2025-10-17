@@ -167,17 +167,20 @@ func (c Connection) ClientOptions(ctx context.Context, brokers []string, awsOptF
 			opts = append(opts, kgo.Dialer((&tls.Dialer{Config: &tls.Config{}}).DialContext))
 		}
 	case AwsMskIam:
-		_, err := awsCfg.LoadDefaultConfig(ctx, awsOptFns...)
+		awsCfg, err := awsCfg.LoadDefaultConfig(ctx, awsOptFns...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load aws configuration: %w", err)
 		}
 
-		mechanism := fgoAws.Auth{
-			AccessKey: "", // Will be loaded from AWS config
-			SecretKey: "", // Will be loaded from AWS config
-		}.AsManagedStreamingIAMMechanism()
+		creds, err := awsCfg.Credentials.Retrieve(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to retrieve aws credentials: %w", err)
+		}
 
-		opts = append(opts, kgo.SASL(mechanism))
+		opts = append(opts, kgo.SASL(fgoAws.Auth{
+			AccessKey: creds.AccessKeyID,
+			SecretKey: creds.SecretAccessKey,
+		}.AsManagedStreamingIAMMechanism()))
 		// AWS MSK always requires TLS
 		opts = append(opts, kgo.Dialer((&tls.Dialer{Config: &tls.Config{}}).DialContext))
 	case Plain:
