@@ -2,6 +2,7 @@ package consumer
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"sync"
 	"time"
@@ -67,7 +68,10 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 
 				if err != nil {
 					if kafkalib.IsFetchMessageError(err) {
-						slog.Warn("Failed to read kafka message", slog.Any("err", err))
+						if !errors.Is(err, context.DeadlineExceeded) {
+							slog.Warn("Failed to read kafka message", slog.Any("err", err))
+						}
+
 						time.Sleep(500 * time.Millisecond)
 						continue
 					} else {
