@@ -3,6 +3,8 @@ package kafkalib
 import (
 	"testing"
 
+	awsCfg "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -102,14 +104,30 @@ func TestConnection_ClientOptions(t *testing.T) {
 	{
 		// AWS IAM w/ TLS - should have SASL and TLS dialer
 		c := NewConnection(true, false, "", "", DefaultTimeout)
-		opts, err := c.ClientOptions(ctx, brokers)
+		opts, err := c.ClientOptions(ctx, brokers, func(options *awsCfg.LoadOptions) error {
+			// Mock AWS credentials for testing
+			options.Credentials = credentials.NewStaticCredentialsProvider(
+				"test-access-key",
+				"test-secret-key",
+				"test-session-token",
+			)
+			return nil
+		})
 		assert.NoError(t, err)
 		assert.NotEmpty(t, opts)
 		assert.GreaterOrEqual(t, len(opts), 4) // brokers, timeout, SASL, dialer
 
 		// w/o TLS (still enabled because AWS doesn't support not having TLS)
 		c = NewConnection(true, true, "", "", DefaultTimeout)
-		opts, err = c.ClientOptions(ctx, brokers)
+		opts, err = c.ClientOptions(ctx, brokers, func(options *awsCfg.LoadOptions) error {
+			// Mock AWS credentials for testing
+			options.Credentials = credentials.NewStaticCredentialsProvider(
+				"test-access-key",
+				"test-secret-key",
+				"test-session-token",
+			)
+			return nil
+		})
 		assert.NoError(t, err)
 		assert.NotEmpty(t, opts)
 		assert.GreaterOrEqual(t, len(opts), 4) // brokers, timeout, SASL, dialer (TLS still forced)
