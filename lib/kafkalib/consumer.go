@@ -129,13 +129,12 @@ func InjectFranzGoConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) 
 			// Consumer group lifecycle callbacks with detailed logging
 			kgo.OnPartitionsAssigned(func(ctx context.Context, c *kgo.Client, assigned map[string][]int32) {
 				for topic, partitions := range assigned {
+					// Check group metadata during assignment for debugging
+					actualGroupID, generation := c.GroupMetadata()
 					slog.Info("🎉 Partitions assigned",
 						slog.String("topic", topic),
 						slog.Any("partitions", partitions),
-						slog.String("groupID", cfg.GroupID))
-					// Check group metadata during assignment for debugging
-					actualGroupID, generation := c.GroupMetadata()
-					slog.Info("Group metadata during assignment",
+						slog.String("expectedGroupID", cfg.GroupID),
 						slog.String("actualGroupID", actualGroupID),
 						slog.Int("generation", int(generation)))
 				}
