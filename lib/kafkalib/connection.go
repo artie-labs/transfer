@@ -200,7 +200,7 @@ func (c Connection) ClientOptions(ctx context.Context, brokers []string, awsOptF
 			opts = append(opts, kgo.Dialer((&tls.Dialer{Config: &tls.Config{}}).DialContext))
 		}
 	default:
-		return nil, fmt.Errorf("unsupported kafka mechanism: %s", c.Mechanism())
+		return nil, fmt.Errorf("unsupported kafka mechanism: %q", c.Mechanism())
 	}
 
 	return opts, nil
