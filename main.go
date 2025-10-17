@@ -113,7 +113,7 @@ func main() {
 		defer wg.Done()
 		switch settings.Config.Queue {
 		case constants.Kafka:
-			consumer.StartKafkaGoConsumer(ctx, settings.Config, inMemDB, dest, metricsClient)
+			consumer.StartKafkaConsumer(ctx, settings.Config, inMemDB, dest, metricsClient)
 		default:
 			logger.Fatal(fmt.Sprintf("Message queue: %q not supported", settings.Config.Queue))
 		}
