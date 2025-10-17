@@ -56,15 +56,17 @@ fi
 echo -e "${GREEN}✅ Test data published successfully${NC}"
 
 # Phase 3: change consumer group for transfer
-GROUP_ID="group_$(date +%Y_%m_%d_%H_%M_%S)"
+DATE="$(date +%Y_%m_%d_%H_%M_%S)"
 # Use a portable sed command for in-place replacement of groupID in config/e2e.yaml
 # This works on both GNU and BSD/macOS sed
 if sed --version >/dev/null 2>&1; then
     # GNU sed
-    sed -i "s/^  groupID: .*/  groupID: ${GROUP_ID}/" config/e2e.yaml
+    sed -i "s/^  groupID: .*/  groupID: group_e2e_${DATE}/" config/e2e.yaml
+    sed -i "s/^  groupID: .*/  groupID: group_fgo_${DATE}/" config/e2e_fgo.yaml
 else
     # BSD/macOS sed
-    sed -i '' "s/^  groupID: .*/  groupID: ${GROUP_ID}/" config/e2e.yaml
+    sed -i '' "s/^  groupID: .*/  groupID: group_e2e_${DATE}/" config/e2e.yaml
+    sed -i '' "s/^  groupID: .*/  groupID: group_fgo_${DATE}/" config/e2e_fgo.yaml
 fi
 
 echo -e "${GREEN}✅ E2E infrastructure is ready!${NC}"
