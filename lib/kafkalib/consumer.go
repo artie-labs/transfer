@@ -194,11 +194,11 @@ func (c *ConsumerProvider) LockAndProcess(ctx context.Context, lock bool, do fun
 
 func (c *ConsumerProvider) FetchMessageAndProcess(ctx context.Context, do func(artie.Message) error) error {
 	msg, err := c.Consumer.FetchMessage(ctx)
-	if msg == nil {
-		return nil
-	}
 	if err != nil {
 		return NewFetchMessageError(err)
+	}
+	if msg == nil {
+		return nil
 	}
 
 	c.mu.Lock()
