@@ -51,7 +51,6 @@ func (k KafkaGoConsumer) FetchMessage(ctx context.Context) (artie.Message, error
 	return artie.NewKafkaGoMessage(msg), nil
 }
 
-
 type FranzGoConsumer struct {
 	client  *kgo.Client
 	groupID string
