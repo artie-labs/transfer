@@ -40,7 +40,7 @@ func (ti TableIdentifier) Table() string {
 }
 
 func (ti TableIdentifier) Schema() string {
-	return ""
+	return ti.Dataset()
 }
 
 func (ti TableIdentifier) WithTable(table string) sql.TableIdentifier {
