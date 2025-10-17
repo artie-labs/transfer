@@ -12,6 +12,10 @@ import (
 	"github.com/segmentio/kafka-go/sasl/aws_msk_iam_v2"
 	"github.com/segmentio/kafka-go/sasl/plain"
 	"github.com/segmentio/kafka-go/sasl/scram"
+	"github.com/twmb/franz-go/pkg/kgo"
+	fgoAws "github.com/twmb/franz-go/pkg/sasl/aws"
+	fgoPlain "github.com/twmb/franz-go/pkg/sasl/plain"
+	fgoScram "github.com/twmb/franz-go/pkg/sasl/scram"
 )
 
 const DefaultTimeout = 10 * time.Second
@@ -144,4 +148,61 @@ func (c Connection) Transport(ctx context.Context, awsOptFns ...func(options *aw
 	}
 
 	return transport, nil
+}
+
+func (c Connection) ClientOptions(ctx context.Context, brokers []string, awsOptFns ...func(options *awsCfg.LoadOptions) error) ([]kgo.Opt, error) {
+	opts := []kgo.Opt{
+		kgo.SeedBrokers(brokers...),
+		kgo.ConnIdleTimeout(c.timeout),
+	}
+
+	switch c.Mechanism() {
+	case ScramSha512:
+		mechanism := fgoScram.Auth{
+			User: c.username,
+			Pass: c.password,
+		}.AsSha512Mechanism()
+
+		opts = append(opts, kgo.SASL(mechanism))
+		if !c.disableTLS {
+			opts = append(opts, kgo.Dialer((&tls.Dialer{Config: &tls.Config{}}).DialContext))
+		}
+	case AwsMskIam:
+		awsCfg, err := awsCfg.LoadDefaultConfig(ctx, awsOptFns...)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load aws configuration: %w", err)
+		}
+
+		creds, err := awsCfg.Credentials.Retrieve(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to retrieve aws credentials: %w", err)
+		}
+
+		opts = append(opts, kgo.SASL(fgoAws.Auth{
+			AccessKey:    creds.AccessKeyID,
+			SecretKey:    creds.SecretAccessKey,
+			SessionToken: creds.SessionToken,
+		}.AsManagedStreamingIAMMechanism()))
+		// AWS MSK always requires TLS
+		opts = append(opts, kgo.Dialer((&tls.Dialer{Config: &tls.Config{}}).DialContext))
+	case Plain:
+		if c.username != "" && c.password != "" {
+			mechanism := fgoPlain.Auth{
+				User: c.username,
+				Pass: c.password,
+			}.AsMechanism()
+
+			opts = append(opts, kgo.SASL(mechanism))
+			if !c.disableTLS {
+				opts = append(opts, kgo.Dialer((&tls.Dialer{Config: &tls.Config{}}).DialContext))
+			}
+		} else if !c.disableTLS {
+			// No SASL mechanism, but may still need TLS
+			opts = append(opts, kgo.Dialer((&tls.Dialer{Config: &tls.Config{}}).DialContext))
+		}
+	default:
+		return nil, fmt.Errorf("unsupported kafka mechanism: %q", c.Mechanism())
+	}
+
+	return opts, nil
 }
