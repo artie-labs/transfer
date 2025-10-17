@@ -20,6 +20,7 @@ const (
 type TableIdentifier interface {
 	EscapedTable() string
 	Table() string
+	Schema() string
 	WithTable(table string) TableIdentifier
 	FullyQualifiedName() string
 	WithTemporaryTable(temp bool) TableIdentifier

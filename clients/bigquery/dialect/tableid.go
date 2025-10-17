@@ -39,6 +39,10 @@ func (ti TableIdentifier) Table() string {
 	return ti.table
 }
 
+func (ti TableIdentifier) Schema() string {
+	return ""
+}
+
 func (ti TableIdentifier) WithTable(table string) sql.TableIdentifier {
 	return NewTableIdentifier(ti.projectID, ti.dataset, table)
 }
