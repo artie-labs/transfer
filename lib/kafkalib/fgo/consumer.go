@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"time"
 
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/twmb/franz-go/pkg/kgo"
@@ -61,9 +60,6 @@ func (f *FranzGoConsumer) FetchMessage(ctx context.Context) (artie.Message, erro
 		return artie.NewFranzGoMessage(*record, f.GetHighWatermark(*record)), nil
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
-	defer cancel()
-
 	groupID, generation := f.client.GroupMetadata()
 	slog.Debug("Polling topics", slog.Any("topics", f.client.GetConsumeTopics()), slog.String("groupID", groupID), slog.Int("generation", int(generation)))
 
@@ -71,10 +67,6 @@ func (f *FranzGoConsumer) FetchMessage(ctx context.Context) (artie.Message, erro
 	slog.Debug("done polling", "fetches", fetches, slog.Any("topics", f.client.GetConsumeTopics()), slog.String("groupID", groupID), slog.Int("generation", int(generation)))
 
 	if errs := fetches.Errors(); len(errs) > 0 {
-		// Don't log timeouts as warnings, they're normal
-		if ctx.Err() != context.DeadlineExceeded {
-			slog.Warn("Error polling fetches", slog.Int("numErrors", len(errs)), slog.Any("errs", errs))
-		}
 		var combinedErrors []error
 		for _, err := range errs {
 			combinedErrors = append(combinedErrors, err.Err)

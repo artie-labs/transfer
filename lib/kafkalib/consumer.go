@@ -200,9 +200,6 @@ func (c *ConsumerProvider) FetchMessageAndProcess(ctx context.Context, do func(a
 	if err != nil {
 		return NewFetchMessageError(err)
 	}
-	if msg == nil {
-		return nil
-	}
 
 	c.mu.Lock()
 	defer c.mu.Unlock()
