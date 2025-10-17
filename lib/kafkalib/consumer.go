@@ -125,7 +125,7 @@ func (f *FranzGoConsumer) FetchMessage(ctx context.Context) (artie.Message, erro
 
 	f.currentIter = fetches.RecordIter()
 	if f.currentIter.Done() {
-		return nil, nil
+		return nil, fmt.Errorf("no messages found")
 	}
 
 	record := f.currentIter.Next()
