@@ -12,13 +12,12 @@ import (
 )
 
 type FranzGoConsumer struct {
-	client       *kgo.Client
-	groupID      string
-	topic        string // Topic this consumer is responsible for
-	recordBuffer []*kgo.Record
-	bufferIndex  int
+	client  *kgo.Client
+	groupID string
+	topic   string
 	// Map to store high watermarks by topic-partition key
 	highWatermarks map[string]int64
+	currentIter    *kgo.FetchesRecordIter
 }
 
 func NewFranzGoConsumer(client *kgo.Client, groupID string, topic string) *FranzGoConsumer {
@@ -26,8 +25,6 @@ func NewFranzGoConsumer(client *kgo.Client, groupID string, topic string) *Franz
 		client:         client,
 		groupID:        groupID,
 		topic:          topic,
-		recordBuffer:   make([]*kgo.Record, 0),
-		bufferIndex:    0,
 		highWatermarks: make(map[string]int64),
 	}
 }
@@ -50,25 +47,27 @@ func (f *FranzGoConsumer) Close() error {
 }
 
 func (f *FranzGoConsumer) FetchMessage(ctx context.Context) (artie.Message, error) {
-	// First, check if we have buffered records from a previous fetch
-	if f.bufferIndex < len(f.recordBuffer) {
-		record := f.recordBuffer[f.bufferIndex]
-		f.bufferIndex++
-		slog.Info("📨 Received message",
+	// First, check if we have records in the current iterator
+	if f.currentIter != nil && !f.currentIter.Done() {
+		record := f.currentIter.Next()
+		slog.Debug("📨 Received message",
 			slog.String("topic", record.Topic),
 			slog.Int("partition", int(record.Partition)),
 			slog.Int64("offset", record.Offset))
+
 		return artie.NewFranzGoMessage(*record, f.GetHighWatermark(*record)), nil
 	}
 
-	// Buffer is empty or exhausted, need to poll for new records
-	// Poll with a longer timeout to allow for consumer group coordination
+	// Current iterator is exhausted, poll for new records
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
+
 	groupID, generation := f.client.GroupMetadata()
 	slog.Debug("Polling topics", slog.Any("topics", f.client.GetConsumeTopics()), slog.String("groupID", groupID), slog.Int("generation", int(generation)))
+
 	fetches := f.client.PollFetches(ctx)
 	slog.Debug("done polling", "fetches", fetches, slog.Any("topics", f.client.GetConsumeTopics()), slog.String("groupID", groupID), slog.Int("generation", int(generation)))
+
 	if errs := fetches.Errors(); len(errs) > 0 {
 		// Don't log timeouts as warnings, they're normal
 		if ctx.Err() != context.DeadlineExceeded {
@@ -77,49 +76,30 @@ func (f *FranzGoConsumer) FetchMessage(ctx context.Context) (artie.Message, erro
 		return nil, errs[0].Err
 	}
 
-	// Clear the buffer and collect all records from this fetch
-	f.recordBuffer = f.recordBuffer[:0] // Clear slice but keep capacity
-	f.bufferIndex = 0
-
-	// Extract high watermarks from fetch partitions
 	fetches.EachTopic(func(topic kgo.FetchTopic) {
 		topic.EachPartition(func(partition kgo.FetchPartition) {
-			// Store high watermark for this topic-partition combination
 			key := fmt.Sprintf("%s-%d", topic.Topic, partition.Partition)
 			f.highWatermarks[key] = partition.HighWatermark
 		})
 	})
 
-	iter := fetches.RecordIter()
-	for !iter.Done() {
-		record := iter.Next()
-		f.recordBuffer = append(f.recordBuffer, record)
-	}
-
-	// If no records were fetched, return nil (normal timeout case)
-	if len(f.recordBuffer) == 0 {
+	f.currentIter = fetches.RecordIter()
+	if f.currentIter.Done() {
 		return nil, nil
 	}
 
-	// Return the first record from the newly filled buffer
-	record := f.recordBuffer[0]
-	f.bufferIndex = 1
-	slog.Info("📨 Received message",
-		slog.String("topic", record.Topic),
-		slog.Int("partition", int(record.Partition)),
-		slog.Int64("offset", record.Offset))
+	record := f.currentIter.Next()
+
 	return artie.NewFranzGoMessage(*record, f.GetHighWatermark(*record)), nil
 }
 
 func (f *FranzGoConsumer) CommitMessages(ctx context.Context, msgs ...artie.Message) error {
-	// franz-go handles auto-commit by default, but we can also commit manually
-	slog.Info("Committing messages using explicit offset method", slog.Int("numRecords", len(msgs)))
+	slog.Debug("Committing messages using explicit offset method", slog.Int("numRecords", len(msgs)))
 
-	// Build explicit offset map - Kafka expects the NEXT offset to read
 	offsetsToCommit := make(map[string]map[int32]kgo.EpochOffset)
 
 	for i, msg := range msgs {
-		slog.Info("Processing message for commit",
+		slog.Debug("Processing message for commit",
 			slog.Int("msgIndex", i),
 			slog.String("topic", msg.Topic()),
 			slog.Int("partition", int(msg.Partition())),
@@ -137,15 +117,14 @@ func (f *FranzGoConsumer) CommitMessages(ctx context.Context, msgs ...artie.Mess
 		}
 	}
 
-	// Check consumer group status before commit
-	groupID, generation := f.client.GroupMetadata()
-	slog.Info("Committing explicit offsets",
-		slog.String("groupID", groupID),
-		slog.Int("generation", int(generation)),
-		slog.Any("offsetsToCommit", offsetsToCommit))
-
-	// Use synchronous commit to ensure it completes before function returns
-	slog.Info("Calling CommitOffsetsSync...")
+	if slog.Default().Enabled(ctx, slog.LevelDebug) {
+		// Check consumer group status before commit
+		groupID, generation := f.client.GroupMetadata()
+		slog.Debug("Committing explicit offsets",
+			slog.String("groupID", groupID),
+			slog.Int("generation", int(generation)),
+			slog.Any("offsetsToCommit", offsetsToCommit))
+	}
 
 	var commitError error
 	f.client.CommitOffsetsSync(ctx, offsetsToCommit, func(client *kgo.Client, req *kmsg.OffsetCommitRequest, resp *kmsg.OffsetCommitResponse, err error) {
@@ -153,14 +132,16 @@ func (f *FranzGoConsumer) CommitMessages(ctx context.Context, msgs ...artie.Mess
 		if err != nil {
 			slog.Error("Sync commit callback failed", slog.Any("err", err))
 		} else {
-			slog.Info("Sync commit callback succeeded",
-				slog.Int("numTopics", len(resp.Topics)))
-			for _, topic := range resp.Topics {
-				for _, partition := range topic.Partitions {
-					slog.Info("Committed offset for partition",
-						slog.String("topic", topic.Topic),
-						slog.Int("partition", int(partition.Partition)),
-						slog.Any("errorCode", partition.ErrorCode))
+			if slog.Default().Enabled(ctx, slog.LevelDebug) {
+				slog.Debug("Sync commit callback succeeded",
+					slog.Int("numTopics", len(resp.Topics)))
+				for _, topic := range resp.Topics {
+					for _, partition := range topic.Partitions {
+						slog.Debug("Committed offset for partition",
+							slog.String("topic", topic.Topic),
+							slog.Int("partition", int(partition.Partition)),
+							slog.Any("errorCode", partition.ErrorCode))
+					}
 				}
 			}
 		}
