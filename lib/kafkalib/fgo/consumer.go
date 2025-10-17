@@ -14,16 +14,18 @@ import (
 type FranzGoConsumer struct {
 	client       *kgo.Client
 	groupID      string
+	topic        string // Topic this consumer is responsible for
 	recordBuffer []*kgo.Record
 	bufferIndex  int
 	// Map to store high watermarks by topic-partition key
 	highWatermarks map[string]int64
 }
 
-func NewFranzGoConsumer(client *kgo.Client, groupID string) *FranzGoConsumer {
+func NewFranzGoConsumer(client *kgo.Client, groupID string, topic string) *FranzGoConsumer {
 	return &FranzGoConsumer{
 		client:         client,
 		groupID:        groupID,
+		topic:          topic,
 		recordBuffer:   make([]*kgo.Record, 0),
 		bufferIndex:    0,
 		highWatermarks: make(map[string]int64),
@@ -52,7 +54,7 @@ func (f *FranzGoConsumer) FetchMessage(ctx context.Context) (artie.Message, erro
 	if f.bufferIndex < len(f.recordBuffer) {
 		record := f.recordBuffer[f.bufferIndex]
 		f.bufferIndex++
-		slog.Info("Received message",
+		slog.Info("📨 Received message",
 			slog.String("topic", record.Topic),
 			slog.Int("partition", int(record.Partition)),
 			slog.Int64("offset", record.Offset))
