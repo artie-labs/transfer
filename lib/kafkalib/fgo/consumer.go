@@ -77,6 +77,8 @@ func (f *FranzGoConsumer) FetchMessage(ctx context.Context) (artie.Message, erro
 		return nil, errs[0].Err
 	}
 
+	// Since HWM is a field on the Partition and not on every kgo.Record,
+	// we need to iterate over the partitions and update the high watermark map.
 	fetches.EachTopic(func(topic kgo.FetchTopic) {
 		topic.EachPartition(func(partition kgo.FetchPartition) {
 			f.highWatermarks[GetHighWatermarkMapKey(topic.Topic, partition.Partition)] = partition.HighWatermark
