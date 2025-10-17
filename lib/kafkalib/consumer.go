@@ -193,6 +193,9 @@ func (c *ConsumerProvider) LockAndProcess(ctx context.Context, lock bool, do fun
 }
 
 func (c *ConsumerProvider) FetchMessageAndProcess(ctx context.Context, do func(artie.Message) error) error {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
+	defer cancel()
+
 	msg, err := c.Consumer.FetchMessage(ctx)
 	if err != nil {
 		return NewFetchMessageError(err)
