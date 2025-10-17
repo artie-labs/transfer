@@ -121,7 +121,7 @@ func InjectFranzGoConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) 
 			kgo.ConsumeTopics(topicConfig.Topic), // Consume only this specific topic
 			kgo.DisableAutoCommit(),
 			// Set session timeout for consumer group heartbeats
-			kgo.SessionTimeout(10*time.Second),
+			kgo.SessionTimeout(30*time.Second),
 			// Set heartbeat interval
 			kgo.HeartbeatInterval(3*time.Second),
 			// Ensure we allow time for rebalancing
