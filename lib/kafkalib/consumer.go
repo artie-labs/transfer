@@ -309,7 +309,7 @@ func InjectFranzGoConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) 
 			return nil, fmt.Errorf("failed to create Kafka client for topic %s: %w", topicConfig.Topic, err)
 		}
 
-		slog.Info("🚀 Created Kafka consumer for topic",
+		slog.Info("Created Kafka consumer for topic",
 			slog.String("topic", topicConfig.Topic),
 			slog.String("groupID", cfg.GroupID),
 			slog.Any("brokers", brokers))
