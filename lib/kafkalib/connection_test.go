@@ -79,23 +79,47 @@ func TestConnection_ClientOptions(t *testing.T) {
 	brokers := []string{"localhost:9092"}
 
 	{
-		// Plain - should have minimal options (brokers + timeout)
+		// Plain without credentials - should have minimal options (brokers + timeout)
 		c := NewConnection(false, false, "", "", DefaultTimeout)
 		opts, err := c.ClientOptions(ctx, brokers)
 		assert.NoError(t, err)
-		assert.NotEmpty(t, opts) // Should have at least seed brokers and timeout
+		assert.NotEmpty(t, opts)               // Should have at least seed brokers and timeout
+		assert.GreaterOrEqual(t, len(opts), 2) // brokers + timeout, possibly TLS
+
+		// Plain without credentials and w/o TLS - should have exactly 2 options
+		c = NewConnection(false, true, "", "", DefaultTimeout)
+		opts, err = c.ClientOptions(ctx, brokers)
+		assert.NoError(t, err)
+		assert.Equal(t, 2, len(opts)) // brokers + timeout only
 	}
 	{
-		// SCRAM enabled with TLS - should have SASL and Dialer options
-		c := NewConnection(false, false, "username", "password", DefaultTimeout)
+		// Plain with credentials (Azure Event Hub style) and TLS - should have SASL and TLS dialer options
+		c := NewConnection(false, false, "$ConnectionString", "Endpoint=sb://test.servicebus.windows.net/;SharedAccessKeyName=test;SharedAccessKey=test", DefaultTimeout)
 		opts, err := c.ClientOptions(ctx, brokers)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, opts)
 		// Should have more options (SASL + TLS dialer)
-		assert.GreaterOrEqual(t, len(opts), 3) // brokers, timeout, SASL, dialer
+		assert.GreaterOrEqual(t, len(opts), 4) // brokers, timeout, SASL, dialer
+
+		// Plain with credentials but w/o TLS - should have SASL but no TLS dialer
+		c = NewConnection(false, true, "$ConnectionString", "Endpoint=sb://test.servicebus.windows.net/;SharedAccessKeyName=test;SharedAccessKey=test", DefaultTimeout)
+		opts, err = c.ClientOptions(ctx, brokers)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, opts)
+		assert.GreaterOrEqual(t, len(opts), 3) // brokers, timeout, SASL
+	}
+	{
+		// SCRAM enabled with TLS - should have SASL and Dialer options
+		// Note: SCRAM is determined by having username/password but not being Azure Event Hub
+		c := NewConnection(false, false, "scramuser", "scrampass", DefaultTimeout)
+		opts, err := c.ClientOptions(ctx, brokers)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, opts)
+		// Should have more options (SASL + TLS dialer)
+		assert.GreaterOrEqual(t, len(opts), 4) // brokers, timeout, SASL, dialer
 
 		// w/o TLS - should have SASL but no TLS dialer
-		c = NewConnection(false, true, "username", "password", DefaultTimeout)
+		c = NewConnection(false, true, "scramuser", "scrampass", DefaultTimeout)
 		opts, err = c.ClientOptions(ctx, brokers)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, opts)

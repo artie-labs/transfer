@@ -14,6 +14,7 @@ import (
 	"github.com/segmentio/kafka-go/sasl/scram"
 	"github.com/twmb/franz-go/pkg/kgo"
 	fgoAws "github.com/twmb/franz-go/pkg/sasl/aws"
+	fgoPlain "github.com/twmb/franz-go/pkg/sasl/plain"
 	fgoScram "github.com/twmb/franz-go/pkg/sasl/scram"
 )
 
@@ -184,8 +185,18 @@ func (c Connection) ClientOptions(ctx context.Context, brokers []string, awsOptF
 		// AWS MSK always requires TLS
 		opts = append(opts, kgo.Dialer((&tls.Dialer{Config: &tls.Config{}}).DialContext))
 	case Plain:
-		// No SASL mechanism, but may still need TLS
-		if !c.disableTLS {
+		if c.username != "" && c.password != "" {
+			mechanism := fgoPlain.Auth{
+				User: c.username,
+				Pass: c.password,
+			}.AsMechanism()
+
+			opts = append(opts, kgo.SASL(mechanism))
+			if !c.disableTLS {
+				opts = append(opts, kgo.Dialer((&tls.Dialer{Config: &tls.Config{}}).DialContext))
+			}
+		} else if !c.disableTLS {
+			// No SASL mechanism, but may still need TLS
 			opts = append(opts, kgo.Dialer((&tls.Dialer{Config: &tls.Config{}}).DialContext))
 		}
 	default:
