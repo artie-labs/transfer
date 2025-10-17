@@ -20,6 +20,10 @@ type FranzGoConsumer struct {
 	currentIter    *kgo.FetchesRecordIter
 }
 
+func GetHighWatermarkMapKey(record kgo.Record) string {
+	return fmt.Sprintf("%s-%d", record.Topic, record.Partition)
+}
+
 func NewFranzGoConsumer(client *kgo.Client, groupID string, topic string) *FranzGoConsumer {
 	return &FranzGoConsumer{
 		client:         client,
@@ -34,8 +38,7 @@ func (f FranzGoConsumer) Client() *kgo.Client {
 }
 
 func (f *FranzGoConsumer) GetHighWatermark(record kgo.Record) int64 {
-	key := fmt.Sprintf("%s-%d", record.Topic, record.Partition)
-	if hwm, exists := f.highWatermarks[key]; exists {
+	if hwm, exists := f.highWatermarks[GetHighWatermarkMapKey(record)]; exists {
 		return hwm
 	}
 	return 0 // Default to 0 if not found
