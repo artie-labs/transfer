@@ -47,7 +47,6 @@ func (f *FranzGoConsumer) Close() error {
 }
 
 func (f *FranzGoConsumer) FetchMessage(ctx context.Context) (artie.Message, error) {
-	// First, check if we have records in the current iterator
 	if f.currentIter != nil && !f.currentIter.Done() {
 		record := f.currentIter.Next()
 		slog.Debug("📨 Received message",
@@ -58,7 +57,6 @@ func (f *FranzGoConsumer) FetchMessage(ctx context.Context) (artie.Message, erro
 		return artie.NewFranzGoMessage(*record, f.GetHighWatermark(*record)), nil
 	}
 
-	// Current iterator is exhausted, poll for new records
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
@@ -152,12 +150,11 @@ func (f *FranzGoConsumer) CommitMessages(ctx context.Context, msgs ...artie.Mess
 		return commitError
 	}
 
-	slog.Info("CommitOffsetsSync completed")
-
-	// Immediately verify the commit worked by checking committed offsets
-	committedOffsets := f.client.CommittedOffsets()
-	slog.Info("CommitOffsets completed successfully",
-		slog.Any("committedOffsets", committedOffsets))
+	if slog.Default().Enabled(ctx, slog.LevelDebug) {
+		committedOffsets := f.client.CommittedOffsets()
+		slog.Debug("CommitOffsets completed successfully",
+			slog.Any("committedOffsets", committedOffsets))
+	}
 
 	return nil
 }
