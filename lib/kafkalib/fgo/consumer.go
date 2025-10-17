@@ -107,8 +107,6 @@ func (f *FranzGoConsumer) FetchMessage(ctx context.Context) (artie.Message, erro
 }
 
 func (f *FranzGoConsumer) CommitMessages(ctx context.Context, msgs ...artie.Message) error {
-	slog.Debug("Committing messages using explicit offset method", slog.Int("numRecords", len(msgs)))
-
 	offsetsToCommit := make(map[string]map[int32]kgo.EpochOffset)
 
 	for i, msg := range msgs {
