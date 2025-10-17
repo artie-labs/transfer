@@ -244,7 +244,7 @@ func (c *ConsumerProvider) CommitMessage(ctx context.Context) error {
 		return fmt.Errorf("failed to commit messages: %w", err)
 	}
 
-	slog.Debug("Committed messages", slog.String("topic", c.topic), slog.Any("partitionToOffset", partitionToOffset))
+	slog.Info("Committed messages", slog.String("topic", c.topic), slog.Any("partitionToOffset", partitionToOffset))
 	return nil
 }
 
