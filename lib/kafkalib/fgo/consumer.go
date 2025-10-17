@@ -72,9 +72,20 @@ func (f *FranzGoConsumer) FetchMessage(ctx context.Context) (artie.Message, erro
 	if errs := fetches.Errors(); len(errs) > 0 {
 		// Don't log timeouts as warnings, they're normal
 		if ctx.Err() != context.DeadlineExceeded {
-			slog.Warn("Error polling fetches", slog.Any("err", errs[0].Err))
+			slog.Warn("Error polling fetches", slog.Int("numErrors", len(errs)), slog.Any("errs", errs))
 		}
-		return nil, errs[0].Err
+		if len(errs) == 1 {
+			return nil, errs[0].Err
+		}
+		var combinedErr error
+		for i, err := range errs {
+			if i == 0 {
+				combinedErr = err.Err
+			} else {
+				combinedErr = fmt.Errorf("%w; %w", combinedErr, err.Err)
+			}
+		}
+		return nil, combinedErr
 	}
 
 	// Since HWM is a field on the Partition and not on every kgo.Record,
