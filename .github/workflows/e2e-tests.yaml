@@ -27,7 +27,8 @@ jobs:
           go build
       - name: Run transfer
         run: |
-          go run main.go --config e2e_tests/postgres/config/e2e.yaml &
+          go run main.go --config e2e_tests/postgres/config/e2e_fgo.yaml > transfer_fgo.log 2>&1 &
+          go run main.go --config e2e_tests/postgres/config/e2e.yaml > transfer_e2e.log 2>&1 &
           sleep 20
       - name: Run tests
         working-directory: e2e_tests/postgres
@@ -38,3 +39,9 @@ jobs:
         working-directory: e2e_tests/postgres
         run: |
           ./stop_e2e.sh
+      - name: Show kafka-go logs
+        run: |
+          cat transfer_e2e.log
+      - name: Show kafka-fgo logs
+        run: |
+          cat transfer_fgo.log

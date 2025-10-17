@@ -17,7 +17,10 @@ type TestCase struct {
 	rows          []map[string]any
 }
 
-const dsn = "postgres://postgres:postgres@localhost:5432/destination_e2e?sslmode=disable"
+var dsns = []string{
+	"postgres://postgres:postgres@localhost:5432/destination_e2e?sslmode=disable",
+	"postgres://postgres:postgres@localhost:5432/destination_e2e_fgo?sslmode=disable",
+}
 
 var (
 	testCases = []TestCase{
@@ -117,123 +120,129 @@ var (
 )
 
 func testCountRows(ctx context.Context, testCase TestCase) error {
-	conn, err := pgx.Connect(ctx, dsn)
-	if err != nil {
-		return fmt.Errorf("unable to connect to database: %w", err)
-	}
-	defer conn.Close(ctx)
+	for _, dsn := range dsns {
+		conn, err := pgx.Connect(ctx, dsn)
+		if err != nil {
+			return fmt.Errorf("unable to connect to database: %w", err)
+		}
+		defer conn.Close(ctx)
 
-	var count int
-	query := fmt.Sprintf(`SELECT COUNT(*) FROM "%s"."%s"`, testCase.schema, testCase.tableName)
-	if err = conn.QueryRow(ctx, query).Scan(&count); err != nil {
-		return fmt.Errorf("failed to count rows in %s.%s: %w", testCase.schema, testCase.tableName, err)
-	}
+		var count int
+		query := fmt.Sprintf(`SELECT COUNT(*) FROM "%s"."%s"`, testCase.schema, testCase.tableName)
+		if err = conn.QueryRow(ctx, query).Scan(&count); err != nil {
+			return fmt.Errorf("failed to count rows in %s.%s: %w", testCase.schema, testCase.tableName, err)
+		}
 
-	if count != testCase.expectedCount {
-		return fmt.Errorf("row count mismatch for %s.%s: got %d, expected %d", testCase.schema, testCase.tableName, count, testCase.expectedCount)
+		if count != testCase.expectedCount {
+			return fmt.Errorf("row count mismatch for %s.%s: got %d, expected %d", testCase.schema, testCase.tableName, count, testCase.expectedCount)
+		}
 	}
 	return nil
 }
 
 func testCustomerRows(ctx context.Context, testCase TestCase) error {
-	conn, err := pgx.Connect(ctx, dsn)
-	if err != nil {
-		return fmt.Errorf("unable to connect to database: %w", err)
-	}
-	defer conn.Close(ctx)
+	for _, dsn := range dsns {
+		conn, err := pgx.Connect(ctx, dsn)
+		if err != nil {
+			return fmt.Errorf("unable to connect to database: %w", err)
+		}
+		defer conn.Close(ctx)
 
-	query := fmt.Sprintf(`SELECT id, first_name, last_name, email FROM "%s"."%s"`, testCase.schema, testCase.tableName)
-	rows, err := conn.Query(ctx, query)
-	if err != nil {
-		return fmt.Errorf("failed to query rows in %s.%s: %w", testCase.schema, testCase.tableName, err)
-	}
-	defer rows.Close()
+		query := fmt.Sprintf(`SELECT id, first_name, last_name, email FROM "%s"."%s"`, testCase.schema, testCase.tableName)
+		rows, err := conn.Query(ctx, query)
+		if err != nil {
+			return fmt.Errorf("failed to query rows in %s.%s: %w", testCase.schema, testCase.tableName, err)
+		}
+		defer rows.Close()
 
-	tableData := make(map[int]map[string]any)
-	for rows.Next() {
-		var id int
-		var firstName string
-		var lastName string
-		var email string
-		if err = rows.Scan(&id, &firstName, &lastName, &email); err != nil {
-			return fmt.Errorf("failed to scan row in %s.%s: %w", testCase.schema, testCase.tableName, err)
+		tableData := make(map[int]map[string]any)
+		for rows.Next() {
+			var id int
+			var firstName string
+			var lastName string
+			var email string
+			if err = rows.Scan(&id, &firstName, &lastName, &email); err != nil {
+				return fmt.Errorf("failed to scan row in %s.%s: %w", testCase.schema, testCase.tableName, err)
+			}
+
+			tableData[id] = map[string]any{
+				"id":         id,
+				"first_name": firstName,
+				"last_name":  lastName,
+				"email":      email,
+			}
+		}
+		if err := rows.Err(); err != nil {
+			return fmt.Errorf("error iterating rows in %s.%s: %w", testCase.schema, testCase.tableName, err)
 		}
 
-		tableData[id] = map[string]any{
-			"id":         id,
-			"first_name": firstName,
-			"last_name":  lastName,
-			"email":      email,
-		}
-	}
-	if err := rows.Err(); err != nil {
-		return fmt.Errorf("error iterating rows in %s.%s: %w", testCase.schema, testCase.tableName, err)
-	}
-
-	for _, row := range testCase.rows {
-		rowMap, ok := tableData[row["id"].(int)]
-		if !ok {
-			return fmt.Errorf("row with id %v not found in %s.%s", row["id"], testCase.schema, testCase.tableName)
-		}
-		if !reflect.DeepEqual(rowMap, row) {
-			return fmt.Errorf("row mismatch for id %v in %s.%s: got %v, expected %v", row["id"], testCase.schema, testCase.tableName, rowMap, row)
+		for _, row := range testCase.rows {
+			rowMap, ok := tableData[row["id"].(int)]
+			if !ok {
+				return fmt.Errorf("row with id %v not found in %s.%s", row["id"], testCase.schema, testCase.tableName)
+			}
+			if !reflect.DeepEqual(rowMap, row) {
+				return fmt.Errorf("row mismatch for id %v in %s.%s: got %v, expected %v", row["id"], testCase.schema, testCase.tableName, rowMap, row)
+			}
 		}
 	}
 	return nil
 }
 
 func testProductRows(ctx context.Context, testCase TestCase) error {
-	conn, err := pgx.Connect(ctx, dsn)
-	if err != nil {
-		return fmt.Errorf("unable to connect to database: %w", err)
-	}
-
-	defer conn.Close(ctx)
-
-	// Store the whole table in a map keyed by id
-	query := fmt.Sprintf(`SELECT id, name, description, weight FROM "%s"."%s"`, testCase.schema, testCase.tableName)
-	rows, err := conn.Query(ctx, query)
-	if err != nil {
-		return fmt.Errorf("failed to query rows in %s.%s: %w", testCase.schema, testCase.tableName, err)
-	}
-	defer rows.Close()
-
-	tableData := make(map[int]map[string]any)
-	for rows.Next() {
-		var id int
-		var name string
-		var description *string
-		var weight *float64
-		if err := rows.Scan(&id, &name, &description, &weight); err != nil {
-			return fmt.Errorf("failed to scan row in %s.%s: %w", testCase.schema, testCase.tableName, err)
+	for _, dsn := range dsns {
+		conn, err := pgx.Connect(ctx, dsn)
+		if err != nil {
+			return fmt.Errorf("unable to connect to database: %w", err)
 		}
 
-		rowMap := make(map[string]any)
-		rowMap["id"] = id
-		rowMap["name"] = name
-		if description != nil {
-			rowMap["description"] = *description
-		} else {
-			rowMap["description"] = nil
-		}
-		if weight != nil {
-			rowMap["weight"] = *weight
-		} else {
-			rowMap["weight"] = nil
-		}
-		tableData[id] = rowMap
-	}
-	if err := rows.Err(); err != nil {
-		return fmt.Errorf("error iterating rows in %s.%s: %w", testCase.schema, testCase.tableName, err)
-	}
+		defer conn.Close(ctx)
 
-	for _, row := range testCase.rows {
-		rowMap, ok := tableData[row["id"].(int)]
-		if !ok {
-			return fmt.Errorf("row with id %v not found in %s.%s", row["id"], testCase.schema, testCase.tableName)
+		// Store the whole table in a map keyed by id
+		query := fmt.Sprintf(`SELECT id, name, description, weight FROM "%s"."%s"`, testCase.schema, testCase.tableName)
+		rows, err := conn.Query(ctx, query)
+		if err != nil {
+			return fmt.Errorf("failed to query rows in %s.%s: %w", testCase.schema, testCase.tableName, err)
 		}
-		if !reflect.DeepEqual(rowMap, row) {
-			return fmt.Errorf("row mismatch for id %v in %s.%s: got %v, expected %v", row["id"], testCase.schema, testCase.tableName, rowMap, row)
+		defer rows.Close()
+
+		tableData := make(map[int]map[string]any)
+		for rows.Next() {
+			var id int
+			var name string
+			var description *string
+			var weight *float64
+			if err := rows.Scan(&id, &name, &description, &weight); err != nil {
+				return fmt.Errorf("failed to scan row in %s.%s: %w", testCase.schema, testCase.tableName, err)
+			}
+
+			rowMap := make(map[string]any)
+			rowMap["id"] = id
+			rowMap["name"] = name
+			if description != nil {
+				rowMap["description"] = *description
+			} else {
+				rowMap["description"] = nil
+			}
+			if weight != nil {
+				rowMap["weight"] = *weight
+			} else {
+				rowMap["weight"] = nil
+			}
+			tableData[id] = rowMap
+		}
+		if err := rows.Err(); err != nil {
+			return fmt.Errorf("error iterating rows in %s.%s: %w", testCase.schema, testCase.tableName, err)
+		}
+
+		for _, row := range testCase.rows {
+			rowMap, ok := tableData[row["id"].(int)]
+			if !ok {
+				return fmt.Errorf("row with id %v not found in %s.%s", row["id"], testCase.schema, testCase.tableName)
+			}
+			if !reflect.DeepEqual(rowMap, row) {
+				return fmt.Errorf("row mismatch for id %v in %s.%s: got %v, expected %v", row["id"], testCase.schema, testCase.tableName, rowMap, row)
+			}
 		}
 	}
 	return nil
