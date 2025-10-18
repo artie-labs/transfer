@@ -13,8 +13,16 @@ const (
 	StatusFailed  Status = "failed"
 )
 
+type Event string
+
+const (
+	EventMergeStarted  Event = "merge_started"
+	EventMergeFinished Event = "merge_finished"
+)
+
 type Action struct {
 	url      string
+	event    string
 	metadata map[string]any
 	status   Status
 }
@@ -22,6 +30,7 @@ type Action struct {
 func (a Action) BuildPayload() (*http.Request, error) {
 	payload := map[string]any{
 		"url":      a.url,
+		"event":    a.event,
 		"metadata": a.metadata,
 		"status":   a.status,
 	}
