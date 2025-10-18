@@ -17,7 +17,6 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/artie-labs/transfer/lib/kafkalib/partition"
 	"github.com/artie-labs/transfer/lib/maputil"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -401,25 +400,6 @@ func (s *SnowflakeTestSuite) TestExecuteMergeExitEarly() {
 	assert.True(s.T(), commitTx)
 	// No SQL should be executed for empty table data
 	assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
-}
-
-func (s *SnowflakeTestSuite) TestStore_AdditionalEqualityStrings() {
-	{
-		// No additional equality strings:
-		tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "foo")
-		assert.Empty(s.T(), s.stageStore.additionalEqualityStrings(tableData))
-	}
-	{
-		// Additional equality strings:
-		topicConfig := kafkalib.TopicConfig{}
-		topicConfig.AdditionalMergePredicates = []partition.MergePredicates{
-			{PartitionField: "foo"},
-			{PartitionField: "bar"},
-		}
-		tableData := optimization.NewTableData(nil, config.Replication, nil, topicConfig, "foo")
-		actual := s.stageStore.additionalEqualityStrings(tableData)
-		assert.Equal(s.T(), []string{`tgt."FOO" = stg."FOO"`, `tgt."BAR" = stg."BAR"`}, actual)
-	}
 }
 
 func TestTempTableIDWithSuffix(t *testing.T) {

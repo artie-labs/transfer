@@ -8,9 +8,6 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
-	"github.com/artie-labs/transfer/lib/sql"
-	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, _ bool) error {
@@ -20,19 +17,13 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, _
 	})
 }
 
-func (s *Store) additionalEqualityStrings(tableData *optimization.TableData) []string {
-	cols := make([]columns.Column, len(tableData.TopicConfig().AdditionalMergePredicates))
-	for i, additionalMergePredicate := range tableData.TopicConfig().AdditionalMergePredicates {
-		cols[i] = columns.NewColumn(additionalMergePredicate.PartitionField, typing.Invalid)
-	}
-	return sql.BuildColumnComparisons(cols, constants.TargetAlias, constants.StagingAlias, sql.Equal, s.Dialect())
-}
-
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
-	mergeOpts := types.MergeOpts{
-		AdditionalEqualityStrings: s.additionalEqualityStrings(tableData),
+	predicates, err := shared.BuildAdditionalEqualityStrings(s.Dialect(), tableData.TopicConfig().AdditionalMergePredicates)
+	if err != nil {
+		return false, fmt.Errorf("failed to build additional equality strings: %w", err)
 	}
 
+	mergeOpts := types.MergeOpts{AdditionalEqualityStrings: predicates}
 	if tableData.MultiStepMergeSettings().Enabled {
 		return shared.MultiStepMerge(ctx, s, tableData, mergeOpts)
 	}
