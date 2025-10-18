@@ -96,4 +96,12 @@ type Config struct {
 			Settings map[string]any         `yaml:"settings,omitempty"`
 		}
 	}
+
+	Webhooks *WebhookConfig `yaml:"webhooks,omitempty"`
+}
+
+type WebhookConfig struct {
+	Enabled    bool     `yaml:"enabled"`
+	URLs       []string `yaml:"urls"`
+	BufferSize int      `yaml:"bufferSize,omitempty"`
 }
