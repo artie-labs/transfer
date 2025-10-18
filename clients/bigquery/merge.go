@@ -31,6 +31,10 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (b
 		additionalEqualityStrings = []string{mergeString}
 	}
 
+	if len(tableData.TopicConfig().AdditionalMergePredicates) > 0 {
+		additionalEqualityStrings = append(additionalEqualityStrings, s.additionalEqualityStrings(tableData)...)
+	}
+
 	err := shared.Merge(ctx, s, tableData, types.MergeOpts{
 		AdditionalEqualityStrings: additionalEqualityStrings,
 		ColumnSettings:            s.config.SharedDestinationSettings.ColumnSettings,
