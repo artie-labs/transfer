@@ -77,7 +77,7 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 		evt.EmitExecutionTimeLag(metricsClient)
 	}
 
-	shouldFlush, flushReason, err := evt.Save(cfg, inMemDB, topicConfig.tc, p.Msg)
+	shouldFlush, flushReason, err := evt.Save(cfg, inMemDB, topicConfig.tc)
 	if err != nil {
 		tags["what"] = "save_fail"
 		return cdc.TableID{}, fmt.Errorf("event failed to save: %w", err)

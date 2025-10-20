@@ -45,7 +45,7 @@ func (g GetTableCfgArgs) query(ctx context.Context) ([]columns.Column, error) {
 		return nil, fmt.Errorf("failed to query %T, err: %w, query: %q", g.Destination, err, query)
 	}
 
-	rows, err := sql.RowsToObjects(sqlRows)
+	rows, err := sql.RowsToObjectsLowercase(sqlRows)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert rows to map slice: %w", err)
 	}

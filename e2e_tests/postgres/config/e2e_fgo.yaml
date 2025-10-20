@@ -1,0 +1,27 @@
+outputSource: postgres
+flushIntervalSeconds: 5
+kafkaClient: franz-go
+kafka:
+  bootstrapServer: localhost:29092
+  groupID: group_fgo
+  disableTLS: true
+  topicConfigs:
+    - db: destination_e2e_fgo
+      tableName: customers
+      schema: artie
+      topic: "dbserver1.inventory.customers"
+      cdcFormat: debezium.postgres.wal2json
+      cdcKeyFormat: org.apache.kafka.connect.json.JsonConverter
+    - db: destination_e2e_fgo
+      tableName: products
+      schema: public
+      topic: "dbserver1.inventory.products"
+      cdcFormat: debezium.postgres.wal2json
+      cdcKeyFormat: org.apache.kafka.connect.json.JsonConverter
+postgres:
+  host: localhost
+  port: 5432
+  username: postgres
+  password: postgres
+  database: destination_e2e_fgo
+  disableSSL: true

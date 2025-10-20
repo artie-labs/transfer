@@ -86,9 +86,19 @@ func main() {
 	slog.Info("Starting...", slog.String("version", version))
 
 	inMemDB := models.NewMemoryDB()
-	ctx, err = kafkalib.InjectConsumerProvidersIntoContext(ctx, settings.Config.Kafka)
-	if err != nil {
-		logger.Fatal("Failed to inject consumer providers into context", slog.Any("err", err))
+	switch settings.Config.KafkaClient {
+	case config.KafkaGoClient:
+		ctx, err = kafkalib.InjectConsumerProvidersIntoContext(ctx, settings.Config.Kafka)
+		if err != nil {
+			logger.Fatal("Failed to inject kafka-go consumer providers into context", slog.Any("err", err))
+		}
+	case config.FranzGoClient:
+		ctx, err = kafkalib.InjectFranzGoConsumerProvidersIntoContext(ctx, settings.Config.Kafka)
+		if err != nil {
+			logger.Fatal("Failed to inject franz-go consumer providers into context", slog.Any("err", err))
+		}
+	default:
+		logger.Fatal(fmt.Sprintf("Kafka client: %q not supported", settings.Config.KafkaClient))
 	}
 
 	var wg sync.WaitGroup
@@ -103,7 +113,7 @@ func main() {
 		defer wg.Done()
 		switch settings.Config.Queue {
 		case constants.Kafka:
-			consumer.StartConsumer(ctx, settings.Config, inMemDB, dest, metricsClient)
+			consumer.StartKafkaConsumer(ctx, settings.Config, inMemDB, dest, metricsClient)
 		default:
 			logger.Fatal(fmt.Sprintf("Message queue: %q not supported", settings.Config.Queue))
 		}

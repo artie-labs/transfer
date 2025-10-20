@@ -2,11 +2,13 @@ package consumer
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"sync"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/artie"
+	"github.com/artie-labs/transfer/lib/artie/metrics"
 	"github.com/artie-labs/transfer/lib/cdc/format"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination"
@@ -15,10 +17,9 @@ import (
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 	"github.com/artie-labs/transfer/models"
-	"github.com/segmentio/kafka-go"
 )
 
-func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client) {
+func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client) {
 	tcFmtMap := NewTcFmtMap()
 	var topics []string
 	for _, topicConfig := range cfg.Kafka.TopicConfigs {
@@ -42,13 +43,12 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 					logger.Fatal("Failed to get consumer from context", slog.Any("err", err))
 				}
 
-				err = kafkaConsumer.FetchMessageAndProcess(ctx, func(kafkaMsg kafka.Message) error {
-					if len(kafkaMsg.Value) == 0 {
-						slog.Debug("Found a tombstone message, skipping...", artie.BuildLogFields(kafkaMsg)...)
+				err = kafkaConsumer.FetchMessageAndProcess(ctx, func(msg artie.Message) error {
+					if len(msg.Value()) == 0 {
+						slog.Debug("Found a tombstone message, skipping...", artie.BuildLogFields(msg)...)
 						return nil
 					}
 
-					msg := artie.NewMessage(kafkaMsg)
 					args := processArgs{
 						Msg:                    msg,
 						GroupID:                kafkaConsumer.GetGroupID(),
@@ -57,18 +57,18 @@ func StartConsumer(ctx context.Context, cfg config.Config, inMemDB *models.Datab
 
 					tableID, err := args.process(ctx, cfg, inMemDB, dest, metricsClient)
 					if err != nil {
-						logger.Fatal("Failed to process message", slog.Any("err", err), slog.String("topic", kafkaMsg.Topic))
+						logger.Fatal("Failed to process message", slog.Any("err", err), slog.String("topic", msg.Topic()))
 					}
 
-					msg.EmitIngestionLag(metricsClient, cfg.Mode, kafkaConsumer.GetGroupID(), tableID.Table)
-					msg.EmitRowLag(metricsClient, cfg.Mode, kafkaConsumer.GetGroupID(), tableID.Table)
+					metrics.EmitIngestionLag(msg, metricsClient, cfg.Mode, kafkaConsumer.GetGroupID(), tableID.Table)
+					metrics.EmitRowLag(msg, metricsClient, cfg.Mode, kafkaConsumer.GetGroupID(), tableID.Table)
 
 					return nil
 				})
 
 				if err != nil {
-					if kafkalib.IsFetchMessageError(err) {
-						slog.Warn("Failed to read kafka message", slog.Any("err", err))
+					if fetchErr, ok := kafkalib.IsFetchMessageError(err); ok && errors.Is(fetchErr.Err, context.DeadlineExceeded) {
+						slog.Warn("Failed to read kafka message", slog.Any("err", err), slog.String("topic", topic), slog.Duration("timeout", kafkalib.FetchMessageTimeout))
 						time.Sleep(500 * time.Millisecond)
 						continue
 					} else {

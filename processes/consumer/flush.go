@@ -92,7 +92,7 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 
 				result, err := retry.WithRetriesAndResult(retryCfg, func(_ int, _ error) (flushResult, error) {
 					slog.Info("Flushing table", slog.String("tableID", table.GetTableID().String()), slog.String("reason", args.Reason))
-					return flush(ctx, dest, table, action, consumer)
+					return flush(ctx, dest, table)
 				})
 
 				if err != nil {
@@ -134,7 +134,7 @@ type flushResult struct {
 	CommitOffset bool
 }
 
-func flush(ctx context.Context, dest destination.Baseline, _tableData *models.TableData, action string, consumer *kafkalib.ConsumerProvider) (flushResult, error) {
+func flush(ctx context.Context, dest destination.Baseline, _tableData *models.TableData) (flushResult, error) {
 	// This is added so that we have a new temporary table suffix for each merge / append.
 	_tableData.ResetTempTableSuffix()
 

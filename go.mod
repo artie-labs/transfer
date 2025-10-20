@@ -35,6 +35,8 @@ require (
 	github.com/segmentio/kafka-go/sasl/aws_msk_iam_v2 v0.1.0
 	github.com/snowflakedb/gosnowflake v1.17.0
 	github.com/stretchr/testify v1.10.0
+	github.com/twmb/franz-go v1.19.5
+	github.com/twmb/franz-go/pkg/kmsg v1.11.2
 	github.com/twpayne/go-geom v1.6.0
 	github.com/viant/bigquery v0.5.1
 	go.mongodb.org/mongo-driver v1.17.3
