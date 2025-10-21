@@ -164,6 +164,22 @@ type TopicConfig struct {
 	opsToSkipMap map[string]bool `yaml:"-"`
 }
 
+func (t TopicConfig) MergePredicates() []partition.MergePredicates {
+	if len(t.AdditionalMergePredicates) > 0 {
+		return t.AdditionalMergePredicates
+	}
+
+	if t.BigQueryPartitionSettings != nil {
+		return []partition.MergePredicates{{
+			PartitionField: t.BigQueryPartitionSettings.PartitionField,
+			PartitionBy:    t.BigQueryPartitionSettings.PartitionBy,
+			PartitionType:  t.BigQueryPartitionSettings.PartitionType,
+		}}
+	}
+
+	return nil
+}
+
 func (t TopicConfig) BuildDatabaseAndSchemaPair() DatabaseAndSchemaPair {
 	return DatabaseAndSchemaPair{Database: t.Database, Schema: t.Schema}
 }

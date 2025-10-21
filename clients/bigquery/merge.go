@@ -17,27 +17,30 @@ import (
 
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
 	var additionalEqualityStrings []string
-	if tableData.TopicConfig().BigQueryPartitionSettings != nil {
-		distinctDates, err := buildDistinctDates(tableData.TopicConfig().BigQueryPartitionSettings.PartitionField, tableData.Rows())
-		if err != nil {
-			return false, fmt.Errorf("failed to generate distinct dates: %w", err)
+	for _, predicate := range tableData.TopicConfig().MergePredicates() {
+		switch predicate.PartitionType {
+		case partition.TimePartitionType:
+			distinctDates, err := buildDistinctDates(predicate.PartitionField, tableData.Rows())
+			if err != nil {
+				return false, fmt.Errorf("failed to generate distinct dates: %w", err)
+			}
+
+			mergeString, err := generateMergeString(predicate, s.Dialect(), distinctDates)
+			if err != nil {
+				return false, fmt.Errorf("failed to generate merge string: %w", err)
+			}
+
+			additionalEqualityStrings = []string{mergeString}
+		case partition.IntegerPartitionType:
+			predicates, err := shared.BuildAdditionalEqualityStrings(s.Dialect(), tableData.TopicConfig().AdditionalMergePredicates)
+			if err != nil {
+				return false, fmt.Errorf("failed to build additional equality strings: %w", err)
+			}
+
+			additionalEqualityStrings = append(additionalEqualityStrings, predicates...)
+		default:
+			return false, fmt.Errorf("unexpected partitionType: %q", predicate.PartitionType)
 		}
-
-		mergeString, err := generateMergeString(tableData.TopicConfig().BigQueryPartitionSettings, s.Dialect(), distinctDates)
-		if err != nil {
-			return false, fmt.Errorf("failed to generate merge string: %w", err)
-		}
-
-		additionalEqualityStrings = []string{mergeString}
-	}
-
-	if len(tableData.TopicConfig().AdditionalMergePredicates) > 0 {
-		predicates, err := shared.BuildAdditionalEqualityStrings(s.Dialect(), tableData.TopicConfig().AdditionalMergePredicates)
-		if err != nil {
-			return false, fmt.Errorf("failed to build additional equality strings: %w", err)
-		}
-
-		additionalEqualityStrings = append(additionalEqualityStrings, predicates...)
 	}
 
 	err := shared.Merge(ctx, s, tableData, types.MergeOpts{
@@ -53,28 +56,12 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (b
 	return true, nil
 }
 
-func generateMergeString(bqSettings *partition.BigQuerySettings, dialect sql.Dialect, values []string) (string, error) {
-	if err := bqSettings.Valid(); err != nil {
-		return "", fmt.Errorf("failed to validate bigQuerySettings: %w", err)
-	}
-
-	if len(values) == 0 {
-		return "", fmt.Errorf("values cannot be empty")
-	}
-
-	switch bqSettings.PartitionType {
-	case "time":
-		switch bqSettings.PartitionBy {
-		case "daily":
-			return fmt.Sprintf(`DATE(%s) IN (%s)`,
-				sql.QuoteTableAliasColumn(
-					constants.TargetAlias,
-					columns.NewColumn(bqSettings.PartitionField, typing.Invalid),
-					dialect,
-				),
-				strings.Join(sql.QuoteLiterals(values), ",")), nil
-		}
-	}
-
-	return "", fmt.Errorf("unexpected partitionType: %s and/or partitionBy: %s", bqSettings.PartitionType, bqSettings.PartitionBy)
+func generateMergeString(predicate partition.MergePredicates, dialect sql.Dialect, values []string) (string, error) {
+	return fmt.Sprintf(`DATE(%s) IN (%s)`,
+		sql.QuoteTableAliasColumn(
+			constants.TargetAlias,
+			columns.NewColumn(predicate.PartitionField, typing.Invalid),
+			dialect,
+		),
+		strings.Join(sql.QuoteLiterals(values), ",")), nil
 }
