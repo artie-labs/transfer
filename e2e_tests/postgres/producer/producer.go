@@ -40,11 +40,9 @@ func NewMessageIterator(filePath string) (*MessageIterator, error) {
 		return nil, fmt.Errorf("failed to open file: %w", err)
 	}
 
-	decoder := json.NewDecoder(file)
-
 	return &MessageIterator{
 		file:    file,
-		decoder: decoder,
+		decoder: json.NewDecoder(file),
 		started: false,
 	}, nil
 }
@@ -74,8 +72,7 @@ func (mi *MessageIterator) Next() (*DebeziumMessage, error) {
 	}
 
 	var msg DebeziumMessage
-	err := mi.decoder.Decode(&msg)
-	if err != nil {
+	if err := mi.decoder.Decode(&msg); err != nil {
 		if err == io.EOF {
 			return nil, nil // End of file
 		}
@@ -159,7 +156,7 @@ func publishFile(ctx context.Context, bootstrapServers []string, mapping TopicMa
 	// Process messages in batches to avoid memory issues
 	const batchSize = 1000
 	var kafkaMessages []kafka.Message
-	messageCount := 0
+	var messageCount int
 
 	for {
 		msg, err := iterator.Next()
@@ -192,8 +189,8 @@ func publishFile(ctx context.Context, bootstrapServers []string, mapping TopicMa
 
 		// Process batch when it reaches batchSize or at end of file
 		if len(kafkaMessages) >= batchSize {
-			log.Printf("📤 Publishing %d messages to topic: %q, message count: %d", len(kafkaMessages), mapping.Topic, messageCount)
-			if err := publishBatch(ctx, writer, kafkaMessages, mapping.Topic); err != nil {
+			slog.Info("📤 Publishing messages", slog.Int("count", len(kafkaMessages)), slog.String("topic", mapping.Topic), slog.Int("messageCount", messageCount))
+			if err := publishBatch(ctx, writer, kafkaMessages); err != nil {
 				return err
 			}
 			kafkaMessages = kafkaMessages[:0] // Reset slice but keep capacity
@@ -202,17 +199,17 @@ func publishFile(ctx context.Context, bootstrapServers []string, mapping TopicMa
 
 	// Publish remaining messages
 	if len(kafkaMessages) > 0 {
-		log.Printf("📤 Publishing %d messages to topic: %q, message count: %d", len(kafkaMessages), mapping.Topic, messageCount)
-		if err := publishBatch(ctx, writer, kafkaMessages, mapping.Topic); err != nil {
+		slog.Info("📤 Publishing messages", slog.Int("count", len(kafkaMessages)), slog.String("topic", mapping.Topic), slog.Int("messageCount", messageCount))
+		if err := publishBatch(ctx, writer, kafkaMessages); err != nil {
 			return err
 		}
 	}
 
-	log.Printf("✅ Successfully published %d messages to %s", messageCount, mapping.Topic)
+	slog.Info("✅ Successfully published messages", slog.Int("count", messageCount), slog.String("topic", mapping.Topic))
 	return nil
 }
 
-func publishBatch(ctx context.Context, writer *kafka.Writer, messages []kafka.Message, topic string) error {
+func publishBatch(ctx context.Context, writer *kafka.Writer, messages []kafka.Message) error {
 	// Retry logic for auto-created topics
 	var writeErr error
 	for attempt := 1; attempt <= 3; attempt++ {
