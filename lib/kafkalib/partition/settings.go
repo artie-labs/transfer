@@ -1,12 +1,15 @@
 package partition
 
-import (
-	"fmt"
-	"slices"
+type PartitionType string
+
+const (
+	TimePartitionType    PartitionType = "time"
+	IntegerPartitionType PartitionType = "integer"
 )
 
-var ValidPartitionTypes = []string{
-	"time",
+var ValidPartitionTypes = []PartitionType{
+	TimePartitionType,
+	IntegerPartitionType,
 }
 
 // TODO: We should be able to support different partition by fields in the future.
@@ -19,38 +22,14 @@ var ValidPartitionBy = []string{
 
 type MergePredicates struct {
 	PartitionField string `yaml:"partitionField" json:"partitionField"`
+
+	// TODO - Start using this.
+	PartitionBy   string        `yaml:"partitionBy" json:"partitionBy"`
+	PartitionType PartitionType `yaml:"partitionType" json:"partitionType"`
 }
 
 type BigQuerySettings struct {
-	PartitionType  string `yaml:"partitionType" json:"partitionType"`
-	PartitionField string `yaml:"partitionField" json:"partitionField"`
-	PartitionBy    string `yaml:"partitionBy" json:"partitionBy"`
-}
-
-func (b *BigQuerySettings) Valid() error {
-	if b == nil {
-		return fmt.Errorf("bigQuerySettings is nil")
-	}
-
-	if b.PartitionType == "" {
-		return fmt.Errorf("partitionTypes cannot be empty")
-	}
-
-	if b.PartitionField == "" {
-		return fmt.Errorf("partitionField cannot be empty")
-	}
-
-	if b.PartitionBy == "" {
-		return fmt.Errorf("partitionBy cannot be empty")
-	}
-
-	if !slices.Contains(ValidPartitionTypes, b.PartitionType) {
-		return fmt.Errorf("partitionType must be one of: %v", ValidPartitionTypes)
-	}
-
-	if !slices.Contains(ValidPartitionBy, b.PartitionBy) {
-		return fmt.Errorf("partitionBy must be one of: %v", ValidPartitionBy)
-	}
-
-	return nil
+	PartitionType  PartitionType `yaml:"partitionType" json:"partitionType"`
+	PartitionField string        `yaml:"partitionField" json:"partitionField"`
+	PartitionBy    string        `yaml:"partitionBy" json:"partitionBy"`
 }
