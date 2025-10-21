@@ -106,7 +106,7 @@ func main() {
 			Topic:    "dbserver1.inventory.customers",
 		},
 		{
-			FilePath: "testdata/dbserver1.inventory.products-10M.json",
+			FilePath: "testdata/dbserver1.inventory.products.json",
 			Topic:    "dbserver1.inventory.products",
 		},
 	}
