@@ -30,8 +30,8 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (b
 				return false, fmt.Errorf("failed to generate merge string: %w", err)
 			}
 
-			additionalEqualityStrings = []string{mergeString}
-		case partition.IntegerPartitionType:
+			additionalEqualityStrings = append(additionalEqualityStrings, mergeString)
+		case "", partition.IntegerPartitionType:
 			predicates, err := shared.BuildAdditionalEqualityStrings(s.Dialect(), tableData.TopicConfig().AdditionalMergePredicates)
 			if err != nil {
 				return false, fmt.Errorf("failed to build additional equality strings: %w", err)
