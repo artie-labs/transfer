@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"log/slog"
 	"os"
@@ -25,6 +26,69 @@ type TopicMapping struct {
 	Topic    string
 }
 
+// MessageIterator provides an iterator for reading JSON messages from a file
+type MessageIterator struct {
+	file    *os.File
+	decoder *json.Decoder
+	started bool
+}
+
+// NewMessageIterator creates a new iterator for the given file
+func NewMessageIterator(filePath string) (*MessageIterator, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open file: %w", err)
+	}
+
+	decoder := json.NewDecoder(file)
+
+	return &MessageIterator{
+		file:    file,
+		decoder: decoder,
+		started: false,
+	}, nil
+}
+
+// Next reads the next message from the file
+func (mi *MessageIterator) Next() (*DebeziumMessage, error) {
+	// If this is the first call, we need to consume the opening bracket of the array
+	if !mi.started {
+		token, err := mi.decoder.Token()
+		if err != nil {
+			if err == io.EOF {
+				return nil, nil
+			}
+			return nil, fmt.Errorf("failed to read opening bracket: %w", err)
+		}
+
+		// Check if it's a delimiter (opening bracket for array)
+		if delim, ok := token.(json.Delim); !ok || delim != '[' {
+			return nil, fmt.Errorf("expected opening bracket, got %v", token)
+		}
+		mi.started = true
+	}
+
+	// Check if we've reached the end of the array
+	if !mi.decoder.More() {
+		return nil, nil // End of array
+	}
+
+	var msg DebeziumMessage
+	err := mi.decoder.Decode(&msg)
+	if err != nil {
+		if err == io.EOF {
+			return nil, nil // End of file
+		}
+		return nil, fmt.Errorf("failed to decode message: %w", err)
+	}
+	return &msg, nil
+}
+
+// Close closes the file
+func (mi *MessageIterator) Close() error {
+	return mi.file.Close()
+}
+
 func main() {
 	ctx := context.Background()
 
@@ -42,7 +106,7 @@ func main() {
 			Topic:    "dbserver1.inventory.customers",
 		},
 		{
-			FilePath: "testdata/dbserver1.inventory.products.json",
+			FilePath: "testdata/dbserver1.inventory.products-10M.json",
 			Topic:    "dbserver1.inventory.products",
 		},
 	}
@@ -73,18 +137,12 @@ func main() {
 func publishFile(ctx context.Context, bootstrapServers []string, mapping TopicMapping) error {
 	log.Printf("📖 Reading file: %s", mapping.FilePath)
 
-	// Read and parse the JSON file
-	fileContent, err := os.ReadFile(mapping.FilePath)
+	// Create message iterator
+	iterator, err := NewMessageIterator(mapping.FilePath)
 	if err != nil {
-		return fmt.Errorf("failed to read file: %w", err)
+		return fmt.Errorf("failed to create iterator: %w", err)
 	}
-
-	var messages []DebeziumMessage
-	if err := json.Unmarshal(fileContent, &messages); err != nil {
-		return fmt.Errorf("failed to parse JSON: %w", err)
-	}
-
-	log.Printf("📝 Found %d messages in %s", len(messages), mapping.FilePath)
+	defer iterator.Close()
 
 	// Create Kafka writer
 	writer := kafka.NewWriter(kafka.WriterConfig{
@@ -98,19 +156,30 @@ func publishFile(ctx context.Context, bootstrapServers []string, mapping TopicMa
 		log.Printf("⚠️  Topic creation failed (might already exist): %v", err)
 	}
 
-	// Publish each message
-	kafkaMessages := make([]kafka.Message, 0, len(messages))
-	for i, msg := range messages {
+	// Process messages in batches to avoid memory issues
+	const batchSize = 1000
+	var kafkaMessages []kafka.Message
+	messageCount := 0
+
+	for {
+		msg, err := iterator.Next()
+		if err != nil {
+			return fmt.Errorf("failed to read message at count %d: %w", messageCount, err)
+		}
+		if msg == nil {
+			break // End of file
+		}
+
 		// Convert the entire Debezium message to bytes
 		msgBytes, err := json.Marshal(msg)
 		if err != nil {
-			return fmt.Errorf("failed to marshal message %d: %w", i, err)
+			return fmt.Errorf("failed to marshal message %d: %w", messageCount, err)
 		}
 
 		// Extract primary key from payload for the message key
-		key, err := extractPrimaryKey(msg)
+		key, err := extractPrimaryKey(*msg)
 		if err != nil {
-			return fmt.Errorf("failed to extract primary key from message %d: %w", i, err)
+			return fmt.Errorf("failed to extract primary key from message %d: %w", messageCount, err)
 		}
 
 		kafkaMessages = append(kafkaMessages, kafka.Message{
@@ -118,14 +187,36 @@ func publishFile(ctx context.Context, bootstrapServers []string, mapping TopicMa
 			Value: msgBytes,
 			Time:  time.Now(),
 		})
+
+		messageCount++
+
+		// Process batch when it reaches batchSize or at end of file
+		if len(kafkaMessages) >= batchSize {
+			log.Printf("📤 Publishing %d messages to topic: %q, message count: %d", len(kafkaMessages), mapping.Topic, messageCount)
+			if err := publishBatch(ctx, writer, kafkaMessages, mapping.Topic); err != nil {
+				return err
+			}
+			kafkaMessages = kafkaMessages[:0] // Reset slice but keep capacity
+		}
 	}
 
-	log.Printf("📤 Publishing %d messages to topic: %s", len(kafkaMessages), mapping.Topic)
+	// Publish remaining messages
+	if len(kafkaMessages) > 0 {
+		log.Printf("📤 Publishing %d messages to topic: %q, message count: %d", len(kafkaMessages), mapping.Topic, messageCount)
+		if err := publishBatch(ctx, writer, kafkaMessages, mapping.Topic); err != nil {
+			return err
+		}
+	}
 
+	log.Printf("✅ Successfully published %d messages to %s", messageCount, mapping.Topic)
+	return nil
+}
+
+func publishBatch(ctx context.Context, writer *kafka.Writer, messages []kafka.Message, topic string) error {
 	// Retry logic for auto-created topics
 	var writeErr error
 	for attempt := 1; attempt <= 3; attempt++ {
-		writeErr = writer.WriteMessages(ctx, kafkaMessages...)
+		writeErr = writer.WriteMessages(ctx, messages...)
 		if writeErr == nil {
 			break
 		}
@@ -140,7 +231,6 @@ func publishFile(ctx context.Context, bootstrapServers []string, mapping TopicMa
 		return fmt.Errorf("failed to write messages after 3 attempts: %w", writeErr)
 	}
 
-	log.Printf("✅ Successfully published %d messages to %s", len(kafkaMessages), mapping.Topic)
 	return nil
 }
 
