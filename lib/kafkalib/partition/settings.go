@@ -18,7 +18,7 @@ var ValidPartitionBy = []string{
 // We need the JSON annotations here for our dashboard to import the settings correctly.
 
 type MergePredicates struct {
-	PartitionField string `yaml:"partitionField" json:"partitionField"`
+	PartitionField string `yaml:"partitionField" json:"partitionField,omitempty"`
 	// TODO: - Flip to start using this.
 	PartitionBy   string `yaml:"partitionBy" json:"partitionBy,omitempty"`
 	PartitionType string `yaml:"partitionType" json:"partitionType,omitempty"`
