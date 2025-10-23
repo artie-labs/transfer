@@ -23,8 +23,8 @@ formatters:
     - goimports
   settings:
     gofumpt:
-      module-path: github.com/artie-labs/dashboard
+      module-path: github.com/artie-labs/transfer
       extra-rules: true
     goimports:
       local-prefixes:
-        - github.com/artie-labs/dashboard
+        - github.com/artie-labs/transfer
