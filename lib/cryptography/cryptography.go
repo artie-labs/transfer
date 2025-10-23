@@ -21,7 +21,7 @@ func HashValue(value any) any {
 	}
 
 	hash := sha256.New()
-	hash.Write([]byte(fmt.Sprint(value)))
+	fmt.Fprint(hash, value)
 	return hex.EncodeToString(hash.Sum(nil))
 }
 
