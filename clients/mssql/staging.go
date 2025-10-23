@@ -29,8 +29,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	var txCommitted bool
 	defer func() {
 		if !txCommitted {
-			err = tx.Rollback()
-			if err != nil {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
 				slog.Warn("failed to rollback transaction", slog.Any("error", err))
 			}
 		}
