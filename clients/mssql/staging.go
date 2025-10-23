@@ -3,6 +3,7 @@ package mssql
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	mssql "github.com/microsoft/go-mssqldb"
 
@@ -28,7 +29,10 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	var txCommitted bool
 	defer func() {
 		if !txCommitted {
-			tx.Rollback()
+			err = tx.Rollback()
+			if err != nil {
+				slog.Warn("failed to rollback transaction", slog.Any("error", err))
+			}
 		}
 	}()
 

@@ -92,9 +92,11 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID
 
 	// This will update the staging columns with the new string precision.
 	for colName, newLength := range additionalOutput.ColumnToNewLengthMap {
-		tableData.InMemoryColumns().UpsertColumn(colName, columns.UpsertColumnArg{
+		if err := tableData.InMemoryColumns().UpsertColumn(colName, columns.UpsertColumnArg{
 			StringPrecision: typing.ToPtr(newLength),
-		})
+		}); err != nil {
+			return "", nil, fmt.Errorf("failed to upsert column %s: %w", colName, err)
+		}
 	}
 
 	return file.FilePath, additionalOutput.ColumnToNewLengthMap, nil

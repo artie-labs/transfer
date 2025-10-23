@@ -192,9 +192,9 @@ WHEN NOT MATCHED THEN INSERT ("__ARTIE_DELETE","__ARTIE_ONLY_SET_DELETE","BAR","
 			constants.OnlySetDeleteColumnMarker: typing.Boolean,
 		})
 
-		_cols.UpsertColumn("bar", columns.UpsertColumnArg{
+		assert.NoError(t, _cols.UpsertColumn("bar", columns.UpsertColumnArg{
 			ToastCol: typing.ToPtr(true),
-		})
+		}))
 
 		statements := SnowflakeDialect{}.BuildMergeQueryIntoStagingTable(
 			fakeTableID,
