@@ -100,3 +100,11 @@ dest-itest-types:
 .PHONY: postgres-itest
 postgres-itest:
 	go run integration_tests/postgres/main.go
+
+.PHONY: lint
+lint:
+	golangci-lint run
+
+.PHONY: lint-fix
+lint-fix:
+	golangci-lint run --fix
