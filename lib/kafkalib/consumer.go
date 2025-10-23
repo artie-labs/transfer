@@ -8,10 +8,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/segmentio/kafka-go"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/kmsg"
+
+	"github.com/artie-labs/transfer/lib/artie"
 )
 
 const (

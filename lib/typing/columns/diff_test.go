@@ -3,9 +3,10 @@ package columns
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestShouldSkipColumn(t *testing.T) {

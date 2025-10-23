@@ -3,10 +3,11 @@ package optimization
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestTableData_UpdateInMemoryColumnsFromDestination_Tz(t *testing.T) {

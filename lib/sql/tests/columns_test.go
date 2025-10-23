@@ -3,6 +3,8 @@ package tests
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	bigqueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
 	redshiftDialect "github.com/artie-labs/transfer/clients/redshift/dialect"
 	snowflakeDialect "github.com/artie-labs/transfer/clients/snowflake/dialect"
@@ -10,7 +12,6 @@ import (
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestQuoteColumns(t *testing.T) {

@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/clients/snowflake/dialect"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestGenerateDedupeQueries(t *testing.T) {
