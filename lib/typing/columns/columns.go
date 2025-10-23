@@ -72,6 +72,7 @@ func (c *Column) SetBackfilled(backfilled bool) {
 func (c *Column) Backfilled() bool {
 	return c.backfilled
 }
+
 func (c *Column) SetDefaultValue(value any) {
 	c.defaultValue = value
 }

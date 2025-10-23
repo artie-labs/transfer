@@ -3,9 +3,10 @@ package tests
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	redshiftDialect "github.com/artie-labs/transfer/clients/redshift/dialect"
 	"github.com/artie-labs/transfer/lib/sql"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestQuoteIdentifiers(t *testing.T) {

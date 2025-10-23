@@ -27,7 +27,7 @@ type Credentials struct {
 	_sessionLabel       string
 }
 
-func GenerateSTSCredentials(ctx context.Context, awsAccessKeyID string, awsSecretAccessKey string, roleARN string, sessionLabel string) (Credentials, error) {
+func GenerateSTSCredentials(ctx context.Context, awsAccessKeyID, awsSecretAccessKey, roleARN, sessionLabel string) (Credentials, error) {
 	creds := credentials.NewStaticCredentialsProvider(awsAccessKeyID, awsSecretAccessKey, "")
 	cfg, err := config.LoadDefaultConfig(ctx, config.WithCredentialsProvider(creds))
 	if err != nil {

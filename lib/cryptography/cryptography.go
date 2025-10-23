@@ -21,7 +21,8 @@ func HashValue(value any) any {
 	}
 
 	hash := sha256.New()
-	hash.Write([]byte(fmt.Sprint(value)))
+	// hash.Hash.Write never returns an error, so we can safely ignore the error from fmt.Fprint.
+	_, _ = fmt.Fprint(hash, value)
 	return hex.EncodeToString(hash.Sum(nil))
 }
 

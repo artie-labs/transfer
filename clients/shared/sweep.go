@@ -10,7 +10,7 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 )
 
-type GetQueryFunc func(dbName string, schemaName string) (string, []any)
+type GetQueryFunc func(dbName, schemaName string) (string, []any)
 
 func Sweep(ctx context.Context, dest destination.Destination, topicConfigs []*kafkalib.TopicConfig, getQueryFunc GetQueryFunc) error {
 	slog.Info("Looking to see if there are any dangling artie temporary tables to delete...")

@@ -123,7 +123,6 @@ COALESCE(
 			RedshiftDialect{}.BuildIsNotToastValueExpression("tbl", columns.NewColumn("foo", typing.String)),
 		)
 	}
-
 }
 
 func TestRedshiftDialect_BuildMergeInsertQuery(t *testing.T) {

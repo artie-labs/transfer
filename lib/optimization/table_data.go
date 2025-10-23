@@ -207,7 +207,6 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 					rowData[key] = prevVal
 				}
 			}
-
 		}
 	}
 
@@ -346,7 +345,7 @@ func (t *TableData) MergeColumnsFromDestination(destCols ...columns.Column) erro
 }
 
 // mergeColumn - This function will merge the in-memory column with the destination column.
-func mergeColumn(inMemoryCol columns.Column, destCol columns.Column) columns.Column {
+func mergeColumn(inMemoryCol, destCol columns.Column) columns.Column {
 	inMemoryCol.KindDetails.Kind = destCol.KindDetails.Kind
 	// Copy over backfilled
 	inMemoryCol.SetBackfilled(destCol.Backfilled())

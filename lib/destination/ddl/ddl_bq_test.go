@@ -25,7 +25,8 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 	td := optimization.NewTableData(nil, config.Replication, nil,
 		kafkalib.TopicConfig{
 			Database:  "mock_dataset",
-			TableName: "delete_col"},
+			TableName: "delete_col",
+		},
 		"delete_col")
 
 	colNameToKindDetailsMap := map[string]typing.KindDetails{

@@ -71,7 +71,9 @@ func (c *Client) newSession(ctx context.Context, kind SessionKind, blockUntilRea
 				slog.Duration("sleepTime", sleepTime),
 				slog.String("logs", strings.Join(session.Logs, "\n")),
 			)
-			c.DeleteSession(ctx, session.ID)
+			if err := c.DeleteSession(ctx, session.ID); err != nil {
+				slog.Warn("Failed to delete session", slog.Any("error", err))
+			}
 			time.Sleep(sleepTime)
 			return c.newSession(ctx, kind, blockUntilReady)
 		}

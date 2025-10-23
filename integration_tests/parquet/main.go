@@ -173,13 +173,12 @@ func addComprehensiveTestData(tableData *optimization.TableData) {
 		"empty_string":        "",
 		"complex_json_string": `{"tags":["edge","case","testing","decimal","precision"],"config":{"debug":true,"verbose":false},"version":"1.0"}`,
 	}, false)
-
 }
 
 func main() {
 	outputDir := "output"
 	// Create output directory if it doesn't exist
-	if err := os.MkdirAll(outputDir, 0755); err != nil {
+	if err := os.MkdirAll(outputDir, 0o755); err != nil {
 		logger.Fatal("Failed to create output directory", slog.Any("error", err))
 	}
 	{
@@ -206,5 +205,4 @@ func main() {
 
 		slog.Info("Wrote comprehensive parquet file", slog.String("path", parquetPath), slog.Int("rows", len(tableData.Rows())))
 	}
-
 }

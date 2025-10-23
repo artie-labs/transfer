@@ -5,10 +5,11 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config"
 
-	"github.com/artie-labs/transfer/lib/db"
-	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/artie-labs/transfer/lib/db"
+	"github.com/artie-labs/transfer/lib/mocks"
 )
 
 type BigQueryTestSuite struct {

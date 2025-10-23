@@ -15,7 +15,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, tempTableID sql.TableIdentifier, parentTableID sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
+func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, tempTableID, parentTableID sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
 	fp, colToNewLengthMap, err := s.loadTemporaryTable(tableData, tempTableID)
 	if err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
@@ -92,15 +92,17 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID
 
 	// This will update the staging columns with the new string precision.
 	for colName, newLength := range additionalOutput.ColumnToNewLengthMap {
-		tableData.InMemoryColumns().UpsertColumn(colName, columns.UpsertColumnArg{
+		if err := tableData.InMemoryColumns().UpsertColumn(colName, columns.UpsertColumnArg{
 			StringPrecision: typing.ToPtr(newLength),
-		})
+		}); err != nil {
+			return "", nil, fmt.Errorf("failed to upsert column %s: %w", colName, err)
+		}
 	}
 
 	return file.FilePath, additionalOutput.ColumnToNewLengthMap, nil
 }
 
-func (s *Store) PrepareReusableStagingTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, stagingTableID sql.TableIdentifier, parentTableID sql.TableIdentifier, opts types.AdditionalSettings) error {
+func (s *Store) PrepareReusableStagingTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, stagingTableID, parentTableID sql.TableIdentifier, opts types.AdditionalSettings) error {
 	exists, err := s.CheckStagingTableExists(ctx, stagingTableID)
 	if err != nil {
 		return fmt.Errorf("failed to check if staging table exists: %w", err)

@@ -22,6 +22,7 @@ func TestKafka_String(t *testing.T) {
 	k.Password = "bar"
 	assert.Equal(t, "bootstrapServer=server, groupID=group-id, user_set=true, pass_set=true", k.String())
 }
+
 func TestCfg_KafkaBootstrapServers(t *testing.T) {
 	{
 		// Single broker

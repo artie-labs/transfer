@@ -202,7 +202,7 @@ WHEN NOT MATCHED AND COALESCE(%s, 1) = 0 THEN INSERT (%s) VALUES (%s);`,
 	)}, nil
 }
 
-func (MSSQLDialect) BuildSweepQuery(_ string, schemaName string) (string, []any) {
+func (MSSQLDialect) BuildSweepQuery(_, schemaName string) (string, []any) {
 	return `
 SELECT
     TABLE_SCHEMA, TABLE_NAME

@@ -83,7 +83,6 @@ func (d *DDLTestSuite) Test_DropTemporaryTable() {
 			fakeStore = d.fakeBigQueryStore
 		} else {
 			fakeStore = d.fakeSnowflakeStagesStore
-
 		}
 
 		for _, doNotDropTable := range doNotDropTables {

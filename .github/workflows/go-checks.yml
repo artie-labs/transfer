@@ -32,6 +32,11 @@ jobs:
           version: "2025.1.1"
           install-go: false
 
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.5
+
       - name: Run tests + race condition check
         run: make race
 

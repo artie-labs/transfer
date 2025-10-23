@@ -78,7 +78,7 @@ func parsePartitionKeyString(keyBytes []byte) (map[string]any, error) {
 		return nil, fmt.Errorf("key is too short")
 	}
 
-	if !(strings.HasPrefix(keyString, stringPrefix) && strings.HasSuffix(keyString, stringSuffix)) {
+	if !strings.HasPrefix(keyString, stringPrefix) || !strings.HasSuffix(keyString, stringSuffix) {
 		return nil, fmt.Errorf("incorrect key structure")
 	}
 

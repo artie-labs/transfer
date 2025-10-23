@@ -125,7 +125,6 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 				err = tableConfig.UpsertColumn(col.Name(), columns.UpsertColumnArg{
 					Backfilled: typing.ToPtr(true),
 				})
-
 				if err != nil {
 					return fmt.Errorf("failed to update column backfilled status: %w", err)
 				}

@@ -156,7 +156,6 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 					PrimaryKey: typing.ToPtr(true),
 				},
 			)
-
 			if err != nil {
 				return Event{}, fmt.Errorf("failed to upsert column: %w", err)
 			}
@@ -373,7 +372,6 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 			err := inMemoryColumns.UpsertColumn(newColName, columns.UpsertColumnArg{
 				ToastCol: typing.ToPtr(true),
 			})
-
 			if err != nil {
 				return false, "", fmt.Errorf("failed to upsert column: %w", err)
 			}

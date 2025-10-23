@@ -5,6 +5,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/segmentio/kafka-go"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/cdc/mongo"
@@ -14,8 +17,6 @@ import (
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"github.com/artie-labs/transfer/models"
-	"github.com/segmentio/kafka-go"
-	"github.com/stretchr/testify/assert"
 )
 
 var (

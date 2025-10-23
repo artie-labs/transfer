@@ -168,7 +168,6 @@ func TestGetTypeFromMap(t *testing.T) {
 			assert.True(t, value)
 		}
 	}
-
 }
 
 func TestGetCaseInsensitiveValue(t *testing.T) {

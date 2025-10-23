@@ -65,7 +65,6 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 
 					return nil
 				})
-
 				if err != nil {
 					if fetchErr, ok := kafkalib.IsFetchMessageError(err); ok && errors.Is(fetchErr.Err, context.DeadlineExceeded) {
 						slog.Warn("Failed to read kafka message", slog.Any("err", err), slog.String("topic", topic), slog.Duration("timeout", kafkalib.FetchMessageTimeout))

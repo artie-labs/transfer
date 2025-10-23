@@ -38,7 +38,6 @@ func TestEscapeBackslashes(t *testing.T) {
 		{
 			// Backslash
 			assert.Equal(t, `hello \\ there \\ hh`, EscapeBackslashes(`hello \ there \ hh`))
-
 		}
 	}
 }

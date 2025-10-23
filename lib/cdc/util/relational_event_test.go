@@ -7,10 +7,11 @@ import (
 
 	"github.com/artie-labs/transfer/lib/debezium"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestSource_GetOptionalSchema(t *testing.T) {

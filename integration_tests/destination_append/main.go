@@ -26,7 +26,7 @@ func NewAppendTest(ctx context.Context, dest destination.Destination, _iceberg *
 	}
 }
 
-func (at *AppendTest) generateTestData(ctx context.Context, numRows int, appendEvery int) error {
+func (at *AppendTest) generateTestData(ctx context.Context, numRows, appendEvery int) error {
 	for i := 0; i < appendEvery; i++ {
 		for j := 0; j < numRows; j++ {
 			pkValue := i*numRows + j

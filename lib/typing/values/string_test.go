@@ -48,7 +48,6 @@ func TestToStringOpts(t *testing.T) {
 			assert.Equal(t, "2021-01-01T00:00:00.999999Z", val)
 		}
 	}
-
 }
 
 func TestToString(t *testing.T) {

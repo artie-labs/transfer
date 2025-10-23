@@ -84,7 +84,6 @@ func DefaultValue(column columns.Column, dialect sql.Dialect) (any, error) {
 	default:
 		return nil, fmt.Errorf("unsupported default value type: %q", column.KindDetails.Kind)
 	}
-
 }
 
 func BackfillColumn(ctx context.Context, dest destination.Destination, column columns.Column, tableID sql.TableIdentifier) error {

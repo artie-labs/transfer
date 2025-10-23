@@ -22,102 +22,100 @@ var dsns = []string{
 	"postgres://postgres:postgres@localhost:5432/destination_e2e_fgo?sslmode=disable",
 }
 
-var (
-	testCases = []TestCase{
-		{
-			schema:        "artie",
-			tableName:     "customers",
-			expectedCount: 4,
-			rows: []map[string]any{
-				{
-					"id":         1001,
-					"first_name": "Sally",
-					"last_name":  "Thomas",
-					"email":      "sally.thomas@acme.com",
-				},
-				{
-					"id":         1002,
-					"first_name": "George",
-					"last_name":  "Bailey",
-					"email":      "gbailey@foobar.com",
-				},
-				{
-					"id":         1003,
-					"first_name": "Edward",
-					"last_name":  "Walker",
-					"email":      "ed@walker.com",
-				},
-				{
-					"id":         1004,
-					"first_name": "Anne",
-					"last_name":  "Kretchmar",
-					"email":      "annek@noanswer.org",
-				},
+var testCases = []TestCase{
+	{
+		schema:        "artie",
+		tableName:     "customers",
+		expectedCount: 4,
+		rows: []map[string]any{
+			{
+				"id":         1001,
+				"first_name": "Sally",
+				"last_name":  "Thomas",
+				"email":      "sally.thomas@acme.com",
+			},
+			{
+				"id":         1002,
+				"first_name": "George",
+				"last_name":  "Bailey",
+				"email":      "gbailey@foobar.com",
+			},
+			{
+				"id":         1003,
+				"first_name": "Edward",
+				"last_name":  "Walker",
+				"email":      "ed@walker.com",
+			},
+			{
+				"id":         1004,
+				"first_name": "Anne",
+				"last_name":  "Kretchmar",
+				"email":      "annek@noanswer.org",
 			},
 		},
-		{
-			schema:        "public",
-			tableName:     "products",
-			expectedCount: 9,
-			rows: []map[string]any{
-				{
-					"id":          101,
-					"name":        "scooter",
-					"description": "Small 2-wheel scooter",
-					"weight":      3.14,
-				},
-				{
-					"id":          102,
-					"name":        "car battery",
-					"description": "12V car battery",
-					"weight":      8.1,
-				},
-				{
-					"id":          103,
-					"name":        "12-pack drill bits",
-					"description": "12-pack of drill bits with sizes ranging from #40 to #3",
-					"weight":      0.8,
-				},
-				{
-					"id":          104,
-					"name":        "hammer",
-					"description": "12oz carpenter's hammer",
-					"weight":      0.75,
-				},
-				{
-					"id":          105,
-					"name":        "hammer",
-					"description": "14oz carpenter's hammer",
-					"weight":      0.875,
-				},
-				{
-					"id":          106,
-					"name":        "hammer",
-					"description": "16oz carpenter's hammer",
-					"weight":      1.0,
-				},
-				{
-					"id":          107,
-					"name":        "rocks",
-					"description": "box of assorted rocks",
-					"weight":      5.3,
-				},
-				{
-					"id":          108,
-					"name":        "jacket",
-					"description": "water resistent black wind breaker",
-					"weight":      0.1,
-				},
-				{
-					"id":          109,
-					"name":        "spare tire",
-					"description": "24 inch spare tire",
-					"weight":      22.2,
-				},
+	},
+	{
+		schema:        "public",
+		tableName:     "products",
+		expectedCount: 9,
+		rows: []map[string]any{
+			{
+				"id":          101,
+				"name":        "scooter",
+				"description": "Small 2-wheel scooter",
+				"weight":      3.14,
+			},
+			{
+				"id":          102,
+				"name":        "car battery",
+				"description": "12V car battery",
+				"weight":      8.1,
+			},
+			{
+				"id":          103,
+				"name":        "12-pack drill bits",
+				"description": "12-pack of drill bits with sizes ranging from #40 to #3",
+				"weight":      0.8,
+			},
+			{
+				"id":          104,
+				"name":        "hammer",
+				"description": "12oz carpenter's hammer",
+				"weight":      0.75,
+			},
+			{
+				"id":          105,
+				"name":        "hammer",
+				"description": "14oz carpenter's hammer",
+				"weight":      0.875,
+			},
+			{
+				"id":          106,
+				"name":        "hammer",
+				"description": "16oz carpenter's hammer",
+				"weight":      1.0,
+			},
+			{
+				"id":          107,
+				"name":        "rocks",
+				"description": "box of assorted rocks",
+				"weight":      5.3,
+			},
+			{
+				"id":          108,
+				"name":        "jacket",
+				"description": "water resistent black wind breaker",
+				"weight":      0.1,
+			},
+			{
+				"id":          109,
+				"name":        "spare tire",
+				"description": "24 inch spare tire",
+				"weight":      22.2,
 			},
 		},
-	}
-)
+	},
+}
 
 func testCountRows(ctx context.Context, testCase TestCase) error {
 	for _, dsn := range dsns {

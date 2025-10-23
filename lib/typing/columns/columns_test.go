@@ -5,9 +5,10 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestEscapeName(t *testing.T) {
@@ -107,7 +108,7 @@ func TestColumn_ShouldBackfill(t *testing.T) {
 func TestColumns_ValidColumns(t *testing.T) {
 	{
 		// Setup test columns
-		var happyPathCols = []Column{
+		happyPathCols := []Column{
 			{
 				name:        "hi",
 				KindDetails: typing.String,
@@ -127,7 +128,7 @@ func TestColumns_ValidColumns(t *testing.T) {
 	}
 	{
 		// Test with mix of valid and invalid columns
-		var happyPathCols = []Column{
+		happyPathCols := []Column{
 			{
 				name:        "hi",
 				KindDetails: typing.String,

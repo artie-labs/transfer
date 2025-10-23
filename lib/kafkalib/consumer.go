@@ -8,10 +8,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/segmentio/kafka-go"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/kmsg"
+
+	"github.com/artie-labs/transfer/lib/artie"
 )
 
 const (
@@ -68,7 +69,7 @@ func GetHighWatermarkMapKey(topic string, partition int32) string {
 	return fmt.Sprintf("%s-%d", topic, partition)
 }
 
-func NewFranzGoConsumer(client *kgo.Client, groupID string, topic string) Consumer {
+func NewFranzGoConsumer(client *kgo.Client, groupID, topic string) Consumer {
 	return &FranzGoConsumer{
 		client:         client,
 		groupID:        groupID,
@@ -217,7 +218,7 @@ func (c *ConsumerProvider) SetPartitionToAppliedOffsetTest(msg artie.Message) {
 	c.partitionToAppliedOffset[msg.Partition()] = msg
 }
 
-func NewConsumerProviderForTest(consumer Consumer, topic string, groupID string) *ConsumerProvider {
+func NewConsumerProviderForTest(consumer Consumer, topic, groupID string) *ConsumerProvider {
 	return &ConsumerProvider{
 		Consumer:                 consumer,
 		topic:                    topic,

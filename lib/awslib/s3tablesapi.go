@@ -60,7 +60,6 @@ func (s S3TablesAPIWrapper) GetTableBucket(ctx context.Context) (s3tables.GetTab
 	resp, err := s.client.GetTableBucket(ctx, &s3tables.GetTableBucketInput{
 		TableBucketARN: aws.String(s.tableBucketARN),
 	})
-
 	if err != nil {
 		return s3tables.GetTableBucketOutput{}, err
 	}
@@ -73,7 +72,6 @@ func (s S3TablesAPIWrapper) GetNamespace(ctx context.Context, namespace string) 
 		Namespace:      aws.String(namespace),
 		TableBucketARN: aws.String(s.tableBucketARN),
 	})
-
 	if err != nil {
 		return s3tables.GetNamespaceOutput{}, err
 	}
@@ -90,7 +88,6 @@ func (s S3TablesAPIWrapper) ListNamespaces(ctx context.Context) ([]types.Namespa
 			TableBucketARN:    aws.String(s.tableBucketARN),
 			ContinuationToken: continuationToken,
 		})
-
 		if err != nil {
 			return []types.NamespaceSummary{}, err
 		}
@@ -133,7 +130,6 @@ func (s S3TablesAPIWrapper) ListTables(ctx context.Context, namespace string) ([
 			TableBucketARN:    aws.String(s.tableBucketARN),
 			ContinuationToken: continuationToken,
 		})
-
 		if err != nil {
 			return []types.TableSummary{}, err
 		}
@@ -149,13 +145,12 @@ func (s S3TablesAPIWrapper) ListTables(ctx context.Context, namespace string) ([
 	return tables, nil
 }
 
-func (s S3TablesAPIWrapper) GetTable(ctx context.Context, namespace string, table string) (s3tables.GetTableOutput, error) {
+func (s S3TablesAPIWrapper) GetTable(ctx context.Context, namespace, table string) (s3tables.GetTableOutput, error) {
 	resp, err := s.client.GetTable(ctx, &s3tables.GetTableInput{
 		Namespace:      aws.String(namespace),
 		Name:           aws.String(table),
 		TableBucketARN: aws.String(s.tableBucketARN),
 	})
-
 	if err != nil {
 		return s3tables.GetTableOutput{}, err
 	}
@@ -177,7 +172,7 @@ func (s S3TablesAPIWrapper) GetTableMetadata(ctx context.Context, s3URI string) 
 	return tableSchema, nil
 }
 
-func (s S3TablesAPIWrapper) DeleteTable(ctx context.Context, namespace string, table string) error {
+func (s S3TablesAPIWrapper) DeleteTable(ctx context.Context, namespace, table string) error {
 	_, err := s.client.DeleteTable(ctx, &s3tables.DeleteTableInput{
 		Namespace:      aws.String(namespace),
 		Name:           aws.String(table),

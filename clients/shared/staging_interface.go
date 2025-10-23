@@ -11,12 +11,12 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func GenerateReusableStagingTableName(baseTableName string, suffix string) string {
+func GenerateReusableStagingTableName(baseTableName, suffix string) string {
 	return fmt.Sprintf("%s_%s_%s", baseTableName, constants.ArtiePrefix, suffix)
 }
 
 type ReusableStagingTableManager interface {
-	PrepareReusableStagingTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, stagingTableID sql.TableIdentifier, parentTableID sql.TableIdentifier, opts types.AdditionalSettings) error
+	PrepareReusableStagingTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, stagingTableID, parentTableID sql.TableIdentifier, opts types.AdditionalSettings) error
 
 	CheckStagingTableExists(ctx context.Context, tableID sql.TableIdentifier) (bool, error)
 

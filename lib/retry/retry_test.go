@@ -77,9 +77,10 @@ func TestWithRetries(t *testing.T) {
 		assert.NoError(t, err)
 		err = WithRetries(retryCfg, func(attempt int, _ error) error {
 			calls++
-			if attempt == 0 {
+			switch attempt {
+			case 0:
 				return fmt.Errorf("retry this one")
-			} else if attempt == 1 {
+			case 1:
 				return fmt.Errorf("oops I failed again")
 			}
 			assert.Fail(t, "Should not happen")
@@ -141,9 +142,10 @@ func TestWithRetriesAndResult(t *testing.T) {
 		assert.NoError(t, err)
 		_, err = WithRetriesAndResult(retryCfg, func(attempt int, _ error) (int, error) {
 			calls++
-			if attempt == 0 {
+			switch attempt {
+			case 0:
 				return 0, fmt.Errorf("retry this one")
-			} else if attempt == 1 {
+			case 1:
 				return 0, fmt.Errorf("oops I failed again")
 			}
 			assert.Fail(t, "Should not happen")

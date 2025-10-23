@@ -10,8 +10,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/segmentio/kafka-go"
+
+	"github.com/artie-labs/transfer/lib/config"
 )
 
 // DebeziumMessage represents the structure of messages in the test data files
@@ -122,7 +123,6 @@ func main() {
 	}
 
 	for _, mapping := range topicMappings {
-
 		if err := publishFile(ctx, bootstrapServers, mapping); err != nil {
 			log.Fatalf("Failed to publish file %s to topic %s: %v", mapping.FilePath, mapping.Topic, err)
 		}
