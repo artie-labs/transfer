@@ -26,7 +26,7 @@ type Heartbeats struct {
 	ticks int32
 }
 
-func NewHeartbeats(initialDelay time.Duration, intervalTicker time.Duration, metric string, tags map[string]any) *Heartbeats {
+func NewHeartbeats(initialDelay, intervalTicker time.Duration, metric string, tags map[string]any) *Heartbeats {
 	return &Heartbeats{
 		initialDelay:   initialDelay,
 		intervalTicker: intervalTicker,

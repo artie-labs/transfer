@@ -123,10 +123,7 @@ func parseValue(colVal any, colKind columns.Column) (any, error) {
 		switch castedColVal := colVal.(type) {
 		// It's okay if it's not a *decimal.Decimal, so long as it's a float or string.
 		// By having the flexibility of handling both *decimal.Decimal and float64/float32/string values within the same batch will increase our ability for data digestion.
-		case
-			float64,
-			float32,
-			string:
+		case float64, float32, string:
 			return castedColVal, nil
 		}
 

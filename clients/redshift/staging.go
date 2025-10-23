@@ -15,7 +15,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, tempTableID sql.TableIdentifier, parentTableID sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
+func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, tempTableID, parentTableID sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
 	fp, colToNewLengthMap, err := s.loadTemporaryTable(tableData, tempTableID)
 	if err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
@@ -100,7 +100,7 @@ func (s *Store) loadTemporaryTable(tableData *optimization.TableData, newTableID
 	return file.FilePath, additionalOutput.ColumnToNewLengthMap, nil
 }
 
-func (s *Store) PrepareReusableStagingTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, stagingTableID sql.TableIdentifier, parentTableID sql.TableIdentifier, opts types.AdditionalSettings) error {
+func (s *Store) PrepareReusableStagingTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, stagingTableID, parentTableID sql.TableIdentifier, opts types.AdditionalSettings) error {
 	exists, err := s.CheckStagingTableExists(ctx, stagingTableID)
 	if err != nil {
 		return fmt.Errorf("failed to check if staging table exists: %w", err)

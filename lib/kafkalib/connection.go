@@ -37,7 +37,7 @@ type Connection struct {
 	timeout time.Duration
 }
 
-func NewConnection(enableAWSMSKIAM bool, disableTLS bool, username, password string, timeout time.Duration) Connection {
+func NewConnection(enableAWSMSKIAM, disableTLS bool, username, password string, timeout time.Duration) Connection {
 	return Connection{
 		enableAWSMSKIAM: enableAWSMSKIAM,
 		disableTLS:      disableTLS,

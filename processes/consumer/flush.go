@@ -94,7 +94,6 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 					slog.Info("Flushing table", slog.String("tableID", table.GetTableID().String()), slog.String("reason", args.Reason))
 					return flush(ctx, dest, table)
 				})
-
 				if err != nil {
 					return fmt.Errorf("failed to %s for %q: %w", action, table.GetTableID().String(), err)
 				}

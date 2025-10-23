@@ -115,7 +115,7 @@ func TestMSSQLDialect_BuildIsNotToastValueExpression(t *testing.T) {
 }
 
 func TestMSSQLDialect_BuildMergeQueries(t *testing.T) {
-	var _cols = []columns.Column{
+	_cols := []columns.Column{
 		columns.NewColumn("id", typing.String),
 		columns.NewColumn("bar", typing.String),
 		columns.NewColumn("updated_at", typing.String),

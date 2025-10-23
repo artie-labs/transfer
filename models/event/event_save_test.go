@@ -112,7 +112,6 @@ func (e *EventsTestSuite) TestEvent_SaveCasing() {
 		_, ok := rowData[expectedColumn]
 		assert.True(e.T(), ok, fmt.Sprintf("expected col: %s, rowsData: %v", expectedColumn, rowData))
 	}
-
 }
 
 func (e *EventsTestSuite) TestEventSaveOptionalSchema() {

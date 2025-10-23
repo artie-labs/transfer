@@ -184,7 +184,7 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body []byte
 	return doRequestResponse{body: out, httpStatus: resp.StatusCode}, nil
 }
 
-func NewClient(ctx context.Context, url string, config map[string]any, jars []string, heartbeatTimeoutInSecond int, driverMemory, executorMemory string, sessionName string) (*Client, error) {
+func NewClient(ctx context.Context, url string, config map[string]any, jars []string, heartbeatTimeoutInSecond int, driverMemory, executorMemory, sessionName string) (*Client, error) {
 	client := &Client{
 		url:                             url,
 		httpClient:                      &http.Client{},

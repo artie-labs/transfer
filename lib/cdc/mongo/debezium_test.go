@@ -12,7 +12,6 @@ import (
 )
 
 func TestGetPrimaryKey(t *testing.T) {
-
 	{
 		// Test JSON key format with numeric ID
 		pkMap, err := Debezium{}.GetPrimaryKey([]byte(`{"id": 1001}`), kafkalib.TopicConfig{CDCKeyFormat: kafkalib.JSONKeyFmt})

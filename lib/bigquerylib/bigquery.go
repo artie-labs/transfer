@@ -19,7 +19,7 @@ func NewClient(ctx context.Context, client *bigquery.Client) *Client {
 
 // [UndeleteTable] - Adding this functionality to restore a deleted table.
 // Ref: https://cloud.google.com/bigquery/docs/samples/bigquery-undelete-table
-func (c Client) UndeleteTable(ctx context.Context, datasetID string, deletedTableName string, restoredTableName string, restoreTime time.Time) error {
+func (c Client) UndeleteTable(ctx context.Context, datasetID, deletedTableName, restoredTableName string, restoreTime time.Time) error {
 	slog.Info("Restoring table",
 		slog.String("datasetID", datasetID),
 		slog.String("deletedTableName", deletedTableName),

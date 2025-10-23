@@ -122,7 +122,6 @@ func main() {
 	}
 
 	for _, mapping := range topicMappings {
-
 		if err := publishFile(ctx, bootstrapServers, mapping); err != nil {
 			log.Fatalf("Failed to publish file %s to topic %s: %v", mapping.FilePath, mapping.Topic, err)
 		}

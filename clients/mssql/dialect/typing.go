@@ -97,9 +97,7 @@ func (MSSQLDialect) KindForDataType(rawType string) (typing.KindDetails, error) 
 		return typing.Integer, nil
 	case "float", "real":
 		return typing.Float, nil
-	case
-		"datetime",
-		"datetime2":
+	case "datetime", "datetime2":
 		return typing.TimestampNTZ, nil
 	case "datetimeoffset":
 		return typing.TimestampTZ, nil

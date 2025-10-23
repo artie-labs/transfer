@@ -182,7 +182,7 @@ WHERE
     UPPER(table_schema) = UPPER(?) AND table_name ILIKE ?`, dbName), []any{schemaName, "%" + constants.ArtiePrefix + "%"}
 }
 
-func (SnowflakeDialect) BuildRemoveFilesFromStage(stageName string, path string) string {
+func (SnowflakeDialect) BuildRemoveFilesFromStage(stageName, path string) string {
 	// https://docs.snowflake.com/en/sql-reference/sql/remove
 	return fmt.Sprintf("REMOVE @%s", filepath.Join(stageName, path))
 }
@@ -209,7 +209,7 @@ func (SnowflakeDialect) EscapeColumns(columns []columns.Column, delimiter string
 	return strings.Join(escapedCols, delimiter)
 }
 
-func (sd SnowflakeDialect) BuildCopyIntoTableQuery(tableID sql.TableIdentifier, columns []columns.Column, stageName string, fileName string) string {
+func (sd SnowflakeDialect) BuildCopyIntoTableQuery(tableID sql.TableIdentifier, columns []columns.Column, stageName, fileName string) string {
 	return fmt.Sprintf("COPY INTO %s (%s) FROM (SELECT %s FROM @%s) FILES = ('%s')",
 		// COPY INTO <table> (<columns>)
 		tableID.FullyQualifiedName(), strings.Join(sql.QuoteColumns(columns, sd), ","),

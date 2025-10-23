@@ -19,7 +19,7 @@ func TestRedshiftDialect_DataTypeForKind(t *testing.T) {
 	expectedKindDetailsToValueMap := map[typing.KindDetails]string{
 		// String:
 		typing.String: "VARCHAR(MAX)",
-		typing.KindDetails{Kind: typing.String.Kind, OptionalStringPrecision: typing.ToPtr(int32(12345))}: "VARCHAR(12345)",
+		{Kind: typing.String.Kind, OptionalStringPrecision: typing.ToPtr(int32(12345))}: "VARCHAR(12345)",
 		// Integers:
 		buildInteger(typing.SmallIntegerKind): "INT2",
 		buildInteger(typing.IntegerKind):      "INT4",

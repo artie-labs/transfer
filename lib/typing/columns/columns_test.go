@@ -107,7 +107,7 @@ func TestColumn_ShouldBackfill(t *testing.T) {
 func TestColumns_ValidColumns(t *testing.T) {
 	{
 		// Setup test columns
-		var happyPathCols = []Column{
+		happyPathCols := []Column{
 			{
 				name:        "hi",
 				KindDetails: typing.String,
@@ -127,7 +127,7 @@ func TestColumns_ValidColumns(t *testing.T) {
 	}
 	{
 		// Test with mix of valid and invalid columns
-		var happyPathCols = []Column{
+		happyPathCols := []Column{
 			{
 				name:        "hi",
 				KindDetails: typing.String,

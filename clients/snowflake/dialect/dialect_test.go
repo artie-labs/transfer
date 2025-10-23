@@ -103,7 +103,6 @@ func TestSnowflakeDialect_BuildIsNotToastValueExpression(t *testing.T) {
 			SnowflakeDialect{}.BuildIsNotToastValueExpression("tbl", columns.NewColumn("bar", typing.String)),
 		)
 	}
-
 }
 
 func buildColumns(colTypesMap map[string]typing.KindDetails) *columns.Columns {

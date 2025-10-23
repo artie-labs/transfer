@@ -47,6 +47,7 @@ func TestKindForDataType(t *testing.T) {
 		assert.Equal(t, expectedKind, kind)
 	}
 }
+
 func TestStripPrecision(t *testing.T) {
 	{
 		// Test with a string that has a precision
