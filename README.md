@@ -86,7 +86,7 @@ _If the database you are using is not on the list, feel free to file for a [feat
 
 ## Telemetry
 
-[Artie Transfer's telemetry guide](https://artie.com/docs/telemetry/overview)
+[Artie Transfer's telemetry guide](https://www.artie.com/docs/monitoring/available-metrics)
 
 ## Tests
 Transfer is written in Go and uses [counterfeiter](https://github.com/maxbrunsfeld/counterfeiter) to mock.
