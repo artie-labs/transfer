@@ -13,6 +13,8 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
+var specialCharacters = []string{"#"}
+
 func EscapeName(name string) string {
 	// Lowercasing and escaping spaces.
 	_, name = stringutil.EscapeSpaces(strings.ToLower(name))
@@ -21,6 +23,12 @@ func EscapeName(name string) string {
 	// We're doing this most databases do not allow column names to start with a number.
 	if _, err := strconv.Atoi(string(name[0])); err == nil {
 		name = "col_" + name
+	}
+
+	for _, specialCharacter := range specialCharacters {
+		if strings.Contains(name, specialCharacter) {
+			name = strings.ReplaceAll(name, specialCharacter, "__")
+		}
 	}
 
 	return name
