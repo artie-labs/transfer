@@ -14,6 +14,10 @@ import (
 
 type DatabricksDialect struct{}
 
+func (DatabricksDialect) ReservedColumnNames() []string {
+	return nil
+}
+
 func (DatabricksDialect) QuoteIdentifier(identifier string) string {
 	return fmt.Sprintf("`%s`", strings.ReplaceAll(identifier, "`", ""))
 }

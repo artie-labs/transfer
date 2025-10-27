@@ -13,6 +13,10 @@ import (
 
 type SnowflakeDialect struct{}
 
+func (SnowflakeDialect) ReservedColumnNames() []string {
+	return nil
+}
+
 func (SnowflakeDialect) QuoteIdentifier(identifier string) string {
 	return fmt.Sprintf(`"%s"`, strings.ToUpper(strings.ReplaceAll(identifier, `"`, ``)))
 }

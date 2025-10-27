@@ -23,6 +23,10 @@ func BQExpiresDate(time time.Time) string {
 
 type BigQueryDialect struct{}
 
+func (BigQueryDialect) ReservedColumnNames() []string {
+	return nil
+}
+
 func (BigQueryDialect) QuoteIdentifier(identifier string) string {
 	// BigQuery needs backticks to quote.
 	return fmt.Sprintf("`%s`", strings.ReplaceAll(identifier, "`", ""))

@@ -12,6 +12,10 @@ import (
 
 type RedshiftDialect struct{}
 
+func (RedshiftDialect) ReservedColumnNames() []string {
+	return nil
+}
+
 func (rd RedshiftDialect) QuoteIdentifier(identifier string) string {
 	// Preserve the existing behavior of Redshift identifiers being lowercased due to not being quoted.
 	return fmt.Sprintf(`"%s"`, strings.ToLower(strings.ReplaceAll(identifier, `"`, ``)))

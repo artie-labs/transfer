@@ -29,6 +29,10 @@ WHERE c.table_schema = $1 AND c.table_name = $2;`
 
 type PostgresDialect struct{}
 
+func (PostgresDialect) ReservedColumnNames() []string {
+	return nil
+}
+
 func (PostgresDialect) QuoteIdentifier(identifier string) string {
 	return fmt.Sprintf(`"%s"`, strings.ReplaceAll(identifier, `"`, `""`))
 }
