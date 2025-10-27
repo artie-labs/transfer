@@ -8,10 +8,12 @@ import (
 
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 func buildDistinctDates(colName string, rows []optimization.Row) ([]string, error) {
 	dateMap := make(map[string]bool)
+	colName = columns.EscapeName(colName)
 	for _, row := range rows {
 		val, ok := row.GetValue(colName)
 		if !ok {

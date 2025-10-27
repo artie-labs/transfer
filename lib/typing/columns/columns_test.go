@@ -12,21 +12,16 @@ import (
 )
 
 func TestEscapeName(t *testing.T) {
-	{
-		// Test basic name without any transformations
-		assert.Equal(t, "foo", EscapeName("foo"))
+	expected := map[string]string{
+		"foo":             "foo",
+		"FOOO":            "fooo",
+		"col with spaces": "col__with__spaces",
+		"1abc":            "col_1abc",
+		"bar#baz":         "bar__baz",
 	}
-	{
-		// Test uppercase to lowercase conversion
-		assert.Equal(t, "fooo", EscapeName("FOOO"))
-	}
-	{
-		// Test spaces being replaced with double underscores
-		assert.Equal(t, "col__with__spaces", EscapeName("col with spaces"))
-	}
-	{
-		// Test column name starting with number gets col_ prefix
-		assert.Equal(t, "col_1abc", EscapeName("1abc"))
+
+	for input, expected := range expected {
+		assert.Equal(t, expected, EscapeName(input))
 	}
 }
 
