@@ -14,6 +14,12 @@ func TestParseDateFromAny(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, _time.Format(supportedDateFormat), now.Format(supportedDateFormat))
 	}
+	{
+		// String value: 2025-10-26T09:37:07.350000+00:00
+		_time, err := ParseDateFromAny("2025-10-26T09:37:07.350000+00:00")
+		assert.NoError(t, err)
+		assert.Equal(t, "2025-10-26", _time.Format(time.DateOnly))
+	}
 }
 
 func TestParseTimeFromAny(t *testing.T) {
