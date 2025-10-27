@@ -14,6 +14,10 @@ import (
 
 type MSSQLDialect struct{}
 
+func (MSSQLDialect) ReservedColumnNames() []string {
+	return nil
+}
+
 func (MSSQLDialect) QuoteIdentifier(identifier string) string {
 	charToReplace := []string{`[`, `]`}
 	for _, char := range charToReplace {

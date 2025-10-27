@@ -28,6 +28,7 @@ type TableIdentifier interface {
 }
 
 type Dialect interface {
+	ReservedColumnNames() []string
 	QuoteIdentifier(identifier string) string
 	EscapeStruct(value string) string
 	DataTypeForKind(kd typing.KindDetails, isPk bool, settings config.SharedDestinationColumnSettings) (string, error)

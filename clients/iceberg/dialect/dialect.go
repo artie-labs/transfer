@@ -12,6 +12,10 @@ import (
 
 type IcebergDialect struct{}
 
+func (IcebergDialect) ReservedColumnNames() []string {
+	return nil
+}
+
 func (IcebergDialect) BuildIdentifier(identifier string) string {
 	return strings.ToLower(identifier)
 }
