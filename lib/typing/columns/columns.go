@@ -16,6 +16,10 @@ import (
 var specialCharacters = []string{"#"}
 
 func EscapeName(name string) string {
+	if len(name) == 0 {
+		return ""
+	}
+
 	// Lowercasing and escaping spaces.
 	_, name = stringutil.EscapeSpaces(strings.ToLower(name))
 
