@@ -5,13 +5,14 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jackc/pgx/v5/pgconn"
+
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
-	"github.com/jackc/pgx/v5/pgconn"
 )
 
 const describeTableQuery = `
@@ -322,6 +323,6 @@ func StripPrecision(s string) (string, string) {
 	return s, metadata
 }
 
-func (PostgresDialect) BuildSweepQuery(_ string, schema string) (string, []any) {
+func (PostgresDialect) BuildSweepQuery(_, schema string) (string, []any) {
 	return `SELECT table_schema, table_name FROM information_schema.tables WHERE table_schema = $1 AND table_name LIKE $2`, []any{schema, "%" + constants.ArtiePrefix + "%"}
 }

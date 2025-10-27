@@ -3,10 +3,11 @@ package shared
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	bq "github.com/artie-labs/transfer/clients/bigquery/dialect"
 	"github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/kafkalib/partition"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestBuildAdditionalEqualityStrings(t *testing.T) {

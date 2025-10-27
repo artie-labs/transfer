@@ -5,10 +5,11 @@ import (
 	"math/big"
 	"slices"
 
+	"github.com/cockroachdb/apd/v3"
+
 	"github.com/artie-labs/transfer/lib/maputil"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
-	"github.com/cockroachdb/apd/v3"
 )
 
 // encodeBigInt encodes a [big.Int] into a big-endian byte slice using two's complement.

@@ -9,10 +9,11 @@ import (
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/stretchr/testify/assert"
 )
 
 var topicConfig = kafkalib.TopicConfig{
@@ -112,7 +113,6 @@ func (e *EventsTestSuite) TestEvent_SaveCasing() {
 		_, ok := rowData[expectedColumn]
 		assert.True(e.T(), ok, fmt.Sprintf("expected col: %s, rowsData: %v", expectedColumn, rowData))
 	}
-
 }
 
 func (e *EventsTestSuite) TestEventSaveOptionalSchema() {

@@ -39,7 +39,7 @@ func TestZonedTimestamp_Convert(t *testing.T) {
 			// No fractional seconds
 			val, err := ZonedTimestamp{}.Convert("2025-09-13T00:00:12Z")
 			assert.NoError(t, err)
-			assert.Equal(t, time.Date(2025, time.September, 13, 0, 0, 12, 000000000, time.UTC), val.(time.Time))
+			assert.Equal(t, time.Date(2025, time.September, 13, 0, 0, 12, 0, time.UTC), val.(time.Time))
 			assert.Equal(t, "2025-09-13T00:00:12Z", val.(time.Time).Format(time.RFC3339Nano))
 		}
 		{

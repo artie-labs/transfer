@@ -36,7 +36,6 @@ func TestIcebergDialect_BuildDedupeQueries(t *testing.T) {
 		assert.Equal(t, "ALTER TABLE `{{catalog}}`.`{{schema}}`.`{{table_staging}}` DROP COLUMN __artie_rn", queries[1])
 		assert.Equal(t, "INSERT OVERWRITE `{{catalog}}`.`{{schema}}`.`{{table}}` TABLE `{{catalog}}`.`{{schema}}`.`{{table_staging}}`", queries[2])
 	}
-
 }
 
 func TestIcebergDialect_BuildCreateTemporaryView(t *testing.T) {

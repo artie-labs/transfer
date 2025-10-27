@@ -5,8 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/artie-labs/transfer/lib/optimization"
 )
 
 func buildRows(data []map[string]any) []optimization.Row {
@@ -62,7 +63,7 @@ func TestDistinctDates(t *testing.T) {
 	}
 }
 
-func equalLists(t *testing.T, list1 []string, list2 []string) {
+func equalLists(t *testing.T, list1, list2 []string) {
 	// Sort the two lists prior to comparison
 	slices.Sort(list1)
 	slices.Sort(list2)

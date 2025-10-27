@@ -4,8 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/artie-labs/transfer/lib/optimization"
 )
 
 func TestShouldSkipMerge(t *testing.T) {

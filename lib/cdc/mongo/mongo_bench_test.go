@@ -6,8 +6,9 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
-	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/artie-labs/transfer/lib/kafkalib"
 )
 
 func BenchmarkGetPrimaryKey(b *testing.B) {

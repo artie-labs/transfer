@@ -70,7 +70,7 @@ func BuildColumnComparison(column columns.Column, table1, table2 constants.Table
 }
 
 func BuildColumnComparisons(_columns []columns.Column, table1, table2 constants.TableAlias, operator Operator, dialect Dialect) []string {
-	var result = make([]string, len(_columns))
+	result := make([]string, len(_columns))
 	for i, column := range _columns {
 		result[i] = BuildColumnComparison(column, table1, table2, operator, dialect)
 	}

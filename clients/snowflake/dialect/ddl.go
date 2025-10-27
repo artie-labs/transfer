@@ -42,7 +42,7 @@ func (SnowflakeDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (st
 	return fmt.Sprintf("DESC TABLE %s", tableID.FullyQualifiedName()), nil, nil
 }
 
-func (SnowflakeDialect) BuildCreateStageQuery(dbName string, schemaName string, stageName string, bucket string, prefix string, credentialsClause string) string {
+func (SnowflakeDialect) BuildCreateStageQuery(dbName, schemaName, stageName, bucket, prefix, credentialsClause string) string {
 	s3Path := fmt.Sprintf("s3://%s", bucket)
 	if prefix != "" {
 		s3Path = fmt.Sprintf("%s/%s", s3Path, prefix)
@@ -58,6 +58,6 @@ func (SnowflakeDialect) BuildCreateStageQuery(dbName string, schemaName string, 
 	return base
 }
 
-func (SnowflakeDialect) BuildDescribeStageQuery(dbName string, schemaName string, stageName string) string {
+func (SnowflakeDialect) BuildDescribeStageQuery(dbName, schemaName, stageName string) string {
 	return fmt.Sprintf(`DESCRIBE STAGE %s.%s.%s`, dbName, schemaName, stageName)
 }

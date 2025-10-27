@@ -188,7 +188,7 @@ func testAddDropColumn(ctx context.Context, store *postgres.Store, pgDialect dia
 	return nil
 }
 
-func testAddColumn(ctx context.Context, store *postgres.Store, pgDialect dialect.PostgresDialect, testTableID sql.TableIdentifier, testTableName string, colName string) error {
+func testAddColumn(ctx context.Context, store *postgres.Store, pgDialect dialect.PostgresDialect, testTableID sql.TableIdentifier, testTableName, colName string) error {
 	sqlPart := fmt.Sprintf("%s varchar(100) DEFAULT 'test_value'", colName)
 	// Add the column in a loop to test idempotency.
 	for range 3 {
@@ -211,7 +211,7 @@ func testAddColumn(ctx context.Context, store *postgres.Store, pgDialect dialect
 	return nil
 }
 
-func testDropColumn(ctx context.Context, store *postgres.Store, pgDialect dialect.PostgresDialect, testTableID sql.TableIdentifier, testTableName string, colName string) error {
+func testDropColumn(ctx context.Context, store *postgres.Store, pgDialect dialect.PostgresDialect, testTableID sql.TableIdentifier, testTableName, colName string) error {
 	// Drop column in a loop to test idempotency.
 	for range 3 {
 		if _, err := store.ExecContext(ctx, pgDialect.BuildDropColumnQuery(testTableID, colName)); err != nil {

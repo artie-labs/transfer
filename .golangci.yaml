@@ -1,0 +1,30 @@
+version: "2"
+
+linters:
+  default: standard
+  settings:
+    errcheck:
+      exclude-functions:
+        - (*database/sql.DB).Close
+      verbose: true
+    staticcheck:
+      checks: ["all", "-ST1000", "-ST1003", "-ST1016", "-ST1020", "-ST1021", "-ST1022", "-QF1008"]
+  exclusions:
+    rules:
+      - linters:
+        - errcheck
+        source: "^\\s*defer\\s+"
+    paths:
+        - lib/mocks/*
+
+formatters:
+  enable:
+    - gofumpt
+    - goimports
+  settings:
+    gofumpt:
+      module-path: github.com/artie-labs/transfer
+      extra-rules: true
+    goimports:
+      local-prefixes:
+        - github.com/artie-labs/transfer

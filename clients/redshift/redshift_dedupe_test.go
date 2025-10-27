@@ -3,9 +3,10 @@ package redshift
 import (
 	"fmt"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/artie-labs/transfer/clients/redshift/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
-	"github.com/stretchr/testify/assert"
 )
 
 func (r *RedshiftTestSuite) Test_GenerateDedupeQueries() {

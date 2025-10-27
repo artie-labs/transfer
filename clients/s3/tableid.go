@@ -15,7 +15,7 @@ type TableIdentifier struct {
 	temporaryTable bool
 }
 
-func NewTableIdentifier(database, schema, table string, nameSeparator string) TableIdentifier {
+func NewTableIdentifier(database, schema, table, nameSeparator string) TableIdentifier {
 	return TableIdentifier{database: database, schema: schema, table: table, nameSeparator: cmp.Or(nameSeparator, ".")}
 }
 

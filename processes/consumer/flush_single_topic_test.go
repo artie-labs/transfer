@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
@@ -11,7 +13,6 @@ import (
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/models"
-	"github.com/stretchr/testify/assert"
 )
 
 func (f *FlushTestSuite) TestFlushSingleTopic_NilDB() {

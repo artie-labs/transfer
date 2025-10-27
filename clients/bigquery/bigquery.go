@@ -80,7 +80,6 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, u
 		UseTempTable:   true,
 		TempTableID:    temporaryTableID,
 	})
-
 	if err != nil {
 		return fmt.Errorf("failed to append: %w", err)
 	}
@@ -99,7 +98,7 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, u
 	return nil
 }
 
-func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
+func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tempTableID, _ sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
 		if err := shared.CreateTempTable(ctx, s, tableData, dwh, opts.ColumnSettings, tempTableID); err != nil {
 			return err
@@ -223,7 +222,6 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 
 					return fmt.Errorf("failed to append rows, encountered %d errors: %v", len(rowErrs), errors)
 				}
-
 			}
 
 			return fmt.Errorf("failed to get response: %w", err)
@@ -239,7 +237,6 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 
 		return nil
 	})
-
 	if err != nil {
 		return fmt.Errorf("failed to write rows: %w", err)
 	}

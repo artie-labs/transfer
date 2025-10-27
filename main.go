@@ -22,9 +22,7 @@ import (
 	"github.com/artie-labs/transfer/processes/pool"
 )
 
-var (
-	version = "dev" // this will be set by the goreleaser configuration to appropriate value for the compiled binary.
-)
+var version = "dev" // this will be set by the goreleaser configuration to appropriate value for the compiled binary.
 
 func main() {
 	// Parse args into settings

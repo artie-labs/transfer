@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/artie-labs/transfer/lib/numbers"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/artie-labs/transfer/lib/numbers"
 )
 
 func TestNewDecimal(t *testing.T) {

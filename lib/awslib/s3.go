@@ -45,7 +45,6 @@ func (s S3Client) UploadLocalFileToS3(ctx context.Context, bucket, prefix, filep
 		Key:    aws.String(objectKey),
 		Body:   file,
 	})
-
 	if err != nil {
 		return "", fmt.Errorf("failed to upload file to s3: %w", err)
 	}
@@ -62,7 +61,6 @@ func (s S3Client) DeleteFolder(ctx context.Context, bucket, folder string) error
 			Prefix:            aws.String(folder),
 			ContinuationToken: continuationToken,
 		})
-
 		if err != nil {
 			return fmt.Errorf("failed to list objects: %w", err)
 		}
@@ -87,7 +85,6 @@ func (s S3Client) DeleteFolder(ctx context.Context, bucket, folder string) error
 				Quiet:   aws.Bool(true),
 			},
 		})
-
 		if err != nil {
 			return fmt.Errorf("failed to delete objects: %w", err)
 		}

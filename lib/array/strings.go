@@ -21,7 +21,6 @@ func InterfaceToArrayString(val any, recastAsArray bool) ([]string, error) {
 		} else {
 			return nil, fmt.Errorf("wrong data type, kind: %v", list.Kind())
 		}
-
 	}
 
 	var vals []string

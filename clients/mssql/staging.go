@@ -3,6 +3,7 @@ package mssql
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	mssql "github.com/microsoft/go-mssqldb"
 
@@ -13,7 +14,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tempTableID sql.TableIdentifier, _ sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
+func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tempTableID, _ sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
 		if err := shared.CreateTempTable(ctx, s, tableData, dwh, opts.ColumnSettings, tempTableID); err != nil {
 			return err
@@ -28,7 +29,9 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	var txCommitted bool
 	defer func() {
 		if !txCommitted {
-			tx.Rollback()
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				slog.Warn("failed to rollback transaction", slog.Any("error", rollbackErr))
+			}
 		}
 	}()
 

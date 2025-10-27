@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/apache/arrow/go/v17/arrow"
+
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 

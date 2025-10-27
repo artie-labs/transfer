@@ -5,9 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/twpayne/go-geom/encoding/ewkb"
 	"github.com/twpayne/go-geom/encoding/geojson"
+
+	"github.com/artie-labs/transfer/lib/typing"
 )
 
 type GeoJSON struct {

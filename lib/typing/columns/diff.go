@@ -26,7 +26,7 @@ type DiffResults struct {
 	TargetColumnsMissing []Column
 }
 
-func Diff(sourceColumns []Column, targetColumns []Column) DiffResults {
+func Diff(sourceColumns, targetColumns []Column) DiffResults {
 	src := buildColumnsMap(sourceColumns)
 	targ := buildColumnsMap(targetColumns)
 
@@ -67,7 +67,7 @@ func filterColumns(columns []Column, columnsToKeep []string) []Column {
 }
 
 // DiffAndFilter - will diff the columns and filter out any Artie metadata columns that should not exist in the target table.
-func DiffAndFilter(columnsInSource []Column, columnsInDestination []Column, columnsToKeep []string) ([]Column, []Column) {
+func DiffAndFilter(columnsInSource, columnsInDestination []Column, columnsToKeep []string) ([]Column, []Column) {
 	diffResult := Diff(columnsInSource, columnsInDestination)
 	return filterColumns(diffResult.SourceColumnsMissing, columnsToKeep), filterColumns(diffResult.TargetColumnsMissing, columnsToKeep)
 }
