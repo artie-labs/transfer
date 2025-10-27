@@ -13,6 +13,7 @@ var supportedDateTimeLayouts = []string{
 	time.RFC3339Nano,
 	RFC3339Millisecond,
 	RFC3339Microsecond,
+	RFC3339MicrosecondAlt,
 	RFC3339Nanosecond,
 	// Others
 	"2006-01-02T15:04:05.999999999-07:00",
@@ -52,6 +53,7 @@ const (
 
 	RFC3339MicrosecondNoTZ = "2006-01-02T15:04:05.000000"
 	RFC3339Microsecond     = RFC3339MicrosecondNoTZ + TimezoneOffsetFormat
+	RFC3339MicrosecondAlt  = RFC3339MicrosecondNoTZ + "-07:00"
 
 	RFC3339NanosecondNoTZ = "2006-01-02T15:04:05.000000000"
 	RFC3339Nanosecond     = RFC3339NanosecondNoTZ + TimezoneOffsetFormat
