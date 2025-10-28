@@ -84,8 +84,8 @@ func transformData(data map[string]any, tc kafkalib.TopicConfig) map[string]any 
 	return data
 }
 
-func buildFilteredColumns(event cdc.Event, tc kafkalib.TopicConfig) (*columns.Columns, error) {
-	cols, err := event.GetColumns()
+func buildFilteredColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns []string) (*columns.Columns, error) {
+	cols, err := event.GetColumns(reservedColumns)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +125,12 @@ func buildFilteredColumns(event cdc.Event, tc kafkalib.TopicConfig) (*columns.Co
 }
 
 func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfig, cfgMode config.Mode) (Event, error) {
-	cols, err := buildFilteredColumns(event, tc)
+	var reservedColumns []string
+	if _dest, ok := dest.(destination.Destination); ok {
+		reservedColumns = _dest.Dialect().ReservedColumnNames()
+	}
+
+	cols, err := buildFilteredColumns(event, tc, reservedColumns)
 	if err != nil {
 		return Event{}, fmt.Errorf("failed to build filtered columns: %w", err)
 	}
@@ -144,11 +149,6 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 				pks = append(pks, pk)
 			}
 		}
-	}
-
-	var reservedColumns []string
-	if _dest, ok := dest.(destination.Destination); ok {
-		reservedColumns = _dest.Dialect().ReservedColumnNames()
 	}
 
 	if cols != nil {
