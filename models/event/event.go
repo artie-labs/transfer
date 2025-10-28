@@ -144,14 +144,18 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 				pks = append(pks, pk)
 			}
 		}
+	}
 
+	var reservedColumns []string
+	if _dest, ok := dest.(destination.Destination); ok {
+		reservedColumns = _dest.Dialect().ReservedColumnNames()
 	}
 
 	if cols != nil {
 		for _, pk := range pks {
 			err = cols.UpsertColumn(
 				// We need to escape the column name similar to have parity with event.GetColumns()
-				columns.EscapeName(pk, nil),
+				columns.EscapeName(pk, reservedColumns),
 				columns.UpsertColumnArg{
 					PrimaryKey: typing.ToPtr(true),
 				},
