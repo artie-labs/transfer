@@ -42,7 +42,7 @@ func (e *EventsTestSuite) TestSaveEvent() {
 	event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication)
 	assert.NoError(e.T(), err)
 
-	_, _, err = event.Save(e.cfg, e.db, topicConfig)
+	_, _, err = event.Save(e.cfg, e.db, topicConfig, nil)
 	assert.NoError(e.T(), err)
 
 	optimization := e.db.GetOrCreateTableData(event.GetTableID(), topicConfig.Topic)
@@ -73,7 +73,7 @@ func (e *EventsTestSuite) TestSaveEvent() {
 		},
 	}
 
-	_, _, err = edgeCaseEvent.Save(e.cfg, e.db, topicConfig)
+	_, _, err = edgeCaseEvent.Save(e.cfg, e.db, topicConfig, nil)
 	assert.NoError(e.T(), err)
 
 	td := e.db.GetOrCreateTableData(edgeCaseEvent.GetTableID(), topicConfig.Topic)
@@ -96,7 +96,7 @@ func (e *EventsTestSuite) TestEvent_SaveCasing() {
 	event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication)
 	assert.NoError(e.T(), err)
 
-	_, _, err = event.Save(e.cfg, e.db, topicConfig)
+	_, _, err = event.Save(e.cfg, e.db, topicConfig, nil)
 	assert.NoError(e.T(), err)
 
 	td := e.db.GetOrCreateTableData(event.GetTableID(), topicConfig.Topic)
@@ -137,7 +137,7 @@ func (e *EventsTestSuite) TestEventSaveOptionalSchema() {
 	event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication)
 	assert.NoError(e.T(), err)
 
-	_, _, err = event.Save(e.cfg, e.db, topicConfig)
+	_, _, err = event.Save(e.cfg, e.db, topicConfig, nil)
 	assert.NoError(e.T(), err)
 
 	td := e.db.GetOrCreateTableData(event.GetTableID(), topicConfig.Topic)
@@ -184,7 +184,7 @@ func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 	evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"col_1": "123"}, topicConfig, config.Replication)
 	assert.NoError(e.T(), err)
 
-	_, _, err = evt.Save(e.cfg, e.db, topicConfig)
+	_, _, err = evt.Save(e.cfg, e.db, topicConfig, nil)
 	assert.NoError(e.T(), err)
 
 	td := e.db.GetOrCreateTableData(evt.GetTableID(), topicConfig.Topic)
@@ -243,7 +243,7 @@ func (e *EventsTestSuite) TestEventSaveColumns() {
 	event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication)
 	assert.NoError(e.T(), err)
 
-	_, _, err = event.Save(e.cfg, e.db, topicConfig)
+	_, _, err = event.Save(e.cfg, e.db, topicConfig, nil)
 	assert.NoError(e.T(), err)
 
 	td := e.db.GetOrCreateTableData(event.GetTableID(), topicConfig.Topic)
@@ -291,13 +291,13 @@ func (e *EventsTestSuite) TestEventSaveTestDeleteFlag() {
 
 	event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication)
 	assert.NoError(e.T(), err)
-	_, _, err = event.Save(e.cfg, e.db, topicConfig)
+	_, _, err = event.Save(e.cfg, e.db, topicConfig, nil)
 	assert.NoError(e.T(), err)
 	assert.False(e.T(), e.db.GetOrCreateTableData(event.GetTableID(), topicConfig.Topic).ContainOtherOperations())
 	assert.True(e.T(), e.db.GetOrCreateTableData(event.GetTableID(), topicConfig.Topic).ContainsHardDeletes())
 
 	event.deleted = false
-	_, _, err = event.Save(e.cfg, e.db, topicConfig)
+	_, _, err = event.Save(e.cfg, e.db, topicConfig, nil)
 	assert.NoError(e.T(), err)
 	assert.True(e.T(), e.db.GetOrCreateTableData(event.GetTableID(), topicConfig.Topic).ContainOtherOperations())
 }

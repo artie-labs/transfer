@@ -307,10 +307,10 @@ func (e *Event) GetPrimaryKeys() []string {
 }
 
 // PrimaryKeyValue - as per above, this needs to return a deterministic k/v string.
-func (e *Event) PrimaryKeyValue() (string, error) {
+func (e *Event) PrimaryKeyValue(reservedColumns []string) (string, error) {
 	var key string
 	for _, pk := range e.GetPrimaryKeys() {
-		escapedPrimaryKey := columns.EscapeName(pk, nil)
+		escapedPrimaryKey := columns.EscapeName(pk, reservedColumns)
 		value, ok := e.data[escapedPrimaryKey]
 		if !ok {
 			return "", fmt.Errorf("primary key %q not found in data: %v", escapedPrimaryKey, e.data)
@@ -324,7 +324,7 @@ func (e *Event) PrimaryKeyValue() (string, error) {
 
 // Save will save the event into our in memory event
 // It will return (flush bool, flushReason string, err error)
-func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkalib.TopicConfig) (bool, string, error) {
+func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkalib.TopicConfig, reservedColumns []string) (bool, string, error) {
 	if err := e.Validate(); err != nil {
 		return false, "", fmt.Errorf("event validation failed: %w", err)
 	}
@@ -352,7 +352,7 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 	// Update col if necessary
 	sanitizedData := make(map[string]any)
 	for _col, val := range e.data {
-		newColName := columns.EscapeName(_col, nil)
+		newColName := columns.EscapeName(_col, reservedColumns)
 		if newColName != _col {
 			// This means that the column name has changed.
 			// We need to update the column name in the sanitizedData map.
@@ -417,7 +417,7 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 	// Swap out sanitizedData <> data.
 	e.data = sanitizedData
 
-	pkValueString, err := e.PrimaryKeyValue()
+	pkValueString, err := e.PrimaryKeyValue(reservedColumns)
 	if err != nil {
 		return false, "", fmt.Errorf("failed to retrieve primary key value: %w", err)
 	}
