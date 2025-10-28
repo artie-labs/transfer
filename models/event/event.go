@@ -160,9 +160,11 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 		return Event{}, fmt.Errorf("failed to build filtered columns: %w", err)
 	}
 
+	pks := buildPrimaryKeys(tc, pkMap, reservedColumns)
+
 	if cols != nil {
 		// All keys in pks are already escaped, so don't escape again
-		for _, pk := range buildPrimaryKeys(tc, pkMap, reservedColumns) {
+		for _, pk := range pks {
 			err = cols.UpsertColumn(
 				pk,
 				columns.UpsertColumnArg{
