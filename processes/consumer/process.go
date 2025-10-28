@@ -25,6 +25,11 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 		return cdc.TableID{}, fmt.Errorf("failed to process, topicConfig is nil")
 	}
 
+	var reservedColumns []string
+	if _dest, ok := dest.(destination.Destination); ok {
+		reservedColumns = _dest.Dialect().ReservedColumnNames()
+	}
+
 	tags := map[string]string{
 		"mode":    cfg.Mode.String(),
 		"groupID": p.GroupID,
@@ -45,7 +50,7 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 
 	tags["database"] = topicConfig.tc.Database
 	tags["schema"] = topicConfig.tc.Schema
-	pkMap, err := topicConfig.GetPrimaryKey(p.Msg.Key(), topicConfig.tc)
+	pkMap, err := topicConfig.GetPrimaryKey(p.Msg.Key(), topicConfig.tc, reservedColumns)
 	if err != nil {
 		tags["what"] = "marshall_pk_err"
 		return cdc.TableID{}, fmt.Errorf("cannot unmarshal key %q: %w", string(p.Msg.Key()), err)

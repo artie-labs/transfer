@@ -15,7 +15,7 @@ import (
 func TestGetPrimaryKey(t *testing.T) {
 	{
 		// Test JSON key format with numeric ID
-		pkMap, err := Debezium{}.GetPrimaryKey([]byte(`{"id": 1001}`), kafkalib.TopicConfig{CDCKeyFormat: kafkalib.JSONKeyFmt})
+		pkMap, err := Debezium{}.GetPrimaryKey([]byte(`{"id": 1001}`), kafkalib.TopicConfig{CDCKeyFormat: kafkalib.JSONKeyFmt}, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, float64(1001), pkMap["_id"])
 
@@ -25,7 +25,7 @@ func TestGetPrimaryKey(t *testing.T) {
 	}
 	{
 		// Test string key format with numeric ID
-		pkMap, err := Debezium{}.GetPrimaryKey([]byte(`Struct{id=1001}`), kafkalib.TopicConfig{CDCKeyFormat: kafkalib.StringKeyFmt})
+		pkMap, err := Debezium{}.GetPrimaryKey([]byte(`Struct{id=1001}`), kafkalib.TopicConfig{CDCKeyFormat: kafkalib.StringKeyFmt}, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, "1001", pkMap["_id"])
 
@@ -37,7 +37,7 @@ func TestGetPrimaryKey(t *testing.T) {
 		// Test JSON key format with ObjectId
 		pkMap, err := Debezium{}.GetPrimaryKey([]byte(`{"schema":{"type":"struct","fields":[{"type":"string","optional":false,"field":"id"}],"optional":false,"name":"1a75f632-29d2-419b-9ffe-d18fa12d74d5.38d5d2db-870a-4a38-a76c-9891b0e5122d.myFirstDatabase.stock.Key"},"payload":{"id":"{\"$oid\": \"63e3a3bf314a4076d249e203\"}"}}`), kafkalib.TopicConfig{
 			CDCKeyFormat: kafkalib.JSONKeyFmt,
-		})
+		}, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, "63e3a3bf314a4076d249e203", pkMap["_id"])
 
@@ -49,7 +49,7 @@ func TestGetPrimaryKey(t *testing.T) {
 		// Test string key format with ObjectId
 		pkMap, err := Debezium{}.GetPrimaryKey([]byte(`Struct{id={"$oid": "65566afbfefeb3c639deaf5d"}}`), kafkalib.TopicConfig{
 			CDCKeyFormat: kafkalib.StringKeyFmt,
-		})
+		}, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, "65566afbfefeb3c639deaf5d", pkMap["_id"])
 

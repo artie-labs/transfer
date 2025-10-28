@@ -25,7 +25,7 @@ func (r *RelationTestSuite) TestGetEventFromBytesTombstone() {
 
 func (r *RelationTestSuite) TestGetPrimaryKey() {
 	valString := `{"id": 47}`
-	pkMap, err := r.GetPrimaryKey([]byte(valString), validTc)
+	pkMap, err := r.GetPrimaryKey([]byte(valString), validTc, nil)
 	assert.NoError(r.T(), err)
 
 	val, ok := pkMap["id"]
@@ -36,7 +36,7 @@ func (r *RelationTestSuite) TestGetPrimaryKey() {
 
 func (r *RelationTestSuite) TestGetPrimaryKeyUUID() {
 	valString := `{"uuid": "ca0cefe9-45cf-44fa-a2ab-ec5e7e5522a3"}`
-	pkMap, err := r.GetPrimaryKey([]byte(valString), validTc)
+	pkMap, err := r.GetPrimaryKey([]byte(valString), validTc, nil)
 	val, ok := pkMap["uuid"]
 	assert.True(r.T(), ok)
 	assert.Equal(r.T(), val, "ca0cefe9-45cf-44fa-a2ab-ec5e7e5522a3")

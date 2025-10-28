@@ -12,7 +12,7 @@ import (
 
 type Format interface {
 	Labels() []string // Labels() to return a list of strings to maintain backward compatibility.
-	GetPrimaryKey(key []byte, tc kafkalib.TopicConfig) (map[string]any, error)
+	GetPrimaryKey(key []byte, tc kafkalib.TopicConfig, reservedColumns []string) (map[string]any, error)
 	GetEventFromBytes(bytes []byte) (Event, error)
 }
 
