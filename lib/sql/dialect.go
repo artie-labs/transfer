@@ -28,6 +28,7 @@ type TableIdentifier interface {
 }
 
 type Dialect interface {
+	// ReservedColumnNames - This is a list of column names that are reserved by the SQL Dialect. This needs to be all in lowercase.
 	ReservedColumnNames() []string
 	QuoteIdentifier(identifier string) string
 	EscapeStruct(value string) string

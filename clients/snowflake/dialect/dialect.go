@@ -13,8 +13,22 @@ import (
 
 type SnowflakeDialect struct{}
 
+// ReservedColumnNames - This is sourced from: https://docs.snowflake.com/en/sql-reference/reserved-keywords
 func (SnowflakeDialect) ReservedColumnNames() []string {
-	return nil
+	return []string{
+		"case",
+		"cast",
+		"constraint",
+		"current_date",
+		"current_timestamp",
+		"current_user",
+		"false",
+		"localtime",
+		"localtimestamp",
+		"true",
+		"try_cast",
+		"when",
+	}
 }
 
 func (SnowflakeDialect) QuoteIdentifier(identifier string) string {
