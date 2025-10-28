@@ -316,6 +316,7 @@ func (e *Event) GetPrimaryKeys() []string {
 }
 
 // PrimaryKeyValue - as per above, this needs to return a deterministic k/v string.
+// Must only call this after the event data has been sanitized within [event.Save].
 func (e *Event) PrimaryKeyValue() (string, error) {
 	var key string
 	for _, pk := range e.GetPrimaryKeys() {
