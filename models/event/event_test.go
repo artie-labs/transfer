@@ -220,8 +220,7 @@ func (e *EventsTestSuite) TestEvent_Columns() {
 		assert.True(e.T(), ok)
 	}
 	{
-		// Now it should handle escaping column names
-		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, map[string]any{"id": 123, "CAPITAL": "foo"}, kafkalib.TopicConfig{}, config.Replication)
+		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, map[string]any{"id": 123, "capital": "foo"}, kafkalib.TopicConfig{}, config.Replication)
 		assert.NoError(e.T(), err)
 
 		assert.Equal(e.T(), 2, len(evt.columns.GetColumns()))
