@@ -137,25 +137,28 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 	// Now iterate over pkMap and tag each column that is a primary key
 	var pks []string
 	if len(tc.PrimaryKeysOverride) > 0 {
-		pks = tc.PrimaryKeysOverride
+		for _, pk := range tc.PrimaryKeysOverride {
+			pks = append(pks, columns.EscapeName(pk, reservedColumns))
+		}
 	} else {
+		// [pkMap] is already escaped.
 		for pk := range pkMap {
 			pks = append(pks, pk)
 		}
 
 		for _, pk := range tc.IncludePrimaryKeys {
-			// If it's not already included in the [pkMap], let's add it.
-			if _, ok := pkMap[pk]; !ok {
-				pks = append(pks, pk)
+			escapedPk := columns.EscapeName(pk, reservedColumns)
+			if _, ok := pkMap[escapedPk]; !ok {
+				pks = append(pks, escapedPk)
 			}
 		}
 	}
 
 	if cols != nil {
+		// All keys in pks are already escaped, so don't escape again
 		for _, pk := range pks {
 			err = cols.UpsertColumn(
-				// We need to escape the column name similar to have parity with event.GetColumns()
-				columns.EscapeName(pk, reservedColumns),
+				pk,
 				columns.UpsertColumnArg{
 					PrimaryKey: typing.ToPtr(true),
 				},
