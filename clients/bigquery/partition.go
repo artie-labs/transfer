@@ -11,9 +11,9 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func buildDistinctDates(colName string, rows []optimization.Row) ([]string, error) {
+func buildDistinctDates(colName string, rows []optimization.Row, reservedColumnNames []string) ([]string, error) {
 	dateMap := make(map[string]bool)
-	colName = columns.EscapeName(colName)
+	colName = columns.EscapeName(colName, reservedColumnNames)
 	for _, row := range rows {
 		val, ok := row.GetValue(colName)
 		if !ok {

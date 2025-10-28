@@ -18,7 +18,7 @@ import (
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
 	var additionalEqualityStrings []string
 	if tableData.TopicConfig().BigQueryPartitionSettings != nil {
-		distinctDates, err := buildDistinctDates(tableData.TopicConfig().BigQueryPartitionSettings.PartitionField, tableData.Rows())
+		distinctDates, err := buildDistinctDates(tableData.TopicConfig().BigQueryPartitionSettings.PartitionField, tableData.Rows(), s.Dialect().ReservedColumnNames())
 		if err != nil {
 			return false, fmt.Errorf("failed to generate distinct dates: %w", err)
 		}

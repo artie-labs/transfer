@@ -135,7 +135,7 @@ func parsePartitionKeyStruct(keyBytes []byte) (map[string]any, error) {
 func sanitizePayload(retMap map[string]any) map[string]any {
 	escapedRetMap := make(map[string]any)
 	for key, value := range retMap {
-		escapedRetMap[columns.EscapeName(key)] = value
+		escapedRetMap[columns.EscapeName(key, nil)] = value
 	}
 
 	return escapedRetMap

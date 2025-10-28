@@ -15,7 +15,7 @@ import (
 
 var specialCharacters = []string{"#"}
 
-func EscapeName(name string) string {
+func EscapeName(name string, reservedColumnNames []string) string {
 	if len(name) == 0 {
 		return ""
 	}

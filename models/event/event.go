@@ -151,7 +151,7 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 		for _, pk := range pks {
 			err = cols.UpsertColumn(
 				// We need to escape the column name similar to have parity with event.GetColumns()
-				columns.EscapeName(pk),
+				columns.EscapeName(pk, nil),
 				columns.UpsertColumnArg{
 					PrimaryKey: typing.ToPtr(true),
 				},
@@ -306,7 +306,7 @@ func (e *Event) GetPrimaryKeys() []string {
 func (e *Event) PrimaryKeyValue() (string, error) {
 	var key string
 	for _, pk := range e.GetPrimaryKeys() {
-		escapedPrimaryKey := columns.EscapeName(pk)
+		escapedPrimaryKey := columns.EscapeName(pk, nil)
 		value, ok := e.data[escapedPrimaryKey]
 		if !ok {
 			return "", fmt.Errorf("primary key %q not found in data: %v", escapedPrimaryKey, e.data)
@@ -348,7 +348,7 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 	// Update col if necessary
 	sanitizedData := make(map[string]any)
 	for _col, val := range e.data {
-		newColName := columns.EscapeName(_col)
+		newColName := columns.EscapeName(_col, nil)
 		if newColName != _col {
 			// This means that the column name has changed.
 			// We need to update the column name in the sanitizedData map.

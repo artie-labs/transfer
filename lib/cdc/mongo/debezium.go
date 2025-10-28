@@ -138,7 +138,7 @@ func (s *SchemaEventPayload) GetColumns() (*columns.Columns, error) {
 	for _, field := range fieldsObject.Fields {
 		// We are purposefully doing this to ensure that the correct typing is set
 		// When we invoke event.Save()
-		cols.AddColumn(columns.NewColumn(columns.EscapeName(field.FieldName), typing.Invalid))
+		cols.AddColumn(columns.NewColumn(columns.EscapeName(field.FieldName, nil), typing.Invalid))
 	}
 
 	return &cols, nil
