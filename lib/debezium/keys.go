@@ -50,12 +50,12 @@ func (p PrimaryKeyPayload) parseAndReturnPayload() (map[string]any, error) {
 	return retMap, nil
 }
 
-func ParsePartitionKey(key []byte, cdcKeyFormat string) (map[string]any, error) {
+func ParsePartitionKey(key []byte, cdcKeyFormat string, reservedColumns []string) (map[string]any, error) {
 	switch cdcKeyFormat {
 	case kafkalib.JSONKeyFmt:
-		return parsePartitionKeyStruct(key)
+		return parsePartitionKeyStruct(key, reservedColumns)
 	case kafkalib.StringKeyFmt:
-		return parsePartitionKeyString(key)
+		return parsePartitionKeyString(key, reservedColumns)
 
 	}
 	return nil, fmt.Errorf("format: %s is not supported", cdcKeyFormat)
@@ -67,7 +67,7 @@ func ParsePartitionKey(key []byte, cdcKeyFormat string) (map[string]any, error) 
 // However, if the k or v has `,` or `=` within it, it is not escaped and thus difficult to delineate between a separator or a continuation of the column or value.
 // In the case where there are multiple `=`, we will use the first one to separate between the key and value.
 // TL;DR - Use `org.apache.kafka.connect.json.JsonConverter` over `org.apache.kafka.connect.storage.StringConverter`
-func parsePartitionKeyString(keyBytes []byte) (map[string]any, error) {
+func parsePartitionKeyString(keyBytes []byte, reservedColumns []string) (map[string]any, error) {
 	// Key will look like key: Struct{quarter_id=1,course_id=course1,student_id=1}
 	if len(keyBytes) == 0 {
 		return nil, fmt.Errorf("key is nil")
@@ -94,10 +94,10 @@ func parsePartitionKeyString(keyBytes []byte) (map[string]any, error) {
 	}
 	// Skip this key.
 	delete(retMap, constants.DebeziumTopicRoutingKey)
-	return sanitizePayload(retMap), nil
+	return sanitizePayload(retMap, reservedColumns), nil
 }
 
-func parsePartitionKeyStruct(keyBytes []byte) (map[string]any, error) {
+func parsePartitionKeyStruct(keyBytes []byte, reservedColumns []string) (map[string]any, error) {
 	if len(keyBytes) == 0 {
 		return nil, fmt.Errorf("key is nil")
 	}
@@ -114,7 +114,7 @@ func parsePartitionKeyStruct(keyBytes []byte) (map[string]any, error) {
 	_, ok := pkStruct["payload"]
 	if !ok {
 		// pkStruct does not have schema enabled
-		return sanitizePayload(pkStruct), nil
+		return sanitizePayload(pkStruct, reservedColumns), nil
 	}
 
 	// If it does have a `payload` object, it should also have a schema object.
@@ -129,13 +129,13 @@ func parsePartitionKeyStruct(keyBytes []byte) (map[string]any, error) {
 	}
 
 	delete(keys, constants.DebeziumTopicRoutingKey)
-	return sanitizePayload(keys), nil
+	return sanitizePayload(keys, reservedColumns), nil
 }
 
-func sanitizePayload(retMap map[string]any) map[string]any {
+func sanitizePayload(retMap map[string]any, reservedColumns []string) map[string]any {
 	escapedRetMap := make(map[string]any)
 	for key, value := range retMap {
-		escapedRetMap[columns.EscapeName(key, nil)] = value
+		escapedRetMap[columns.EscapeName(key, reservedColumns)] = value
 	}
 
 	return escapedRetMap
