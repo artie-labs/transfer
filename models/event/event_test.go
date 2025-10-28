@@ -269,14 +269,14 @@ func (e *EventsTestSuite) TestEventPrimaryKeys() {
 	anotherEvt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": 1, "course_id": 2}, kafkalib.TopicConfig{}, config.Replication)
 	assert.NoError(e.T(), err)
 
-	pkValue, err := anotherEvt.PrimaryKeyValue(nil)
+	pkValue, err := anotherEvt.PrimaryKeyValue()
 	assert.NoError(e.T(), err)
 	assert.Equal(e.T(), "course_id=2id=1", pkValue)
 
 	// Make sure the ordering for the pk is deterministic.
 	partsMap := make(map[string]bool)
 	for i := 0; i < 100; i++ {
-		pkValue, err := anotherEvt.PrimaryKeyValue(nil)
+		pkValue, err := anotherEvt.PrimaryKeyValue()
 		assert.NoError(e.T(), err)
 		partsMap[pkValue] = true
 	}
@@ -292,7 +292,7 @@ func (e *EventsTestSuite) TestEventPrimaryKeys() {
 		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": 123}, kafkalib.TopicConfig{}, config.Replication)
 		assert.NoError(e.T(), err)
 
-		pkValue, err := evt.PrimaryKeyValue(nil)
+		pkValue, err := evt.PrimaryKeyValue()
 		assert.ErrorContains(e.T(), err, `primary key "id" not found in data: map[course_id:2]`)
 		assert.Equal(e.T(), "", pkValue)
 	}
@@ -319,7 +319,7 @@ func (e *EventsTestSuite) TestPrimaryKeyValueDeterministic() {
 	assert.NoError(e.T(), err)
 
 	for i := 0; i < 50_000; i++ {
-		pkValue, err := evt.PrimaryKeyValue(nil)
+		pkValue, err := evt.PrimaryKeyValue()
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), "aa=1bb=5dusty=mini aussiegg=artiezz=ff", pkValue)
 	}

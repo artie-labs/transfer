@@ -316,16 +316,15 @@ func (e *Event) GetPrimaryKeys() []string {
 }
 
 // PrimaryKeyValue - as per above, this needs to return a deterministic k/v string.
-func (e *Event) PrimaryKeyValue(reservedColumns []string) (string, error) {
+func (e *Event) PrimaryKeyValue() (string, error) {
 	var key string
 	for _, pk := range e.GetPrimaryKeys() {
-		escapedPrimaryKey := columns.EscapeName(pk, reservedColumns)
-		value, ok := e.data[escapedPrimaryKey]
+		value, ok := e.data[pk]
 		if !ok {
-			return "", fmt.Errorf("primary key %q not found in data: %v", escapedPrimaryKey, e.data)
+			return "", fmt.Errorf("primary key %q not found in data: %v", pk, e.data)
 		}
 
-		key += fmt.Sprintf("%s=%v", escapedPrimaryKey, value)
+		key += fmt.Sprintf("%s=%v", pk, value)
 	}
 
 	return key, nil
@@ -426,7 +425,7 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 	// Swap out sanitizedData <> data.
 	e.data = sanitizedData
 
-	pkValueString, err := e.PrimaryKeyValue(reservedColumns)
+	pkValueString, err := e.PrimaryKeyValue()
 	if err != nil {
 		return false, "", fmt.Errorf("failed to retrieve primary key value: %w", err)
 	}
