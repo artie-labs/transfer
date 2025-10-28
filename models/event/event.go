@@ -124,6 +124,31 @@ func buildFilteredColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColu
 	return cols, nil
 }
 
+func buildPrimaryKeys(tc kafkalib.TopicConfig, pkMap map[string]any, reservedColumns []string) []string {
+	var pks []string
+	if len(tc.PrimaryKeysOverride) > 0 {
+		for _, pk := range tc.PrimaryKeysOverride {
+			pks = append(pks, columns.EscapeName(pk, reservedColumns))
+		}
+
+		return pks
+	}
+
+	// [pkMap] is already escaped.
+	for pk := range pkMap {
+		pks = append(pks, pk)
+	}
+
+	for _, pk := range tc.IncludePrimaryKeys {
+		escapedPk := columns.EscapeName(pk, reservedColumns)
+		if _, ok := pkMap[escapedPk]; !ok {
+			pks = append(pks, escapedPk)
+		}
+	}
+
+	return pks
+}
+
 func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfig, cfgMode config.Mode) (Event, error) {
 	var reservedColumns []string
 	if _dest, ok := dest.(destination.Destination); ok {
@@ -134,29 +159,10 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 	if err != nil {
 		return Event{}, fmt.Errorf("failed to build filtered columns: %w", err)
 	}
-	// Now iterate over pkMap and tag each column that is a primary key
-	var pks []string
-	if len(tc.PrimaryKeysOverride) > 0 {
-		for _, pk := range tc.PrimaryKeysOverride {
-			pks = append(pks, columns.EscapeName(pk, reservedColumns))
-		}
-	} else {
-		// [pkMap] is already escaped.
-		for pk := range pkMap {
-			pks = append(pks, pk)
-		}
-
-		for _, pk := range tc.IncludePrimaryKeys {
-			escapedPk := columns.EscapeName(pk, reservedColumns)
-			if _, ok := pkMap[escapedPk]; !ok {
-				pks = append(pks, escapedPk)
-			}
-		}
-	}
 
 	if cols != nil {
 		// All keys in pks are already escaped, so don't escape again
-		for _, pk := range pks {
+		for _, pk := range buildPrimaryKeys(tc, pkMap, reservedColumns) {
 			err = cols.UpsertColumn(
 				pk,
 				columns.UpsertColumnArg{
