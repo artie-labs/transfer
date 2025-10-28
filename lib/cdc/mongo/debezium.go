@@ -127,7 +127,7 @@ func (s *SchemaEventPayload) GetOptionalSchema() (map[string]typing.KindDetails,
 	return nil, nil
 }
 
-func (s *SchemaEventPayload) GetColumns() (*columns.Columns, error) {
+func (s *SchemaEventPayload) GetColumns(reservedColumns []string) (*columns.Columns, error) {
 	fieldsObject := s.Schema.GetSchemaFromLabel(debezium.After)
 	if fieldsObject == nil {
 		// AFTER schema does not exist.
@@ -138,7 +138,7 @@ func (s *SchemaEventPayload) GetColumns() (*columns.Columns, error) {
 	for _, field := range fieldsObject.Fields {
 		// We are purposefully doing this to ensure that the correct typing is set
 		// When we invoke event.Save()
-		cols.AddColumn(columns.NewColumn(columns.EscapeName(field.FieldName, nil), typing.Invalid))
+		cols.AddColumn(columns.NewColumn(columns.EscapeName(field.FieldName, reservedColumns), typing.Invalid))
 	}
 
 	return &cols, nil

@@ -508,7 +508,7 @@ func TestMongoDBEventWithSchema(t *testing.T) {
 		Type:         debezium.String,
 	})
 	assert.False(t, evt.DeletePayload())
-	cols, err := schemaEvt.GetColumns()
+	cols, err := schemaEvt.GetColumns(nil)
 	assert.NoError(t, err)
 	assert.NotNil(t, cols)
 }
