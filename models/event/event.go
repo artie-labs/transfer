@@ -249,7 +249,7 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 	}
 
 	sort.Strings(pks)
-	_event := Event{
+	return Event{
 		executionTime: event.GetExecutionTime(),
 		mode:          cfgMode,
 		// [primaryKeys] needs to be sorted so that we have a deterministic way to identify a row in our in-memory db.
@@ -260,9 +260,7 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 		columns:        cols,
 		data:           transformData(evtData, tc),
 		deleted:        event.DeletePayload(),
-	}
-
-	return _event, nil
+	}, nil
 }
 
 // GetData - This will return the data for the event.
