@@ -23,7 +23,7 @@ func BQExpiresDate(time time.Time) string {
 
 type BigQueryDialect struct{}
 
-func (BigQueryDialect) ReservedColumnNames() []string {
+func (BigQueryDialect) ReservedColumnNames() map[string]bool {
 	return nil
 }
 

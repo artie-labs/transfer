@@ -14,7 +14,7 @@ import (
 
 type MSSQLDialect struct{}
 
-func (MSSQLDialect) ReservedColumnNames() []string {
+func (MSSQLDialect) ReservedColumnNames() map[string]bool {
 	return nil
 }
 

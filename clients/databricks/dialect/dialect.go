@@ -14,7 +14,7 @@ import (
 
 type DatabricksDialect struct{}
 
-func (DatabricksDialect) ReservedColumnNames() []string {
+func (DatabricksDialect) ReservedColumnNames() map[string]bool {
 	return nil
 }
 

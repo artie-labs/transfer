@@ -84,7 +84,7 @@ func transformData(data map[string]any, tc kafkalib.TopicConfig) map[string]any 
 	return data
 }
 
-func buildFilteredColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns []string) (*columns.Columns, error) {
+func buildFilteredColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns map[string]bool) (*columns.Columns, error) {
 	cols, err := event.GetColumns(reservedColumns)
 	if err != nil {
 		return nil, err
@@ -124,7 +124,7 @@ func buildFilteredColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColu
 	return cols, nil
 }
 
-func buildPrimaryKeys(tc kafkalib.TopicConfig, pkMap map[string]any, reservedColumns []string) []string {
+func buildPrimaryKeys(tc kafkalib.TopicConfig, pkMap map[string]any, reservedColumns map[string]bool) []string {
 	var pks []string
 	if len(tc.PrimaryKeysOverride) > 0 {
 		for _, pk := range tc.PrimaryKeysOverride {
@@ -150,7 +150,7 @@ func buildPrimaryKeys(tc kafkalib.TopicConfig, pkMap map[string]any, reservedCol
 }
 
 func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfig, cfgMode config.Mode) (Event, error) {
-	var reservedColumns []string
+	var reservedColumns map[string]bool
 	if _dest, ok := dest.(destination.Destination); ok {
 		reservedColumns = _dest.Dialect().ReservedColumnNames()
 	}
@@ -333,7 +333,7 @@ func (e *Event) PrimaryKeyValue() (string, error) {
 
 // Save will save the event into our in memory event
 // It will return (flush bool, flushReason string, err error)
-func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkalib.TopicConfig, reservedColumns []string) (bool, string, error) {
+func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkalib.TopicConfig, reservedColumns map[string]bool) (bool, string, error) {
 	if err := e.Validate(); err != nil {
 		return false, "", fmt.Errorf("event validation failed: %w", err)
 	}

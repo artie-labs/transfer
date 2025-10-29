@@ -14,20 +14,20 @@ import (
 type SnowflakeDialect struct{}
 
 // ReservedColumnNames - This is sourced from: https://docs.snowflake.com/en/sql-reference/reserved-keywords
-func (SnowflakeDialect) ReservedColumnNames() []string {
-	return []string{
-		"case",
-		"cast",
-		"constraint",
-		"current_date",
-		"current_timestamp",
-		"current_user",
-		"false",
-		"localtime",
-		"localtimestamp",
-		"true",
-		"try_cast",
-		"when",
+func (SnowflakeDialect) ReservedColumnNames() map[string]bool {
+	return map[string]bool{
+		"case":              true,
+		"cast":              true,
+		"constraint":        true,
+		"current_date":      true,
+		"current_timestamp": true,
+		"current_user":      true,
+		"false":             true,
+		"localtime":         true,
+		"localtimestamp":    true,
+		"true":              true,
+		"try_cast":          true,
+		"when":              true,
 	}
 }
 

@@ -28,8 +28,8 @@ type TableIdentifier interface {
 }
 
 type Dialect interface {
-	// ReservedColumnNames - This is a list of column names that are reserved by the SQL Dialect. This needs to be all in lowercase.
-	ReservedColumnNames() []string
+	// ReservedColumnNames - This is a map of column names that are reserved by the SQL Dialect. This needs to be all in lowercase.
+	ReservedColumnNames() map[string]bool
 	QuoteIdentifier(identifier string) string
 	EscapeStruct(value string) string
 	DataTypeForKind(kd typing.KindDetails, isPk bool, settings config.SharedDestinationColumnSettings) (string, error)

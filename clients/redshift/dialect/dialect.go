@@ -12,7 +12,7 @@ import (
 
 type RedshiftDialect struct{}
 
-func (RedshiftDialect) ReservedColumnNames() []string {
+func (RedshiftDialect) ReservedColumnNames() map[string]bool {
 	return nil
 }
 
