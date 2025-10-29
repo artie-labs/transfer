@@ -131,7 +131,7 @@ func (e *EventsTestSuite) TestTransformData() {
 func testBuildFilteredColumns(t *testing.T, fakeEvent *mocks.FakeEvent, topicConfig kafkalib.TopicConfig, fakeColumns []columns.Column, expectedCols *columns.Columns) {
 	fakeEvent.GetColumnsReturns(columns.NewColumns(fakeColumns), nil)
 
-	cols, err := buildFilteredColumns(fakeEvent, topicConfig)
+	cols, err := buildFilteredColumns(fakeEvent, topicConfig, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedCols.GetColumns(), cols.GetColumns())
 }
@@ -220,8 +220,7 @@ func (e *EventsTestSuite) TestEvent_Columns() {
 		assert.True(e.T(), ok)
 	}
 	{
-		// Now it should handle escaping column names
-		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, map[string]any{"id": 123, "CAPITAL": "foo"}, kafkalib.TopicConfig{}, config.Replication)
+		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, map[string]any{"id": 123, "capital": "foo"}, kafkalib.TopicConfig{}, config.Replication)
 		assert.NoError(e.T(), err)
 
 		assert.Equal(e.T(), 2, len(evt.columns.GetColumns()))

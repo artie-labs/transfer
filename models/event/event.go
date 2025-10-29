@@ -84,8 +84,8 @@ func transformData(data map[string]any, tc kafkalib.TopicConfig) map[string]any 
 	return data
 }
 
-func buildFilteredColumns(event cdc.Event, tc kafkalib.TopicConfig) (*columns.Columns, error) {
-	cols, err := event.GetColumns()
+func buildFilteredColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns []string) (*columns.Columns, error) {
+	cols, err := event.GetColumns(reservedColumns)
 	if err != nil {
 		return nil, err
 	}
@@ -124,34 +124,49 @@ func buildFilteredColumns(event cdc.Event, tc kafkalib.TopicConfig) (*columns.Co
 	return cols, nil
 }
 
+func buildPrimaryKeys(tc kafkalib.TopicConfig, pkMap map[string]any, reservedColumns []string) []string {
+	var pks []string
+	if len(tc.PrimaryKeysOverride) > 0 {
+		for _, pk := range tc.PrimaryKeysOverride {
+			pks = append(pks, columns.EscapeName(pk, reservedColumns))
+		}
+
+		return pks
+	}
+
+	// [pkMap] is already escaped.
+	for pk := range pkMap {
+		pks = append(pks, pk)
+	}
+
+	for _, pk := range tc.IncludePrimaryKeys {
+		escapedPk := columns.EscapeName(pk, reservedColumns)
+		if _, ok := pkMap[escapedPk]; !ok {
+			pks = append(pks, escapedPk)
+		}
+	}
+
+	return pks
+}
+
 func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfig, cfgMode config.Mode) (Event, error) {
-	cols, err := buildFilteredColumns(event, tc)
+	var reservedColumns []string
+	if _dest, ok := dest.(destination.Destination); ok {
+		reservedColumns = _dest.Dialect().ReservedColumnNames()
+	}
+
+	cols, err := buildFilteredColumns(event, tc, reservedColumns)
 	if err != nil {
 		return Event{}, fmt.Errorf("failed to build filtered columns: %w", err)
 	}
-	// Now iterate over pkMap and tag each column that is a primary key
-	var pks []string
-	if len(tc.PrimaryKeysOverride) > 0 {
-		pks = tc.PrimaryKeysOverride
-	} else {
-		for pk := range pkMap {
-			pks = append(pks, pk)
-		}
 
-		for _, pk := range tc.IncludePrimaryKeys {
-			// If it's not already included in the [pkMap], let's add it.
-			if _, ok := pkMap[pk]; !ok {
-				pks = append(pks, pk)
-			}
-		}
-
-	}
+	pks := buildPrimaryKeys(tc, pkMap, reservedColumns)
 
 	if cols != nil {
+		// All keys in pks are already escaped, so don't escape again
 		for _, pk := range pks {
 			err = cols.UpsertColumn(
-				// We need to escape the column name similar to have parity with event.GetColumns()
-				columns.EscapeName(pk),
+				pk,
 				columns.UpsertColumnArg{
 					PrimaryKey: typing.ToPtr(true),
 				},
@@ -234,7 +249,7 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 	}
 
 	sort.Strings(pks)
-	_event := Event{
+	return Event{
 		executionTime: event.GetExecutionTime(),
 		mode:          cfgMode,
 		// [primaryKeys] needs to be sorted so that we have a deterministic way to identify a row in our in-memory db.
@@ -245,9 +260,7 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 		columns:        cols,
 		data:           transformData(evtData, tc),
 		deleted:        event.DeletePayload(),
-	}
-
-	return _event, nil
+	}, nil
 }
 
 // GetData - This will return the data for the event.
@@ -303,16 +316,16 @@ func (e *Event) GetPrimaryKeys() []string {
 }
 
 // PrimaryKeyValue - as per above, this needs to return a deterministic k/v string.
+// Must only call this after the event data has been sanitized within [event.Save].
 func (e *Event) PrimaryKeyValue() (string, error) {
 	var key string
 	for _, pk := range e.GetPrimaryKeys() {
-		escapedPrimaryKey := columns.EscapeName(pk)
-		value, ok := e.data[escapedPrimaryKey]
+		value, ok := e.data[pk]
 		if !ok {
-			return "", fmt.Errorf("primary key %q not found in data: %v", escapedPrimaryKey, e.data)
+			return "", fmt.Errorf("primary key %q not found in data: %v", pk, e.data)
 		}
 
-		key += fmt.Sprintf("%s=%v", escapedPrimaryKey, value)
+		key += fmt.Sprintf("%s=%v", pk, value)
 	}
 
 	return key, nil
@@ -320,7 +333,7 @@ func (e *Event) PrimaryKeyValue() (string, error) {
 
 // Save will save the event into our in memory event
 // It will return (flush bool, flushReason string, err error)
-func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkalib.TopicConfig) (bool, string, error) {
+func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkalib.TopicConfig, reservedColumns []string) (bool, string, error) {
 	if err := e.Validate(); err != nil {
 		return false, "", fmt.Errorf("event validation failed: %w", err)
 	}
@@ -348,7 +361,7 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 	// Update col if necessary
 	sanitizedData := make(map[string]any)
 	for _col, val := range e.data {
-		newColName := columns.EscapeName(_col)
+		newColName := columns.EscapeName(_col, reservedColumns)
 		if newColName != _col {
 			// This means that the column name has changed.
 			// We need to update the column name in the sanitizedData map.

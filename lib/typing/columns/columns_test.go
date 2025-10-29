@@ -21,7 +21,7 @@ func TestEscapeName(t *testing.T) {
 	}
 
 	for input, expected := range expected {
-		assert.Equal(t, expected, EscapeName(input))
+		assert.Equal(t, expected, EscapeName(input, nil))
 	}
 }
 

@@ -10,50 +10,50 @@ import (
 func TestParsePartitionKeyString(t *testing.T) {
 	{
 		// All the bad rows.
-		_, err := parsePartitionKeyString([]byte(""))
+		_, err := parsePartitionKeyString([]byte(""), nil)
 		assert.ErrorContains(t, err, "key is nil")
 
-		_, err = parsePartitionKeyString([]byte("Struct{"))
+		_, err = parsePartitionKeyString([]byte("Struct{"), nil)
 		assert.ErrorContains(t, err, "key is too short")
 
-		_, err = parsePartitionKeyString([]byte("Struct{}"))
+		_, err = parsePartitionKeyString([]byte("Struct{}"), nil)
 		assert.ErrorContains(t, err, "key is too short")
 
-		_, err = parsePartitionKeyString([]byte("}"))
+		_, err = parsePartitionKeyString([]byte("}"), nil)
 		assert.ErrorContains(t, err, "key is too short")
 
-		_, err = parsePartitionKeyString([]byte("Struct{uuid=a,,}"))
+		_, err = parsePartitionKeyString([]byte("Struct{uuid=a,,}"), nil)
 		assert.ErrorContains(t, err, `malformed key value pair: ""`)
 
-		_, err = parsePartitionKeyString([]byte("Struct{,,}"))
+		_, err = parsePartitionKeyString([]byte("Struct{,,}"), nil)
 		assert.ErrorContains(t, err, `malformed key value pair: ""`)
 	}
 	{
 		// Valid rows
-		kv, err := parsePartitionKeyString([]byte("Struct{hi=world,foo=bar}"))
+		kv, err := parsePartitionKeyString([]byte("Struct{hi=world,foo=bar}"), nil)
 		assert.NoError(t, err)
 		assert.Equal(t, "world", kv["hi"])
 		assert.Equal(t, "bar", kv["foo"])
 
-		kv, err = parsePartitionKeyString([]byte("Struct{hi==world}"))
+		kv, err = parsePartitionKeyString([]byte("Struct{hi==world}"), nil)
 		assert.NoError(t, err)
 		assert.Equal(t, "=world", kv["hi"])
 
-		kv, err = parsePartitionKeyString([]byte("Struct{Foo=bar,abc=def}"))
+		kv, err = parsePartitionKeyString([]byte("Struct{Foo=bar,abc=def}"), nil)
 		assert.NoError(t, err)
 		assert.Equal(t, "bar", kv["foo"])
 		assert.Equal(t, "def", kv["abc"])
 
-		kv, err = parsePartitionKeyString([]byte("Struct{id=47}"))
+		kv, err = parsePartitionKeyString([]byte("Struct{id=47}"), nil)
 		assert.NoError(t, err)
 		assert.Equal(t, "47", kv["id"])
 
-		kv, err = parsePartitionKeyString([]byte("Struct{id=47,__dbz__physicalTableIdentifier=dbserver1.inventory.customers}"))
+		kv, err = parsePartitionKeyString([]byte("Struct{id=47,__dbz__physicalTableIdentifier=dbserver1.inventory.customers}"), nil)
 		assert.NoError(t, err)
 		assert.Equal(t, "47", kv["id"])
 		assert.Equal(t, 1, len(kv))
 
-		kv, err = parsePartitionKeyString([]byte("Struct{uuid=d4a5bc26-9ae6-4dd4-8894-39cbcd2d526c}"))
+		kv, err = parsePartitionKeyString([]byte("Struct{uuid=d4a5bc26-9ae6-4dd4-8894-39cbcd2d526c}"), nil)
 		assert.NoError(t, err)
 		assert.Equal(t, "d4a5bc26-9ae6-4dd4-8894-39cbcd2d526c", kv["uuid"])
 	}
@@ -62,25 +62,25 @@ func TestParsePartitionKeyString(t *testing.T) {
 func TestParsePartitionKeyStruct(t *testing.T) {
 	{
 		// Errors
-		_, err := parsePartitionKeyStruct([]byte(""))
+		_, err := parsePartitionKeyStruct([]byte(""), nil)
 		assert.Error(t, err)
 
-		_, err = parsePartitionKeyStruct([]byte("{}"))
+		_, err = parsePartitionKeyStruct([]byte("{}"), nil)
 		assert.Error(t, err)
 
-		_, err = parsePartitionKeyStruct([]byte("{id:"))
+		_, err = parsePartitionKeyStruct([]byte("{id:"), nil)
 		assert.Error(t, err)
 
-		_, err = parsePartitionKeyStruct([]byte(`{"id":`))
+		_, err = parsePartitionKeyStruct([]byte(`{"id":`), nil)
 		assert.Error(t, err)
 	}
 	{
 		// No schema.
-		keys, err := parsePartitionKeyStruct([]byte(`{"id": 47}`))
+		keys, err := parsePartitionKeyStruct([]byte(`{"id": 47}`), nil)
 		assert.NoError(t, err)
 		assert.Equal(t, float64(47), keys["id"])
 
-		keys, err = parsePartitionKeyStruct([]byte(`{"uuid": "d4a5bc26-9ae6-4dd4-8894-39cbcd2d526c", "FOO": "bar"}`))
+		keys, err = parsePartitionKeyStruct([]byte(`{"uuid": "d4a5bc26-9ae6-4dd4-8894-39cbcd2d526c", "FOO": "bar"}`), nil)
 		assert.NoError(t, err)
 		assert.Equal(t, "d4a5bc26-9ae6-4dd4-8894-39cbcd2d526c", keys["uuid"])
 		assert.Equal(t, "bar", keys["foo"])
@@ -114,7 +114,7 @@ func TestParsePartitionKeyStruct(t *testing.T) {
 		"created_at": 1713229699440
 	}
 }
-`))
+`), nil)
 		assert.NoError(t, err)
 		assert.Equal(t, "339f3f2f-f29f-4f00-869e-476122310eff", keys["id"])
 		assert.Equal(t, time.Date(2024, 4, 16, 1, 8, 19, 440000000, time.UTC), keys["created_at"].(time.Time))
@@ -134,7 +134,7 @@ func TestParsePartitionKeyStruct(t *testing.T) {
 	"payload": {
 		"id": 1002
 	}
-}`))
+}`), nil)
 
 		assert.NoError(t, err)
 		assert.Equal(t, keys["id"], int64(1002))
@@ -166,7 +166,7 @@ func TestParsePartitionKeyStruct(t *testing.T) {
 	}
 }`
 
-		keys, err = parsePartitionKeyStruct([]byte(compositeKeyString))
+		keys, err = parsePartitionKeyStruct([]byte(compositeKeyString), nil)
 		assert.NoError(t, err)
 		assert.Equal(t, int64(1), keys["quarter_id"])
 		assert.Equal(t, int64(1), keys["student_id"])
@@ -195,7 +195,7 @@ func TestParsePartitionKeyStruct(t *testing.T) {
 	}
 }`
 
-		keys, err = parsePartitionKeyStruct([]byte(smtKey))
+		keys, err = parsePartitionKeyStruct([]byte(smtKey), nil)
 		assert.NoError(t, err)
 		assert.Equal(t, int64(1001), keys["id"])
 		assert.Len(t, keys, 1)

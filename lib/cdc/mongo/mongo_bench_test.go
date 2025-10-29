@@ -22,6 +22,7 @@ func BenchmarkGetPrimaryKey(b *testing.B) {
 			kafkalib.TopicConfig{
 				CDCKeyFormat: kafkalib.JSONKeyFmt,
 			},
+			nil,
 		)
 		assert.NoError(b, err)
 

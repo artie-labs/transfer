@@ -38,6 +38,6 @@ func (Debezium) Labels() []string {
 	}
 }
 
-func (Debezium) GetPrimaryKey(key []byte, tc kafkalib.TopicConfig) (map[string]any, error) {
-	return debezium.ParsePartitionKey(key, tc.CDCKeyFormat)
+func (Debezium) GetPrimaryKey(key []byte, tc kafkalib.TopicConfig, reservedColumns []string) (map[string]any, error) {
+	return debezium.ParsePartitionKey(key, tc.CDCKeyFormat, reservedColumns)
 }
