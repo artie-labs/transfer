@@ -12,7 +12,7 @@ import (
 
 type IcebergDialect struct{}
 
-func (IcebergDialect) ReservedColumnNames() []string {
+func (IcebergDialect) ReservedColumnNames() map[string]bool {
 	return nil
 }
 

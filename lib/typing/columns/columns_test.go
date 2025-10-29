@@ -18,10 +18,11 @@ func TestEscapeName(t *testing.T) {
 		"col with spaces": "col__with__spaces",
 		"1abc":            "col_1abc",
 		"bar#baz":         "bar__baz",
+		"case":            "col_case",
 	}
 
 	for input, expected := range expected {
-		assert.Equal(t, expected, EscapeName(input, nil))
+		assert.Equal(t, expected, EscapeName(input, map[string]bool{"case": true}))
 	}
 }
 

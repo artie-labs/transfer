@@ -53,7 +53,7 @@ func (Debezium) Labels() []string {
 	return []string{constants.DBZMongoFormat}
 }
 
-func (Debezium) GetPrimaryKey(key []byte, tc kafkalib.TopicConfig, reservedColumns []string) (map[string]any, error) {
+func (Debezium) GetPrimaryKey(key []byte, tc kafkalib.TopicConfig, reservedColumns map[string]bool) (map[string]any, error) {
 	kvMap, err := debezium.ParsePartitionKey(key, tc.CDCKeyFormat, reservedColumns)
 	if err != nil {
 		return nil, err
@@ -127,7 +127,7 @@ func (s *SchemaEventPayload) GetOptionalSchema() (map[string]typing.KindDetails,
 	return nil, nil
 }
 
-func (s *SchemaEventPayload) GetColumns(reservedColumns []string) (*columns.Columns, error) {
+func (s *SchemaEventPayload) GetColumns(reservedColumns map[string]bool) (*columns.Columns, error) {
 	fieldsObject := s.Schema.GetSchemaFromLabel(debezium.After)
 	if fieldsObject == nil {
 		// AFTER schema does not exist.
