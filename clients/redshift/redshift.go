@@ -82,9 +82,7 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, _
 
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
 	if err := shared.Merge(ctx, s, tableData, types.MergeOpts{
-		// We are adding SELECT DISTINCT here for the temporary table as an extra guardrail.
-		// Redshift does not enforce any row uniqueness and there could be potential LOAD errors which will cause duplicate rows to arise.
-		SubQueryDedupe: true,
+		SubQueryDedupe: false,
 	}); err != nil {
 		return false, fmt.Errorf("failed to merge: %w", err)
 	}
