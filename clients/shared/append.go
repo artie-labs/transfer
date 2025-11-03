@@ -43,7 +43,7 @@ func Append(ctx context.Context, dest destination.Destination, tableData *optimi
 	}
 
 	config := dest.GetConfig()
-	if config.IsStagingTableReuseEnabled() {
+	if opts.UseTempTable && config.IsStagingTableReuseEnabled() {
 		if stagingManager, ok := dest.(ReusableStagingTableManager); ok {
 			return stagingManager.PrepareReusableStagingTable(
 				ctx,
