@@ -9,14 +9,131 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/snowflakedb/gosnowflake"
+
+	"github.com/artie-labs/transfer/lib/optimization"
 )
+
+type SnowpipeStreamingChannel struct {
+	mu                sync.Mutex
+	ContinuationToken string
+	Buffer            *bytes.Buffer
+	Encoder           *jsoniter.Stream
+	Reader            io.Reader
+}
+
+func NewSnowpipeStreamingChannel() *SnowpipeStreamingChannel {
+	out := &bytes.Buffer{}
+	return &SnowpipeStreamingChannel{
+		mu:                sync.Mutex{},
+		ContinuationToken: "",
+		Buffer:            out,
+		Encoder:           jsoniter.NewStream(jsoniter.ConfigDefault, out, 1024*1024*4),
+		Reader:            io.Reader(out),
+	}
+}
+
+func (s *SnowpipeStreamingChannel) UpdateToken(token string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.ContinuationToken = token
+}
+
+type SnowpipeStreamingChannelManager struct {
+	mu     sync.Mutex
+	config *gosnowflake.Config
+
+	channelNameToChannel map[string]*SnowpipeStreamingChannel
+
+	ingestHost  string
+	scopedToken string
+	expiresAt   time.Time
+}
+
+func NewSnowpipeStreamingChannelManager(config *gosnowflake.Config) *SnowpipeStreamingChannelManager {
+	return &SnowpipeStreamingChannelManager{
+		config:               config,
+		channelNameToChannel: make(map[string]*SnowpipeStreamingChannel),
+	}
+}
+
+func (s *SnowpipeStreamingChannelManager) refresh(ctx context.Context) error {
+	jwt, err := PrepareJWTToken(s.config)
+	if err != nil {
+		return fmt.Errorf("failed to prepare JWT token: %w", err)
+	}
+
+	ingestHost, err := GetIngestHost(ctx, jwt, s.config.Account)
+	if err != nil {
+		return fmt.Errorf("failed to get ingest host: %w", err)
+	}
+
+	scopedToken, expiresAt, err := GetScopedToken(ctx, jwt, s.config.Account, ingestHost)
+	if err != nil {
+		return fmt.Errorf("failed to get scoped token: %w", err)
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.scopedToken = scopedToken
+	s.expiresAt = expiresAt
+	s.ingestHost = ingestHost
+
+	return nil
+}
+
+func (s *SnowpipeStreamingChannelManager) LoadData(ctx context.Context, db, schema, pipe string, now time.Time, data optimization.TableData) error {
+	if s.expiresAt.Before(now.Add(1 * time.Minute)) {
+		if err := s.refresh(ctx); err != nil {
+			return fmt.Errorf("failed to refresh scoped token for snowpipe streaming: %w", err)
+		}
+	}
+
+	if _, ok := s.channelNameToChannel[data.Name()]; !ok {
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		s.channelNameToChannel[data.Name()] = NewSnowpipeStreamingChannel()
+	}
+
+	channel := s.channelNameToChannel[data.Name()]
+
+	contToken := channel.ContinuationToken
+	if contToken == "" {
+		channelResponse, err := OpenChannel(ctx, s.scopedToken, s.ingestHost, db, schema, pipe, data.Name())
+		if err != nil {
+			return fmt.Errorf("failed to open channel for snowpipe streaming: %w", err)
+		}
+		contToken = channelResponse.NextContinuationToken
+	}
+
+	channel.Buffer.Reset()
+	encoder := channel.Encoder
+	reader := channel.Reader
+
+	for _, row := range data.Rows() {
+		encoder.WriteVal(row.GetData())
+		encoder.WriteRaw("\n") // NDJSON format
+	}
+	err := encoder.Flush()
+	if err != nil {
+		return fmt.Errorf("failed to flush encoder for snowpipe streaming channel %q: %w", data.Name(), err)
+	}
+
+	appendResp, err := AppendRows(ctx, s.scopedToken, s.ingestHost, db, schema, pipe, data.Name(), contToken, reader)
+	if err != nil {
+		return fmt.Errorf("failed to append rows for snowpipe streaming channel %q: %w", data.Name(), err)
+	}
+	channel.UpdateToken(appendResp.NextContinuationToken)
+
+	return nil
+}
 
 // copied from https://github.com/snowflakedb/gosnowflake/blob/v1.17.0/auth.go#L640
 func PrepareJWTToken(config *gosnowflake.Config) (string, error) {
@@ -74,8 +191,6 @@ func getControlHost(account string) string {
 func GetIngestHost(ctx context.Context, jwt, account string) (string, error) {
 	controlHost := getControlHost(account)
 	url := fmt.Sprintf("https://%s/v2/streaming/hostname", controlHost)
-
-	slog.Info("Getting ingest host", slog.String("url", url))
 
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
