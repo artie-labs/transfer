@@ -179,7 +179,7 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 	expectedPath := filepath.Join(tempDir, expectedFileName)
 	{
 		// Set up expectations for the first test case (creates temp table)
-		s.mockDB.ExpectExec(`CREATE TABLE IF NOT EXISTS "DATABASE"\."SCHEMA"\."TEMP___ARTIE_.*" \("USER_ID" string,"FIRST_NAME" string,"LAST_NAME" string,"DUSTY" string\) DATA_RETENTION_TIME_IN_DAYS = 0 STAGE_COPY_OPTIONS = \( PURGE = TRUE \) STAGE_FILE_FORMAT = \( TYPE = 'csv' FIELD_DELIMITER= '\\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='__artie_null_value' EMPTY_FIELD_AS_NULL=FALSE\)`).
+		s.mockDB.ExpectExec(`CREATE TRANSIENT TABLE IF NOT EXISTS "DATABASE"\."SCHEMA"\."TEMP___ARTIE_.*" \("USER_ID" string,"FIRST_NAME" string,"LAST_NAME" string,"DUSTY" string\) DATA_RETENTION_TIME_IN_DAYS = 0 STAGE_COPY_OPTIONS = \( PURGE = TRUE \) STAGE_FILE_FORMAT = \( TYPE = 'csv' FIELD_DELIMITER= '\\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='__artie_null_value' EMPTY_FIELD_AS_NULL=FALSE\)`).
 			WillReturnResult(sqlmock.NewResult(0, 0))
 
 		s.mockDB.ExpectExec(fmt.Sprintf(`PUT 'file://%s' @"DATABASE"\."SCHEMA"\."%%TEMP___ARTIE_.*"`, expectedPath)).
