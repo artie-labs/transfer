@@ -21,12 +21,14 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 )
 
+// https://docs.snowflake.com/en/user-guide/snowpipe-streaming/snowpipe-streaming-high-performance-limitations#channel-limits
+const maxChunkSize = 4 * 1024 * 1024 // 4MB
+
 type SnowpipeStreamingChannel struct {
 	mu                sync.Mutex
 	ContinuationToken string
 	Buffer            *bytes.Buffer
 	Encoder           *jsoniter.Stream
-	Reader            io.Reader
 }
 
 func NewSnowpipeStreamingChannel() *SnowpipeStreamingChannel {
@@ -35,15 +37,15 @@ func NewSnowpipeStreamingChannel() *SnowpipeStreamingChannel {
 		mu:                sync.Mutex{},
 		ContinuationToken: "",
 		Buffer:            out,
-		Encoder:           jsoniter.NewStream(jsoniter.ConfigDefault, out, 1024*1024*4),
-		Reader:            io.Reader(out),
+		Encoder:           jsoniter.NewStream(jsoniter.ConfigDefault, out, maxChunkSize),
 	}
 }
 
-func (s *SnowpipeStreamingChannel) UpdateToken(token string) {
+func (s *SnowpipeStreamingChannel) UpdateToken(token string) string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.ContinuationToken = token
+	return s.ContinuationToken
 }
 
 type SnowpipeStreamingChannelManager struct {
@@ -98,8 +100,8 @@ func (s *SnowpipeStreamingChannelManager) LoadData(ctx context.Context, db, sche
 
 	if _, ok := s.channelNameToChannel[data.Name()]; !ok {
 		s.mu.Lock()
-		defer s.mu.Unlock()
 		s.channelNameToChannel[data.Name()] = NewSnowpipeStreamingChannel()
+		s.mu.Unlock()
 	}
 
 	channel := s.channelNameToChannel[data.Name()]
@@ -110,27 +112,58 @@ func (s *SnowpipeStreamingChannelManager) LoadData(ctx context.Context, db, sche
 		if err != nil {
 			return fmt.Errorf("failed to open channel for snowpipe streaming: %w", err)
 		}
-		contToken = channelResponse.NextContinuationToken
+		contToken = channel.UpdateToken(channelResponse.NextContinuationToken)
 	}
 
 	channel.Buffer.Reset()
 	encoder := channel.Encoder
-	reader := channel.Reader
 
 	for _, row := range data.Rows() {
-		encoder.WriteVal(row.GetData())
+		rowBytes, err := jsoniter.Marshal(row.GetData())
+		if err != nil {
+			return fmt.Errorf("failed to serialize row for snowpipe streaming channel %q: %w", data.Name(), err)
+		}
+
+		rowSize := len(rowBytes) + 1 // +1 for the newline character
+
+		if rowSize > maxChunkSize {
+			return fmt.Errorf("row size %d is greater than the max payload size (4MB) allowed by Snowflake for channel %q", rowSize, data.Name())
+		}
+
+		// Check if adding this row would exceed the chunk size
+		if channel.Buffer.Len() > 0 && channel.Buffer.Len()+rowSize > maxChunkSize {
+			if err := encoder.Flush(); err != nil {
+				return fmt.Errorf("failed to flush encoder for snowpipe streaming channel %q: %w", data.Name(), err)
+			}
+
+			reader := bytes.NewReader(channel.Buffer.Bytes())
+			appendResp, err := AppendRows(ctx, s.scopedToken, s.ingestHost, db, schema, pipe, data.Name(), contToken, reader)
+			if err != nil {
+				return fmt.Errorf("failed to append rows for snowpipe streaming channel %q: %w", data.Name(), err)
+			}
+			contToken = channel.UpdateToken(appendResp.NextContinuationToken)
+
+			// Reset buffer for next chunk
+			channel.Buffer.Reset()
+		}
+
+		encoder.Write(rowBytes)
 		encoder.WriteRaw("\n") // NDJSON format
 	}
-	err := encoder.Flush()
-	if err != nil {
-		return fmt.Errorf("failed to flush encoder for snowpipe streaming channel %q: %w", data.Name(), err)
-	}
 
-	appendResp, err := AppendRows(ctx, s.scopedToken, s.ingestHost, db, schema, pipe, data.Name(), contToken, reader)
-	if err != nil {
-		return fmt.Errorf("failed to append rows for snowpipe streaming channel %q: %w", data.Name(), err)
+	// Send any remaining data
+	if channel.Buffer.Len() > 0 {
+		if err := encoder.Flush(); err != nil {
+			return fmt.Errorf("failed to flush encoder for snowpipe streaming channel %q: %w", data.Name(), err)
+		}
+
+		reader := bytes.NewReader(channel.Buffer.Bytes())
+		appendResp, err := AppendRows(ctx, s.scopedToken, s.ingestHost, db, schema, pipe, data.Name(), contToken, reader)
+		if err != nil {
+			return fmt.Errorf("failed to append rows for snowpipe streaming channel %q: %w", data.Name(), err)
+		}
+		channel.UpdateToken(appendResp.NextContinuationToken)
 	}
-	channel.UpdateToken(appendResp.NextContinuationToken)
 
 	return nil
 }
