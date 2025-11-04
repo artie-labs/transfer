@@ -104,7 +104,7 @@ func GetIngestHost(ctx context.Context, jwt, account string) (string, error) {
 	return ingestHost, nil
 }
 
-func GetScopedToken(ctx context.Context, jwt, account, ingestHost string) (string, error) {
+func GetScopedToken(ctx context.Context, jwtToken, account, ingestHost string) (scopedToken string, expiresAt time.Time, err error) {
 	controlHost := getControlHost(account)
 	url := fmt.Sprintf("https://%s/oauth/token", controlHost)
 	data := fmt.Sprintf("grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&scope=%s", ingestHost)
@@ -112,25 +112,38 @@ func GetScopedToken(ctx context.Context, jwt, account, ingestHost string) (strin
 
 	req, err := http.NewRequestWithContext(ctx, "POST", url, payload)
 	if err != nil {
-		return "", fmt.Errorf("failed to create HTTP request: %w", err)
+		return "", time.Time{}, fmt.Errorf("failed to create HTTP request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("Authorization", "Bearer "+jwt)
+	req.Header.Set("Authorization", "Bearer "+jwtToken)
 
 	resp, err := http.DefaultClient.Do(req.WithContext(ctx))
 	if err != nil {
-		return "", fmt.Errorf("failed to make call to Snowflake oauth/token endpoint: %w", err)
+		return "", time.Time{}, fmt.Errorf("failed to make call to Snowflake oauth/token endpoint: %w", err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", fmt.Errorf("failed to read body from Snowflake oauth/token endpoint: %w", err)
+		return "", time.Time{}, fmt.Errorf("failed to read body from Snowflake oauth/token endpoint: %w", err)
 	}
 	if resp.StatusCode != 200 {
-		return "", fmt.Errorf("unexpected status code from Snowflake oauth/token endpoint: %d, body: %s", resp.StatusCode, string(body))
+		return "", time.Time{}, fmt.Errorf("unexpected status code from Snowflake oauth/token endpoint: %d, body: %s", resp.StatusCode, string(body))
 	}
-	return string(body), nil
+	scopedToken = string(body)
+
+	// Decode the JWT to get the expiration time
+	parser := jwt.Parser{}
+	token, _, err := parser.ParseUnverified(scopedToken, jwt.MapClaims{})
+	if err == nil {
+		if claims, ok := token.Claims.(jwt.MapClaims); ok {
+			if exp, ok := claims["exp"].(float64); ok {
+				expiresAt = time.Unix(int64(exp), 0)
+			}
+		}
+	}
+
+	return scopedToken, expiresAt, nil
 }
 
 type ChannelStatus struct {
@@ -182,7 +195,6 @@ func OpenChannel(ctx context.Context, scopedToken, ingestHost, db, schema, pipe,
 	if resp.StatusCode != 200 && resp.StatusCode != 201 {
 		return ChannelResponse{}, fmt.Errorf("unexpected status code %d, body: %s", resp.StatusCode, body)
 	}
-	slog.Info("Channel response", slog.Any("body", string(body)))
 
 	var channelResponse ChannelResponse
 	if err := json.Unmarshal(body, &channelResponse); err != nil {
