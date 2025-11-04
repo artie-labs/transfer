@@ -98,14 +98,14 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, u
 	return nil
 }
 
-func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tempTableID, _ sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
+func (s *Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tableID, _ sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
-		if err := shared.CreateTempTable(ctx, s, tableData, dwh, opts.ColumnSettings, tempTableID); err != nil {
+		if err := shared.CreateTempTable(ctx, s, tableData, dwh, opts.ColumnSettings, tableID); err != nil {
 			return err
 		}
 	}
 
-	bqTempTableID, err := typing.AssertType[dialect.TableIdentifier](tempTableID)
+	bqTempTableID, err := typing.AssertType[dialect.TableIdentifier](tableID)
 	if err != nil {
 		return err
 	}

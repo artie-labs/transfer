@@ -95,7 +95,7 @@ func MultiStepMerge(ctx context.Context, dest destination.Destination, tableData
 	if msmSettings.IsFirstFlush() {
 		// If it's the first flush, we'll just load the data directly into the MSM table.
 		// Don't need to create the temporary table, we've already created it above.
-		if err = dest.PrepareTemporaryTable(ctx, tableData, msmTableConfig, msmTableID, msmTableID, types.AdditionalSettings{ColumnSettings: opts.ColumnSettings}, false); err != nil {
+		if err = dest.LoadDataIntoTable(ctx, tableData, msmTableConfig, msmTableID, msmTableID, types.AdditionalSettings{ColumnSettings: opts.ColumnSettings}, false); err != nil {
 			return false, fmt.Errorf("failed to prepare temporary table: %w", err)
 		}
 	} else {
@@ -134,7 +134,7 @@ func merge(ctx context.Context, dwh destination.Destination, tableData *optimiza
 	}()
 
 	if opts.PrepareTemporaryTable {
-		if err := dwh.PrepareTemporaryTable(ctx, tableData, tableConfig, temporaryTableID, targetTableID, types.AdditionalSettings{ColumnSettings: opts.ColumnSettings}, true); err != nil {
+		if err := dwh.LoadDataIntoTable(ctx, tableData, tableConfig, temporaryTableID, targetTableID, types.AdditionalSettings{ColumnSettings: opts.ColumnSettings}, true); err != nil {
 			return fmt.Errorf("failed to prepare temporary table: %w", err)
 		}
 	}

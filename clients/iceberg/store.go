@@ -80,7 +80,7 @@ func (s Store) Append(ctx context.Context, tableData *optimization.TableData, us
 	}
 
 	// Load the data into a temporary view
-	if err = s.PrepareTemporaryTable(ctx, tableData, tableConfig, tempTableID); err != nil {
+	if err = s.LoadDataIntoTable(ctx, tableData, tableConfig, tempTableID); err != nil {
 		return fmt.Errorf("failed to prepare temporary table: %w", err)
 	}
 
@@ -168,7 +168,7 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bo
 		return false, fmt.Errorf("failed to merge columns from destination: %w for table %q", err, tableData.Name())
 	}
 
-	if err = s.PrepareTemporaryTable(ctx, tableData, tableConfig, temporaryTableID); err != nil {
+	if err = s.LoadDataIntoTable(ctx, tableData, tableConfig, temporaryTableID); err != nil {
 		return false, fmt.Errorf("failed to prepare temporary table: %w", err)
 	}
 

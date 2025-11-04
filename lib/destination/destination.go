@@ -26,7 +26,8 @@ type Destination interface {
 
 	// Helper functions for merge
 	GetTableConfig(ctx context.Context, tableID sqllib.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error)
-	PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, tempTableID, parentTableID sqllib.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error
+	// LoadDataIntoTable is used to load data into staging tables, and also to append data directly to a target table (for history mode and OLAP-destination backfills)
+	LoadDataIntoTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, tableID, parentTableID sqllib.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error
 }
 
 type Baseline interface {
