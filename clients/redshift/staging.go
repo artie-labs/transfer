@@ -15,8 +15,8 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, tempTableID, parentTableID sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
-	fp, colToNewLengthMap, err := s.loadTemporaryTable(tableData, tempTableID)
+func (s *Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, tableID, parentTableID sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
+	fp, colToNewLengthMap, err := s.loadTemporaryTable(tableData, tableID)
 	if err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
 	}
@@ -33,7 +33,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	}
 
 	if createTempTable {
-		if err = shared.CreateTempTable(ctx, s, tableData, tableConfig, opts.ColumnSettings, tempTableID); err != nil {
+		if err = shared.CreateTempTable(ctx, s, tableData, tableConfig, opts.ColumnSettings, tableID); err != nil {
 			return err
 		}
 	}
@@ -65,7 +65,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 		return fmt.Errorf("failed to build credentials clause: %w", err)
 	}
 
-	copyStmt := s.dialect().BuildCopyStatement(tempTableID, cols, s3Uri, credentialsClause)
+	copyStmt := s.dialect().BuildCopyStatement(tableID, cols, s3Uri, credentialsClause)
 	if _, err = s.ExecContext(ctx, copyStmt); err != nil {
 		return fmt.Errorf("failed to run COPY for temporary table: %w", err)
 	}
@@ -132,7 +132,7 @@ func (s *Store) PrepareReusableStagingTable(ctx context.Context, tableData *opti
 		}
 	}
 
-	return s.PrepareTemporaryTable(ctx, tableData, tableConfig, stagingTableID, parentTableID, opts, false)
+	return s.LoadDataIntoTable(ctx, tableData, tableConfig, stagingTableID, parentTableID, opts, false)
 }
 
 func (s *Store) CheckStagingTableExists(ctx context.Context, tableID sql.TableIdentifier) (bool, error) {

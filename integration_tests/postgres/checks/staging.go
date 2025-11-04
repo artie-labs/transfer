@@ -34,7 +34,7 @@ func TestStagingTable(ctx context.Context, store *postgres.Store) error {
 	}
 
 	tc := types.NewDestinationTableConfig(cols.GetColumns(), false)
-	if err := store.PrepareTemporaryTable(ctx, tableData, tc, tableID, tableID, types.AdditionalSettings{}, true); err != nil {
+	if err := store.LoadDataIntoTable(ctx, tableData, tc, tableID, tableID, types.AdditionalSettings{}, true); err != nil {
 		return fmt.Errorf("failed to prepare temporary table: %w", err)
 	}
 

@@ -98,7 +98,7 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 			}
 		}()
 
-		if err = dest.PrepareTemporaryTable(ctx, tableData, tableConfig, temporaryTableID, tableID, types.AdditionalSettings{ColumnSettings: opts.ColumnSettings}, true); err != nil {
+		if err = dest.LoadDataIntoTable(ctx, tableData, tableConfig, temporaryTableID, tableID, types.AdditionalSettings{ColumnSettings: opts.ColumnSettings}, true); err != nil {
 			return fmt.Errorf("failed to prepare temporary table: %w", err)
 		}
 

@@ -188,7 +188,7 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 		s.mockDB.ExpectQuery(fmt.Sprintf(`COPY INTO "DATABASE"\."SCHEMA"\."TEMP___ARTIE_.*" \("USER_ID","FIRST_NAME","LAST_NAME","DUSTY"\) FROM \(SELECT \$1,\$2,\$3,\$4 FROM @"DATABASE"\."SCHEMA"\."%%TEMP___ARTIE_.*"\) FILES = \('%s'\)`, expectedFileName)).
 			WillReturnRows(sqlmock.NewRows([]string{"rows_loaded"}).AddRow(fmt.Sprintf("%d", tableData.NumberOfRows())))
 
-		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(s.T().Context(), tableData, snowflakeTableConfig, tempTableID, tempTableID, types.AdditionalSettings{}, true))
+		assert.NoError(s.T(), s.stageStore.LoadDataIntoTable(s.T().Context(), tableData, snowflakeTableConfig, tempTableID, tempTableID, types.AdditionalSettings{}, true))
 		assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
 	}
 	{
@@ -199,7 +199,7 @@ func (s *SnowflakeTestSuite) TestPrepareTempTable() {
 		s.mockDB.ExpectQuery(fmt.Sprintf(`COPY INTO "DATABASE"\."SCHEMA"\."TEMP___ARTIE_.*" \("USER_ID","FIRST_NAME","LAST_NAME","DUSTY"\) FROM \(SELECT \$1,\$2,\$3,\$4 FROM @"DATABASE"\."SCHEMA"\."%%TEMP___ARTIE_.*"\) FILES = \('%s'\)`, expectedFileName)).
 			WillReturnRows(sqlmock.NewRows([]string{"rows_loaded"}).AddRow(fmt.Sprintf("%d", tableData.NumberOfRows())))
 
-		assert.NoError(s.T(), s.stageStore.PrepareTemporaryTable(s.T().Context(), tableData, snowflakeTableConfig, tempTableID, tempTableID, types.AdditionalSettings{}, false))
+		assert.NoError(s.T(), s.stageStore.LoadDataIntoTable(s.T().Context(), tableData, snowflakeTableConfig, tempTableID, tempTableID, types.AdditionalSettings{}, false))
 		assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
 	}
 }
