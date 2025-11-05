@@ -230,7 +230,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 
 			message.Set(field, protoreflect.ValueOfInt64(_time.UnixMicro()))
 		case typing.Struct.Kind:
-			stringValue, err := encodeStructToJSONString(value)
+			stringValue, err := encodeStructToJSONString(column.Name(), value)
 			if err != nil {
 				return nil, fmt.Errorf("failed to convert value for column: %q, err: %w", column.Name(), err)
 			} else if stringValue == "" {
@@ -258,7 +258,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 // Structs from relational and Mongo are different.
 // MongoDB will return the native objects back such as `map[string]any{"hello": "world"}`
 // Relational will return a string representation of the struct such as `{"hello": "world"}`
-func encodeStructToJSONString(value any) (string, error) {
+func encodeStructToJSONString(colName string, value any) (string, error) {
 	if stringValue, ok := value.(string); ok {
 		if strings.Contains(stringValue, constants.ToastUnavailableValuePlaceholder) {
 			return fmt.Sprintf(`{"key":"%s"}`, constants.ToastUnavailableValuePlaceholder), nil
@@ -274,7 +274,9 @@ func encodeStructToJSONString(value any) (string, error) {
 			// Invalid JSON - log it for debugging
 			slog.Warn("Invalid JSON detected in struct field",
 				slog.String("value", stringValue),
-				slog.Int("length", len(stringValue)))
+				slog.Int("length", len(stringValue)),
+				slog.String("column", colName),
+			)
 			// Return empty object instead of failing
 			return "{}", nil
 		}
