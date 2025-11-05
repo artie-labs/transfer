@@ -75,26 +75,36 @@ func (DuckDBDialect) KindForDataType(_type string) (typing.KindDetails, error) {
 	if err != nil {
 		return typing.Invalid, err
 	}
-
 	switch dataType {
 	case "float":
 		return typing.Float, nil
 	case "double":
 		return typing.Float, nil
 	case "integer":
+		return typing.BuildIntegerKind(typing.IntegerKind), nil
 	case "int4":
+		return typing.BuildIntegerKind(typing.IntegerKind), nil
 	case "int":
+		return typing.BuildIntegerKind(typing.IntegerKind), nil
 	case "signed":
 		return typing.BuildIntegerKind(typing.IntegerKind), nil
 	case "bigint":
+		return typing.BuildIntegerKind(typing.BigIntegerKind), nil
 	case "int8":
+		return typing.BuildIntegerKind(typing.BigIntegerKind), nil
 	case "long":
 		return typing.BuildIntegerKind(typing.BigIntegerKind), nil
 	case "smallint":
+		return typing.BuildIntegerKind(typing.SmallIntegerKind), nil
 	case "int2":
+		return typing.BuildIntegerKind(typing.SmallIntegerKind), nil
 	case "short":
 		return typing.BuildIntegerKind(typing.SmallIntegerKind), nil
 	case "numeric":
+		if len(parameters) == 0 {
+			return typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale)), nil
+		}
+		return typing.ParseNumeric(parameters)
 	case "decimal":
 		if len(parameters) == 0 {
 			return typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale)), nil
@@ -107,9 +117,13 @@ func (DuckDBDialect) KindForDataType(_type string) (typing.KindDetails, error) {
 	case "struct":
 		return typing.Struct, nil
 	case "varchar":
+		return typing.String, nil
 	case "char":
+		return typing.String, nil
 	case "bpchar":
+		return typing.String, nil
 	case "text":
+		return typing.String, nil
 	case "string":
 		return typing.String, nil
 	case "date":
@@ -117,13 +131,15 @@ func (DuckDBDialect) KindForDataType(_type string) (typing.KindDetails, error) {
 	case "time":
 		return typing.Time, nil
 	case "timestamp":
+		return typing.TimestampNTZ, nil
 	case "datetime":
 		return typing.TimestampNTZ, nil
 	case "timestamp with time zone":
+		return typing.TimestampTZ, nil
 	case "timestamptz":
 		return typing.TimestampTZ, nil
 	}
-	return typing.Invalid, fmt.Errorf("unsupported data type: %s", _type)
+	return typing.Invalid, fmt.Errorf("unsupported data type: %s", dataType)
 }
 
 func (DuckDBDialect) IsColumnAlreadyExistsErr(err error) bool {
@@ -164,7 +180,19 @@ func (DuckDBDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (strin
 	if err != nil {
 		return "", nil, err
 	}
-	return "DESCRIBE $1;", []any{castedTableID.FullyQualifiedName()}, nil
+
+	query := `
+SELECT
+	column_name,
+	data_type,
+	column_default AS default_value
+FROM information_schema.columns
+WHERE table_catalog = $1
+	AND table_schema = $2
+	AND table_name = $3
+ORDER BY ordinal_position;`
+
+	return query, []any{castedTableID.Database(), castedTableID.Schema(), castedTableID.Table()}, nil
 }
 
 func (d DuckDBDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
@@ -186,7 +214,7 @@ func (d DuckDBDialect) buildSoftDeleteMergeQuery(
 ) string {
 	query := fmt.Sprintf(`
 MERGE INTO %s AS %s
-USING %s AS %s ON %s
+USING (%s) AS %s ON %s
 WHEN MATCHED AND COALESCE(%s, false) = false THEN UPDATE SET %s
 WHEN MATCHED AND COALESCE(%s, false) = true THEN UPDATE SET %s
 WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s)`,
@@ -216,7 +244,7 @@ func (d DuckDBDialect) buildRegularMergeQuery(
 ) string {
 	deleteColumnMarker := sql.QuotedDeleteColumnMarker(constants.StagingAlias, d)
 	return fmt.Sprintf(`
-MERGE INTO %s AS %s USING %s AS %s ON %s
+MERGE INTO %s AS %s USING (%s) AS %s ON %s
 WHEN MATCHED AND %s = true THEN DELETE
 WHEN MATCHED AND COALESCE(%s, false) = false THEN UPDATE SET %s
 WHEN NOT MATCHED AND COALESCE(%s, false) = false THEN INSERT (%s) VALUES (%s)`,
