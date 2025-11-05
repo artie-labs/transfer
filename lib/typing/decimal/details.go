@@ -109,3 +109,11 @@ func (d Details) PostgresKind() string {
 
 	return fmt.Sprintf("NUMERIC(%d, %d)", d.precision, d.scale)
 }
+
+func (d Details) MotherduckKind() string {
+	if d.precision == PrecisionNotSpecified {
+		return "DECIMAL"
+	}
+
+	return fmt.Sprintf("DECIMAL(%d, %d)", d.precision, d.scale)
+}

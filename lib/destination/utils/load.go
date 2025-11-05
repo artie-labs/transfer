@@ -16,6 +16,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination"
+	"github.com/artie-labs/transfer/clients/motherduck"
 )
 
 func IsOutputBaseline(cfg config.Config) bool {
@@ -56,6 +57,8 @@ func LoadDestination(ctx context.Context, cfg config.Config, store *db.Store) (d
 		return postgres.LoadStore(cfg)
 	case constants.Redshift:
 		return redshift.LoadRedshift(ctx, cfg, store)
+	case constants.Motherduck:
+		return motherduck.LoadStore(cfg)
 	}
 
 	return nil, fmt.Errorf("invalid destination: %q", cfg.Output)
