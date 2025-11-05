@@ -3,7 +3,6 @@ package bigquery
 import (
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"strings"
 	"time"
 
@@ -271,14 +270,7 @@ func encodeStructToJSONString(colName string, value any) (string, error) {
 
 		// Validate JSON before returning it
 		if !json.Valid([]byte(stringValue)) {
-			// Invalid JSON - log it for debugging
-			slog.Warn("Invalid JSON detected in struct field",
-				slog.String("value", stringValue),
-				slog.Int("length", len(stringValue)),
-				slog.String("column", colName),
-			)
-			// Return empty object instead of failing
-			return "{}", nil
+			return fmt.Sprintf("%q", stringValue), nil
 		}
 
 		return stringValue, nil
