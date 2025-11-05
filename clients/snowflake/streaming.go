@@ -70,6 +70,15 @@ func NewSnowpipeStreamingChannelManager(config *gosnowflake.Config) *SnowpipeStr
 }
 
 func (s *SnowpipeStreamingChannelManager) refresh(ctx context.Context) error {
+	// Double-checked locking: check again under lock if refresh is still needed
+	// This prevents multiple goroutines from refreshing simultaneously
+	s.mu.Lock()
+	if !s.expiresAt.Before(time.Now().Add(1 * time.Minute)) {
+		s.mu.Unlock()
+		return nil // Another goroutine already refreshed
+	}
+	s.mu.Unlock()
+
 	jwt, err := PrepareJWTToken(s.config)
 	if err != nil {
 		return fmt.Errorf("failed to prepare JWT token: %w", err)
@@ -95,7 +104,11 @@ func (s *SnowpipeStreamingChannelManager) refresh(ctx context.Context) error {
 }
 
 func (s *SnowpipeStreamingChannelManager) LoadData(ctx context.Context, db, schema, pipe string, now time.Time, data optimization.TableData) error {
-	if s.expiresAt.Before(now.Add(1 * time.Minute)) {
+	s.mu.Lock()
+	needsRefresh := s.expiresAt.Before(now.Add(1 * time.Minute))
+	s.mu.Unlock()
+
+	if needsRefresh {
 		if err := s.refresh(ctx); err != nil {
 			return fmt.Errorf("failed to refresh scoped token for snowpipe streaming: %w", err)
 		}
