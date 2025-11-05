@@ -130,17 +130,16 @@ func (s *SnowpipeStreamingChannelManager) LoadData(ctx context.Context, db, sche
 	_, err := batch.BySize(
 		data.Rows(),
 		maxChunkSize,
-		true, // fail if a single row exceeds maxChunkSize
+		true,
 		func(row optimization.Row) ([]byte, error) {
 			rowBytes, err := jsoniter.Marshal(row.GetData())
 			if err != nil {
 				return nil, err
 			}
-			// Include newline in the encoded bytes
+			// Include newline in the encoded bytes - NDJSON
 			return append(rowBytes, '\n'), nil
 		},
 		func(encodedBytes [][]byte, rows []optimization.Row) error {
-			// Rate limit before sending
 			if err := channel.RateLimiter.Wait(ctx); err != nil {
 				return fmt.Errorf("rate limiter error for channel %q: %w", data.Name(), err)
 			}
@@ -276,7 +275,6 @@ func GetScopedToken(ctx context.Context, jwtToken, account, ingestHost string) (
 	}
 	scopedToken = string(body)
 
-	// Decode the JWT to get the expiration time
 	parser := jwt.Parser{}
 	token, _, err := parser.ParseUnverified(scopedToken, jwt.MapClaims{})
 	if err == nil {
