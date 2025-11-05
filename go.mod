@@ -27,6 +27,7 @@ require (
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/json-iterator/go v1.1.12
 	github.com/lmittmann/tint v1.0.7
+	github.com/marcboeker/go-duckdb v1.8.5
 	github.com/mattn/go-isatty v0.0.20
 	github.com/microsoft/go-mssqldb v1.8.0
 	github.com/samber/slog-multi v1.4.0
@@ -93,6 +94,7 @@ require (
 	github.com/go-jose/go-jose/v3 v3.0.4 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/go-viper/mapstructure/v2 v2.3.0 // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/godbus/dbus v0.0.0-20190726142602-4481cbc300e2 // indirect
 	github.com/golang-jwt/jwt/v5 v5.2.2 // indirect
