@@ -267,7 +267,7 @@ func encodeStructToJSONString(value any) (string, error) {
 			return fmt.Sprintf(`{"key":"%s"}`, constants.ToastUnavailableValuePlaceholder), nil
 		}
 
-		// Validate JSON before returning it
+		// If the value is invalid JSON, then let's wrap it in quotes, so it doesn't get misinterpreted as a JSON string by BigQuery.
 		if !json.Valid([]byte(stringValue)) {
 			return fmt.Sprintf("%q", stringValue), nil
 		}
