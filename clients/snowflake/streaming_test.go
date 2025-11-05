@@ -197,14 +197,14 @@ func TestSnowpipeStreamingChannelManager_SmallBatchSingleRequest(t *testing.T) {
 		if strings.Contains(r.URL.Path, "/rows") && r.Method == http.MethodPost {
 			requestCount++
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(map[string]any{
+			require.NoError(t, json.NewEncoder(w).Encode(map[string]any{
 				"next_continuation_token": fmt.Sprintf("token%d", requestCount),
-			})
+			}))
 		} else if strings.Contains(r.URL.Path, "/channels/") && r.Method == http.MethodPut {
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(map[string]any{
+			require.NoError(t, json.NewEncoder(w).Encode(map[string]any{
 				"next_continuation_token": "initial-token",
-			})
+			}))
 		}
 	}))
 	defer server.Close()
@@ -253,14 +253,14 @@ func TestSnowpipeStreamingChannelManager_LargeBatchMultipleRequests(t *testing.T
 			assert.LessOrEqual(t, len(body), maxChunkSize, "Each request should be <= 4MB")
 
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(map[string]any{
+			require.NoError(t, json.NewEncoder(w).Encode(map[string]any{
 				"next_continuation_token": fmt.Sprintf("token%d", requestCount),
-			})
+			}))
 		} else if strings.Contains(r.URL.Path, "/channels/") && r.Method == http.MethodPut {
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(map[string]any{
+			require.NoError(t, json.NewEncoder(w).Encode(map[string]any{
 				"next_continuation_token": "initial-token",
-			})
+			}))
 		}
 	}))
 	defer server.Close()
@@ -335,14 +335,14 @@ func TestSnowpipeStreamingChannelManager_ContinuationTokenChaining(t *testing.T)
 			tokens = append(tokens, contToken)
 
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(map[string]any{
+			require.NoError(t, json.NewEncoder(w).Encode(map[string]any{
 				"next_continuation_token": fmt.Sprintf("token%d", len(tokens)),
-			})
+			}))
 		} else if strings.Contains(r.URL.Path, "/channels/") && r.Method == http.MethodPut {
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(map[string]any{
+			require.NoError(t, json.NewEncoder(w).Encode(map[string]any{
 				"next_continuation_token": "token0",
-			})
+			}))
 		}
 	}))
 	defer server.Close()
@@ -420,18 +420,18 @@ func createMockSnowflakeServer(t *testing.T) *httptest.Server {
 		case strings.Contains(r.URL.Path, "/channels/") && r.Method == http.MethodPut:
 			// OpenChannel
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(map[string]any{
+			require.NoError(t, json.NewEncoder(w).Encode(map[string]any{
 				"next_continuation_token": "initial-token",
 				"channel_status": map[string]any{
 					"channel_status_code": "ACTIVE",
 				},
-			})
+			}))
 		case strings.Contains(r.URL.Path, "/rows") && r.Method == http.MethodPost:
 			// AppendRows
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(map[string]any{
+			require.NoError(t, json.NewEncoder(w).Encode(map[string]any{
 				"next_continuation_token": "next-token",
-			})
+			}))
 		default:
 			w.WriteHeader(http.StatusNotFound)
 		}
