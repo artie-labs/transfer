@@ -24,8 +24,6 @@ import (
 func TestSnowpipeStreamingChannel_RateLimiterInitialization(t *testing.T) {
 	channel := NewSnowpipeStreamingChannel()
 	assert.NotNil(t, channel.RateLimiter, "RateLimiter should be initialized")
-	assert.NotNil(t, channel.Buffer, "Buffer should be initialized")
-	assert.NotNil(t, channel.Encoder, "Encoder should be initialized")
 	assert.Equal(t, "", channel.ContinuationToken, "ContinuationToken should be empty")
 }
 
@@ -183,8 +181,8 @@ func TestSnowpipeStreamingChannelManager_OversizedRowRejection(t *testing.T) {
 	err := manager.LoadData(ctx, "db", "schema", "pipe", time.Now(), *tableData)
 
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "greater than the max payload size (4MB)")
-	assert.Contains(t, err.Error(), "test_table")
+	assert.Contains(t, err.Error(), "is larger")
+	assert.Contains(t, err.Error(), "maxSizeBytes")
 }
 
 func TestSnowpipeStreamingChannelManager_SmallBatchSingleRequest(t *testing.T) {
@@ -389,7 +387,7 @@ func TestSnowpipeStreamingChannelManager_ContinuationTokenChaining(t *testing.T)
 	assert.Greater(t, finalCount, 1, "Should have made multiple requests for chunking")
 }
 
-func TestSnowpipeStreamingChannelManager_BufferReset(t *testing.T) {
+func TestSnowpipeStreamingChannelManager_SingleRowBatch(t *testing.T) {
 	cfg := &gosnowflake.Config{
 		Account: "test",
 		User:    "test",
@@ -412,12 +410,9 @@ func TestSnowpipeStreamingChannelManager_BufferReset(t *testing.T) {
 	err := manager.LoadData(ctx, "db", "schema", "pipe", time.Now(), *tableData)
 	require.NoError(t, err)
 
+	// Verify channel was created and has updated continuation token
 	channel := manager.channelNameToChannel["test_table"]
-
-	// After LoadData, buffer should be empty (reset after final send)
-	// Note: Buffer might still have some data from the last write before flush
-	// but it should be relatively small
-	assert.NotNil(t, channel.Buffer)
+	assert.NotEmpty(t, channel.ContinuationToken)
 }
 
 // Helper function to create a mock Snowflake TLS server

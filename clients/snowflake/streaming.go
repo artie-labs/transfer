@@ -19,6 +19,7 @@ import (
 	"github.com/snowflakedb/gosnowflake"
 	"golang.org/x/time/rate"
 
+	"github.com/artie-labs/transfer/lib/batch"
 	"github.com/artie-labs/transfer/lib/optimization"
 )
 
@@ -28,18 +29,13 @@ const maxChunkSize = 4 * 1024 * 1024 // 4MB
 type SnowpipeStreamingChannel struct {
 	mu                sync.Mutex
 	ContinuationToken string
-	Buffer            *bytes.Buffer
-	Encoder           *jsoniter.Stream
 	RateLimiter       *rate.Limiter
 }
 
 func NewSnowpipeStreamingChannel() *SnowpipeStreamingChannel {
-	out := &bytes.Buffer{}
 	return &SnowpipeStreamingChannel{
 		mu:                sync.Mutex{},
 		ContinuationToken: "",
-		Buffer:            out,
-		Encoder:           jsoniter.NewStream(jsoniter.ConfigDefault, out, maxChunkSize),
 		RateLimiter:       rate.NewLimiter(rate.Limit(10), 1),
 	}
 }
@@ -49,16 +45,6 @@ func (s *SnowpipeStreamingChannel) UpdateToken(token string) string {
 	defer s.mu.Unlock()
 	s.ContinuationToken = token
 	return s.ContinuationToken
-}
-
-// SwapBuffer swaps the current buffer with a fresh one and returns a reader for the old buffer
-// along with the new encoder. This avoids race conditions by giving exclusive ownership of the
-// old buffer to the caller while allowing new writes to continue on the fresh buffer.
-func (s *SnowpipeStreamingChannel) SwapBuffer() (io.Reader, *jsoniter.Stream) {
-	oldBuffer := s.Buffer
-	s.Buffer = &bytes.Buffer{}
-	s.Encoder = jsoniter.NewStream(jsoniter.ConfigDefault, s.Buffer, maxChunkSize)
-	return bytes.NewReader(oldBuffer.Bytes()), s.Encoder
 }
 
 type SnowpipeStreamingChannelManager struct {
@@ -141,69 +127,41 @@ func (s *SnowpipeStreamingChannelManager) LoadData(ctx context.Context, db, sche
 		contToken = channel.UpdateToken(channelResponse.NextContinuationToken)
 	}
 
-	channel.Buffer.Reset()
-	encoder := channel.Encoder
-
-	for _, row := range data.Rows() {
-		rowBytes, err := jsoniter.Marshal(row.GetData())
-		if err != nil {
-			return fmt.Errorf("failed to serialize row for snowpipe streaming channel %q: %w", data.Name(), err)
-		}
-
-		rowSize := len(rowBytes) + 1 // +1 for the newline character
-
-		if rowSize > maxChunkSize {
-			return fmt.Errorf("row size %d is greater than the max payload size (4MB) allowed by Snowflake for channel %q", rowSize, data.Name())
-		}
-
-		// Check if adding this row would exceed the chunk size
-		if channel.Buffer.Len() > 0 && channel.Buffer.Len()+rowSize > maxChunkSize {
-			if err := encoder.Flush(); err != nil {
-				return fmt.Errorf("failed to flush encoder for snowpipe streaming channel %q: %w", data.Name(), err)
+	_, err := batch.BySize(
+		data.Rows(),
+		maxChunkSize,
+		true, // fail if a single row exceeds maxChunkSize
+		func(row optimization.Row) ([]byte, error) {
+			rowBytes, err := jsoniter.Marshal(row.GetData())
+			if err != nil {
+				return nil, err
 			}
-
+			// Include newline in the encoded bytes
+			return append(rowBytes, '\n'), nil
+		},
+		func(encodedBytes [][]byte, rows []optimization.Row) error {
+			// Rate limit before sending
 			if err := channel.RateLimiter.Wait(ctx); err != nil {
 				return fmt.Errorf("rate limiter error for channel %q: %w", data.Name(), err)
 			}
 
-			// Swap buffers to avoid race condition - HTTP client reads from old buffer while we write to new one
-			var reader io.Reader
-			reader, encoder = channel.SwapBuffer()
+			readers := make([]io.Reader, len(encodedBytes))
+			for i, b := range encodedBytes {
+				readers[i] = bytes.NewReader(b)
+			}
+			reader := io.MultiReader(readers...)
 
 			appendResp, err := AppendRows(ctx, s.scopedToken, s.ingestHost, db, schema, pipe, data.Name(), contToken, reader)
 			if err != nil {
 				return fmt.Errorf("failed to append rows for snowpipe streaming channel %q: %w", data.Name(), err)
 			}
+
 			contToken = channel.UpdateToken(appendResp.NextContinuationToken)
-		}
+			return nil
+		},
+	)
 
-		_, err = encoder.Write(rowBytes)
-		if err != nil {
-			return fmt.Errorf("failed to write row to encoder for snowpipe streaming channel %q: %w", data.Name(), err)
-		}
-		encoder.WriteRaw("\n") // NDJSON format
-	}
-
-	// Send any remaining data
-	if channel.Buffer.Len() > 0 {
-		if err := encoder.Flush(); err != nil {
-			return fmt.Errorf("failed to flush encoder for snowpipe streaming channel %q: %w", data.Name(), err)
-		}
-
-		if err := channel.RateLimiter.Wait(ctx); err != nil {
-			return fmt.Errorf("rate limiter error for channel %q: %w", data.Name(), err)
-		}
-
-		// Swap buffer to avoid race if LoadData is called again before HTTP request completes
-		reader, _ := channel.SwapBuffer()
-		appendResp, err := AppendRows(ctx, s.scopedToken, s.ingestHost, db, schema, pipe, data.Name(), contToken, reader)
-		if err != nil {
-			return fmt.Errorf("failed to append rows for snowpipe streaming channel %q: %w", data.Name(), err)
-		}
-		channel.UpdateToken(appendResp.NextContinuationToken)
-	}
-
-	return nil
+	return err
 }
 
 // copied from https://github.com/snowflakedb/gosnowflake/blob/v1.17.0/auth.go#L640
