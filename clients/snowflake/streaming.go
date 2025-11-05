@@ -57,7 +57,7 @@ func (s *SnowpipeStreamingChannel) UpdateToken(token string) string {
 func (s *SnowpipeStreamingChannel) SwapBuffer() (io.Reader, *jsoniter.Stream) {
 	oldBuffer := s.Buffer
 	s.Buffer = &bytes.Buffer{}
-	s.Encoder = jsoniter.NewStream(jsoniter.ConfigDefault, s.Buffer, 0)
+	s.Encoder = jsoniter.NewStream(jsoniter.ConfigDefault, s.Buffer, maxChunkSize)
 	return bytes.NewReader(oldBuffer.Bytes()), s.Encoder
 }
 
