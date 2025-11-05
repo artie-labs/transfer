@@ -17,6 +17,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/snowflakedb/gosnowflake"
+	"golang.org/x/time/rate"
 
 	"github.com/artie-labs/transfer/lib/optimization"
 )
@@ -29,6 +30,7 @@ type SnowpipeStreamingChannel struct {
 	ContinuationToken string
 	Buffer            *bytes.Buffer
 	Encoder           *jsoniter.Stream
+	RateLimiter       *rate.Limiter
 }
 
 func NewSnowpipeStreamingChannel() *SnowpipeStreamingChannel {
@@ -38,6 +40,7 @@ func NewSnowpipeStreamingChannel() *SnowpipeStreamingChannel {
 		ContinuationToken: "",
 		Buffer:            out,
 		Encoder:           jsoniter.NewStream(jsoniter.ConfigDefault, out, maxChunkSize),
+		RateLimiter:       rate.NewLimiter(rate.Limit(10), 1),
 	}
 }
 
@@ -136,6 +139,10 @@ func (s *SnowpipeStreamingChannelManager) LoadData(ctx context.Context, db, sche
 				return fmt.Errorf("failed to flush encoder for snowpipe streaming channel %q: %w", data.Name(), err)
 			}
 
+			if err := channel.RateLimiter.Wait(ctx); err != nil {
+				return fmt.Errorf("rate limiter error for channel %q: %w", data.Name(), err)
+			}
+
 			reader := bytes.NewReader(channel.Buffer.Bytes())
 			appendResp, err := AppendRows(ctx, s.scopedToken, s.ingestHost, db, schema, pipe, data.Name(), contToken, reader)
 			if err != nil {
@@ -147,7 +154,10 @@ func (s *SnowpipeStreamingChannelManager) LoadData(ctx context.Context, db, sche
 			channel.Buffer.Reset()
 		}
 
-		encoder.Write(rowBytes)
+		_, err = encoder.Write(rowBytes)
+		if err != nil {
+			return fmt.Errorf("failed to write row to encoder for snowpipe streaming channel %q: %w", data.Name(), err)
+		}
 		encoder.WriteRaw("\n") // NDJSON format
 	}
 
@@ -155,6 +165,10 @@ func (s *SnowpipeStreamingChannelManager) LoadData(ctx context.Context, db, sche
 	if channel.Buffer.Len() > 0 {
 		if err := encoder.Flush(); err != nil {
 			return fmt.Errorf("failed to flush encoder for snowpipe streaming channel %q: %w", data.Name(), err)
+		}
+
+		if err := channel.RateLimiter.Wait(ctx); err != nil {
+			return fmt.Errorf("rate limiter error for channel %q: %w", data.Name(), err)
 		}
 
 		reader := bytes.NewReader(channel.Buffer.Bytes())
