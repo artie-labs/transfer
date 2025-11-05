@@ -51,6 +51,16 @@ func (s *SnowpipeStreamingChannel) UpdateToken(token string) string {
 	return s.ContinuationToken
 }
 
+// SwapBuffer swaps the current buffer with a fresh one and returns a reader for the old buffer
+// along with the new encoder. This avoids race conditions by giving exclusive ownership of the
+// old buffer to the caller while allowing new writes to continue on the fresh buffer.
+func (s *SnowpipeStreamingChannel) SwapBuffer() (io.Reader, *jsoniter.Stream) {
+	oldBuffer := s.Buffer
+	s.Buffer = &bytes.Buffer{}
+	s.Encoder = jsoniter.NewStream(jsoniter.ConfigDefault, s.Buffer, 0)
+	return bytes.NewReader(oldBuffer.Bytes()), s.Encoder
+}
+
 type SnowpipeStreamingChannelManager struct {
 	mu     sync.Mutex
 	config *gosnowflake.Config
@@ -156,15 +166,15 @@ func (s *SnowpipeStreamingChannelManager) LoadData(ctx context.Context, db, sche
 				return fmt.Errorf("rate limiter error for channel %q: %w", data.Name(), err)
 			}
 
-			reader := bytes.NewReader(channel.Buffer.Bytes())
+			// Swap buffers to avoid race condition - HTTP client reads from old buffer while we write to new one
+			var reader io.Reader
+			reader, encoder = channel.SwapBuffer()
+
 			appendResp, err := AppendRows(ctx, s.scopedToken, s.ingestHost, db, schema, pipe, data.Name(), contToken, reader)
 			if err != nil {
 				return fmt.Errorf("failed to append rows for snowpipe streaming channel %q: %w", data.Name(), err)
 			}
 			contToken = channel.UpdateToken(appendResp.NextContinuationToken)
-
-			// Reset buffer for next chunk
-			channel.Buffer.Reset()
 		}
 
 		_, err = encoder.Write(rowBytes)
@@ -184,7 +194,8 @@ func (s *SnowpipeStreamingChannelManager) LoadData(ctx context.Context, db, sche
 			return fmt.Errorf("rate limiter error for channel %q: %w", data.Name(), err)
 		}
 
-		reader := bytes.NewReader(channel.Buffer.Bytes())
+		// Swap buffer to avoid race if LoadData is called again before HTTP request completes
+		reader, _ := channel.SwapBuffer()
 		appendResp, err := AppendRows(ctx, s.scopedToken, s.ingestHost, db, schema, pipe, data.Name(), contToken, reader)
 		if err != nil {
 			return fmt.Errorf("failed to append rows for snowpipe streaming channel %q: %w", data.Name(), err)

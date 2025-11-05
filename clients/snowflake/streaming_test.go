@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -327,16 +328,25 @@ func TestSnowpipeStreamingChannelManager_ContinuationTokenChaining(t *testing.T)
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 
-	tokens := []string{}
+	var mu sync.Mutex
+	requestCount := 0
+	expectedToken := "token0" // Start with token from OpenChannel
+
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.Contains(r.URL.Path, "/rows") && r.Method == http.MethodPost {
-			// Extract continuation token from query params
-			contToken := r.URL.Query().Get("continuationToken")
-			tokens = append(tokens, contToken)
+			mu.Lock()
+			requestCount++
+			// Verify the request uses the expected continuation token
+			actualToken := r.URL.Query().Get("continuationToken")
+			assert.Equal(t, expectedToken, actualToken, "Request should use token from previous response")
+			// Set next expected token
+			expectedToken = fmt.Sprintf("token%d", requestCount)
+			nextToken := expectedToken
+			mu.Unlock()
 
 			w.WriteHeader(http.StatusOK)
 			require.NoError(t, json.NewEncoder(w).Encode(map[string]any{
-				"next_continuation_token": fmt.Sprintf("token%d", len(tokens)),
+				"next_continuation_token": nextToken,
 			}))
 		} else if strings.Contains(r.URL.Path, "/channels/") && r.Method == http.MethodPut {
 			w.WriteHeader(http.StatusOK)
@@ -371,15 +381,12 @@ func TestSnowpipeStreamingChannelManager_ContinuationTokenChaining(t *testing.T)
 	err := manager.LoadData(ctx, "db", "schema", "pipe", time.Now(), *tableData)
 	require.NoError(t, err)
 
-	// Verify tokens are chained correctly
-	assert.Greater(t, len(tokens), 1, "Should have multiple tokens")
-	// First token should be from OpenChannel (token0)
-	assert.Equal(t, "token0", tokens[0], "First request should use token from OpenChannel")
-	// Subsequent tokens should be chained
-	for i := 1; i < len(tokens); i++ {
-		expectedToken := fmt.Sprintf("token%d", i)
-		assert.Equal(t, expectedToken, tokens[i], "Token should be chained from previous response")
-	}
+	// Verify multiple chunks were sent
+	mu.Lock()
+	finalCount := requestCount
+	mu.Unlock()
+
+	assert.Greater(t, finalCount, 1, "Should have made multiple requests for chunking")
 }
 
 func TestSnowpipeStreamingChannelManager_BufferReset(t *testing.T) {
