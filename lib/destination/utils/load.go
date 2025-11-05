@@ -7,6 +7,7 @@ import (
 	"github.com/artie-labs/transfer/clients/bigquery"
 	"github.com/artie-labs/transfer/clients/databricks"
 	"github.com/artie-labs/transfer/clients/iceberg"
+	"github.com/artie-labs/transfer/clients/motherduck"
 	"github.com/artie-labs/transfer/clients/mssql"
 	"github.com/artie-labs/transfer/clients/postgres"
 	"github.com/artie-labs/transfer/clients/redshift"
@@ -16,7 +17,6 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination"
-	"github.com/artie-labs/transfer/clients/motherduck"
 )
 
 func IsOutputBaseline(cfg config.Config) bool {
