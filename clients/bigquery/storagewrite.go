@@ -229,7 +229,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 
 			message.Set(field, protoreflect.ValueOfInt64(_time.UnixMicro()))
 		case typing.Struct.Kind:
-			stringValue, err := encodeStructToJSONString(column.Name(), value)
+			stringValue, err := encodeStructToJSONString(value)
 			if err != nil {
 				return nil, fmt.Errorf("failed to convert value for column: %q, err: %w", column.Name(), err)
 			} else if stringValue == "" {
@@ -257,15 +257,14 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 // Structs from relational and Mongo are different.
 // MongoDB will return the native objects back such as `map[string]any{"hello": "world"}`
 // Relational will return a string representation of the struct such as `{"hello": "world"}`
-func encodeStructToJSONString(colName string, value any) (string, error) {
+func encodeStructToJSONString(value any) (string, error) {
 	if stringValue, ok := value.(string); ok {
-		if strings.Contains(stringValue, constants.ToastUnavailableValuePlaceholder) {
-			return fmt.Sprintf(`{"key":"%s"}`, constants.ToastUnavailableValuePlaceholder), nil
-		}
-
-		// Empty strings are allowed
 		if stringValue == "" {
 			return "", nil
+		}
+
+		if strings.Contains(stringValue, constants.ToastUnavailableValuePlaceholder) {
+			return fmt.Sprintf(`{"key":"%s"}`, constants.ToastUnavailableValuePlaceholder), nil
 		}
 
 		// Validate JSON before returning it
