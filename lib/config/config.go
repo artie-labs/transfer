@@ -117,6 +117,22 @@ func (c Config) ValidateMSSQL() error {
 	return nil
 }
 
+func (c Config) ValidateMotherduck() error {
+	if c.Output != constants.Motherduck {
+		return fmt.Errorf("output is not motherduck, output: %q", c.Output)
+	}
+
+	if c.Motherduck == nil {
+		return fmt.Errorf("motherduck config is nil")
+	}
+
+	if empty := stringutil.Empty(c.Motherduck.Token); empty {
+		return fmt.Errorf("motherduck token not found")
+	}
+
+	return nil
+}
+
 // Validate will check the output source validity
 // It will also check if a topic exists + iterate over each topic to make sure it's valid.
 // The actual output source (like Snowflake) and CDC parser will be loaded and checked by other funcs.
@@ -149,6 +165,10 @@ func (c Config) Validate() error {
 		}
 	case constants.S3:
 		if err := c.S3.Validate(); err != nil {
+			return err
+		}
+	case constants.Motherduck:
+		if err := c.ValidateMotherduck(); err != nil {
 			return err
 		}
 	}

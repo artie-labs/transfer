@@ -89,6 +89,7 @@ const (
 	S3         DestinationKind = "s3"
 	Snowflake  DestinationKind = "snowflake"
 	Iceberg    DestinationKind = "iceberg"
+	Motherduck DestinationKind = "motherduck"
 )
 
 var ValidDestinations = []DestinationKind{
@@ -100,6 +101,7 @@ var ValidDestinations = []DestinationKind{
 	Snowflake,
 	Iceberg,
 	Postgres,
+	Motherduck,
 }
 
 func IsValidDestination(destination DestinationKind) bool {

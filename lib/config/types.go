@@ -86,6 +86,7 @@ type Config struct {
 	Redshift   *Redshift   `yaml:"redshift,omitempty"`
 	S3         *S3Settings `yaml:"s3,omitempty"`
 	Iceberg    *Iceberg    `yaml:"iceberg,omitempty"`
+	Motherduck *Motherduck `yaml:"motherduck,omitempty"`
 
 	SharedDestinationSettings SharedDestinationSettings `yaml:"sharedDestinationSettings"`
 	StagingTableReuse         *StagingTableReuseConfig  `yaml:"stagingTableReuse,omitempty"`
