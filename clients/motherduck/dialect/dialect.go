@@ -335,6 +335,6 @@ func (DuckDBDialect) GetDefaultValueStrategy() sql.DefaultValueStrategy {
 	return sql.NotImplemented
 }
 
-func (DuckDBDialect) BuildSweepQuery(_, schema string) (string, []any) {
-	return "SELECT table_schema, table_name FROM information_schema.tables WHERE table_schema = $1 AND table_name LIKE $2;", []any{"%", "%"}
+func (DuckDBDialect) BuildSweepQuery(dbName, schema string) (string, []any) {
+	return "SELECT table_schema, table_name FROM information_schema.tables WHERE table_catalog = $1 AND table_schema = $2 AND table_name LIKE $3;", []any{dbName, schema, "%" + constants.ArtiePrefix + "%"}
 }
