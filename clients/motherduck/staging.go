@@ -62,7 +62,7 @@ func appendRows(ctx context.Context, store Store, tableData *optimization.TableD
 	}
 	defer appender.Close()
 
-	rowCount := 0
+	var rowCount uint
 	for _, row := range tableData.Rows() {
 		var rowValues []driver.Value
 		for _, col := range cols {
@@ -84,7 +84,7 @@ func appendRows(ctx context.Context, store Store, tableData *optimization.TableD
 		return fmt.Errorf("failed to close appender: %w", err)
 	}
 
-	if expectedRows := tableData.NumberOfRows(); uint(rowCount) != expectedRows {
+	if expectedRows := tableData.NumberOfRows(); rowCount != expectedRows {
 		return fmt.Errorf("expected %d rows to be loaded, but got %d", expectedRows, rowCount)
 	}
 
