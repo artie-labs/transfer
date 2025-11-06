@@ -212,6 +212,12 @@ func (d DuckDBDialect) buildSoftDeleteMergeQuery(
 	joinCondition string,
 	cols []columns.Column,
 ) string {
+	// DuckDB requires SELECT * FROM when using table references in USING clause
+	source := subQuery
+	if !strings.Contains(strings.ToUpper(subQuery), "SELECT") {
+		source = fmt.Sprintf("SELECT * FROM %s", subQuery)
+	}
+
 	query := fmt.Sprintf(`
 MERGE INTO %s AS %s
 USING (%s) AS %s ON %s
@@ -220,8 +226,8 @@ WHEN MATCHED AND COALESCE(%s, false) = true THEN UPDATE SET %s
 WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s)`,
 		// MERGE INTO target AS tgt
 		tableID.FullyQualifiedName(), constants.TargetAlias,
-		// USING (subquery) AS stg ON join_condition
-		subQuery, constants.StagingAlias, joinCondition,
+		// USING (SELECT * FROM subquery) AS stg ON join_condition
+		source, constants.StagingAlias, joinCondition,
 		// Update all columns when __artie_only_set_delete = false
 		sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, d), sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, d),
 		// Update only delete column when __artie_only_set_delete = true
@@ -242,6 +248,12 @@ func (d DuckDBDialect) buildRegularMergeQuery(
 	joinCondition string,
 	cols []columns.Column,
 ) string {
+	// DuckDB requires SELECT * FROM when using table references in USING clause
+	source := subQuery
+	if !strings.Contains(strings.ToUpper(subQuery), "SELECT") {
+		source = fmt.Sprintf("SELECT * FROM %s", subQuery)
+	}
+
 	deleteColumnMarker := sql.QuotedDeleteColumnMarker(constants.StagingAlias, d)
 	return fmt.Sprintf(`
 MERGE INTO %s AS %s USING (%s) AS %s ON %s
@@ -250,8 +262,8 @@ WHEN MATCHED AND COALESCE(%s, false) = false THEN UPDATE SET %s
 WHEN NOT MATCHED AND COALESCE(%s, false) = false THEN INSERT (%s) VALUES (%s)`,
 		// MERGE INTO target AS tgt
 		tableID.FullyQualifiedName(), constants.TargetAlias,
-		// USING (subquery) AS stg ON join_condition
-		subQuery, constants.StagingAlias, joinCondition,
+		// USING (SELECT * FROM subquery) AS stg ON join_condition
+		source, constants.StagingAlias, joinCondition,
 		// Delete when __artie_delete = true
 		deleteColumnMarker,
 		// Update all columns when __artie_delete = false

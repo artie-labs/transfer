@@ -98,7 +98,3 @@ func (s *Store) specificIdentifierFor(databaseAndSchema kafkalib.DatabaseAndSche
 func (s Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, table string) sql.TableIdentifier {
 	return s.specificIdentifierFor(databaseAndSchema, table)
 }
-
-func (s Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tableID, _ sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
-	return nil
-}
