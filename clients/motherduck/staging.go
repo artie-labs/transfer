@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	duckdb "github.com/duckdb/duckdb-go/v2"
+	jsoniter "github.com/json-iterator/go"
 
 	"github.com/artie-labs/transfer/clients/motherduck/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
@@ -15,6 +16,8 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/values"
 )
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func (s Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tableID, _ sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
@@ -102,13 +105,49 @@ func convertValue(value any, kd typing.KindDetails) (driver.Value, error) {
 			return nil, err
 		}
 		return castedValue, nil
-	case typing.Struct.Kind, typing.Array.Kind:
-		// For complex types, convert to JSON string
+	case typing.Struct.Kind:
+		// For structs, convert to JSON string
 		str, err := values.ToString(value, kd)
 		if err != nil {
 			return nil, err
 		}
 		return str, nil
+	case typing.Array.Kind:
+		// For arrays, DuckDB appender expects a Go slice, not a JSON string
+		// If it's already a slice, return as-is
+		// If it's a string (JSON), parse it into a slice
+		switch v := value.(type) {
+		case []interface{}:
+			return v, nil
+		case []string:
+			// Convert to []interface{} for DuckDB appender
+			result := make([]interface{}, len(v))
+			for i, s := range v {
+				result[i] = s
+			}
+			return result, nil
+		case string:
+			// Parse JSON string into a slice for DuckDB appender
+			var arr []interface{}
+			if err := json.Unmarshal([]byte(v), &arr); err != nil {
+				// If it's not valid JSON, return as a single-element array
+				return []interface{}{v}, nil
+			}
+			return arr, nil
+		default:
+			// For other types, try to convert to string then parse
+			str, err := values.ToString(value, kd)
+			if err != nil {
+				return nil, err
+			}
+			// Try to parse as JSON array
+			var arr []interface{}
+			if err := json.Unmarshal([]byte(str), &arr); err != nil {
+				// If it's not valid JSON, return as a single-element array
+				return []interface{}{str}, nil
+			}
+			return arr, nil
+		}
 	case typing.Integer.Kind:
 		// Return as-is, DuckDB appender will handle conversion
 		return value, nil

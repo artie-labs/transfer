@@ -53,9 +53,8 @@ func (DuckDBDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, settings 
 	case typing.Boolean.Kind:
 		return "boolean", nil
 	case typing.Array.Kind:
-		// DuckDB requires arrays to specify element type or use JSON
-		// Using JSON is more flexible for variable types
-		return "json", nil
+		// DuckDB supports typed arrays. We use TEXT[] for flexibility with variable element types
+		return "text[]", nil
 	case typing.Struct.Kind:
 		// DuckDB struct type requires explicit schema, use JSON for flexibility
 		return "json", nil
@@ -78,6 +77,12 @@ func (DuckDBDialect) KindForDataType(_type string) (typing.KindDetails, error) {
 	if err != nil {
 		return typing.Invalid, err
 	}
+
+	// Check if this is an array type (e.g., "text[]", "integer[]")
+	if strings.HasSuffix(dataType, "[]") {
+		return typing.Array, nil
+	}
+
 	switch dataType {
 	case "float":
 		return typing.Float, nil
@@ -120,8 +125,7 @@ func (DuckDBDialect) KindForDataType(_type string) (typing.KindDetails, error) {
 	case "struct":
 		return typing.Struct, nil
 	case "json":
-		// JSON columns could contain either arrays or structs
-		// Default to struct as it's more common
+		// JSON type is used for structs. Arrays use the array notation (e.g., "text[]")
 		return typing.Struct, nil
 	case "varchar":
 		return typing.String, nil
