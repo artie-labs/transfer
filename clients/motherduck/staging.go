@@ -10,6 +10,7 @@ import (
 
 	"github.com/artie-labs/transfer/clients/motherduck/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
+	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -119,41 +120,12 @@ func convertValue(value any, kd typing.KindDetails) (driver.Value, error) {
 		}
 		return str, nil
 	case typing.Array.Kind:
-		// For arrays, DuckDB appender expects a Go slice, not a JSON string
-		// If it's already a slice, return as-is
-		// If it's a string (JSON), parse it into a slice
-		switch v := value.(type) {
-		case []interface{}:
-			return v, nil
-		case []string:
-			// Convert to []interface{} for DuckDB appender
-			result := make([]interface{}, len(v))
-			for i, s := range v {
-				result[i] = s
-			}
-			return result, nil
-		case string:
-			// Parse JSON string into a slice for DuckDB appender
-			var arr []interface{}
-			if err := json.Unmarshal([]byte(v), &arr); err != nil {
-				// If it's not valid JSON, return as a single-element array
-				return []interface{}{v}, nil
-			}
-			return arr, nil
-		default:
-			// For other types, try to convert to string then parse
-			str, err := values.ToString(value, kd)
-			if err != nil {
-				return nil, err
-			}
-			// Try to parse as JSON array
-			var arr []interface{}
-			if err := json.Unmarshal([]byte(str), &arr); err != nil {
-				// If it's not valid JSON, return as a single-element array
-				return []interface{}{str}, nil
-			}
-			return arr, nil
+		// DuckDB appender expects []string for text[] columns
+		arrayStr, err := array.InterfaceToArrayString(value, true)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert array: %w", err)
 		}
+		return arrayStr, nil
 	case typing.Integer.Kind, typing.Float.Kind:
 		// Return as-is, DuckDB appender will handle conversion
 		return value, nil
