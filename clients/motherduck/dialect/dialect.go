@@ -53,9 +53,12 @@ func (DuckDBDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, settings 
 	case typing.Boolean.Kind:
 		return "boolean", nil
 	case typing.Array.Kind:
-		return "array", nil
+		// DuckDB requires arrays to specify element type or use JSON
+		// Using JSON is more flexible for variable types
+		return "json", nil
 	case typing.Struct.Kind:
-		return "struct", nil
+		// DuckDB struct type requires explicit schema, use JSON for flexibility
+		return "json", nil
 	case typing.String.Kind:
 		return "text", nil
 	case typing.Date.Kind:
@@ -115,6 +118,10 @@ func (DuckDBDialect) KindForDataType(_type string) (typing.KindDetails, error) {
 	case "array":
 		return typing.Array, nil
 	case "struct":
+		return typing.Struct, nil
+	case "json":
+		// JSON columns could contain either arrays or structs
+		// Default to struct as it's more common
 		return typing.Struct, nil
 	case "varchar":
 		return typing.String, nil
@@ -198,7 +205,13 @@ ORDER BY ordinal_position;`
 func (d DuckDBDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
 	toastedValue := "%" + constants.ToastUnavailableValuePlaceholder + "%"
 	colName := sql.QuoteTableAliasColumn(tableAlias, column, d)
-	return fmt.Sprintf("COALESCE(%s, '') NOT LIKE '%s'", colName, toastedValue)
+
+	// For JSON columns (struct/array), cast to VARCHAR before string comparison
+	if column.KindDetails.Kind == typing.Struct.Kind || column.KindDetails.Kind == typing.Array.Kind {
+		return fmt.Sprintf("COALESCE(CAST(%s AS VARCHAR) NOT LIKE '%s', TRUE)", colName, toastedValue)
+	}
+
+	return fmt.Sprintf("COALESCE(%s NOT LIKE '%s', TRUE)", colName, toastedValue)
 }
 
 func (DuckDBDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string {
