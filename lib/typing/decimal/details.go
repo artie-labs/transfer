@@ -115,5 +115,9 @@ func (d Details) DuckDBKind() string {
 		return "DECIMAL"
 	}
 
+	if d.precision > MaxPrecisionBeforeString {
+		return "TEXT"
+	}
+
 	return fmt.Sprintf("DECIMAL(%d, %d)", d.precision, d.scale)
 }
