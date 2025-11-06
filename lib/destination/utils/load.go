@@ -57,7 +57,7 @@ func LoadDestination(ctx context.Context, cfg config.Config, store *db.Store) (d
 		return postgres.LoadStore(cfg)
 	case constants.Redshift:
 		return redshift.LoadRedshift(ctx, cfg, store)
-	case constants.Motherduck:
+	case constants.MotherDuck:
 		return motherduck.LoadStore(cfg)
 	}
 

@@ -23,7 +23,7 @@ type Store struct {
 }
 
 func LoadStore(cfg config.Config) (*Store, error) {
-	store, err := db.Open("duckdb", "md:?motherduck_token="+cfg.Motherduck.Token)
+	store, err := db.Open("duckdb", "md:?motherduck_token="+cfg.MotherDuck.Token)
 	if err != nil {
 		return nil, err
 	}

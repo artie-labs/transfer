@@ -49,7 +49,7 @@ func (DuckDBDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, settings 
 		if kd.ExtendedDecimalDetails == nil {
 			return "", fmt.Errorf("expected extended decimal details to be set for %q", kd.Kind)
 		}
-		return kd.ExtendedDecimalDetails.MotherduckKind(), nil
+		return kd.ExtendedDecimalDetails.DuckDBKind(), nil
 	case typing.Boolean.Kind:
 		return "boolean", nil
 	case typing.Array.Kind:

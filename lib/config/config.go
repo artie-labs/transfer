@@ -117,17 +117,17 @@ func (c Config) ValidateMSSQL() error {
 	return nil
 }
 
-func (c Config) ValidateMotherduck() error {
-	if c.Output != constants.Motherduck {
+func (c Config) ValidateMotherDuck() error {
+	if c.Output != constants.MotherDuck {
 		return fmt.Errorf("output is not motherduck, output: %q", c.Output)
 	}
 
-	if c.Motherduck == nil {
-		return fmt.Errorf("motherduck config is nil")
+	if c.MotherDuck == nil {
+		return fmt.Errorf("MotherDuck config is nil")
 	}
 
-	if empty := stringutil.Empty(c.Motherduck.Token); empty {
-		return fmt.Errorf("motherduck token not found")
+	if empty := stringutil.Empty(c.MotherDuck.Token); empty {
+		return fmt.Errorf("MotherDuck accesstoken is empty")
 	}
 
 	return nil
@@ -167,8 +167,8 @@ func (c Config) Validate() error {
 		if err := c.S3.Validate(); err != nil {
 			return err
 		}
-	case constants.Motherduck:
-		if err := c.ValidateMotherduck(); err != nil {
+	case constants.MotherDuck:
+		if err := c.ValidateMotherDuck(); err != nil {
 			return err
 		}
 	}

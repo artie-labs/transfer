@@ -154,6 +154,6 @@ func (s S3Tables) CatalogName() string {
 	return "s3tablesbucket"
 }
 
-type Motherduck struct {
+type MotherDuck struct {
 	Token string `yaml:"token"`
 }
