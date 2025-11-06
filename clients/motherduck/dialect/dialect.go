@@ -84,36 +84,15 @@ func (DuckDBDialect) KindForDataType(_type string) (typing.KindDetails, error) {
 	}
 
 	switch dataType {
-	case "float":
+	case "float", "double":
 		return typing.Float, nil
-	case "double":
-		return typing.Float, nil
-	case "integer":
+	case "integer", "int4", "int", "signed":
 		return typing.BuildIntegerKind(typing.IntegerKind), nil
-	case "int4":
-		return typing.BuildIntegerKind(typing.IntegerKind), nil
-	case "int":
-		return typing.BuildIntegerKind(typing.IntegerKind), nil
-	case "signed":
-		return typing.BuildIntegerKind(typing.IntegerKind), nil
-	case "bigint":
+	case "bigint", "int8", "long":
 		return typing.BuildIntegerKind(typing.BigIntegerKind), nil
-	case "int8":
-		return typing.BuildIntegerKind(typing.BigIntegerKind), nil
-	case "long":
-		return typing.BuildIntegerKind(typing.BigIntegerKind), nil
-	case "smallint":
+	case "smallint", "int2", "short":
 		return typing.BuildIntegerKind(typing.SmallIntegerKind), nil
-	case "int2":
-		return typing.BuildIntegerKind(typing.SmallIntegerKind), nil
-	case "short":
-		return typing.BuildIntegerKind(typing.SmallIntegerKind), nil
-	case "numeric":
-		if len(parameters) == 0 {
-			return typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale)), nil
-		}
-		return typing.ParseNumeric(parameters)
-	case "decimal":
+	case "numeric","decimal":
 		if len(parameters) == 0 {
 			return typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale)), nil
 		}
@@ -127,27 +106,15 @@ func (DuckDBDialect) KindForDataType(_type string) (typing.KindDetails, error) {
 	case "json":
 		// JSON type is used for structs. Arrays use the array notation (e.g., "text[]")
 		return typing.Struct, nil
-	case "varchar":
-		return typing.String, nil
-	case "char":
-		return typing.String, nil
-	case "bpchar":
-		return typing.String, nil
-	case "text":
-		return typing.String, nil
-	case "string":
+	case "varchar", "char", "bpchar", "text", "string":
 		return typing.String, nil
 	case "date":
 		return typing.Date, nil
 	case "time":
 		return typing.Time, nil
-	case "timestamp":
+	case "timestamp", "datetime":
 		return typing.TimestampNTZ, nil
-	case "datetime":
-		return typing.TimestampNTZ, nil
-	case "timestamp with time zone":
-		return typing.TimestampTZ, nil
-	case "timestamptz":
+	case "timestamp with time zone", "timestamptz":
 		return typing.TimestampTZ, nil
 	}
 	return typing.Invalid, fmt.Errorf("unsupported data type: %s", dataType)
