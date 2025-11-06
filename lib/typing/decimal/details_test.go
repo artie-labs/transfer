@@ -106,3 +106,48 @@ func TestDetails_PostgresKind(t *testing.T) {
 		assert.Equal(t, expectedValue, details.PostgresKind())
 	}
 }
+
+func TestDetails_DuckDBKind(t *testing.T) {
+	testCases := []struct {
+		name     string
+		details  Details
+		expected string
+	}{
+		{
+			name:     "variable precision",
+			details:  NewDetails(PrecisionNotSpecified, DefaultScale),
+			expected: "DECIMAL",
+		},
+		{
+			name:     "precision within limit",
+			details:  NewDetails(10, 2),
+			expected: "DECIMAL(10, 2)",
+		},
+		{
+			name:     "precision at max limit (38)",
+			details:  NewDetails(38, 2),
+			expected: "DECIMAL(38, 2)",
+		},
+		{
+			name:     "precision exceeds limit (39)",
+			details:  NewDetails(39, 5),
+			expected: "TEXT",
+		},
+		{
+			name:     "precision exceeds limit (76)",
+			details:  NewDetails(76, 38),
+			expected: "TEXT",
+		},
+		{
+			name:     "zero scale",
+			details:  NewDetails(15, 0),
+			expected: "DECIMAL(15, 0)",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.expected, tc.details.DuckDBKind())
+		})
+	}
+}
