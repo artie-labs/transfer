@@ -152,8 +152,8 @@ func TestConvertValue_Array(t *testing.T) {
 		input := []interface{}{"apple", "banana", "cherry"}
 		result, err := convertValue(input, typing.Array)
 		assert.NoError(t, err)
-		assert.IsType(t, []interface{}{}, result)
-		assert.Equal(t, input, result)
+		assert.IsType(t, []string{}, result)
+		assert.Equal(t, []string{"apple", "banana", "cherry"}, result)
 	}
 
 	// Array as []string
@@ -161,62 +161,12 @@ func TestConvertValue_Array(t *testing.T) {
 		input := []string{"red", "green", "blue"}
 		result, err := convertValue(input, typing.Array)
 		assert.NoError(t, err)
-		assert.IsType(t, []interface{}{}, result)
-		resultSlice := result.([]interface{})
+		assert.IsType(t, []string{}, result)
+		resultSlice := result.([]string)
 		assert.Len(t, resultSlice, 3)
 		assert.Equal(t, "red", resultSlice[0])
 		assert.Equal(t, "green", resultSlice[1])
 		assert.Equal(t, "blue", resultSlice[2])
-	}
-
-	// Array as JSON string
-	{
-		input := `["one","two","three"]`
-		result, err := convertValue(input, typing.Array)
-		assert.NoError(t, err)
-		assert.IsType(t, []interface{}{}, result)
-		resultSlice := result.([]interface{})
-		assert.Len(t, resultSlice, 3)
-		assert.Equal(t, "one", resultSlice[0])
-		assert.Equal(t, "two", resultSlice[1])
-		assert.Equal(t, "three", resultSlice[2])
-	}
-
-	// Array as JSON string with numbers
-	{
-		input := `[1,2,3,4,5]`
-		result, err := convertValue(input, typing.Array)
-		assert.NoError(t, err)
-		assert.IsType(t, []interface{}{}, result)
-		resultSlice := result.([]interface{})
-		assert.Len(t, resultSlice, 5)
-		assert.Equal(t, float64(1), resultSlice[0]) // JSON numbers parse as float64
-		assert.Equal(t, float64(2), resultSlice[1])
-	}
-
-	// Array as JSON string with mixed types
-	{
-		input := `["text",123,true,null]`
-		result, err := convertValue(input, typing.Array)
-		assert.NoError(t, err)
-		assert.IsType(t, []interface{}{}, result)
-		resultSlice := result.([]interface{})
-		assert.Len(t, resultSlice, 4)
-		assert.Equal(t, "text", resultSlice[0])
-		assert.Equal(t, float64(123), resultSlice[1])
-		assert.Equal(t, true, resultSlice[2])
-		assert.Nil(t, resultSlice[3])
-	}
-
-	// Array as non-JSON string (should wrap in single-element array)
-	{
-		input := "not a json array"
-		result, err := convertValue(input, typing.Array)
-		assert.NoError(t, err)
-		assert.IsType(t, []interface{}{}, result)
-		resultSlice := result.([]interface{})
-		assert.Len(t, resultSlice, 1)
-		assert.Equal(t, "not a json array", resultSlice[0])
 	}
 
 	// Empty array
@@ -224,81 +174,41 @@ func TestConvertValue_Array(t *testing.T) {
 		input := []interface{}{}
 		result, err := convertValue(input, typing.Array)
 		assert.NoError(t, err)
-		assert.IsType(t, []interface{}{}, result)
-		assert.Len(t, result.([]interface{}), 0)
-	}
-
-	// Empty JSON array
-	{
-		input := `[]`
-		result, err := convertValue(input, typing.Array)
-		assert.NoError(t, err)
-		assert.IsType(t, []interface{}{}, result)
-		assert.Len(t, result.([]interface{}), 0)
-	}
-
-	// Nested arrays
-	{
-		input := `[["a","b"],["c","d"]]`
-		result, err := convertValue(input, typing.Array)
-		assert.NoError(t, err)
-		assert.IsType(t, []interface{}{}, result)
-		resultSlice := result.([]interface{})
-		assert.Len(t, resultSlice, 2)
-
-		firstNested := resultSlice[0].([]interface{})
-		assert.Len(t, firstNested, 2)
-		assert.Equal(t, "a", firstNested[0])
-		assert.Equal(t, "b", firstNested[1])
+		assert.IsType(t, []string{}, result)
+		assert.Len(t, result.([]string), 0)
 	}
 }
 
 func TestConvertValue_ArrayRoundTrip(t *testing.T) {
 	// This test verifies that arrays maintain their integrity through conversion
-	// This is critical for the fix of the "cannot cast string to []interface{}" error
+	// Now arrays are converted to []string for DuckDB's text[] columns
 
 	// Simple string array
 	{
 		input := []string{"alpha", "beta", "gamma"}
-		expected := []interface{}{"alpha", "beta", "gamma"}
+		expected := []string{"alpha", "beta", "gamma"}
 
 		result, err := convertValue(input, typing.Array)
 		assert.NoError(t, err)
-		assert.IsType(t, []interface{}{}, result)
+		assert.IsType(t, []string{}, result)
 
-		resultSlice := result.([]interface{})
+		resultSlice := result.([]string)
 		assert.Equal(t, len(expected), len(resultSlice))
 		for i, expectedVal := range expected {
 			assert.Equal(t, expectedVal, resultSlice[i])
 		}
 	}
 
-	// Interface array
+	// Interface array - all elements converted to strings
 	{
 		input := []interface{}{"one", 2, true}
-		expected := []interface{}{"one", 2, true}
+		expected := []string{"one", "2", "true"}
 
 		result, err := convertValue(input, typing.Array)
 		assert.NoError(t, err)
-		assert.IsType(t, []interface{}{}, result)
+		assert.IsType(t, []string{}, result)
 
-		resultSlice := result.([]interface{})
-		assert.Equal(t, len(expected), len(resultSlice))
-		for i, expectedVal := range expected {
-			assert.Equal(t, expectedVal, resultSlice[i])
-		}
-	}
-
-	// JSON array string
-	{
-		input := `["foo","bar","baz"]`
-		expected := []interface{}{"foo", "bar", "baz"}
-
-		result, err := convertValue(input, typing.Array)
-		assert.NoError(t, err)
-		assert.IsType(t, []interface{}{}, result)
-
-		resultSlice := result.([]interface{})
+		resultSlice := result.([]string)
 		assert.Equal(t, len(expected), len(resultSlice))
 		for i, expectedVal := range expected {
 			assert.Equal(t, expectedVal, resultSlice[i])
@@ -327,8 +237,8 @@ func TestConvertValue_DriverValue(t *testing.T) {
 	{
 		result, err := convertValue([]string{"a", "b"}, typing.Array)
 		assert.NoError(t, err)
-		// DuckDB appender accepts []interface{} as driver.Value
-		assert.IsType(t, []interface{}{}, result)
+		// DuckDB appender accepts []string for text[] columns
+		assert.IsType(t, []string{}, result)
 	}
 
 	// Nil returns nil driver.Value

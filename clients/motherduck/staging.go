@@ -117,7 +117,6 @@ func convertValue(value any, kd typing.KindDetails) (driver.Value, error) {
 		}
 		return str, nil
 	case typing.Array.Kind:
-		// DuckDB appender expects []string for text[] columns
 		arrayStr, err := array.InterfaceToArrayString(value, true)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert array: %w", err)
