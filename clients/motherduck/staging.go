@@ -148,10 +148,8 @@ func convertValue(value any, kd typing.KindDetails) (driver.Value, error) {
 			}
 			return arr, nil
 		}
-	case typing.Integer.Kind:
+	case typing.Integer.Kind, typing.Float.Kind:
 		// Return as-is, DuckDB appender will handle conversion
-		return value, nil
-	case typing.Float.Kind:
 		return value, nil
 	case typing.EDecimal.Kind:
 		// Convert decimal to string for DuckDB
