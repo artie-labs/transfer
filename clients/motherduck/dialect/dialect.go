@@ -68,8 +68,9 @@ func (DuckDBDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, settings 
 		return "timestamp", nil
 	case typing.TimestampTZ.Kind:
 		return "timestamp with time zone", nil
+	default:
+		return "", fmt.Errorf("unsupported kind: %q", kd.Kind)
 	}
-	return kd.Kind, nil
 }
 
 func (DuckDBDialect) KindForDataType(_type string) (typing.KindDetails, error) {
@@ -92,7 +93,7 @@ func (DuckDBDialect) KindForDataType(_type string) (typing.KindDetails, error) {
 		return typing.BuildIntegerKind(typing.BigIntegerKind), nil
 	case "smallint", "int2", "short":
 		return typing.BuildIntegerKind(typing.SmallIntegerKind), nil
-	case "numeric","decimal":
+	case "numeric", "decimal":
 		if len(parameters) == 0 {
 			return typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale)), nil
 		}

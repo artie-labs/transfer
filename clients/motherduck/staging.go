@@ -60,7 +60,7 @@ func appendRows(ctx context.Context, store Store, tableData *optimization.TableD
 		return nil
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create appender: %w", err)
 	}
 	defer appender.Close()
 
