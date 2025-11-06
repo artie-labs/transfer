@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	duckdb "github.com/duckdb/duckdb-go/v2"
-	jsoniter "github.com/json-iterator/go"
 
 	"github.com/artie-labs/transfer/clients/motherduck/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
@@ -17,8 +16,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/values"
 )
-
-var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func (s Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tableID, _ sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
