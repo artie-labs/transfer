@@ -9,13 +9,13 @@ before:
 builds:
   - binary: transfer
     env:
-      - CGO_ENABLED=1
+      - CGO_ENABLED=0
     goos:
       - linux
       - darwin
     goarch:
-      - amd64
-      - arm64
+    - amd64
+    - arm64
 
 dockers:
 - image_templates:
