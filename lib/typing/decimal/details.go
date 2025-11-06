@@ -109,15 +109,3 @@ func (d Details) PostgresKind() string {
 
 	return fmt.Sprintf("NUMERIC(%d, %d)", d.precision, d.scale)
 }
-
-func (d Details) DuckDBKind() string {
-	if d.precision == PrecisionNotSpecified {
-		return "DECIMAL"
-	}
-
-	if d.precision > MaxPrecisionBeforeString {
-		return "TEXT"
-	}
-
-	return fmt.Sprintf("DECIMAL(%d, %d)", d.precision, d.scale)
-}
