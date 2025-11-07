@@ -5,7 +5,7 @@ import (
 	"database/sql/driver"
 	"fmt"
 
-	duckdb "github.com/duckdb/duckdb-go/v2"
+	"github.com/artie-labs/ducktape/api/pkg/ducktape"
 
 	"github.com/artie-labs/transfer/clients/motherduck/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
@@ -42,50 +42,54 @@ func appendRows(ctx context.Context, store Store, tableData *optimization.TableD
 		return fmt.Errorf("failed to cast table identifier to dialect.TableIdentifier")
 	}
 
-	conn, err := store.Store.Conn(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get connection: %w", err)
-	}
-	defer conn.Close()
-
-	var appender *duckdb.Appender
-	err = conn.Raw(func(driverConn any) error {
-		var appErr error
-		appender, appErr = duckdb.NewAppender(driverConn.(driver.Conn), castedTableID.Database(), castedTableID.Schema(), castedTableID.Table())
-		if appErr != nil {
-			return fmt.Errorf("failed to create appender: %w", appErr)
-		}
-		return nil
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create appender: %w", err)
-	}
-	defer appender.Close()
-
-	var rowCount uint
-	for _, row := range tableData.Rows() {
-		var rowValues []driver.Value
-		for _, col := range cols {
-			value, _ := row.GetValue(col.Name())
-			convertedValue, err := convertValue(value, col.KindDetails)
-			if err != nil {
-				return fmt.Errorf("failed to convert value: %w", err)
+	streamIterator := func(yield func(ducktape.RowMessageResult) bool) {
+		for _, row := range tableData.Rows() {
+			var rowValues []any
+			for _, col := range cols {
+				value, _ := row.GetValue(col.Name())
+				convertedValue, err := convertValue(value, col.KindDetails)
+				if err != nil {
+					errMsg := fmt.Sprintf("failed to convert value: %v", err)
+					if !yield(ducktape.RowMessageResult{Error: &errMsg}) {
+						return
+					}
+					continue
+				}
+				rowValues = append(rowValues, convertedValue)
 			}
-			rowValues = append(rowValues, convertedValue)
+			if !yield(ducktape.RowMessageResult{Row: ducktape.RowMessage{Values: rowValues}}) {
+				return
+			}
 		}
-
-		if err := appender.AppendRow(rowValues...); err != nil {
-			return fmt.Errorf("failed to append row: %w", err)
-		}
-		rowCount++
 	}
 
-	if err := appender.Close(); err != nil {
-		return fmt.Errorf("failed to close appender: %w", err)
+	resp, err := store.client.Append(
+		ctx,
+		store.dsn,
+		castedTableID.Database(),
+		castedTableID.Schema(),
+		castedTableID.Table(),
+		streamIterator,
+		func(r ducktape.RowMessage) ([]byte, error) {
+			return json.Marshal(r)
+		},
+		func(r []byte) (*ducktape.AppendResponse, error) {
+			var resp ducktape.AppendResponse
+			if err := json.Unmarshal(r, &resp); err != nil {
+				return nil, err
+			}
+			return &resp, nil
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("failure on client side to append rows: %w", err)
+	}
+	if resp.Error != nil {
+		return fmt.Errorf("failure on server side to append rows: %s", *resp.Error)
 	}
 
-	if expectedRows := tableData.NumberOfRows(); rowCount != expectedRows {
-		return fmt.Errorf("expected %d rows to be loaded, but got %d", expectedRows, rowCount)
+	if expectedRows := tableData.NumberOfRows(); resp.RowsAppended != int64(expectedRows) {
+		return fmt.Errorf("expected %d rows to be loaded, but got %d", expectedRows, resp.RowsAppended)
 	}
 
 	return nil

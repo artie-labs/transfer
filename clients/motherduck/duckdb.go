@@ -4,31 +4,33 @@ import (
 	"context"
 	"fmt"
 
-	_ "github.com/duckdb/duckdb-go/v2"
+	goSql "database/sql"
+
+	"github.com/artie-labs/ducktape/api/pkg/ducktape"
+	jsoniter "github.com/json-iterator/go"
 
 	"github.com/artie-labs/transfer/clients/motherduck/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
-	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
 )
 
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
+
 type Store struct {
-	db.Store
+	dsn       string
+	client    *ducktape.Client
 	configMap *types.DestinationTableConfigMap
 	config    config.Config
 }
 
 func LoadStore(cfg config.Config) (*Store, error) {
-	store, err := db.Open("duckdb", fmt.Sprintf("md:?motherduck_token=%s", cfg.MotherDuck.Token))
-	if err != nil {
-		return nil, err
-	}
 	return &Store{
-		Store:     store,
+		dsn:       fmt.Sprintf("md:?motherduck_token=%s", cfg.MotherDuck.Token),
+		client:    ducktape.NewClient(cfg.MotherDuck.DucktapeURL),
 		configMap: &types.DestinationTableConfigMap{},
 		config:    cfg,
 	}, nil
@@ -46,23 +48,103 @@ func (s Store) GetConfig() config.Config {
 	return s.config
 }
 
+func (s Store) Begin() (*goSql.Tx, error) {
+	return nil, fmt.Errorf("not implemented: Begin")
+}
+
+func (s Store) QueryContextHttp(ctx context.Context, query string, args ...any) (*ducktape.QueryResponse, error) {
+	request := ducktape.QueryRequest{
+		Query: query,
+		Args:  args,
+	}
+	response, err := s.client.Query(ctx, request, s.dsn, func(r ducktape.QueryRequest) ([]byte, error) {
+		return json.Marshal(r)
+	}, func(r []byte) (*ducktape.QueryResponse, error) {
+		var resp ducktape.QueryResponse
+		if err := json.Unmarshal(r, &resp); err != nil {
+			return nil, fmt.Errorf("failed to unmarshall query response: %w", err)
+		}
+		return &resp, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
+}
+
+// QueryContext is a stub to satisfy the destination.Destination interface
+// This should never be called since we override GetTableConfig with our custom implementation
+func (s Store) QueryContext(ctx context.Context, query string, args ...any) (*goSql.Rows, error) {
+	return nil, fmt.Errorf("QueryContext is not implemented for MotherDuck - use QueryContextHttp methods instead")
+}
+
+func (s Store) ExecContext(ctx context.Context, query string, args ...any) (goSql.Result, error) {
+	request := ducktape.ExecuteRequest{
+		Query: query,
+		Args:  args,
+	}
+	response, err := s.client.Execute(ctx, request, s.dsn, func(r ducktape.ExecuteRequest) ([]byte, error) {
+		return json.Marshal(r)
+	}, func(r []byte) (*ducktape.ExecuteResponse, error) {
+		var response ducktape.ExecuteResponse
+		if err := json.Unmarshal(r, &response); err != nil {
+			return nil, fmt.Errorf("failed to unmarshall execute response: %w", err)
+		}
+		return &response, nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failure on client side to execute query: %w", err)
+	}
+
+	if response.Error != nil {
+		return nil, fmt.Errorf("execution failed for duckdb: %s", *response.Error)
+	}
+
+	return response, nil
+}
+
+func (s Store) IsRetryableError(err error) bool {
+	return false
+}
+
 func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
 	return fmt.Errorf("dedupe not implemented for duckdb")
 }
 
 func (s Store) SweepTemporaryTables(ctx context.Context) error {
-	return shared.Sweep(ctx, s, s.config.TopicConfigs(), s.dialect().BuildSweepQuery)
-}
+	for _, topicConfig := range s.config.TopicConfigs() {
+		dbAndSchema := topicConfig.BuildDatabaseAndSchemaPair()
+		query, args := s.dialect().BuildSweepQuery(dbAndSchema.Database, dbAndSchema.Schema)
 
-func (s Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
-	return shared.GetTableCfgArgs{
-		Destination:           s,
-		TableID:               tableID,
-		ConfigMap:             s.configMap,
-		ColumnNameForName:     "column_name",
-		ColumnNameForDataType: "data_type",
-		DropDeletedColumns:    dropDeletedColumns,
-	}.GetTableConfig(ctx)
+		response, err := s.QueryContextHttp(ctx, query, args...)
+		if err != nil {
+			return fmt.Errorf("failed to query temporary tables: %w", err)
+		}
+
+		if response.Error != nil {
+			return fmt.Errorf("query failed: %s", *response.Error)
+		}
+
+		for _, row := range response.Rows {
+			tableName, ok := row["table_name"].(string)
+			if !ok {
+				continue
+			}
+
+			tableSchema, ok := row["table_schema"].(string)
+			if !ok {
+				continue
+			}
+
+			tableID := dialect.NewTableIdentifier(dbAndSchema.Database, tableSchema, tableName)
+			if _, err := s.ExecContext(ctx, s.Dialect().BuildDropTableQuery(tableID)); err != nil {
+				return fmt.Errorf("failed to drop table %s: %w", tableID.FullyQualifiedName(), err)
+			}
+		}
+	}
+
+	return nil
 }
 
 func (s Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error {

@@ -126,8 +126,12 @@ func (c Config) ValidateMotherDuck() error {
 		return fmt.Errorf("MotherDuck config is nil")
 	}
 
+	if stringutil.Empty(c.MotherDuck.DucktapeURL) {
+		return fmt.Errorf("MotherDuck ducktape URL is empty")
+	}
+
 	if empty := stringutil.Empty(c.MotherDuck.Token); empty {
-		return fmt.Errorf("MotherDuck accesstoken is empty")
+		return fmt.Errorf("MotherDuck access token is empty")
 	}
 
 	return nil

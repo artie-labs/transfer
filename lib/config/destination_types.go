@@ -155,5 +155,6 @@ func (s S3Tables) CatalogName() string {
 }
 
 type MotherDuck struct {
-	Token string `yaml:"token"`
+	DucktapeURL string `yaml:"ducktapeUrl"`
+	Token       string `yaml:"token"`
 }
