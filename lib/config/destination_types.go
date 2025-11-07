@@ -153,3 +153,7 @@ func (s S3Tables) ApacheLivyConfig() map[string]any {
 func (s S3Tables) CatalogName() string {
 	return "s3tablesbucket"
 }
+
+type MotherDuck struct {
+	Token string `yaml:"token"`
+}
