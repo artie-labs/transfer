@@ -12,7 +12,7 @@ require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/DataDog/datadog-go/v5 v5.6.0
 	github.com/apache/arrow/go/v17 v17.0.0
-	github.com/artie-labs/ducktape/api v0.1.0
+	github.com/artie-labs/ducktape/api v0.1.3
 	github.com/aws/aws-sdk-go-v2 v1.38.1
 	github.com/aws/aws-sdk-go-v2/config v1.29.12
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.65
