@@ -66,6 +66,7 @@ Transfer is aiming to provide coverage across all OLTPs and OLAPs databases. Cur
     - S3
     - Snowflake
     - PostgreSQL
+    - MotherDuck
 
 - [Sources](https://artie.com/docs/sources):
     - DocumentDB
