@@ -50,10 +50,8 @@ func appendRows(ctx context.Context, store Store, tableData *optimization.TableD
 				convertedValue, err := convertValue(value, col.KindDetails)
 				if err != nil {
 					errMsg := fmt.Sprintf("failed to convert value: %v", err)
-					if !yield(ducktape.RowMessageResult{Error: &errMsg}) {
-						return
-					}
-					continue
+					yield(ducktape.RowMessageResult{Error: &errMsg})
+					return
 				}
 				rowValues = append(rowValues, convertedValue)
 			}
