@@ -253,9 +253,8 @@ WHEN NOT MATCHED AND COALESCE(%s, false) = false THEN INSERT (%s) VALUES (%s)`,
 		deleteColumnMarker,
 		// Update all columns when __artie_delete = false
 		deleteColumnMarker, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, d),
-		// Update only delete column when __artie_delete = true
+		// Insert new records when __artie_delete = false
 		deleteColumnMarker, strings.Join(sql.QuoteColumns(cols, d), ","),
-		// Insert new records
 		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, d), ","),
 	)
 }
