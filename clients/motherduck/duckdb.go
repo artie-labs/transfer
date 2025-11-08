@@ -62,7 +62,7 @@ func (s Store) QueryContextHttp(ctx context.Context, query string, args ...any) 
 	}, func(r []byte) (*ducktape.QueryResponse, error) {
 		var resp ducktape.QueryResponse
 		if err := json.Unmarshal(r, &resp); err != nil {
-			return nil, fmt.Errorf("failed to unmarshall query response: %w", err)
+			return nil, fmt.Errorf("failed to unmarshal query response: %w", err)
 		}
 		return &resp, nil
 	})

@@ -6,6 +6,7 @@ import (
 
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
@@ -26,14 +27,14 @@ func (s Store) describeTable(ctx context.Context, tableID sql.TableIdentifier) (
 
 	var cols []columns.Column
 	for _, row := range response.Rows {
-		columnName, ok := row["column_name"].(string)
-		if !ok {
-			return nil, fmt.Errorf("column_name is not a string: %v", row["column_name"])
+		columnName, err := typing.AssertType[string](row["column_name"])
+		if err != nil {
+			return nil, fmt.Errorf("column_name is not a string: %w", err)
 		}
 
-		dataType, ok := row["data_type"].(string)
-		if !ok {
-			return nil, fmt.Errorf("data_type is not a string: %v", row["data_type"])
+		dataType, err := typing.AssertType[string](row["data_type"])
+		if err != nil {
+			return nil, fmt.Errorf("data_type is not a string: %w", err)
 		}
 
 		kind, err := s.Dialect().KindForDataType(dataType)
