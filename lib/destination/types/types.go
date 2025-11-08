@@ -16,6 +16,10 @@ func (d *DestinationTableConfigMap) GetTableConfig(tableID sql.TableIdentifier) 
 	d.RLock()
 	defer d.RUnlock()
 
+	if d.fqNameToConfigMap == nil {
+		return nil
+	}
+
 	tableConfig, ok := d.fqNameToConfigMap[tableID.FullyQualifiedName()]
 	if !ok {
 		return nil
@@ -28,7 +32,9 @@ func (d *DestinationTableConfigMap) RemoveTable(tableID sql.TableIdentifier) {
 	d.Lock()
 	defer d.Unlock()
 
-	delete(d.fqNameToConfigMap, tableID.FullyQualifiedName())
+	if d.fqNameToConfigMap != nil {
+		delete(d.fqNameToConfigMap, tableID.FullyQualifiedName())
+	}
 }
 
 func (d *DestinationTableConfigMap) AddTable(tableID sql.TableIdentifier, config *DestinationTableConfig) {
