@@ -53,10 +53,6 @@ func (id IcebergDialect) BuildIsNotToastValueExpression(tableAlias constants.Tab
 	return fmt.Sprintf(`CAST(%s AS STRING) NOT LIKE '%s'`, colName, "%"+constants.ToastUnavailableValuePlaceholder+"%")
 }
 
-func (IcebergDialect) BuildDedupeTableQuery(tableID sql.TableIdentifier, primaryKeys []string) string {
-	panic("not implemented")
-}
-
 func (id IcebergDialect) BuildDedupeQueries(
 	tableID,
 	stagingTableID sql.TableIdentifier,
