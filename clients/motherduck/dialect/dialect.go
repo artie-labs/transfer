@@ -150,10 +150,6 @@ func (DuckDBDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentif
 	panic("not implemented")
 }
 
-func (DuckDBDialect) BuildDedupeTableQuery(tableID sql.TableIdentifier, primaryKeys []string) string {
-	panic("not implemented")
-}
-
 func (DuckDBDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (string, []any, error) {
 	castedTableID, err := typing.AssertType[TableIdentifier](tableID)
 	if err != nil {

@@ -52,7 +52,6 @@ type MergeOpts struct {
 	AdditionalEqualityStrings []string
 	ColumnSettings            config.SharedDestinationColumnSettings
 	RetryColBackfill          bool
-	SubQueryDedupe            bool
 
 	// Multi-step merge settings
 	PrepareTemporaryTable              bool

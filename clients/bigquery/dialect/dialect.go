@@ -54,18 +54,6 @@ func (bd BigQueryDialect) BuildIsNotToastValueExpression(tableAlias constants.Ta
 	return fmt.Sprintf(`TO_JSON_STRING(%s) NOT LIKE '%s'`, colName, "%"+constants.ToastUnavailableValuePlaceholder+"%")
 }
 
-func (bd BigQueryDialect) BuildDedupeTableQuery(tableID sql.TableIdentifier, primaryKeys []string) string {
-	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, bd)
-
-	// BigQuery does not like DISTINCT for JSON columns, so we wrote this instead.
-	// Error: Column foo of type JSON cannot be used in SELECT DISTINCT
-	return fmt.Sprintf(`(SELECT * FROM %s QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 1)`,
-		tableID.FullyQualifiedName(),
-		strings.Join(primaryKeysEscaped, ", "),
-		strings.Join(primaryKeysEscaped, ", "),
-	)
-}
-
 func (bd BigQueryDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string {
 	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, bd)
 

@@ -141,14 +141,6 @@ func merge(ctx context.Context, dwh destination.Destination, tableData *optimiza
 
 	// TODO: Support column backfill
 	subQuery := temporaryTableID.FullyQualifiedName()
-	if opts.SubQueryDedupe {
-		subQuery = dwh.Dialect().BuildDedupeTableQuery(temporaryTableID, tableData.PrimaryKeys())
-	}
-
-	if subQuery == "" {
-		return fmt.Errorf("subQuery cannot be empty")
-	}
-
 	cols := tableData.ReadOnlyInMemoryCols()
 
 	var primaryKeys []columns.Column
