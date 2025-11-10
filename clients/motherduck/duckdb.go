@@ -20,6 +20,10 @@ import (
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
+func BuildDSN(token string) string {
+	return fmt.Sprintf("md:?motherduck_token=%s", token)
+}
+
 type Store struct {
 	dsn       string
 	client    *ducktape.Client
@@ -29,7 +33,7 @@ type Store struct {
 
 func LoadStore(cfg config.Config) (*Store, error) {
 	return &Store{
-		dsn:       fmt.Sprintf("md:?motherduck_token=%s", cfg.MotherDuck.Token),
+		dsn:       BuildDSN(cfg.MotherDuck.Token),
 		client:    ducktape.NewClient(cfg.MotherDuck.DucktapeURL),
 		configMap: &types.DestinationTableConfigMap{},
 		config:    cfg,
