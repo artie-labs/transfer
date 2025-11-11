@@ -12,13 +12,11 @@ import (
 )
 
 type EventPayload struct {
-	Event      string         `json:"event"`
-	Properties map[string]any `json:"properties"`
-	Timestamp  string         `json:"timestamp"`
-	MessageID  string         `json:"messageID"`
-
-	// Additional top-level fields are stored here
-	additionalFields map[string]any
+	Event       string         `json:"event"`
+	Timestamp   string         `json:"timestamp"`
+	MessageID   string         `json:"messageID"`
+	Properties  map[string]any `json:"properties"`
+	ExtraFields map[string]any `json:"extraFields"`
 }
 
 // EventTrackingEvent implements the [cdc.Event] interface
@@ -62,19 +60,14 @@ func (e *EventTrackingEvent) GetSourceMetadata() (string, error) {
 }
 
 func (e *EventTrackingEvent) GetData(tc kafkalib.TopicConfig) (map[string]any, error) {
+	// The table data consists of the properties, additional top-level fields, and the ID & timestamp.
 	retMap := make(map[string]any)
-
-	// Add all properties
 	maps.Copy(retMap, e.payload.Properties)
-
-	// Add all additional top-level fields (excluding event, properties, timestamp, messageID)
-	if e.payload.additionalFields != nil {
-		maps.Copy(retMap, e.payload.additionalFields)
-	}
-
+	maps.Copy(retMap, e.payload.ExtraFields)
 	retMap["id"] = e.payload.MessageID
 	retMap["timestamp"] = e.payload.Timestamp
 
+	// Add Artie-specific metadata columns
 	retMap[constants.DeleteColumnMarker] = false
 	retMap[constants.OnlySetDeleteColumnMarker] = false
 	if tc.IncludeArtieUpdatedAt {
@@ -94,15 +87,11 @@ func (e *EventTrackingEvent) GetOptionalSchema() (map[string]typing.KindDetails,
 
 func (e *EventTrackingEvent) GetColumns(reservedColumns map[string]bool) (*columns.Columns, error) {
 	var cols columns.Columns
-
 	for k := range e.payload.Properties {
 		cols.AddColumn(columns.NewColumn(columns.EscapeName(k, reservedColumns), typing.Invalid))
 	}
-
-	if e.payload.additionalFields != nil {
-		for k := range e.payload.additionalFields {
-			cols.AddColumn(columns.NewColumn(columns.EscapeName(k, reservedColumns), typing.Invalid))
-		}
+	for k := range e.payload.ExtraFields {
+		cols.AddColumn(columns.NewColumn(columns.EscapeName(k, reservedColumns), typing.Invalid))
 	}
 
 	cols.AddColumn(columns.NewColumn(columns.EscapeName("id", reservedColumns), typing.Invalid))

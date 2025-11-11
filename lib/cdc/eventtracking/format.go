@@ -36,26 +36,6 @@ func (Format) GetEventFromBytes(bytes []byte) (cdc.Event, error) {
 		return nil, fmt.Errorf("missing required field: messageID")
 	}
 
-	// Parse the JSON again, this time as a map to capture additional top-level fields
-	var rawPayload map[string]any
-	if err := json.Unmarshal(bytes, &rawPayload); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal raw json: %w", err)
-	}
-
-	// Extract additional fields (excluding known fields)
-	knownFields := map[string]bool{
-		"event":      true,
-		"properties": true,
-		"timestamp":  true,
-		"messageID":  true,
-	}
-	payload.additionalFields = make(map[string]any)
-	for k, v := range rawPayload {
-		if !knownFields[k] {
-			payload.additionalFields[k] = v
-		}
-	}
-
 	return &EventTrackingEvent{payload: payload}, nil
 }
 
