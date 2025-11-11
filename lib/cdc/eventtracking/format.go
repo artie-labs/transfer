@@ -36,16 +36,22 @@ func (Format) GetEventFromBytes(bytes []byte) (cdc.Event, error) {
 		return nil, fmt.Errorf("missing required field: messageID")
 	}
 
-	// Parse the JSON again to capture additional top-level fields
+	// Parse the JSON again, this time as a map to capture additional top-level fields
 	var rawPayload map[string]any
 	if err := json.Unmarshal(bytes, &rawPayload); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal raw json: %w", err)
 	}
 
 	// Extract additional fields (excluding known fields)
+	knownFields := map[string]bool{
+		"event":      true,
+		"properties": true,
+		"timestamp":  true,
+		"messageID":  true,
+	}
 	payload.additionalFields = make(map[string]any)
 	for k, v := range rawPayload {
-		if k != "event" && k != "properties" && k != "timestamp" && k != "messageID" {
+		if !knownFields[k] {
 			payload.additionalFields[k] = v
 		}
 	}
@@ -58,9 +64,7 @@ func (Format) Labels() []string {
 }
 
 func (Format) GetPrimaryKey(key []byte, tc kafkalib.TopicConfig, reservedColumns map[string]bool) (map[string]any, error) {
-	// For event tracking format, the key is the messageID as a string
-	escapedID := columns.EscapeName("id", reservedColumns)
 	return map[string]any{
-		escapedID: string(key),
+		columns.EscapeName("id", reservedColumns): string(key),
 	}, nil
 }

@@ -11,13 +11,13 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-// EventPayload represents the structure of the event tracking payload
 type EventPayload struct {
 	Event      string         `json:"event"`
 	Properties map[string]any `json:"properties"`
 	Timestamp  string         `json:"timestamp"`
 	MessageID  string         `json:"messageID"`
-	// Additional top-level fields will be stored here
+
+	// Additional top-level fields are stored here
 	additionalFields map[string]any
 }
 
@@ -32,8 +32,8 @@ func (e *EventTrackingEvent) GetExecutionTime() time.Time {
 		// If parsing fails, try RFC3339Nano
 		t, err = time.Parse(time.RFC3339Nano, e.payload.Timestamp)
 		if err != nil {
-			// Timestamp is required, but if parsing fails, return current time as fallback
 			slog.Error("failed to parse timestamp", slog.String("timestamp", e.payload.Timestamp), slog.Any("error", err))
+			// Timestamp is required, but if parsing fails, return current time as fallback
 			return time.Now().UTC()
 		}
 	}
@@ -42,7 +42,6 @@ func (e *EventTrackingEvent) GetExecutionTime() time.Time {
 }
 
 func (e *EventTrackingEvent) Operation() constants.Operation {
-	// Event tracking format always creates/updates records
 	return constants.Create
 }
 
@@ -55,12 +54,10 @@ func (e *EventTrackingEvent) GetTableName() string {
 }
 
 func (e *EventTrackingEvent) GetFullTableName() string {
-	// Event tracking format doesn't have schemas
 	return e.GetTableName()
 }
 
 func (e *EventTrackingEvent) GetSourceMetadata() (string, error) {
-	// Return empty metadata for event tracking format
 	return "{}", nil
 }
 
@@ -91,7 +88,7 @@ func (e *EventTrackingEvent) GetData(tc kafkalib.TopicConfig) (map[string]any, e
 }
 
 func (e *EventTrackingEvent) GetOptionalSchema() (map[string]typing.KindDetails, error) {
-	// Event tracking format doesn't have schemas
+	// Event tracking format doesn't have a schema
 	return nil, nil
 }
 
