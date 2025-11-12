@@ -85,8 +85,7 @@ func (s Store) QueryContext(ctx context.Context, query string, args ...any) (*go
 
 func (s Store) ExecContext(ctx context.Context, query string, args ...any) (goSql.Result, error) {
 	request := ducktape.ExecuteRequest{
-		Query: query,
-		Args:  args,
+		Statements: []ducktape.ExecuteStatement{{Query: query, Args: args}},
 	}
 	response, err := s.client.Execute(ctx, request, s.dsn, func(r ducktape.ExecuteRequest) ([]byte, error) {
 		return json.Marshal(r)
@@ -113,7 +112,32 @@ func (s Store) IsRetryableError(err error) bool {
 }
 
 func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
-	return fmt.Errorf("dedupe not implemented for duckdb")
+	stagingTableID := shared.TempTableID(tableID)
+	dedupeQueries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt)
+
+	var request ducktape.ExecuteRequest
+	for _, query := range dedupeQueries {
+		request.Statements = append(request.Statements, ducktape.ExecuteStatement{Query: query})
+	}
+
+	response, err := s.client.Execute(ctx, request, s.dsn, func(r ducktape.ExecuteRequest) ([]byte, error) {
+		return json.Marshal(r)
+	}, func(r []byte) (*ducktape.ExecuteResponse, error) {
+		var response ducktape.ExecuteResponse
+		if err := json.Unmarshal(r, &response); err != nil {
+			return nil, fmt.Errorf("failed to unmarshall execute response: %w", err)
+		}
+		return &response, nil
+	})
+	if err != nil {
+		return fmt.Errorf("failure on client side to execute query: %w", err)
+	}
+
+	if response.Error != nil {
+		return fmt.Errorf("execution failed for duckdb: %s", *response.Error)
+	}
+
+	return nil
 }
 
 func (s Store) SweepTemporaryTables(ctx context.Context) error {

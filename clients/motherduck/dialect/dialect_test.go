@@ -368,3 +368,71 @@ func TestRoundTripConversion(t *testing.T) {
 		assert.Equal(t, typing.Boolean, resultKind, "Round trip conversion failed for boolean")
 	}
 }
+
+func TestBuildDedupeQueries(t *testing.T) {
+	dd := DuckDBDialect{}
+
+	// Test with single primary key, no artie updated at
+	{
+		tableID := NewTableIdentifier("test_db", "public", "users")
+		stagingTableID := NewTableIdentifier("test_db", "public", "users_staging")
+		primaryKeys := []string{"id"}
+
+		queries := dd.BuildDedupeQueries(tableID, stagingTableID, primaryKeys, false)
+
+		assert.Len(t, queries, 4, "Should return 4 queries")
+
+		assert.Equal(t, `CREATE TABLE "test_db"."public"."users_staging" AS (SELECT * FROM "test_db"."public"."users" QUALIFY ROW_NUMBER() OVER (PARTITION BY "id" ORDER BY "id" DESC) = 1)`, queries[0])
+		assert.Equal(t, `DELETE FROM "test_db"."public"."users" t1 WHERE EXISTS (SELECT 1 FROM "test_db"."public"."users_staging" t2 WHERE t1."id" = t2."id")`, queries[1])
+		assert.Equal(t, `INSERT INTO "test_db"."public"."users" SELECT * FROM "test_db"."public"."users_staging"`, queries[2])
+		assert.Equal(t, `DROP TABLE IF EXISTS "test_db"."public"."users_staging"`, queries[3])
+	}
+
+	// Test with multiple primary keys, no artie updated at
+	{
+		tableID := NewTableIdentifier("test_db", "public", "orders")
+		stagingTableID := NewTableIdentifier("test_db", "public", "orders_staging")
+		primaryKeys := []string{"order_id", "line_item_id"}
+
+		queries := dd.BuildDedupeQueries(tableID, stagingTableID, primaryKeys, false)
+
+		assert.Len(t, queries, 4, "Should return 4 queries")
+
+		assert.Equal(t, `CREATE TABLE "test_db"."public"."orders_staging" AS (SELECT * FROM "test_db"."public"."orders" QUALIFY ROW_NUMBER() OVER (PARTITION BY "order_id", "line_item_id" ORDER BY "order_id" DESC, "line_item_id" DESC) = 1)`, queries[0])
+		assert.Equal(t, `DELETE FROM "test_db"."public"."orders" t1 WHERE EXISTS (SELECT 1 FROM "test_db"."public"."orders_staging" t2 WHERE t1."order_id" = t2."order_id" AND t1."line_item_id" = t2."line_item_id")`, queries[1])
+		assert.Equal(t, `INSERT INTO "test_db"."public"."orders" SELECT * FROM "test_db"."public"."orders_staging"`, queries[2])
+		assert.Equal(t, `DROP TABLE IF EXISTS "test_db"."public"."orders_staging"`, queries[3])
+	}
+
+	// Test with single primary key and includeArtieUpdatedAt = true
+	{
+		tableID := NewTableIdentifier("test_db", "public", "users")
+		stagingTableID := NewTableIdentifier("test_db", "public", "users_staging")
+		primaryKeys := []string{"id"}
+
+		queries := dd.BuildDedupeQueries(tableID, stagingTableID, primaryKeys, true)
+
+		assert.Len(t, queries, 4, "Should return 4 queries")
+
+		assert.Equal(t, `CREATE TABLE "test_db"."public"."users_staging" AS (SELECT * FROM "test_db"."public"."users" QUALIFY ROW_NUMBER() OVER (PARTITION BY "id" ORDER BY "id" DESC, "__artie_updated_at" DESC) = 1)`, queries[0])
+		assert.Equal(t, `DELETE FROM "test_db"."public"."users" t1 WHERE EXISTS (SELECT 1 FROM "test_db"."public"."users_staging" t2 WHERE t1."id" = t2."id")`, queries[1])
+		assert.Equal(t, `INSERT INTO "test_db"."public"."users" SELECT * FROM "test_db"."public"."users_staging"`, queries[2])
+		assert.Equal(t, `DROP TABLE IF EXISTS "test_db"."public"."users_staging"`, queries[3])
+	}
+
+	// Test with multiple primary keys and includeArtieUpdatedAt = true
+	{
+		tableID := NewTableIdentifier("test_db", "public", "orders")
+		stagingTableID := NewTableIdentifier("test_db", "public", "orders_staging")
+		primaryKeys := []string{"order_id", "line_item_id"}
+
+		queries := dd.BuildDedupeQueries(tableID, stagingTableID, primaryKeys, true)
+
+		assert.Len(t, queries, 4, "Should return 4 queries")
+
+		assert.Equal(t, `CREATE TABLE "test_db"."public"."orders_staging" AS (SELECT * FROM "test_db"."public"."orders" QUALIFY ROW_NUMBER() OVER (PARTITION BY "order_id", "line_item_id" ORDER BY "order_id" DESC, "line_item_id" DESC, "__artie_updated_at" DESC) = 1)`, queries[0])
+		assert.Equal(t, `DELETE FROM "test_db"."public"."orders" t1 WHERE EXISTS (SELECT 1 FROM "test_db"."public"."orders_staging" t2 WHERE t1."order_id" = t2."order_id" AND t1."line_item_id" = t2."line_item_id")`, queries[1])
+		assert.Equal(t, `INSERT INTO "test_db"."public"."orders" SELECT * FROM "test_db"."public"."orders_staging"`, queries[2])
+		assert.Equal(t, `DROP TABLE IF EXISTS "test_db"."public"."orders_staging"`, queries[3])
+	}
+}

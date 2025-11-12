@@ -139,15 +139,65 @@ func (DuckDBDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, temporar
 }
 
 func (DuckDBDialect) BuildDropTableQuery(tableID sql.TableIdentifier) string {
-	return fmt.Sprintf("DROP TABLE IF EXISTS %s;", tableID.FullyQualifiedName())
+	return fmt.Sprintf("DROP TABLE IF EXISTS %s", tableID.FullyQualifiedName())
 }
 
 func (DuckDBDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) string {
 	return fmt.Sprintf("TRUNCATE TABLE %s;", tableID.FullyQualifiedName())
 }
 
-func (DuckDBDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string {
-	panic("not implemented")
+func (d DuckDBDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string {
+	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, d)
+
+	orderColsToIterate := primaryKeysEscaped
+	if includeArtieUpdatedAt {
+		orderColsToIterate = append(orderColsToIterate, d.QuoteIdentifier(constants.UpdateColumnMarker))
+	}
+
+	var orderByCols []string
+	for _, orderByCol := range orderColsToIterate {
+		orderByCols = append(orderByCols, fmt.Sprintf("%s DESC", orderByCol))
+	}
+
+	// Create staging table with rows to keep (ROW_NUMBER() = 1 with DESC ordering = last/most recent row per partition)
+	var parts []string
+	parts = append(parts,
+		fmt.Sprintf("CREATE TABLE %s AS (SELECT * FROM %s QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 1)",
+			stagingTableID.FullyQualifiedName(),
+			tableID.FullyQualifiedName(),
+			strings.Join(primaryKeysEscaped, ", "),
+			strings.Join(orderByCols, ", "),
+		),
+	)
+
+	// Build WHERE clause to identify rows that have duplicates
+	var whereClauses []string
+	for _, primaryKeyEscaped := range primaryKeysEscaped {
+		whereClauses = append(whereClauses, fmt.Sprintf("t1.%s = t2.%s", primaryKeyEscaped, primaryKeyEscaped))
+	}
+
+	// Delete all rows from the main table that have the same primary keys as rows in staging
+	// (This deletes all occurrences of duplicated rows, whether there are 2, 3, or more)
+	parts = append(parts,
+		fmt.Sprintf("DELETE FROM %s t1 WHERE EXISTS (SELECT 1 FROM %s t2 WHERE %s)",
+			tableID.FullyQualifiedName(),
+			stagingTableID.FullyQualifiedName(),
+			strings.Join(whereClauses, " AND "),
+		),
+	)
+
+	// Insert back the deduplicated rows (one row per primary key combination)
+	parts = append(parts,
+		fmt.Sprintf("INSERT INTO %s SELECT * FROM %s",
+			tableID.FullyQualifiedName(),
+			stagingTableID.FullyQualifiedName(),
+		),
+	)
+
+	// Drop the staging table now that we're done with it
+	parts = append(parts, d.BuildDropTableQuery(stagingTableID))
+
+	return parts
 }
 
 func (DuckDBDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (string, []any, error) {
