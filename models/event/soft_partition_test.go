@@ -19,7 +19,7 @@ func (e *EventsTestSuite) TestBuildSoftPartitionSuffix() {
 	assert.NoError(e.T(), err)
 	executionTime := baseTime.Add(1 * time.Hour) // 1 hour later
 
-	e.T().Run("Soft partitioning disabled", func(t *testing.T) {
+	{
 		// Soft partition disabled
 		tc := kafkalib.TopicConfig{
 			Database:         "customer",
@@ -31,7 +31,7 @@ func (e *EventsTestSuite) TestBuildSoftPartitionSuffix() {
 		suffix, err := BuildSoftPartitionSuffix(ctx, tc, baseTime, executionTime, "users", e.fakeBaseline)
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), "", suffix)
-	})
+	}
 
 	e.T().Run("Soft partitioning enabled without MaxPartitions", func(t *testing.T) {
 		partitionFrequencies := []kafkalib.PartitionFrequency{
