@@ -24,6 +24,10 @@ type EventTrackingEvent struct {
 	payload EventPayload
 }
 
+func NewEventTrackingEvent(payload EventPayload) *EventTrackingEvent {
+	return &EventTrackingEvent{payload: payload}
+}
+
 func (e *EventTrackingEvent) GetExecutionTime() time.Time {
 	t, err := time.Parse(time.RFC3339, e.payload.Timestamp)
 	if err != nil {
