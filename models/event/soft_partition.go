@@ -10,7 +10,7 @@ import (
 )
 
 // [BuildSoftPartitionSuffix] - This will check what the right suffix we should add to the soft-partitioned table should be.
-func BuildSoftPartitionSuffix(ctx context.Context, tc kafkalib.TopicConfig, columnValue time.Time, executionTime time.Time, tblName string, dest destination.Baseline) (string, error) {
+func BuildSoftPartitionSuffix(ctx context.Context, tc kafkalib.TopicConfig, columnValue, executionTime time.Time, tblName string, dest destination.Baseline) (string, error) {
 	if !tc.SoftPartitioning.Enabled {
 		return "", nil
 	}
