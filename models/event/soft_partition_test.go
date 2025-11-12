@@ -5,11 +5,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/lib/typing/columns"
-	"github.com/stretchr/testify/assert"
 )
 
 func (e *EventsTestSuite) TestBuildSoftPartitionSuffix() {
@@ -19,6 +20,7 @@ func (e *EventsTestSuite) TestBuildSoftPartitionSuffix() {
 	executionTime := baseTime.Add(1 * time.Hour) // 1 hour later
 
 	e.T().Run("Soft partitioning disabled", func(t *testing.T) {
+		// Soft partition disabled
 		tc := kafkalib.TopicConfig{
 			Database:         "customer",
 			TableName:        "users",
