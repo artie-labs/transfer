@@ -29,15 +29,11 @@ func NewEventTrackingEvent(payload EventPayload) *EventTrackingEvent {
 }
 
 func (e *EventTrackingEvent) GetExecutionTime() time.Time {
-	t, err := time.Parse(time.RFC3339, e.Payload.Timestamp)
+	t, err := time.Parse(time.RFC3339Nano, e.Payload.Timestamp)
 	if err != nil {
-		// If parsing fails, try RFC3339Nano
-		t, err = time.Parse(time.RFC3339Nano, e.Payload.Timestamp)
-		if err != nil {
-			slog.Error("failed to parse timestamp", slog.String("timestamp", e.Payload.Timestamp), slog.Any("error", err))
-			// Timestamp is required, but if parsing fails, return current time as fallback
-			return time.Now().UTC()
-		}
+		slog.Error("failed to parse timestamp", slog.String("timestamp", e.Payload.Timestamp), slog.Any("error", err))
+		// Timestamp is required, but if parsing fails, return current time as fallback
+		return time.Now().UTC()
 	}
 
 	return t.UTC()
