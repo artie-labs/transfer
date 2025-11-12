@@ -29,7 +29,7 @@ func (Format) GetEventFromBytes(bytes []byte) (cdc.Event, error) {
 	if payload.Properties == nil {
 		return nil, fmt.Errorf("missing required field: properties")
 	}
-	if payload.Timestamp == "" {
+	if payload.Timestamp.IsZero() {
 		return nil, fmt.Errorf("missing required field: timestamp")
 	}
 	if payload.MessageID == "" {

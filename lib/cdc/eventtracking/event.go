@@ -1,7 +1,6 @@
 package eventtracking
 
 import (
-	"log/slog"
 	"maps"
 	"time"
 
@@ -14,21 +13,14 @@ import (
 // EventPayload implements the [cdc.Event] interface
 type EventPayload struct {
 	Event       string         `json:"event"`
-	Timestamp   string         `json:"timestamp"`
+	Timestamp   time.Time      `json:"timestamp"`
 	MessageID   string         `json:"messageID"`
 	Properties  map[string]any `json:"properties"`
 	ExtraFields map[string]any `json:"extraFields"`
 }
 
 func (e *EventPayload) GetExecutionTime() time.Time {
-	t, err := time.Parse(time.RFC3339Nano, e.Timestamp)
-	if err != nil {
-		slog.Error("failed to parse timestamp", slog.String("timestamp", e.Timestamp), slog.Any("error", err))
-		// Timestamp is required, but if parsing fails, return current time as fallback
-		return time.Now().UTC()
-	}
-
-	return t.UTC()
+	return e.Timestamp.UTC()
 }
 
 func (e *EventPayload) Operation() constants.Operation {
