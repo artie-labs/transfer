@@ -2,7 +2,6 @@ package event
 
 import (
 	"fmt"
-	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
@@ -135,8 +134,8 @@ func (e *EventsTestSuite) TestBuildSoftPartitionSuffix() {
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), kafkalib.CompactedTableSuffix, suffix, "Should return compacted suffix when table should be created")
 	}
-
-	e.T().Run("Soft partitioning with MaxPartitions but distance = 0", func(t *testing.T) {
+	{
+		// Soft partitioning with MaxPartitions but distance = 0
 		tc := kafkalib.TopicConfig{
 			Database:  "customer",
 			TableName: "users",
@@ -163,10 +162,11 @@ func (e *EventsTestSuite) TestBuildSoftPartitionSuffix() {
 		expectedSuffix, err := kafkalib.Daily.Suffix(sameTime)
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), expectedSuffix, suffix, "Should return base suffix when distance = 0")
-	})
-
-	e.T().Run("Error cases", func(t *testing.T) {
-		t.Run("Invalid partition frequency", func(t *testing.T) {
+	}
+	{
+		// Error cases
+		{
+			// Invalid partition frequency
 			tc := kafkalib.TopicConfig{
 				Database:  "customer",
 				TableName: "users",
@@ -182,9 +182,9 @@ func (e *EventsTestSuite) TestBuildSoftPartitionSuffix() {
 			assert.Error(e.T(), err)
 			assert.Equal(e.T(), "", suffix)
 			assert.Contains(e.T(), err.Error(), "failed to get partition frequency suffix")
-		})
-
-		t.Run("Destination GetTableConfig error", func(t *testing.T) {
+		}
+		{
+			// Destination GetTableConfig error
 			tc := kafkalib.TopicConfig{
 				Database:  "customer",
 				TableName: "users",
@@ -208,6 +208,6 @@ func (e *EventsTestSuite) TestBuildSoftPartitionSuffix() {
 			assert.Error(e.T(), err)
 			assert.Equal(e.T(), "", suffix)
 			assert.Contains(e.T(), err.Error(), "failed to get table config")
-		})
-	})
+		}
+	}
 }
