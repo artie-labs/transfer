@@ -32,8 +32,8 @@ func (e *EventsTestSuite) TestBuildSoftPartitionSuffix() {
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), "", suffix)
 	}
-
-	e.T().Run("Soft partitioning enabled without MaxPartitions", func(t *testing.T) {
+	{
+		// Soft partitioning enabled without MaxPartitions
 		partitionFrequencies := []kafkalib.PartitionFrequency{
 			kafkalib.Monthly,
 			kafkalib.Daily,
@@ -60,9 +60,9 @@ func (e *EventsTestSuite) TestBuildSoftPartitionSuffix() {
 			assert.NoError(e.T(), err)
 			assert.Equal(e.T(), expectedSuffix, suffix, "Should return base suffix for frequency %s", freq)
 		}
-	})
-
-	e.T().Run("Soft partitioning with MaxPartitions and baseline destination", func(t *testing.T) {
+	}
+	{
+		// Soft partitioning with MaxPartitions and baseline destination
 		tc := kafkalib.TopicConfig{
 			Database:  "customer",
 			TableName: "users",
@@ -81,7 +81,7 @@ func (e *EventsTestSuite) TestBuildSoftPartitionSuffix() {
 		expectedSuffix, err := kafkalib.Daily.Suffix(baseTime)
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), expectedSuffix, suffix, "Should return base suffix when dest is baseline")
-	})
+	}
 
 	e.T().Run("Soft partitioning with MaxPartitions and full destination - existing table", func(t *testing.T) {
 		tc := kafkalib.TopicConfig{
