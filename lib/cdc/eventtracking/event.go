@@ -11,6 +11,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
+// EventPayload implements the [cdc.Event] interface
 type EventPayload struct {
 	Event       string         `json:"event"`
 	Timestamp   string         `json:"timestamp"`
@@ -19,19 +20,10 @@ type EventPayload struct {
 	ExtraFields map[string]any `json:"extraFields"`
 }
 
-// EventTrackingEvent implements the [cdc.Event] interface
-type EventTrackingEvent struct {
-	Payload EventPayload
-}
-
-func NewEventTrackingEvent(payload EventPayload) *EventTrackingEvent {
-	return &EventTrackingEvent{Payload: payload}
-}
-
-func (e *EventTrackingEvent) GetExecutionTime() time.Time {
-	t, err := time.Parse(time.RFC3339Nano, e.Payload.Timestamp)
+func (e *EventPayload) GetExecutionTime() time.Time {
+	t, err := time.Parse(time.RFC3339Nano, e.Timestamp)
 	if err != nil {
-		slog.Error("failed to parse timestamp", slog.String("timestamp", e.Payload.Timestamp), slog.Any("error", err))
+		slog.Error("failed to parse timestamp", slog.String("timestamp", e.Timestamp), slog.Any("error", err))
 		// Timestamp is required, but if parsing fails, return current time as fallback
 		return time.Now().UTC()
 	}
@@ -39,33 +31,33 @@ func (e *EventTrackingEvent) GetExecutionTime() time.Time {
 	return t.UTC()
 }
 
-func (e *EventTrackingEvent) Operation() constants.Operation {
+func (e *EventPayload) Operation() constants.Operation {
 	return constants.Create
 }
 
-func (e *EventTrackingEvent) DeletePayload() bool {
+func (e *EventPayload) DeletePayload() bool {
 	return false
 }
 
-func (e *EventTrackingEvent) GetTableName() string {
-	return e.Payload.Event
+func (e *EventPayload) GetTableName() string {
+	return e.Event
 }
 
-func (e *EventTrackingEvent) GetFullTableName() string {
+func (e *EventPayload) GetFullTableName() string {
 	return e.GetTableName()
 }
 
-func (e *EventTrackingEvent) GetSourceMetadata() (string, error) {
+func (e *EventPayload) GetSourceMetadata() (string, error) {
 	return "{}", nil
 }
 
-func (e *EventTrackingEvent) GetData(tc kafkalib.TopicConfig) (map[string]any, error) {
+func (e *EventPayload) GetData(tc kafkalib.TopicConfig) (map[string]any, error) {
 	// The table data consists of the properties, additional top-level fields, and the ID & timestamp.
 	retMap := make(map[string]any)
-	maps.Copy(retMap, e.Payload.Properties)
-	maps.Copy(retMap, e.Payload.ExtraFields)
-	retMap["id"] = e.Payload.MessageID
-	retMap["timestamp"] = e.Payload.Timestamp
+	maps.Copy(retMap, e.Properties)
+	maps.Copy(retMap, e.ExtraFields)
+	retMap["id"] = e.MessageID
+	retMap["timestamp"] = e.Timestamp
 
 	// Add Artie-specific metadata columns
 	retMap[constants.DeleteColumnMarker] = false
@@ -80,17 +72,17 @@ func (e *EventTrackingEvent) GetData(tc kafkalib.TopicConfig) (map[string]any, e
 	return retMap, nil
 }
 
-func (e *EventTrackingEvent) GetOptionalSchema() (map[string]typing.KindDetails, error) {
+func (e *EventPayload) GetOptionalSchema() (map[string]typing.KindDetails, error) {
 	// Event tracking format doesn't have a schema
 	return nil, nil
 }
 
-func (e *EventTrackingEvent) GetColumns(reservedColumns map[string]bool) (*columns.Columns, error) {
+func (e *EventPayload) GetColumns(reservedColumns map[string]bool) (*columns.Columns, error) {
 	var cols columns.Columns
-	for k := range e.Payload.Properties {
+	for k := range e.Properties {
 		cols.AddColumn(columns.NewColumn(columns.EscapeName(k, reservedColumns), typing.Invalid))
 	}
-	for k := range e.Payload.ExtraFields {
+	for k := range e.ExtraFields {
 		cols.AddColumn(columns.NewColumn(columns.EscapeName(k, reservedColumns), typing.Invalid))
 	}
 

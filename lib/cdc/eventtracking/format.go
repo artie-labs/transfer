@@ -36,7 +36,7 @@ func (Format) GetEventFromBytes(bytes []byte) (cdc.Event, error) {
 		return nil, fmt.Errorf("missing required field: messageID")
 	}
 
-	return &EventTrackingEvent{Payload: payload}, nil
+	return &payload, nil
 }
 
 func (Format) Labels() []string {
