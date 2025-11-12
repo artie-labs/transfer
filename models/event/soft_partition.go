@@ -9,45 +9,40 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 )
 
-func BuildSoftPartitionSuffix(
-	ctx context.Context,
-	tc kafkalib.TopicConfig,
-	partitionColumnValue time.Time,
-	executionTime time.Time,
-	tblName string,
-	dest destination.Baseline,
-) (string, error) {
+// [BuildSoftPartitionSuffix] - This will check what the right suffix we should add to the soft-partitioned table should be.
+func BuildSoftPartitionSuffix(ctx context.Context, tc kafkalib.TopicConfig, columnValue time.Time, executionTime time.Time, tblName string, dest destination.Baseline) (string, error) {
 	if !tc.SoftPartitioning.Enabled {
 		return "", nil
 	}
-	suffix, err := tc.SoftPartitioning.PartitionFrequency.Suffix(partitionColumnValue)
+
+	suffix, err := tc.SoftPartitioning.PartitionFrequency.Suffix(columnValue)
 	if err != nil {
 		return "", fmt.Errorf("failed to get partition frequency suffix: %w for table %q schema %q", err, tc.TableName, tc.Schema)
 	}
-	// only works for full destinations, not just Baseline
-	if destWithTableConfig, ok := dest.(destination.Destination); ok {
-		// Check if we should write to compacted table
-		sp := tc.SoftPartitioning
-		if sp.PartitionFrequency == "" {
-			return "", fmt.Errorf("partition frequency is required")
+
+	destination, ok := dest.(destination.Destination)
+	if !ok {
+		// Soft partitioning is only supported for [destination.Destination]
+		return suffix, nil
+	}
+
+	distance := tc.SoftPartitioning.PartitionFrequency.PartitionDistance(columnValue, executionTime)
+	fmt.Println("distance", distance, "table name", tblName, "suffix", suffix)
+	if distance < 0 {
+		return "", fmt.Errorf("partition time %v for column %q is in the future of execution time %v", columnValue, tc.SoftPartitioning.PartitionColumn, executionTime)
+	} else if distance > 0 {
+		partitionedTableName := tblName + suffix
+		tableID := dest.IdentifierFor(kafkalib.DatabaseAndSchemaPair{Database: tc.Database, Schema: tc.Schema}, partitionedTableName)
+		tableConfig, err := destination.GetTableConfig(ctx, tableID, false)
+		if err != nil {
+			return "", fmt.Errorf("failed to get table config: %w", err)
 		}
-		distance := sp.PartitionFrequency.PartitionDistance(partitionColumnValue, executionTime)
-		if distance == 0 {
-			// Same partition, use base suffix
-		} else if distance < 0 {
-			return "", fmt.Errorf("partition time %v for column %q is in the future of execution time %v", partitionColumnValue, sp.PartitionColumn, executionTime)
-		} else {
-			partitionedTableName := tblName + suffix
-			tableID := dest.IdentifierFor(kafkalib.DatabaseAndSchemaPair{Database: tc.Database, Schema: tc.Schema}, partitionedTableName)
-			tableConfig, err := destWithTableConfig.GetTableConfig(ctx, tableID, false)
-			if err != nil {
-				return "", fmt.Errorf("failed to get table config: %w", err)
-			}
-			// tableConfig.CreateTable() will return true if the table doesn't exist.
-			if tableConfig.CreateTable() {
-				suffix = kafkalib.CompactedTableSuffix
-			}
+
+		if tableConfig.CreateTable() {
+			// If the table doesn't exist, then we should write to the compacted partition.
+			return kafkalib.CompactedTableSuffix, nil
 		}
 	}
+
 	return suffix, nil
 }
