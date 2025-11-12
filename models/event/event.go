@@ -193,7 +193,9 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 		}
 
 		evtData[constants.SourceMetadataColumnMarker] = metadata
-		cols.AddColumn(columns.NewColumn(constants.SourceMetadataColumnMarker, typing.Struct))
+		if cols != nil {
+			cols.AddColumn(columns.NewColumn(constants.SourceMetadataColumnMarker, typing.Struct))
+		}
 	}
 
 	if tc.IncludeFullSourceTableName {
