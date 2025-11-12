@@ -139,7 +139,7 @@ func (DuckDBDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, temporar
 }
 
 func (DuckDBDialect) BuildDropTableQuery(tableID sql.TableIdentifier) string {
-	return fmt.Sprintf("DROP TABLE IF EXISTS %s;", tableID.FullyQualifiedName())
+	return fmt.Sprintf("DROP TABLE IF EXISTS %s", tableID.FullyQualifiedName())
 }
 
 func (DuckDBDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) string {
@@ -193,6 +193,9 @@ func (d DuckDBDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdent
 			stagingTableID.FullyQualifiedName(),
 		),
 	)
+
+	// Drop the staging table now that we're done with it
+	parts = append(parts, d.BuildDropTableQuery(stagingTableID))
 
 	return parts
 }
