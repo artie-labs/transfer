@@ -27,7 +27,6 @@ func BuildSoftPartitionSuffix(ctx context.Context, tc kafkalib.TopicConfig, colu
 	}
 
 	distance := tc.SoftPartitioning.PartitionFrequency.PartitionDistance(columnValue, executionTime)
-	fmt.Println("distance", distance, "table name", tblName, "suffix", suffix)
 	if distance < 0 {
 		return "", fmt.Errorf("partition time %v for column %q is in the future of execution time %v", columnValue, tc.SoftPartitioning.PartitionColumn, executionTime)
 	} else if distance > 0 {
