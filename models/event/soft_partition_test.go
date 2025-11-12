@@ -82,8 +82,8 @@ func (e *EventsTestSuite) TestBuildSoftPartitionSuffix() {
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), expectedSuffix, suffix, "Should return base suffix when dest is baseline")
 	}
-
-	e.T().Run("Soft partitioning with MaxPartitions and full destination - existing table", func(t *testing.T) {
+	{
+		// Soft partitioning with MaxPartitions and full destination - existing table
 		tc := kafkalib.TopicConfig{
 			Database:  "customer",
 			TableName: "users",
@@ -107,9 +107,9 @@ func (e *EventsTestSuite) TestBuildSoftPartitionSuffix() {
 		expectedSuffix, err := kafkalib.Daily.Suffix(baseTime)
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), expectedSuffix, suffix, "Should return base suffix when table exists")
-	})
-
-	e.T().Run("Soft partitioning with MaxPartitions and full destination - new table (should compact)", func(t *testing.T) {
+	}
+	{
+		// Soft partitioning with MaxPartitions and full destination - new table (should compact)
 		tc := kafkalib.TopicConfig{
 			Database:  "customer",
 			TableName: "users",
@@ -133,9 +133,8 @@ func (e *EventsTestSuite) TestBuildSoftPartitionSuffix() {
 
 		suffix, err := BuildSoftPartitionSuffix(ctx, tc, pastTime, executionTime, "users", mockDest)
 		assert.NoError(e.T(), err)
-
 		assert.Equal(e.T(), kafkalib.CompactedTableSuffix, suffix, "Should return compacted suffix when table should be created")
-	})
+	}
 
 	e.T().Run("Soft partitioning with MaxPartitions but distance = 0", func(t *testing.T) {
 		tc := kafkalib.TopicConfig{
