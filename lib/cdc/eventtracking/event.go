@@ -21,20 +21,20 @@ type EventPayload struct {
 
 // EventTrackingEvent implements the [cdc.Event] interface
 type EventTrackingEvent struct {
-	payload EventPayload
+	Payload EventPayload
 }
 
 func NewEventTrackingEvent(payload EventPayload) *EventTrackingEvent {
-	return &EventTrackingEvent{payload: payload}
+	return &EventTrackingEvent{Payload: payload}
 }
 
 func (e *EventTrackingEvent) GetExecutionTime() time.Time {
-	t, err := time.Parse(time.RFC3339, e.payload.Timestamp)
+	t, err := time.Parse(time.RFC3339, e.Payload.Timestamp)
 	if err != nil {
 		// If parsing fails, try RFC3339Nano
-		t, err = time.Parse(time.RFC3339Nano, e.payload.Timestamp)
+		t, err = time.Parse(time.RFC3339Nano, e.Payload.Timestamp)
 		if err != nil {
-			slog.Error("failed to parse timestamp", slog.String("timestamp", e.payload.Timestamp), slog.Any("error", err))
+			slog.Error("failed to parse timestamp", slog.String("timestamp", e.Payload.Timestamp), slog.Any("error", err))
 			// Timestamp is required, but if parsing fails, return current time as fallback
 			return time.Now().UTC()
 		}
@@ -52,7 +52,7 @@ func (e *EventTrackingEvent) DeletePayload() bool {
 }
 
 func (e *EventTrackingEvent) GetTableName() string {
-	return e.payload.Event
+	return e.Payload.Event
 }
 
 func (e *EventTrackingEvent) GetFullTableName() string {
@@ -66,10 +66,10 @@ func (e *EventTrackingEvent) GetSourceMetadata() (string, error) {
 func (e *EventTrackingEvent) GetData(tc kafkalib.TopicConfig) (map[string]any, error) {
 	// The table data consists of the properties, additional top-level fields, and the ID & timestamp.
 	retMap := make(map[string]any)
-	maps.Copy(retMap, e.payload.Properties)
-	maps.Copy(retMap, e.payload.ExtraFields)
-	retMap["id"] = e.payload.MessageID
-	retMap["timestamp"] = e.payload.Timestamp
+	maps.Copy(retMap, e.Payload.Properties)
+	maps.Copy(retMap, e.Payload.ExtraFields)
+	retMap["id"] = e.Payload.MessageID
+	retMap["timestamp"] = e.Payload.Timestamp
 
 	// Add Artie-specific metadata columns
 	retMap[constants.DeleteColumnMarker] = false
@@ -91,10 +91,10 @@ func (e *EventTrackingEvent) GetOptionalSchema() (map[string]typing.KindDetails,
 
 func (e *EventTrackingEvent) GetColumns(reservedColumns map[string]bool) (*columns.Columns, error) {
 	var cols columns.Columns
-	for k := range e.payload.Properties {
+	for k := range e.Payload.Properties {
 		cols.AddColumn(columns.NewColumn(columns.EscapeName(k, reservedColumns), typing.Invalid))
 	}
-	for k := range e.payload.ExtraFields {
+	for k := range e.Payload.ExtraFields {
 		cols.AddColumn(columns.NewColumn(columns.EscapeName(k, reservedColumns), typing.Invalid))
 	}
 
