@@ -17,7 +17,6 @@ func (e *EventsTestSuite) TestBuildSoftPartitionSuffix() {
 	baseTime, err := time.Parse("2006-01-02T15:04:05Z", "2024-06-01T12:34:56Z")
 	assert.NoError(e.T(), err)
 	executionTime := baseTime.Add(1 * time.Hour) // 1 hour later
-
 	{
 		// Soft partition disabled
 		tc := kafkalib.TopicConfig{
