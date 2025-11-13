@@ -268,8 +268,13 @@ func encodeStructToJSONString(value any) (string, error) {
 		}
 
 		// If the value is invalid JSON, then let's wrap it in quotes, so it doesn't get misinterpreted as a JSON string by BigQuery.
+		// Use json.Marshal to properly escape the string for JSON format (not Go's %q format).
 		if !json.Valid([]byte(stringValue)) {
-			return fmt.Sprintf("%q", stringValue), nil
+			bytes, err := json.Marshal(stringValue)
+			if err != nil {
+				return "", fmt.Errorf("failed to marshal string value: %w", err)
+			}
+			return string(bytes), nil
 		}
 
 		return stringValue, nil
