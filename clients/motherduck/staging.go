@@ -24,15 +24,17 @@ func (s Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.Ta
 		}
 	}
 
-	return appendRows(ctx, s, tableData, tableID)
+	return appendRows(ctx, s, tableData, dwh, tableID)
 }
 
-func appendRows(ctx context.Context, store Store, tableData *optimization.TableData, tableID sql.TableIdentifier) error {
+func appendRows(ctx context.Context, store Store, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tableID sql.TableIdentifier) error {
 	if len(tableData.Rows()) == 0 {
 		return nil
 	}
 
-	cols := tableData.ReadOnlyInMemoryCols().ValidColumns()
+	// Use the destination table's column order to ensure values are in the correct position
+	// This is critical because the DuckDB append API doesn't specify column names
+	cols := dwh.GetColumns()
 	if len(cols) == 0 {
 		return fmt.Errorf("no valid columns to insert")
 	}
@@ -46,10 +48,15 @@ func appendRows(ctx context.Context, store Store, tableData *optimization.TableD
 		for _, row := range tableData.Rows() {
 			var rowValues []any
 			for _, col := range cols {
+				// Skip columns that should not be included (e.g., invalid columns)
+				if col.ShouldSkip() {
+					continue
+				}
+
 				value, _ := row.GetValue(col.Name())
 				convertedValue, err := convertValue(value, col.KindDetails)
 				if err != nil {
-					errMsg := fmt.Sprintf("failed to convert value: %v", err)
+					errMsg := fmt.Sprintf("failed to convert value while appending: %v", err)
 					yield(ducktape.RowMessageResult{Error: &errMsg})
 					return
 				}
