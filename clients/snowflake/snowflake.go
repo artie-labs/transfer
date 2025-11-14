@@ -32,6 +32,9 @@ type Store struct {
 
 	// Only set if we're using an external stage:
 	_awsS3Client awslib.S3Client
+
+	// Only set if we're using snowpipe streaming:
+	snowpipeStreamingChannelManager *SnowpipeStreamingChannelManager
 }
 
 func (s Store) GetConfig() config.Config {
@@ -143,6 +146,10 @@ func LoadSnowflake(ctx context.Context, cfg config.Config, _store *db.Store) (*S
 		}
 
 		s._awsS3Client = awslib.NewS3Client(awsCfg)
+	}
+
+	if cfg.Snowflake.Streaming {
+		s.snowpipeStreamingChannelManager = NewSnowpipeStreamingChannelManager(snowflakeCfg)
 	}
 
 	return s, nil

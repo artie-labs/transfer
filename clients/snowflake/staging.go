@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/clients/snowflake/dialect"
@@ -68,6 +69,15 @@ func (s *Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.T
 		if err := shared.CreateTempTable(ctx, s, tableData, dwh, additionalSettings.ColumnSettings, tempTableID); err != nil {
 			return err
 		}
+	}
+
+	if s.config.Snowflake.Streaming && s.snowpipeStreamingChannelManager != nil {
+		castedTempTableID, ok := tempTableID.(dialect.TableIdentifier)
+		if !ok {
+			return fmt.Errorf("failed to cast temp table ID to TableIdentifier")
+		}
+		// pipe name is the same as the table name
+		return s.snowpipeStreamingChannelManager.LoadData(ctx, castedTempTableID.Database(), castedTempTableID.Schema(), castedTempTableID.Table(), time.Now(), *tableData)
 	}
 
 	// Write data into CSV
