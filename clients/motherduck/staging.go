@@ -14,6 +14,7 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/values"
 )
 
@@ -24,15 +25,26 @@ func (s Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.Ta
 		}
 	}
 
-	return appendRows(ctx, s, tableData, tableID)
+	return appendRows(ctx, s, tableData, dwh, tableID)
 }
 
-func appendRows(ctx context.Context, store Store, tableData *optimization.TableData, tableID sql.TableIdentifier) error {
+func appendRows(ctx context.Context, store Store, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tableID sql.TableIdentifier) error {
 	if len(tableData.Rows()) == 0 {
 		return nil
 	}
 
-	cols := tableData.ReadOnlyInMemoryCols().ValidColumns()
+	// For temporary tables, we need to use the in-memory column order because that's how they were created.
+	// For permanent tables, dwh already contains columns in the destination table's order from GetTableConfig.
+	var cols []columns.Column
+	if tableID.TemporaryTable() {
+		// Temporary tables are created using tableData columns, so use that order
+		cols = tableData.ReadOnlyInMemoryCols().ValidColumns()
+	} else {
+		// For permanent tables, dwh already contains columns in destination table order.
+		// This is populated by GetTableConfig which calls describeTable to get the actual column order.
+		cols = dwh.GetColumns()
+	}
+
 	if len(cols) == 0 {
 		return fmt.Errorf("no valid columns to insert")
 	}
@@ -46,10 +58,15 @@ func appendRows(ctx context.Context, store Store, tableData *optimization.TableD
 		for _, row := range tableData.Rows() {
 			var rowValues []any
 			for _, col := range cols {
+				// Skip columns that should not be included (e.g., invalid columns)
+				if col.ShouldSkip() {
+					continue
+				}
+
 				value, _ := row.GetValue(col.Name())
 				convertedValue, err := convertValue(value, col.KindDetails)
 				if err != nil {
-					errMsg := fmt.Sprintf("failed to convert value: %v", err)
+					errMsg := fmt.Sprintf("failed to convert value while appending: %v", err)
 					yield(ducktape.RowMessageResult{Error: &errMsg})
 					return
 				}
