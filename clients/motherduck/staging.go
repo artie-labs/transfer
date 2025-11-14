@@ -14,6 +14,7 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/values"
 )
 
@@ -32,9 +33,18 @@ func appendRows(ctx context.Context, store Store, tableData *optimization.TableD
 		return nil
 	}
 
-	// Use the destination table's column order to ensure values are in the correct position
-	// This is critical because the DuckDB append API doesn't specify column names
-	cols := dwh.GetColumns()
+	// For temporary tables, we need to use the in-memory column order because that's how they were created.
+	// For permanent tables, dwh already contains columns in the destination table's order from GetTableConfig.
+	var cols []columns.Column
+	if tableID.TemporaryTable() {
+		// Temporary tables are created using tableData columns, so use that order
+		cols = tableData.ReadOnlyInMemoryCols().ValidColumns()
+	} else {
+		// For permanent tables, dwh already contains columns in destination table order.
+		// This is populated by GetTableConfig which calls describeTable to get the actual column order.
+		cols = dwh.GetColumns()
+	}
+
 	if len(cols) == 0 {
 		return fmt.Errorf("no valid columns to insert")
 	}
