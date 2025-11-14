@@ -90,6 +90,17 @@ func buildFilteredColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColu
 		return nil, err
 	}
 
+	if cols == nil {
+		sourceMetadata, _ := event.GetSourceMetadata()
+		slog.Warn("GetColumns returned nil - possible schema issue",
+			slog.String("topic", tc.Topic),
+			slog.String("table", event.GetTableName()),
+			slog.String("operation", string(event.Operation())),
+			slog.String("source_metadata", sourceMetadata),
+		)
+		return nil, nil
+	}
+
 	for _, col := range tc.ColumnsToExclude {
 		cols.DeleteColumn(col)
 	}
@@ -194,7 +205,7 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 
 		evtData[constants.SourceMetadataColumnMarker] = metadata
 		if cols == nil {
-			slog.Warn("cols is nil, kafka topic: %q", slog.String("topic", tc.Topic), slog.String("schema", tc.Schema), slog.String("table", tc.TableName))
+			slog.Warn("cols is nil", slog.String("topic", tc.Topic), slog.String("schema", tc.Schema), slog.String("table", tc.TableName), slog.Any("event_data", evtData))
 		}
 		if cols != nil {
 			cols.AddColumn(columns.NewColumn(constants.SourceMetadataColumnMarker, typing.Struct))
