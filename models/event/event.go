@@ -15,7 +15,6 @@ import (
 	"github.com/artie-labs/transfer/lib/cryptography"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/artie-labs/transfer/lib/maputil"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
@@ -216,17 +215,19 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 		delete(evtData, constants.DeleteColumnMarker)
 		delete(evtData, constants.OnlySetDeleteColumnMarker)
 	} else if tc.SoftPartitioning.Enabled {
-		// TODO: cache exact match or fix upstream to pass the column name from source table
-		maybeDatetime, ok := maputil.GetCaseInsensitiveValue(evtData, tc.SoftPartitioning.PartitionColumn)
+		escapedColumn := columns.EscapeName(tc.SoftPartitioning.PartitionColumn, reservedColumns)
+		maybeTimestamp, ok := evtData[escapedColumn]
 		if !ok {
 			return Event{}, fmt.Errorf("partition column %q not found in data", tc.SoftPartitioning.PartitionColumn)
 		}
-		actuallyDateTime, err := typing.ParseTimestampTZFromAny(maybeDatetime)
+
+		timetampValue, err := typing.ParseTimestampTZFromAny(maybeTimestamp)
 		if err != nil {
-			return Event{}, fmt.Errorf("failed to assert datetime: %w for table %q schema %q", err, tc.TableName, tc.Schema)
+			return Event{}, fmt.Errorf("failed to assert timestamp: %w for table %q schema %q", err, tc.TableName, tc.Schema)
 		}
+
 		// TODO: clean up parameters, i.e. ctx, dest, etc
-		suffix, err := BuildSoftPartitionSuffix(ctx, tc, actuallyDateTime, event.GetExecutionTime(), tblName, dest)
+		suffix, err := BuildSoftPartitionSuffix(ctx, tc, timetampValue, event.GetExecutionTime(), tblName, dest)
 		if err != nil {
 			return Event{}, fmt.Errorf("failed to calculate soft partition suffix: %w", err)
 		}
