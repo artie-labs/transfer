@@ -54,7 +54,7 @@ func shouldParseValue(value any) bool {
 
 func (s *SchemaEventPayload) GetColumns(reservedColumns map[string]bool) (*columns.Columns, error) {
 	fieldsObject := s.Schema.GetSchemaFromLabel(debezium.After)
-	if fieldsObject == nil {
+	if fieldsObject == nil { // @ani - check why this is possible.
 		// AFTER schema does not exist.
 		return nil, nil
 	}

@@ -193,6 +193,9 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 		}
 
 		evtData[constants.SourceMetadataColumnMarker] = metadata
+		if cols == nil {
+			slog.Warn("cols is nil, kafka topic: %q", slog.String("topic", tc.Topic), slog.String("schema", tc.Schema), slog.String("table", tc.TableName))
+		}
 		if cols != nil {
 			cols.AddColumn(columns.NewColumn(constants.SourceMetadataColumnMarker, typing.Struct))
 		}
