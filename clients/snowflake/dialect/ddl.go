@@ -61,3 +61,21 @@ func (SnowflakeDialect) BuildCreateStageQuery(dbName, schemaName, stageName, buc
 func (SnowflakeDialect) BuildDescribeStageQuery(dbName, schemaName, stageName string) string {
 	return fmt.Sprintf(`DESCRIBE STAGE %s.%s.%s`, dbName, schemaName, stageName)
 }
+
+func (sd SnowflakeDialect) BuildCreatePipeQuery(pipe, tableID TableIdentifier, columns []string) string {
+	// Build the SELECT clause with column mappings from streaming JSON
+	// For Snowpipe Streaming, data comes as JSON in $1, so we extract fields
+	var selectParts []string
+	for _, col := range columns {
+		// Quote the column name and extract from $1:<column_name>
+		quotedCol := sd.QuoteIdentifier(col)
+		selectParts = append(selectParts, fmt.Sprintf("$1:%s", quotedCol))
+	}
+
+	selectClause := strings.Join(selectParts, ", ")
+
+	return fmt.Sprintf(
+		`CREATE OR REPLACE PIPE %s AS COPY INTO %s FROM (SELECT %s FROM TABLE(DATA_SOURCE(TYPE => 'STREAMING')))`,
+		pipe.FullyQualifiedName(), tableID.FullyQualifiedName(), selectClause,
+	)
+}

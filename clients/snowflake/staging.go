@@ -17,6 +17,7 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/values"
 )
 
@@ -76,6 +77,21 @@ func (s *Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.T
 		if !ok {
 			return fmt.Errorf("failed to cast temp table ID to TableIdentifier")
 		}
+
+		// Create the pipe if it doesn't exist
+		pipe := dialect.NewTableIdentifier(castedTempTableID.Database(), castedTempTableID.Schema(), castedTempTableID.Table()+"_PIPE")
+		columnNames := columns.ColumnNames(tableData.ReadOnlyInMemoryCols().ValidColumns())
+
+		createPipeQuery := s.dialect().BuildCreatePipeQuery(
+			pipe,
+			castedTempTableID,
+			columnNames,
+		)
+
+		if _, err := s.ExecContext(ctx, createPipeQuery); err != nil {
+			return fmt.Errorf("failed to create pipe for streaming: %w", err)
+		}
+
 		// pipe name is the same as the table name
 		return s.snowpipeStreamingChannelManager.LoadData(ctx, castedTempTableID.Database(), castedTempTableID.Schema(), castedTempTableID.Table(), time.Now(), *tableData)
 	}
