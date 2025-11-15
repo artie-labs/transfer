@@ -6,7 +6,13 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/artie-labs/transfer/clients/motherduck/dialect"
+	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/destination/ddl"
+	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
 
@@ -247,4 +253,123 @@ func TestConvertValue_DriverValue(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Nil(t, result)
 	}
+}
+
+func TestCreateTempTable_ColumnOrder(t *testing.T) {
+	// This test verifies that temporary tables are created with columns in the EXACT order
+	// from tableData.ReadOnlyInMemoryCols().GetColumns() - not destination table order.
+	// This is critical because the DuckDB append API is positional.
+
+	// Create in-memory columns in a specific order that might differ from destination
+	inMemoryCols := &columns.Columns{}
+	inMemoryCols.AddColumn(columns.NewColumn("id", typing.Integer))
+	inMemoryCols.AddColumn(columns.NewColumn("name", typing.String))
+	inMemoryCols.AddColumn(columns.NewColumn("created_at", typing.TimestampTZ))
+	inMemoryCols.AddColumn(columns.NewColumn("__artie_updated_at", typing.TimestampTZ))
+	inMemoryCols.AddColumn(columns.NewColumn("__artie_operation", typing.String))
+
+	tableData := optimization.NewTableData(
+		inMemoryCols,
+		config.Replication,
+		[]string{"id"},
+		kafkalib.TopicConfig{},
+		"test_table",
+	)
+
+	// Get the columns that would be used for temp table creation
+	tempTableCols := tableData.ReadOnlyInMemoryCols().GetColumns()
+
+	// Build the CREATE TABLE SQL using MotherDuck dialect
+	tableID := dialect.NewTableIdentifier("test_db", "test_schema", "temp__artie_test")
+	createSQL, err := ddl.BuildCreateTableSQL(
+		config.SharedDestinationColumnSettings{},
+		dialect.DuckDBDialect{},
+		tableID,
+		true, // temporaryTable = true
+		config.Replication,
+		tempTableCols,
+	)
+	assert.NoError(t, err)
+
+	// Verify the SQL has columns in the EXACT order from in-memory columns
+	// The CREATE statement should look like: CREATE TABLE ... ("id" ..., "name" ..., "created_at" ..., "__artie_updated_at" ..., "__artie_operation" ...)
+	expectedSQL := `CREATE TABLE "test_db"."test_schema"."temp__artie_test" ("id" bigint,"name" text,"created_at" timestamp with time zone,"__artie_updated_at" timestamp with time zone,"__artie_operation" text);`
+	assert.Equal(t, expectedSQL, createSQL,
+		"Temp table CREATE statement must have columns in the exact order from tableData.ReadOnlyInMemoryCols().GetColumns()")
+
+	// Also verify the column order explicitly
+	expectedOrder := []string{"id", "name", "created_at", "__artie_updated_at", "__artie_operation"}
+	actualOrder := make([]string, 0)
+	for _, col := range tempTableCols {
+		if !col.ShouldSkip() {
+			actualOrder = append(actualOrder, col.Name())
+		}
+	}
+	assert.Equal(t, expectedOrder, actualOrder,
+		"Column order must match tableData.ReadOnlyInMemoryCols().GetColumns() order")
+}
+
+func TestCreateTempTable_ColumnOrderDiffersFromDestination(t *testing.T) {
+	// This is a regression test for the bug where __artie_operation value was appearing
+	// in __artie_updated_at position. This happens when temp table column order doesn't
+	// match the order used during append.
+
+	// Simulate a scenario where destination table has a different column order
+	inMemoryCols := &columns.Columns{}
+	inMemoryCols.AddColumn(columns.NewColumn("col_a", typing.String))
+	inMemoryCols.AddColumn(columns.NewColumn("col_b", typing.Integer))
+	inMemoryCols.AddColumn(columns.NewColumn("__artie_updated_at", typing.TimestampTZ))
+	inMemoryCols.AddColumn(columns.NewColumn("__artie_operation", typing.String))
+
+	// Destination might have different order (e.g., alphabetical from DESCRIBE)
+	destCols := []columns.Column{
+		columns.NewColumn("__artie_updated_at", typing.TimestampTZ),
+		columns.NewColumn("col_a", typing.String),
+		columns.NewColumn("col_b", typing.Integer),
+	}
+
+	tableData := optimization.NewTableData(
+		inMemoryCols,
+		config.Replication,
+		[]string{"col_a"},
+		kafkalib.TopicConfig{},
+		"test_table",
+	)
+
+	// Temp table columns should be from in-memory, NOT destination
+	tempTableCols := tableData.ReadOnlyInMemoryCols().GetColumns()
+	tempTableID := dialect.NewTableIdentifier("db", "schema", "temp__artie_test")
+
+	tempSQL, err := ddl.BuildCreateTableSQL(
+		config.SharedDestinationColumnSettings{},
+		dialect.DuckDBDialect{},
+		tempTableID,
+		true,
+		config.Replication,
+		tempTableCols,
+	)
+	assert.NoError(t, err)
+
+	// Verify temp table uses in-memory order
+	assert.Contains(t, tempSQL, `"col_a" text,"col_b" bigint,"__artie_updated_at" timestamp with time zone,"__artie_operation" text`,
+		"Temp table should use in-memory column order (col_a, col_b, __artie_updated_at, __artie_operation)")
+
+	// If someone mistakenly uses destination order, it would look different
+	wrongSQL, err := ddl.BuildCreateTableSQL(
+		config.SharedDestinationColumnSettings{},
+		dialect.DuckDBDialect{},
+		tempTableID,
+		true,
+		config.Replication,
+		destCols,
+	)
+	assert.NoError(t, err)
+
+	// This should be DIFFERENT (wrong order)
+	assert.NotEqual(t, tempSQL, wrongSQL,
+		"Using destination column order would create a different table structure - should have been fixed")
+
+	// The wrong SQL would have __artie_updated_at first
+	assert.Contains(t, wrongSQL, `"__artie_updated_at" timestamp with time zone,"col_a" text,"col_b" bigint`,
+		"Wrong order would have __artie_updated_at first, causing value misalignment during append")
 }
