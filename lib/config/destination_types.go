@@ -76,6 +76,7 @@ type Snowflake struct {
 	Region           string `yaml:"region"`
 	Host             string `yaml:"host"`
 	Application      string `yaml:"application"`
+	Streaming        bool   `yaml:"streaming"`
 
 	// ExternalStage configuration
 	ExternalStage *ExternalStage `yaml:"externalStage,omitempty"`
