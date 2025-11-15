@@ -25,17 +25,17 @@ func TestBuildCreateStageQuery(t *testing.T) {
 func TestBuildCreatePipeQuery(t *testing.T) {
 	{
 		// Single column
-		query := SnowflakeDialect{}.BuildCreatePipeQuery("db", "schema", "my_pipe", "my_table", []string{"id"})
+		query := SnowflakeDialect{}.BuildCreatePipeQuery(NewTableIdentifier("db", "schema", "my_pipe"), NewTableIdentifier("db", "schema", "my_table"), []string{"id"})
 		assert.Equal(t, `CREATE OR REPLACE PIPE db.schema.my_pipe AS COPY INTO db.schema.my_table FROM (SELECT $1:"ID" FROM TABLE(DATA_SOURCE(TYPE => 'STREAMING')))`, query)
 	}
 	{
 		// Multiple columns
-		query := SnowflakeDialect{}.BuildCreatePipeQuery("db", "schema", "my_pipe", "my_table", []string{"id", "name", "timestamp"})
+		query := SnowflakeDialect{}.BuildCreatePipeQuery(NewTableIdentifier("db", "schema", "my_pipe"), NewTableIdentifier("db", "schema", "my_table"), []string{"id", "name", "timestamp"})
 		assert.Equal(t, `CREATE OR REPLACE PIPE db.schema.my_pipe AS COPY INTO db.schema.my_table FROM (SELECT $1:"ID", $1:"NAME", $1:"TIMESTAMP" FROM TABLE(DATA_SOURCE(TYPE => 'STREAMING')))`, query)
 	}
 	{
 		// Column with special characters (should be quoted)
-		query := SnowflakeDialect{}.BuildCreatePipeQuery("db", "schema", "my_pipe", "my_table", []string{"user_id", "created_at"})
+		query := SnowflakeDialect{}.BuildCreatePipeQuery(NewTableIdentifier("db", "schema", "my_pipe"), NewTableIdentifier("db", "schema", "my_table"), []string{"user_id", "created_at"})
 		assert.Equal(t, `CREATE OR REPLACE PIPE db.schema.my_pipe AS COPY INTO db.schema.my_table FROM (SELECT $1:"USER_ID", $1:"CREATED_AT" FROM TABLE(DATA_SOURCE(TYPE => 'STREAMING')))`, query)
 	}
 }
