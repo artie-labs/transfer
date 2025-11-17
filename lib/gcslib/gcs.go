@@ -37,10 +37,7 @@ func (g GCSClient) UploadLocalFileToGCS(ctx context.Context, bucket, prefix, fil
 		objectKey = fmt.Sprintf("%s/%s", prefix, objectKey)
 	}
 
-	bkt := g.client.Bucket(bucket)
-	obj := bkt.Object(objectKey)
-	writer := obj.NewWriter(ctx)
-
+	writer := g.client.Bucket(bucket).Object(objectKey).NewWriter(ctx)
 	if _, err := io.Copy(writer, file); err != nil {
 		writer.Close()
 		return "", fmt.Errorf("failed to write file to GCS: %w", err)
@@ -56,9 +53,7 @@ func (g GCSClient) UploadLocalFileToGCS(ctx context.Context, bucket, prefix, fil
 // DeleteFolder - Folders in GCS are virtual, so we need to list all the objects in the folder and then delete them
 func (g GCSClient) DeleteFolder(ctx context.Context, bucket, folder string) error {
 	bkt := g.client.Bucket(bucket)
-	query := &storage.Query{Prefix: folder}
-
-	it := bkt.Objects(ctx, query)
+	it := bkt.Objects(ctx, &storage.Query{Prefix: folder})
 	for {
 		attrs, err := it.Next()
 		if err == iterator.Done {
@@ -75,4 +70,3 @@ func (g GCSClient) DeleteFolder(ctx context.Context, bucket, folder string) erro
 
 	return nil
 }
-
