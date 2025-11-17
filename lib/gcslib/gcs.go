@@ -39,7 +39,7 @@ func (g GCSClient) UploadLocalFileToGCS(ctx context.Context, bucket, prefix, fil
 
 	writer := g.client.Bucket(bucket).Object(objectKey).NewWriter(ctx)
 	if _, err := io.Copy(writer, file); err != nil {
-		writer.Close()
+		_ = writer.Close()
 		return "", fmt.Errorf("failed to write file to GCS: %w", err)
 	}
 

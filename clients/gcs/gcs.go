@@ -145,4 +145,3 @@ func LoadStore(ctx context.Context, cfg config.Config) (*Store, error) {
 
 	return &store, nil
 }
-

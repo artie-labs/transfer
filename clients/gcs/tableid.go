@@ -52,4 +52,3 @@ func (ti TableIdentifier) WithTemporaryTable(temp bool) sql.TableIdentifier {
 func (ti TableIdentifier) TemporaryTable() bool {
 	return ti.temporaryTable
 }
-
