@@ -77,6 +77,58 @@ func TestS3Settings_Validate(t *testing.T) {
 	}
 }
 
+func TestGCSSettings_Validate(t *testing.T) {
+	testCases := []struct {
+		name        string
+		gcs         *GCSSettings
+		expectedErr string
+	}{
+		{
+			name:        "nil",
+			expectedErr: "gcs settings are nil",
+		},
+		{
+			name:        "empty",
+			gcs:         &GCSSettings{},
+			expectedErr: "gcs bucket is empty",
+		},
+		{
+			name: "missing output format",
+			gcs: &GCSSettings{
+				Bucket:    "bucket",
+				ProjectID: "project",
+			},
+			expectedErr: `invalid gcs output format ""`,
+		},
+		{
+			name: "valid",
+			gcs: &GCSSettings{
+				Bucket:       "bucket",
+				ProjectID:    "project",
+				OutputFormat: constants.ParquetFormat,
+			},
+		},
+		{
+			name: "valid with credentials",
+			gcs: &GCSSettings{
+				Bucket:            "bucket",
+				ProjectID:         "project",
+				PathToCredentials: "/path/to/creds.json",
+				OutputFormat:      constants.ParquetFormat,
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		err := testCase.gcs.Validate()
+		if testCase.expectedErr != "" {
+			assert.ErrorContains(t, err, testCase.expectedErr, testCase.name)
+		} else {
+			assert.NoError(t, err, testCase.name)
+		}
+	}
+}
+
 func TestCfg_ValidateRedshift(t *testing.T) {
 	testCases := []struct {
 		name        string

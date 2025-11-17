@@ -78,15 +78,16 @@ type Config struct {
 	Kafka *kafkalib.Kafka `yaml:"kafka,omitempty"`
 
 	// Supported destinations
-	BigQuery   *BigQuery   `yaml:"bigquery,omitempty"`
-	Databricks *Databricks `yaml:"databricks,omitempty"`
-	MSSQL      *MSSQL      `yaml:"mssql,omitempty"`
-	Postgres   *Postgres   `yaml:"postgres,omitempty"`
-	Snowflake  *Snowflake  `yaml:"snowflake,omitempty"`
-	Redshift   *Redshift   `yaml:"redshift,omitempty"`
-	S3         *S3Settings `yaml:"s3,omitempty"`
-	Iceberg    *Iceberg    `yaml:"iceberg,omitempty"`
-	MotherDuck *MotherDuck `yaml:"motherduck,omitempty"`
+	BigQuery   *BigQuery    `yaml:"bigquery,omitempty"`
+	Databricks *Databricks  `yaml:"databricks,omitempty"`
+	MSSQL      *MSSQL       `yaml:"mssql,omitempty"`
+	Postgres   *Postgres    `yaml:"postgres,omitempty"`
+	Snowflake  *Snowflake   `yaml:"snowflake,omitempty"`
+	Redshift   *Redshift    `yaml:"redshift,omitempty"`
+	S3         *S3Settings  `yaml:"s3,omitempty"`
+	GCS        *GCSSettings `yaml:"gcs,omitempty"`
+	Iceberg    *Iceberg     `yaml:"iceberg,omitempty"`
+	MotherDuck *MotherDuck  `yaml:"motherduck,omitempty"`
 
 	SharedDestinationSettings SharedDestinationSettings `yaml:"sharedDestinationSettings"`
 	StagingTableReuse         *StagingTableReuseConfig  `yaml:"stagingTableReuse,omitempty"`
