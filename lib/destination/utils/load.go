@@ -6,6 +6,7 @@ import (
 
 	"github.com/artie-labs/transfer/clients/bigquery"
 	"github.com/artie-labs/transfer/clients/databricks"
+	"github.com/artie-labs/transfer/clients/gcs"
 	"github.com/artie-labs/transfer/clients/iceberg"
 	"github.com/artie-labs/transfer/clients/motherduck"
 	"github.com/artie-labs/transfer/clients/mssql"
@@ -20,7 +21,7 @@ import (
 )
 
 func IsOutputBaseline(cfg config.Config) bool {
-	return cfg.Output == constants.S3 || cfg.Output == constants.Iceberg
+	return cfg.Output == constants.S3 || cfg.Output == constants.GCS || cfg.Output == constants.Iceberg
 }
 
 func LoadBaseline(ctx context.Context, cfg config.Config) (destination.Baseline, error) {
@@ -29,6 +30,13 @@ func LoadBaseline(ctx context.Context, cfg config.Config) (destination.Baseline,
 		store, err := s3.LoadStore(ctx, cfg)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load S3: %w", err)
+		}
+
+		return store, nil
+	case constants.GCS:
+		store, err := gcs.LoadStore(ctx, cfg)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load GCS: %w", err)
 		}
 
 		return store, nil
