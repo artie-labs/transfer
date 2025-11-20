@@ -48,6 +48,10 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
+// Pin golang.org/x/tools to v0.27.0 to fix counterfeiter compatibility issue
+// https://github.com/maxbrunsfeld/counterfeiter/issues/344
+replace golang.org/x/tools => golang.org/x/tools v0.37.0
+
 require (
 	cel.dev/expr v0.24.0 // indirect
 	cloud.google.com/go v0.121.6 // indirect
