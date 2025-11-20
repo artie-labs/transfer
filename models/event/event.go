@@ -211,7 +211,7 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 		table:          tblName,
 		tableID:        cdc.NewTableID(tc.Schema, tblName),
 		optionalSchema: optionalSchema,
-		columns:        &cols,
+		columns:        cols,
 		data:           transformData(evtData, tc),
 		deleted:        event.DeletePayload(),
 	}, nil
