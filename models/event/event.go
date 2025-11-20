@@ -117,17 +117,18 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 	}
 
 	pks := buildPrimaryKeys(tc, pkMap, reservedColumns)
-
-	// All keys in pks are already escaped, so don't escape again
-	for _, pk := range pks {
-		err = cols.UpsertColumn(
-			pk,
-			columns.UpsertColumnArg{
-				PrimaryKey: typing.ToPtr(true),
-			},
-		)
-		if err != nil {
-			return Event{}, fmt.Errorf("failed to upsert column: %w", err)
+	if cols != nil {
+		// All keys in pks are already escaped, so don't escape again
+		for _, pk := range pks {
+			err = cols.UpsertColumn(
+				pk,
+				columns.UpsertColumnArg{
+					PrimaryKey: typing.ToPtr(true),
+				},
+			)
+			if err != nil {
+				return Event{}, fmt.Errorf("failed to upsert column: %w", err)
+			}
 		}
 	}
 
