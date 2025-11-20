@@ -150,11 +150,7 @@ func buildPrimaryKeys(tc kafkalib.TopicConfig, pkMap map[string]any, reservedCol
 }
 
 func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfig, cfgMode config.Mode) (Event, error) {
-	var reservedColumns map[string]bool
-	if _dest, ok := dest.(destination.Destination); ok {
-		reservedColumns = _dest.Dialect().ReservedColumnNames()
-	}
-
+	reservedColumns := destination.BuildReservedColumnNames(dest)
 	cols, err := buildFilteredColumns(event, tc, reservedColumns)
 	if err != nil {
 		return Event{}, fmt.Errorf("failed to build filtered columns: %w", err)
