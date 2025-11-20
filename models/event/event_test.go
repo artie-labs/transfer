@@ -130,7 +130,7 @@ func (e *EventsTestSuite) TestTransformData() {
 func testBuildFilteredColumns(t *testing.T, fakeEvent *mocks.FakeEvent, topicConfig kafkalib.TopicConfig, fakeColumns []columns.Column, expectedCols *columns.Columns) {
 	fakeEvent.GetColumnsReturns(columns.NewColumns(fakeColumns), nil)
 
-	cols, err := buildFilteredColumns(fakeEvent, topicConfig, nil)
+	cols, err := buildColumns(fakeEvent, topicConfig, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedCols.GetColumns(), cols.GetColumns())
 }

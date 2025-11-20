@@ -25,11 +25,7 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 		return cdc.TableID{}, fmt.Errorf("failed to process, topicConfig is nil")
 	}
 
-	var reservedColumns map[string]bool
-	if _dest, ok := dest.(destination.Destination); ok {
-		reservedColumns = _dest.Dialect().ReservedColumnNames()
-	}
-
+	reservedColumns := destination.BuildReservedColumnNames(dest)
 	tags := map[string]string{
 		"mode":    cfg.Mode.String(),
 		"groupID": p.GroupID,

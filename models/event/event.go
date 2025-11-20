@@ -84,46 +84,6 @@ func transformData(data map[string]any, tc kafkalib.TopicConfig) map[string]any 
 	return data
 }
 
-func buildFilteredColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns map[string]bool) (*columns.Columns, error) {
-	cols, err := event.GetColumns(reservedColumns)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, col := range tc.ColumnsToExclude {
-		cols.DeleteColumn(col)
-	}
-
-	if len(tc.ColumnsToInclude) > 0 {
-		var filteredColumns columns.Columns
-		for _, col := range tc.ColumnsToInclude {
-			if existingColumn, ok := cols.GetColumn(col); ok {
-				filteredColumns.AddColumn(existingColumn)
-			}
-		}
-
-		for _, col := range constants.ArtieColumns {
-			if existingColumn, ok := cols.GetColumn(col); ok {
-				filteredColumns.AddColumn(existingColumn)
-			}
-		}
-
-		// If columns to include is specified, we should always include static columns.
-		for _, col := range tc.StaticColumns {
-			filteredColumns.AddColumn(columns.NewColumn(col.Name, typing.String))
-		}
-
-		return &filteredColumns, nil
-	}
-
-	// Include static columns
-	for _, col := range tc.StaticColumns {
-		cols.AddColumn(columns.NewColumn(col.Name, typing.String))
-	}
-
-	return cols, nil
-}
-
 func buildPrimaryKeys(tc kafkalib.TopicConfig, pkMap map[string]any, reservedColumns map[string]bool) []string {
 	var pks []string
 	if len(tc.PrimaryKeysOverride) > 0 {
@@ -150,18 +110,13 @@ func buildPrimaryKeys(tc kafkalib.TopicConfig, pkMap map[string]any, reservedCol
 }
 
 func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfig, cfgMode config.Mode) (Event, error) {
-	var reservedColumns map[string]bool
-	if _dest, ok := dest.(destination.Destination); ok {
-		reservedColumns = _dest.Dialect().ReservedColumnNames()
-	}
-
-	cols, err := buildFilteredColumns(event, tc, reservedColumns)
+	reservedColumns := destination.BuildReservedColumnNames(dest)
+	cols, err := buildColumns(event, tc, reservedColumns)
 	if err != nil {
 		return Event{}, fmt.Errorf("failed to build filtered columns: %w", err)
 	}
 
 	pks := buildPrimaryKeys(tc, pkMap, reservedColumns)
-
 	if cols != nil {
 		// All keys in pks are already escaped, so don't escape again
 		for _, pk := range pks {
