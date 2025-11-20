@@ -1,8 +1,6 @@
 package event
 
 import (
-	"fmt"
-
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
@@ -10,10 +8,10 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func buildColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns map[string]bool) (columns.Columns, error) {
+func buildColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns map[string]bool) (*columns.Columns, error) {
 	cols, err := event.GetColumns(reservedColumns)
 	if err != nil {
-		return columns.Columns{}, fmt.Errorf("failed to get columns: %w", err)
+		return nil, err
 	}
 
 	for _, col := range tc.ColumnsToExclude {
@@ -39,7 +37,7 @@ func buildColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns map[
 			filteredColumns.AddColumn(columns.NewColumn(col.Name, typing.String))
 		}
 
-		return filteredColumns, nil
+		return &filteredColumns, nil
 	}
 
 	// Include static columns
@@ -47,5 +45,5 @@ func buildColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns map[
 		cols.AddColumn(columns.NewColumn(col.Name, typing.String))
 	}
 
-	return *cols, nil
+	return cols, nil
 }
