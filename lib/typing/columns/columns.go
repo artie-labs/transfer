@@ -6,7 +6,6 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/stringutil"
@@ -125,7 +124,6 @@ func (c *Column) DefaultValue() any {
 
 type Columns struct {
 	columns []Column
-	sync.RWMutex
 }
 
 func NewColumns(columns []Column) *Columns {
@@ -213,16 +211,10 @@ func (c *Columns) AddColumn(col Column) {
 		return
 	}
 
-	c.Lock()
-	defer c.Unlock()
-
 	c.columns = append(c.columns, col)
 }
 
 func (c *Columns) GetColumn(name string) (Column, bool) {
-	c.RLock()
-	defer c.RUnlock()
-
 	for _, column := range c.columns {
 		if column.name == name {
 			return column, true
@@ -238,9 +230,6 @@ func (c *Columns) ValidColumns() []Column {
 	if c == nil {
 		return []Column{}
 	}
-
-	c.RLock()
-	defer c.RUnlock()
 
 	var cols []Column
 	for _, col := range c.columns {
@@ -258,9 +247,6 @@ func (c *Columns) GetColumns() []Column {
 		return []Column{}
 	}
 
-	c.RLock()
-	defer c.RUnlock()
-
 	var cols []Column
 	cols = append(cols, c.columns...)
 	return cols
@@ -268,9 +254,6 @@ func (c *Columns) GetColumns() []Column {
 
 // UpdateColumn will update the column and also preserve the `defaultValue` from the previous column if the new column does not have one.
 func (c *Columns) UpdateColumn(updateCol Column) {
-	c.Lock()
-	defer c.Unlock()
-
 	for index, col := range c.columns {
 		if col.name == updateCol.name {
 			c.columns[index] = updateCol
@@ -280,9 +263,6 @@ func (c *Columns) UpdateColumn(updateCol Column) {
 }
 
 func (c *Columns) DeleteColumn(name string) {
-	c.Lock()
-	defer c.Unlock()
-
 	for idx, column := range c.columns {
 		if column.name == name {
 			c.columns = append(c.columns[:idx], c.columns[idx+1:]...)
