@@ -47,3 +47,28 @@ func buildColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns map[
 
 	return cols, nil
 }
+
+func buildPrimaryKeys(tc kafkalib.TopicConfig, pkMap map[string]any, reservedColumns map[string]bool) []string {
+	var pks []string
+	if len(tc.PrimaryKeysOverride) > 0 {
+		for _, pk := range tc.PrimaryKeysOverride {
+			pks = append(pks, columns.EscapeName(pk, reservedColumns))
+		}
+
+		return pks
+	}
+
+	// [pkMap] is already escaped.
+	for pk := range pkMap {
+		pks = append(pks, pk)
+	}
+
+	for _, pk := range tc.IncludePrimaryKeys {
+		escapedPk := columns.EscapeName(pk, reservedColumns)
+		if _, ok := pkMap[escapedPk]; !ok {
+			pks = append(pks, escapedPk)
+		}
+	}
+
+	return pks
+}
