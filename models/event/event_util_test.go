@@ -1,8 +1,9 @@
 package event
 
 import (
-	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/artie-labs/transfer/lib/kafkalib"
 )
 
 func (e *EventsTestSuite) TestBuildPrimaryKeys() {
