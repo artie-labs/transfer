@@ -68,13 +68,13 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 		}
 	}
 
-	evtData, err := event.GetData(tc)
+	data, err := buildEventData(event, tc)
 	if err != nil {
-		return Event{}, fmt.Errorf("failed to get data: %w", err)
+		return Event{}, fmt.Errorf("failed to load artie metadata: %w", err)
 	}
 
 	if tc.IncludeArtieOperation {
-		evtData[constants.OperationColumnMarker] = string(event.Operation())
+		data[constants.OperationColumnMarker] = string(event.Operation())
 	}
 
 	if tc.IncludeSourceMetadata {
@@ -83,12 +83,12 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 			return Event{}, fmt.Errorf("failed to get source metadata: %w", err)
 		}
 
-		evtData[constants.SourceMetadataColumnMarker] = metadata
+		data[constants.SourceMetadataColumnMarker] = metadata
 		cols.AddColumn(columns.NewColumn(constants.SourceMetadataColumnMarker, typing.Struct))
 	}
 
 	if tc.IncludeFullSourceTableName {
-		evtData[constants.FullSourceTableNameColumnMarker] = event.GetFullTableName()
+		data[constants.FullSourceTableNameColumnMarker] = event.GetFullTableName()
 	}
 
 	tblName := cmp.Or(tc.TableName, event.GetTableName())
@@ -101,14 +101,14 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 		}
 
 		// If this is already set, it's a no-op.
-		evtData[constants.OperationColumnMarker] = string(event.Operation())
+		data[constants.OperationColumnMarker] = string(event.Operation())
 
 		// We don't need the deletion markers either.
-		delete(evtData, constants.DeleteColumnMarker)
-		delete(evtData, constants.OnlySetDeleteColumnMarker)
+		delete(data, constants.DeleteColumnMarker)
+		delete(data, constants.OnlySetDeleteColumnMarker)
 	} else if tc.SoftPartitioning.Enabled {
 		// TODO: cache exact match or fix upstream to pass the column name from source table
-		maybeDatetime, ok := maputil.GetCaseInsensitiveValue(evtData, tc.SoftPartitioning.PartitionColumn)
+		maybeDatetime, ok := maputil.GetCaseInsensitiveValue(data, tc.SoftPartitioning.PartitionColumn)
 		if !ok {
 			return Event{}, fmt.Errorf("partition column %q not found in data", tc.SoftPartitioning.PartitionColumn)
 		}
@@ -131,12 +131,12 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 
 	// Static columns cannot collide with the event data.
 	for _, staticColumn := range tc.StaticColumns {
-		if _, ok := evtData[staticColumn.Name]; ok {
+		if _, ok := data[staticColumn.Name]; ok {
 			return Event{}, fmt.Errorf("static column %q collides with event data", staticColumn.Name)
 		}
 
 		// Inject static columns into the event data.
-		evtData[staticColumn.Name] = staticColumn.Value
+		data[staticColumn.Name] = staticColumn.Value
 	}
 
 	sort.Strings(pks)
@@ -149,7 +149,7 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 		tableID:        cdc.NewTableID(tc.Schema, tblName),
 		optionalSchema: optionalSchema,
 		columns:        cols,
-		data:           transformData(evtData, tc),
+		data:           transformData(data, tc),
 		deleted:        event.DeletePayload(),
 	}, nil
 }

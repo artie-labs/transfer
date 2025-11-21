@@ -111,3 +111,12 @@ func transformData(data map[string]any, tc kafkalib.TopicConfig) map[string]any 
 
 	return data
 }
+
+func buildEventData(event cdc.Event, tc kafkalib.TopicConfig) (map[string]any, error) {
+	data, err := event.GetData(tc)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
