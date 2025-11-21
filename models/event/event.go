@@ -12,7 +12,6 @@ import (
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/cryptography"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/maputil"
@@ -44,44 +43,6 @@ func (e Event) GetTableID() cdc.TableID {
 
 func (e Event) GetTable() string {
 	return e.table
-}
-
-func transformData(data map[string]any, tc kafkalib.TopicConfig) map[string]any {
-	for _, columnToHash := range tc.ColumnsToHash {
-		if value, ok := data[columnToHash]; ok {
-			data[columnToHash] = cryptography.HashValue(value)
-		}
-	}
-
-	// Exclude certain columns
-	for _, col := range tc.ColumnsToExclude {
-		delete(data, col)
-	}
-
-	// If column inclusion is specified, then we need to include only the specified columns
-	if len(tc.ColumnsToInclude) > 0 {
-		filteredData := make(map[string]any)
-		for _, col := range tc.ColumnsToInclude {
-			if value, ok := data[col]; ok {
-				filteredData[col] = value
-			}
-		}
-
-		// Include Artie columns
-		for _, col := range constants.ArtieColumns {
-			if value, ok := data[col]; ok {
-				filteredData[col] = value
-			}
-		}
-
-		for _, col := range tc.StaticColumns {
-			filteredData[col.Name] = col.Value
-		}
-
-		return filteredData
-	}
-
-	return data
 }
 
 func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfig, cfgMode config.Mode) (Event, error) {
