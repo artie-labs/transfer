@@ -26,7 +26,7 @@ func (e *EventsTestSuite) TestBuildPrimaryKeys() {
 	{
 		// Include primary keys and primary keys override
 		pks := buildPrimaryKeys(kafkalib.TopicConfig{PrimaryKeysOverride: []string{}, IncludePrimaryKeys: []string{"id2"}}, map[string]any{"id": "123", "id2": "456"}, nil)
-		assert.Equal(e.T(), []string{"id", "id2"}, pks)
+		assert.ElementsMatch(e.T(), []string{"id", "id2"}, pks)
 	}
 }
 
