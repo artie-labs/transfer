@@ -118,5 +118,13 @@ func buildEventData(event cdc.Event, tc kafkalib.TopicConfig) (map[string]any, e
 		return nil, err
 	}
 
+	if tc.IncludeArtieOperation {
+		data[constants.OperationColumnMarker] = string(event.Operation())
+	}
+
+	if tc.IncludeFullSourceTableName {
+		data[constants.FullSourceTableNameColumnMarker] = event.GetFullTableName()
+	}
+
 	return data, nil
 }

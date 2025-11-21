@@ -73,10 +73,6 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 		return Event{}, fmt.Errorf("failed to load artie metadata: %w", err)
 	}
 
-	if tc.IncludeArtieOperation {
-		data[constants.OperationColumnMarker] = string(event.Operation())
-	}
-
 	if tc.IncludeSourceMetadata {
 		metadata, err := event.GetSourceMetadata()
 		if err != nil {
@@ -87,12 +83,7 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 		cols.AddColumn(columns.NewColumn(constants.SourceMetadataColumnMarker, typing.Struct))
 	}
 
-	if tc.IncludeFullSourceTableName {
-		data[constants.FullSourceTableNameColumnMarker] = event.GetFullTableName()
-	}
-
 	tblName := cmp.Or(tc.TableName, event.GetTableName())
-
 	if cfgMode == config.History {
 		if !strings.HasSuffix(tblName, constants.HistoryModeSuffix) {
 			// History mode will include a table suffix and operation column
