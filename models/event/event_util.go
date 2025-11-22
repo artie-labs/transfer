@@ -1,6 +1,7 @@
 package event
 
 import (
+	"fmt"
 	"slices"
 
 	"github.com/artie-labs/transfer/lib/cdc"
@@ -126,4 +127,18 @@ func buildEventData(event cdc.Event, tc kafkalib.TopicConfig) (map[string]any, e
 	}
 
 	return data, nil
+}
+
+func buildRowKey(pks []string, data map[string]any) (string, error) {
+	var pk string
+	for _, pk := range pks {
+		value, ok := data[pk]
+		if !ok {
+			return "", fmt.Errorf("primary key %q not found in data: %v", pk, data)
+		}
+
+		pk += fmt.Sprintf("%s=%v", pk, value)
+	}
+
+	return pk, nil
 }

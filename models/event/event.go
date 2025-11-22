@@ -24,9 +24,14 @@ import (
 )
 
 type Event struct {
-	table          string
-	tableID        cdc.TableID
-	data           map[string]any // json serialized column data
+	table   string
+	tableID cdc.TableID
+
+	// [prevPrimaryKeys] - The previous primary keys for the event.
+	prevPrimaryKeys map[string]any
+	// [data] - The data for the event.
+	data map[string]any // json serialized column data
+
 	optionalSchema map[string]typing.KindDetails
 	columns        *columns.Columns
 	deleted        bool
