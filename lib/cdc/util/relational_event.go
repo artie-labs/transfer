@@ -169,6 +169,7 @@ func (s *SchemaEventPayload) GetPreviousData() (map[string]any, error) {
 	case constants.Create, constants.Backfill:
 		return nil, nil
 	case constants.Delete:
+		// It's already been modified, so we don't need to modify it again.
 		return s.Payload.Before, nil
 	case constants.Update:
 		retMap, err := s.parseAndMutateMapInPlace(s.Payload.Before, debezium.Before)
