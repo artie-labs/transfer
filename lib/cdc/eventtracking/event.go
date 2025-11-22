@@ -64,6 +64,10 @@ func (e *EventPayload) GetData(tc kafkalib.TopicConfig) (map[string]any, error) 
 	return retMap, nil
 }
 
+func (e *EventPayload) GetPreviousData() (map[string]any, error) {
+	return nil, nil
+}
+
 func (e *EventPayload) GetOptionalSchema() (map[string]typing.KindDetails, error) {
 	// Event tracking format doesn't have a schema
 	return nil, nil
