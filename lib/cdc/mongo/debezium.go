@@ -182,3 +182,7 @@ func (s *SchemaEventPayload) GetData(tc kafkalib.TopicConfig) (map[string]any, e
 
 	return retMap, nil
 }
+
+func (s *SchemaEventPayload) GetPreviousData() (map[string]any, error) {
+	return s.Payload.beforeMap, nil
+}

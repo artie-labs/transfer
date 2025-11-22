@@ -164,6 +164,10 @@ func (s *SchemaEventPayload) GetData(tc kafkalib.TopicConfig) (map[string]any, e
 	return retMap, nil
 }
 
+func (s *SchemaEventPayload) GetPreviousData() (map[string]any, error) {
+	return s.Payload.Before, nil
+}
+
 // parseAndMutateMapInPlace will take `retMap` and `kind` (which part of the schema should we be inspecting) and then parse the values accordingly.
 // This will unpack any Debezium-specific values and convert them back into their original types.
 // NOTE: `retMap` and the returned object are the same object.
