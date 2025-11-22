@@ -3,6 +3,7 @@ package mongo
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/cdc"
@@ -52,7 +53,17 @@ func (Debezium) Labels() []string {
 }
 
 func (Debezium) GetPrimaryKeys(key []byte, tc kafkalib.TopicConfig, reservedColumns map[string]bool) ([]string, error) {
-	return debezium.ParsePartitionKey(key, tc.CDCKeyFormat, reservedColumns)
+	keys, err := debezium.ParsePartitionKey(key, tc.CDCKeyFormat, reservedColumns)
+	if err != nil {
+		return nil, err
+	}
+
+	// Does "id" exist? If so, swap it with "_id"
+	if idx := slices.Index(keys, "id"); idx != -1 {
+		keys[idx] = "_id"
+	}
+
+	return keys, nil
 }
 
 func (s *SchemaEventPayload) Operation() constants.Operation {
