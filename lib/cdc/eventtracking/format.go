@@ -43,8 +43,6 @@ func (Format) Labels() []string {
 	return []string{constants.EventTrackingFormat}
 }
 
-func (Format) GetPrimaryKey(key []byte, tc kafkalib.TopicConfig, reservedColumns map[string]bool) (map[string]any, error) {
-	return map[string]any{
-		columns.EscapeName("id", reservedColumns): string(key),
-	}, nil
+func (Format) GetPrimaryKeys(key []byte, tc kafkalib.TopicConfig, reservedColumns map[string]bool) ([]string, error) {
+	return []string{columns.EscapeName("id", reservedColumns)}, nil
 }
