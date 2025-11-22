@@ -2,6 +2,7 @@ package debezium
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 
@@ -50,12 +51,20 @@ func (p PrimaryKeyPayload) parseAndReturnPayload() (map[string]any, error) {
 	return retMap, nil
 }
 
-func ParsePartitionKey(key []byte, cdcKeyFormat string, reservedColumns map[string]bool) (map[string]any, error) {
+func ParsePartitionKey(key []byte, cdcKeyFormat string, reservedColumns map[string]bool) ([]string, error) {
 	switch cdcKeyFormat {
 	case kafkalib.JSONKeyFmt:
-		return parsePartitionKeyStruct(key, reservedColumns)
+		out, err := parsePartitionKeyStruct(key, reservedColumns)
+		if err != nil {
+			return nil, err
+		}
+		return slices.Collect(maps.Keys(out)), nil
 	case kafkalib.StringKeyFmt:
-		return parsePartitionKeyString(key, reservedColumns)
+		out, err := parsePartitionKeyString(key, reservedColumns)
+		if err != nil {
+			return nil, err
+		}
+		return slices.Collect(maps.Keys(out)), nil
 
 	}
 	return nil, fmt.Errorf("format: %s is not supported", cdcKeyFormat)

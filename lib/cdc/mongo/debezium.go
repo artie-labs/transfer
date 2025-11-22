@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
-
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/debezium"
@@ -53,43 +51,8 @@ func (Debezium) Labels() []string {
 	return []string{constants.DBZMongoFormat}
 }
 
-func (Debezium) GetPrimaryKey(key []byte, tc kafkalib.TopicConfig, reservedColumns map[string]bool) (map[string]any, error) {
-	kvMap, err := debezium.ParsePartitionKey(key, tc.CDCKeyFormat, reservedColumns)
-	if err != nil {
-		return nil, err
-	}
-
-	// This code is needed because the partition key bytes returns nested objects as a string
-	// Such that, the value looks like this: {"id":"{\"$oid\": \"640127e4beeb1ccfc821c25b\"}"}
-	for k, v := range kvMap {
-		var obj map[string]any
-		if err = json.Unmarshal([]byte(fmt.Sprint(v)), &obj); err != nil {
-			continue
-		}
-
-		// If the value is indeed a nested JSON object, we'll pass it along.
-		kvMap[k] = obj
-	}
-
-	// Now that we have the JSON extended object, we'll parse it down into bytes, so we can feed it into `JSONEToMap`
-	kvMapBytes, err := bson.MarshalExtJSON(kvMap, false, false)
-	if err != nil {
-		return nil, err
-	}
-
-	kvMap, err = typing.JSONEToMap(kvMapBytes)
-	if err != nil {
-		return nil, err
-	}
-
-	value, ok := kvMap["id"]
-	if ok {
-		// Debezium will write MongoDB's primary key `_id` as `id` in the partition key, so we are renaming it back to `_id`
-		kvMap["_id"] = value
-		delete(kvMap, "id")
-	}
-
-	return kvMap, nil
+func (Debezium) GetPrimaryKeys(key []byte, tc kafkalib.TopicConfig, reservedColumns map[string]bool) ([]string, error) {
+	return debezium.ParsePartitionKey(key, tc.CDCKeyFormat, reservedColumns)
 }
 
 func (s *SchemaEventPayload) Operation() constants.Operation {
