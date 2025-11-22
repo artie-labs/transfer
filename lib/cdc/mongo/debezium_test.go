@@ -13,17 +13,17 @@ import (
 )
 
 func TestGetPrimaryKey(t *testing.T) {
-	values := []string{
-		`{"id": 1001}`,
-		`Struct{id=1001}`,
-		`{"schema":{"type":"struct","fields":[{"type":"string","optional":false,"field":"id"}],"optional":false,"name":"1a75f632-29d2-419b-9ffe-d18fa12d74d5.38d5d2db-870a-4a38-a76c-9891b0e5122d.myFirstDatabase.stock.Key"},"payload":{"id":"{\"$oid\": \"63e3a3bf314a4076d249e203\"}"}}`,
-		`Struct{id={"$oid": "65566afbfefeb3c639deaf5d"}}`,
+	valuesToFormatMap := map[string]string{
+		`{"id": 1001}`:    kafkalib.JSONKeyFmt,
+		`Struct{id=1001}`: kafkalib.StringKeyFmt,
+		`{"schema":{"type":"struct","fields":[{"type":"string","optional":false,"field":"id"}],"optional":false,"name":"1a75f632-29d2-419b-9ffe-d18fa12d74d5.38d5d2db-870a-4a38-a76c-9891b0e5122d.myFirstDatabase.stock.Key"},"payload":{"id":"{\"$oid\": \"63e3a3bf314a4076d249e203\"}"}}`: kafkalib.JSONKeyFmt,
+		`Struct{id={"$oid": "65566afbfefeb3c639deaf5d"}}`: kafkalib.StringKeyFmt,
 	}
 
-	for _, value := range values {
-		pkMap, err := Debezium{}.GetPrimaryKeys([]byte(value), kafkalib.TopicConfig{CDCKeyFormat: kafkalib.JSONKeyFmt}, nil)
+	for value, format := range valuesToFormatMap {
+		pks, err := Debezium{}.GetPrimaryKeys([]byte(value), kafkalib.TopicConfig{CDCKeyFormat: format}, nil)
 		assert.NoError(t, err)
-		assert.Equal(t, []string{"_id"}, pkMap)
+		assert.Equal(t, []string{"_id"}, pks)
 	}
 }
 
