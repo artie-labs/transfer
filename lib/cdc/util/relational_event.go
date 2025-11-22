@@ -165,7 +165,21 @@ func (s *SchemaEventPayload) GetData(tc kafkalib.TopicConfig) (map[string]any, e
 }
 
 func (s *SchemaEventPayload) GetPreviousData() (map[string]any, error) {
-	return s.Payload.Before, nil
+	switch s.Operation() {
+	case constants.Create, constants.Backfill:
+		return nil, nil
+	case constants.Delete:
+		return s.Payload.Before, nil
+	case constants.Update:
+		retMap, err := s.parseAndMutateMapInPlace(s.Payload.Before, debezium.Before)
+		if err != nil {
+			return nil, err
+		}
+
+		return retMap, nil
+	default:
+		return nil, fmt.Errorf("unknown operation %q", s.Operation())
+	}
 }
 
 // parseAndMutateMapInPlace will take `retMap` and `kind` (which part of the schema should we be inspecting) and then parse the values accordingly.
