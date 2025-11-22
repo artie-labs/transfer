@@ -23,24 +23,17 @@ func (r *RelationTestSuite) TestGetEventFromBytesTombstone() {
 	assert.ErrorContains(r.T(), err, "empty message")
 }
 
-func (r *RelationTestSuite) TestGetPrimaryKey() {
-	valString := `{"id": 47}`
-	pkMap, err := r.GetPrimaryKey([]byte(valString), validTc, nil)
-	assert.NoError(r.T(), err)
+func (r *RelationTestSuite) TestGetPrimaryKeys() {
+	expectedMap := map[string][]string{
+		`{"id": 47}`: []string{"id"},
+		`{"uuid": "ca0cefe9-45cf-44fa-a2ab-ec5e7e5522a3"}`: []string{"uuid"},
+	}
 
-	val, ok := pkMap["id"]
-	assert.True(r.T(), ok)
-	assert.Equal(r.T(), val, float64(47))
-	assert.Equal(r.T(), err, nil)
-}
-
-func (r *RelationTestSuite) TestGetPrimaryKeyUUID() {
-	valString := `{"uuid": "ca0cefe9-45cf-44fa-a2ab-ec5e7e5522a3"}`
-	pkMap, err := r.GetPrimaryKey([]byte(valString), validTc, nil)
-	val, ok := pkMap["uuid"]
-	assert.True(r.T(), ok)
-	assert.Equal(r.T(), val, "ca0cefe9-45cf-44fa-a2ab-ec5e7e5522a3")
-	assert.Equal(r.T(), err, nil)
+	for valString, expectedPks := range expectedMap {
+		pks, err := r.GetPrimaryKeys([]byte(valString), validTc, nil)
+		assert.NoError(r.T(), err)
+		assert.Equal(r.T(), expectedPks, pks)
+	}
 }
 
 func (r *RelationTestSuite) TestPostgresEvent() {
