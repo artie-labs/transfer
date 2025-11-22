@@ -46,7 +46,7 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 
 	tags["database"] = topicConfig.tc.Database
 	tags["schema"] = topicConfig.tc.Schema
-	pkMap, err := topicConfig.GetPrimaryKey(p.Msg.Key(), topicConfig.tc, reservedColumns)
+	primaryKeys, err := topicConfig.GetPrimaryKeys(p.Msg.Key(), topicConfig.tc, reservedColumns)
 	if err != nil {
 		tags["what"] = "marshall_pk_err"
 		return cdc.TableID{}, fmt.Errorf("cannot unmarshal key %q: %w", string(p.Msg.Key()), err)
@@ -59,7 +59,7 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 	}
 
 	tags["op"] = string(_event.Operation())
-	evt, err := event.ToMemoryEvent(ctx, dest, _event, pkMap, topicConfig.tc, cfg.Mode)
+	evt, err := event.ToMemoryEvent(ctx, dest, _event, primaryKeys, topicConfig.tc, cfg.Mode)
 	if err != nil {
 		tags["what"] = "to_mem_event_err"
 		return cdc.TableID{}, fmt.Errorf("cannot convert to memory event: %w", err)

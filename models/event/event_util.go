@@ -1,6 +1,8 @@
 package event
 
 import (
+	"slices"
+
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/cryptography"
@@ -49,7 +51,7 @@ func buildColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns map[
 	return cols, nil
 }
 
-func buildPrimaryKeys(tc kafkalib.TopicConfig, pkMap map[string]any, reservedColumns map[string]bool) []string {
+func buildPrimaryKeys(tc kafkalib.TopicConfig, primaryKeys []string, reservedColumns map[string]bool) []string {
 	var pks []string
 	if len(tc.PrimaryKeysOverride) > 0 {
 		for _, pk := range tc.PrimaryKeysOverride {
@@ -59,14 +61,11 @@ func buildPrimaryKeys(tc kafkalib.TopicConfig, pkMap map[string]any, reservedCol
 		return pks
 	}
 
-	// [pkMap] is already escaped.
-	for pk := range pkMap {
-		pks = append(pks, pk)
-	}
-
+	// Already escaped
+	pks = append(pks, primaryKeys...)
 	for _, pk := range tc.IncludePrimaryKeys {
 		escapedPk := columns.EscapeName(pk, reservedColumns)
-		if _, ok := pkMap[escapedPk]; !ok {
+		if !slices.Contains(primaryKeys, escapedPk) {
 			pks = append(pks, escapedPk)
 		}
 	}

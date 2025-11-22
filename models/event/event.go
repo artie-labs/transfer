@@ -45,14 +45,14 @@ func (e Event) GetTable() string {
 	return e.table
 }
 
-func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfig, cfgMode config.Mode) (Event, error) {
+func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Event, primaryKeys []string, tc kafkalib.TopicConfig, cfgMode config.Mode) (Event, error) {
 	reservedColumns := destination.BuildReservedColumnNames(dest)
 	cols, err := buildColumns(event, tc, reservedColumns)
 	if err != nil {
 		return Event{}, fmt.Errorf("failed to build filtered columns: %w", err)
 	}
 
-	pks := buildPrimaryKeys(tc, pkMap, reservedColumns)
+	pks := buildPrimaryKeys(tc, primaryKeys, reservedColumns)
 	if cols != nil {
 		// All keys in pks are already escaped, so don't escape again
 		for _, pk := range pks {
