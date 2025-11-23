@@ -129,7 +129,6 @@ func (e *EventsTestSuite) TestEvent_TableName() {
 		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, id, kafkalib.TopicConfig{}, config.Replication)
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), e.fakeEvent.GetTableName(), evt.GetTable())
-
 		assert.Equal(e.T(), "id=123", evt.rowKey)
 		assert.Equal(e.T(), "id=999", evt.prevRowKey)
 	}
