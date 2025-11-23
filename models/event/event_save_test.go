@@ -63,6 +63,7 @@ func (e *EventsTestSuite) TestSaveEvent() {
 	edgeCaseEvent := Event{
 		table:       "foo",
 		primaryKeys: []string{"id"},
+		rowKey:      "id=12344",
 		data: map[string]any{
 			"id":                                "12344",
 			constants.DeleteColumnMarker:        true,

@@ -21,13 +21,14 @@ func (e *EventsTestSuite) TestEvent_Validate() {
 		assert.ErrorContains(e.T(), _evt.Validate(), "primary keys are empty")
 	}
 	{
-		_evt := Event{table: "foo", primaryKeys: []string{"id"}}
+		_evt := Event{table: "foo", primaryKeys: []string{"id"}, rowKey: "id=123"}
 		assert.ErrorContains(e.T(), _evt.Validate(), "event has no data")
 	}
 	{
 		_evt := Event{
 			table:       "foo",
 			primaryKeys: []string{"id"},
+			rowKey:      "id=123",
 			data: map[string]any{
 				"id":  123,
 				"foo": "bar",
@@ -40,6 +41,7 @@ func (e *EventsTestSuite) TestEvent_Validate() {
 		_evt := Event{
 			table:       "foo",
 			primaryKeys: []string{"id"},
+			rowKey:      "id=123",
 			data: map[string]any{
 				"id":  123,
 				"foo": "bar",
@@ -51,6 +53,7 @@ func (e *EventsTestSuite) TestEvent_Validate() {
 		_evt := Event{
 			table:       "foo",
 			primaryKeys: []string{"id"},
+			rowKey:      "id=123",
 			data: map[string]any{
 				"id":                                123,
 				constants.DeleteColumnMarker:        true,
@@ -121,12 +124,14 @@ func (e *EventsTestSuite) TestEvent_TableName() {
 	id := []string{"id"}
 	{
 		// Don't pass in tableName.
+		e.fakeEvent.GetDataReturns(map[string]any{"id": 123}, nil)
 		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, id, kafkalib.TopicConfig{}, config.Replication)
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), e.fakeEvent.GetTableName(), evt.GetTable())
 	}
 	{
 		// Now pass it in, it should override.
+		e.fakeEvent.GetDataReturns(map[string]any{"id": 123}, nil)
 		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, id, kafkalib.TopicConfig{TableName: "orders"}, config.Replication)
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), "orders", evt.GetTable())
@@ -147,6 +152,7 @@ func (e *EventsTestSuite) TestEvent_TableName() {
 func (e *EventsTestSuite) TestEvent_Columns() {
 	id := []string{"id"}
 	{
+		e.fakeEvent.GetDataReturns(map[string]any{"id": 123}, nil)
 		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, id, kafkalib.TopicConfig{}, config.Replication)
 		assert.NoError(e.T(), err)
 
@@ -155,7 +161,8 @@ func (e *EventsTestSuite) TestEvent_Columns() {
 		assert.True(e.T(), ok)
 	}
 	{
-		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, id, kafkalib.TopicConfig{}, config.Replication)
+		e.fakeEvent.GetDataReturns(map[string]any{"id": 123, "capital": "foo"}, nil)
+		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, []string{"id", "capital"}, kafkalib.TopicConfig{}, config.Replication)
 		assert.NoError(e.T(), err)
 
 		assert.Equal(e.T(), 2, len(evt.columns.GetColumns()))
@@ -180,12 +187,14 @@ func (e *EventsTestSuite) TestEvent_Columns() {
 func (e *EventsTestSuite) TestEvent_PrimaryKeysOverride() {
 	{
 		// No primary keys override
+		e.fakeEvent.GetDataReturns(map[string]any{"not_id": "foo"}, nil)
 		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, []string{"not_id"}, kafkalib.TopicConfig{}, config.Replication)
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), []string{"not_id"}, evt.GetPrimaryKeys())
 	}
 	{
 		// Specified primary keys override
+		e.fakeEvent.GetDataReturns(map[string]any{"id": "foo"}, nil)
 		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, []string{"not_id"}, kafkalib.TopicConfig{PrimaryKeysOverride: []string{"id"}}, config.Replication)
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), []string{"id"}, evt.GetPrimaryKeys())
