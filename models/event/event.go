@@ -329,6 +329,7 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 	e.data = sanitizedData
 
 	if e.rowKey != e.GetPrevRowKey() {
+		slog.Info("Saw ID value mismatch, so we're going to delete the previous row", slog.String("prevRowKey", e.GetPrevRowKey()), slog.String("rowKey", e.rowKey))
 		deleteRow, err := buildDeleteRow(e.primaryKeys, e.data)
 		if err != nil {
 			return false, "", fmt.Errorf("failed to build delete row: %w", err)
