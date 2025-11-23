@@ -30,7 +30,6 @@ type Event struct {
 	// [rowKey] - This is a deterministic key-value string that is used to identify a row in our in-memory db.
 	rowKey string
 	// [prevRowKey] - This is a deterministic key-value string that is used to identify a row in our in-memory db.
-	prevRowKey string
 
 	// [data] - The data for the event.
 	data map[string]any // json serialized column data
