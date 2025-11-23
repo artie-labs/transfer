@@ -138,12 +138,12 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 		data[staticColumn.Name] = staticColumn.Value
 	}
 
+	sort.Strings(pks)
 	rowKey, err := buildRowKey(pks, data)
 	if err != nil {
 		return Event{}, fmt.Errorf("failed to build row key: %w", err)
 	}
 
-	sort.Strings(pks)
 	return Event{
 		executionTime: event.GetExecutionTime(),
 		mode:          cfgMode,
