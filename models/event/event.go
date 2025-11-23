@@ -27,8 +27,11 @@ type Event struct {
 	table   string
 	tableID cdc.TableID
 
-	// [prevPrimaryKeys] - The previous primary keys for the event.
-	prevPrimaryKeys map[string]any
+	// [rowKey] - This is a deterministic key-value string that is used to identify a row in our in-memory db.
+	rowKey string
+	// [prevRowKey] - This is a deterministic key-value string that is used to identify a row in our in-memory db.
+	prevRowKey string
+
 	// [data] - The data for the event.
 	data map[string]any // json serialized column data
 
@@ -135,6 +138,11 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 		data[staticColumn.Name] = staticColumn.Value
 	}
 
+	rowKey, err := buildRowKey(pks, data)
+	if err != nil {
+		return Event{}, fmt.Errorf("failed to build row key: %w", err)
+	}
+
 	sort.Strings(pks)
 	return Event{
 		executionTime: event.GetExecutionTime(),
@@ -147,6 +155,9 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 		columns:        cols,
 		data:           transformData(data, tc),
 		deleted:        event.DeletePayload(),
+
+		// RowKeys:
+		rowKey: rowKey,
 	}, nil
 }
 
@@ -172,12 +183,11 @@ func (e *Event) EmitExecutionTimeLag(metricsClient base.Client) {
 }
 
 func (e *Event) Validate() error {
-	// Does it have a PK or table set?
 	if stringutil.Empty(e.table) {
 		return fmt.Errorf("table name is empty")
 	}
 
-	if len(e.primaryKeys) == 0 {
+	if len(e.primaryKeys) == 0 || stringutil.Empty(e.rowKey) {
 		return fmt.Errorf("primary keys are empty")
 	}
 
@@ -200,22 +210,6 @@ func (e *Event) Validate() error {
 
 func (e *Event) GetPrimaryKeys() []string {
 	return e.primaryKeys
-}
-
-// PrimaryKeyValue - as per above, this needs to return a deterministic k/v string.
-// Must only call this after the event data has been sanitized within [event.Save].
-func (e *Event) PrimaryKeyValue() (string, error) {
-	var key string
-	for _, pk := range e.GetPrimaryKeys() {
-		value, ok := e.data[pk]
-		if !ok {
-			return "", fmt.Errorf("primary key %q not found in data: %v", pk, e.data)
-		}
-
-		key += fmt.Sprintf("%s=%v", pk, value)
-	}
-
-	return key, nil
 }
 
 // Save will save the event into our in memory event
@@ -312,13 +306,7 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 
 	// Swap out sanitizedData <> data.
 	e.data = sanitizedData
-
-	pkValueString, err := e.PrimaryKeyValue()
-	if err != nil {
-		return false, "", fmt.Errorf("failed to retrieve primary key value: %w", err)
-	}
-
-	td.InsertRow(pkValueString, e.data, e.deleted)
+	td.InsertRow(e.rowKey, e.data, e.deleted)
 	td.SetLatestTimestamp(e.executionTime)
 	flush, flushReason := td.ShouldFlush(cfg)
 	return flush, flushReason, nil

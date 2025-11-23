@@ -129,6 +129,8 @@ func buildEventData(event cdc.Event, tc kafkalib.TopicConfig) (map[string]any, e
 	return data, nil
 }
 
+// [buildRowKey] - This will build a row key from the primary keys and data.
+// This will return a deterministic key-value string.
 func buildRowKey(pks []string, data map[string]any) (string, error) {
 	var pk string
 	for _, pk := range pks {

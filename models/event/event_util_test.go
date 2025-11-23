@@ -10,22 +10,22 @@ import (
 func (e *EventsTestSuite) TestBuildPrimaryKeys() {
 	{
 		// No primary keys override
-		pks := buildPrimaryKeys(kafkalib.TopicConfig{}, map[string]any{}, nil)
+		pks := buildPrimaryKeys(kafkalib.TopicConfig{}, []string{}, nil)
 		assert.Empty(e.T(), pks)
 	}
 	{
 		// Primary keys override
-		pks := buildPrimaryKeys(kafkalib.TopicConfig{PrimaryKeysOverride: []string{"id"}}, map[string]any{}, nil)
+		pks := buildPrimaryKeys(kafkalib.TopicConfig{PrimaryKeysOverride: []string{"id"}}, []string{}, nil)
 		assert.Equal(e.T(), []string{"id"}, pks)
 	}
 	{
 		// Include primary keys
-		pks := buildPrimaryKeys(kafkalib.TopicConfig{IncludePrimaryKeys: []string{"id"}}, map[string]any{}, nil)
+		pks := buildPrimaryKeys(kafkalib.TopicConfig{IncludePrimaryKeys: []string{"id"}}, []string{}, nil)
 		assert.Equal(e.T(), []string{"id"}, pks)
 	}
 	{
 		// Include primary keys and primary keys override
-		pks := buildPrimaryKeys(kafkalib.TopicConfig{PrimaryKeysOverride: []string{}, IncludePrimaryKeys: []string{"id2"}}, map[string]any{"id": "123", "id2": "456"}, nil)
+		pks := buildPrimaryKeys(kafkalib.TopicConfig{PrimaryKeysOverride: []string{}, IncludePrimaryKeys: []string{"id2"}}, []string{"id", "id2"}, nil)
 		assert.ElementsMatch(e.T(), []string{"id", "id2"}, pks)
 	}
 }
