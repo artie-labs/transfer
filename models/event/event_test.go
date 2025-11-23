@@ -125,9 +125,13 @@ func (e *EventsTestSuite) TestEvent_TableName() {
 	{
 		// Don't pass in tableName.
 		e.fakeEvent.GetDataReturns(map[string]any{"id": 123}, nil)
+		e.fakeEvent.GetPreviousDataReturns(map[string]any{"id": 999}, nil)
 		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, id, kafkalib.TopicConfig{}, config.Replication)
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), e.fakeEvent.GetTableName(), evt.GetTable())
+
+		assert.Equal(e.T(), "id=123", evt.rowKey)
+		assert.Equal(e.T(), "id=999", evt.prevRowKey)
 	}
 	{
 		// Now pass it in, it should override.
