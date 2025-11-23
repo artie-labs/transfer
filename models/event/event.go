@@ -30,6 +30,7 @@ type Event struct {
 	// [rowKey] - This is a deterministic key-value string that is used to identify a row in our in-memory db.
 	rowKey string
 	// [prevRowKey] - This is a deterministic key-value string that is used to identify a row in our in-memory db.
+	prevRowKey string
 
 	// [data] - The data for the event.
 	data map[string]any // json serialized column data
@@ -143,6 +144,19 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 		return Event{}, fmt.Errorf("failed to build row key: %w", err)
 	}
 
+	prevData, err := event.GetPreviousData()
+	if err != nil {
+		return Event{}, fmt.Errorf("failed to get previous data: %w", err)
+	}
+
+	var prevRowKey string
+	if prevData != nil {
+		prevRowKey, err = buildRowKey(pks, prevData)
+		if err != nil {
+			return Event{}, fmt.Errorf("failed to build previous row key: %w", err)
+		}
+	}
+
 	return Event{
 		executionTime: event.GetExecutionTime(),
 		mode:          cfgMode,
@@ -156,7 +170,8 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 		deleted:        event.DeletePayload(),
 
 		// RowKeys:
-		rowKey: rowKey,
+		rowKey:     rowKey,
+		prevRowKey: prevRowKey,
 	}, nil
 }
 
