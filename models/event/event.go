@@ -183,6 +183,10 @@ func (e Event) GetData() map[string]any {
 	return e.data
 }
 
+func (e Event) GetPrevRowKey() string {
+	return cmp.Or(e.prevRowKey, e.rowKey)
+}
+
 // SetData - This will set the data for the event. This is used by Reader.
 func (e *Event) SetData(key string, value any) {
 	e.data[key] = value
@@ -323,6 +327,16 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 
 	// Swap out sanitizedData <> data.
 	e.data = sanitizedData
+
+	if e.rowKey != e.GetPrevRowKey() {
+		deleteRow, err := buildDeleteRow(e.primaryKeys, e.data)
+		if err != nil {
+			return false, "", fmt.Errorf("failed to build delete row: %w", err)
+		}
+
+		td.InsertRow(e.GetPrevRowKey(), deleteRow, true)
+	}
+
 	td.InsertRow(e.rowKey, e.data, e.deleted)
 	td.SetLatestTimestamp(e.executionTime)
 	flush, flushReason := td.ShouldFlush(cfg)
