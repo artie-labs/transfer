@@ -155,6 +155,11 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 		prevRowData[pk] = prevData[pk]
 	}
 
+	prevRowKey, err := buildRowKey(pks, prevRowData)
+	if err != nil {
+		return Event{}, fmt.Errorf("failed to build previous row key: %w", err)
+	}
+
 	return Event{
 		executionTime: event.GetExecutionTime(),
 		mode:          cfgMode,
@@ -169,6 +174,7 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 
 		// RowKeys:
 		rowKey:      rowKey,
+		prevRowKey:  prevRowKey,
 		prevRowData: prevRowData,
 	}, nil
 }
