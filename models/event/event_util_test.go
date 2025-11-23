@@ -115,3 +115,15 @@ func (e *EventsTestSuite) TestBuildRowKey() {
 		assert.Empty(e.T(), rowKey)
 	}
 }
+
+func (e *EventsTestSuite) TestBuildDeleteRow() {
+	// Happy path
+	data := map[string]any{
+		"a_id": 1,
+		"b_id": 2,
+	}
+
+	deleteRow, err := buildDeleteRow([]string{"a_id", "b_id"}, data)
+	assert.NoError(e.T(), err)
+	assert.ElementsMatch(e.T(), map[string]any{constants.DeleteColumnMarker: true, constants.OnlySetDeleteColumnMarker: true, "a_id": 1, "b_id": 2}, deleteRow)
+}

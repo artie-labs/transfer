@@ -130,7 +130,7 @@ func (e *EventsTestSuite) TestEvent_TableName() {
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), e.fakeEvent.GetTableName(), evt.GetTable())
 		assert.Equal(e.T(), "id=123", evt.rowKey)
-		assert.Equal(e.T(), "id=999", evt.prevRowKey)
+		assert.Equal(e.T(), map[string]any{"id": 999}, evt.prevRowData)
 	}
 	{
 		// Now pass it in, it should override.

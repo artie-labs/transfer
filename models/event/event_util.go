@@ -144,3 +144,21 @@ func buildRowKey(pks []string, data map[string]any) (string, error) {
 
 	return out, nil
 }
+
+func buildDeleteRow(pk []string, data map[string]any) (map[string]any, error) {
+	out := map[string]any{
+		constants.DeleteColumnMarker:        true,
+		constants.OnlySetDeleteColumnMarker: true,
+	}
+
+	for _, pk := range pk {
+		value, ok := data[pk]
+		if !ok {
+			return nil, fmt.Errorf("primary key %q not found in data: %v", pk, data)
+		}
+
+		out[pk] = value
+	}
+
+	return out, nil
+}
