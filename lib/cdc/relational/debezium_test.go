@@ -25,8 +25,8 @@ func (r *RelationTestSuite) TestGetEventFromBytesTombstone() {
 
 func (r *RelationTestSuite) TestGetPrimaryKeys() {
 	expectedMap := map[string][]string{
-		`{"id": 47}`: []string{"id"},
-		`{"uuid": "ca0cefe9-45cf-44fa-a2ab-ec5e7e5522a3"}`: []string{"uuid"},
+		`{"id": 47}`: {"id"},
+		`{"uuid": "ca0cefe9-45cf-44fa-a2ab-ec5e7e5522a3"}`: {"uuid"},
 	}
 
 	for valString, expectedPks := range expectedMap {
