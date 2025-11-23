@@ -91,3 +91,27 @@ func (e *EventsTestSuite) TestTransformData() {
 		}
 	}
 }
+
+func (e *EventsTestSuite) TestBuildRowKey() {
+	{
+		// Happy path
+		data := map[string]any{
+			"a_id": 1,
+			"b_id": 2,
+		}
+
+		rowKey, err := buildRowKey([]string{"a_id", "b_id"}, data)
+		assert.NoError(e.T(), err)
+		assert.Equal(e.T(), "a_id=1b_id=2", rowKey)
+	}
+	{
+		// Data does not exist in the row
+		data := map[string]any{
+			"a_id": 1,
+		}
+
+		rowKey, err := buildRowKey([]string{"a_id", "b_id"}, data)
+		assert.ErrorContains(e.T(), err, `primary key "b_id" not found in data: map[a_id:1]`)
+		assert.Empty(e.T(), rowKey)
+	}
+}
