@@ -100,9 +100,10 @@ func (e *EventsTestSuite) TestBuildRowKey() {
 			"b_id": 2,
 		}
 
-		rowKey, err := buildRowKey([]string{"a_id", "b_id"}, data)
+		rowKey, rowMap, err := buildRowKey([]string{"a_id", "b_id"}, data)
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), "a_id=1b_id=2", rowKey)
+		assert.Equal(e.T(), map[string]any{"a_id": 1, "b_id": 2}, rowMap)
 	}
 	{
 		// Data does not exist in the row
@@ -110,9 +111,10 @@ func (e *EventsTestSuite) TestBuildRowKey() {
 			"a_id": 1,
 		}
 
-		rowKey, err := buildRowKey([]string{"a_id", "b_id"}, data)
+		rowKey, rowMap, err := buildRowKey([]string{"a_id", "b_id"}, data)
 		assert.ErrorContains(e.T(), err, `primary key "b_id" not found in data: map[a_id:1]`)
 		assert.Empty(e.T(), rowKey)
+		assert.Empty(e.T(), rowMap)
 	}
 }
 
@@ -125,5 +127,5 @@ func (e *EventsTestSuite) TestBuildDeleteRow() {
 
 	deleteRow, err := buildDeleteRow([]string{"a_id", "b_id"}, data)
 	assert.NoError(e.T(), err)
-	assert.ElementsMatch(e.T(), map[string]any{constants.DeleteColumnMarker: true, constants.OnlySetDeleteColumnMarker: true, "a_id": 1, "b_id": 2}, deleteRow)
+	assert.Equal(e.T(), map[string]any{constants.DeleteColumnMarker: true, constants.OnlySetDeleteColumnMarker: true, "a_id": 1, "b_id": 2}, deleteRow)
 }

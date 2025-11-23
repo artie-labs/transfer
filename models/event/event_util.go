@@ -131,18 +131,20 @@ func buildEventData(event cdc.Event, tc kafkalib.TopicConfig) (map[string]any, e
 
 // [buildRowKey] - This will build a row key from the primary keys and data.
 // This will return a deterministic key-value string.
-func buildRowKey(pks []string, data map[string]any) (string, error) {
+func buildRowKey(pks []string, data map[string]any) (string, map[string]any, error) {
 	var out string
+	outData := make(map[string]any)
 	for _, pk := range pks {
 		value, ok := data[pk]
 		if !ok {
-			return "", fmt.Errorf("primary key %q not found in data: %v", pk, data)
+			return "", nil, fmt.Errorf("primary key %q not found in data: %v", pk, data)
 		}
 
 		out += fmt.Sprintf("%s=%v", pk, value)
+		outData[pk] = value
 	}
 
-	return out, nil
+	return out, outData, nil
 }
 
 func buildDeleteRow(pk []string, data map[string]any) (map[string]any, error) {

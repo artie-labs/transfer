@@ -140,7 +140,7 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 	}
 
 	sort.Strings(pks)
-	rowKey, err := buildRowKey(pks, data)
+	rowKey, _, err := buildRowKey(pks, data)
 	if err != nil {
 		return Event{}, fmt.Errorf("failed to build row key: %w", err)
 	}
@@ -150,14 +150,13 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 		return Event{}, fmt.Errorf("failed to get previous data: %w", err)
 	}
 
-	prevRowData := make(map[string]any)
-	for _, pk := range pks {
-		prevRowData[pk] = prevData[pk]
-	}
-
-	prevRowKey, err := buildRowKey(pks, prevRowData)
-	if err != nil {
-		return Event{}, fmt.Errorf("failed to build previous row key: %w", err)
+	var prevRowKey string
+	var prevRowData map[string]any
+	if len(prevData) > 0 {
+		prevRowKey, prevRowData, err = buildRowKey(pks, prevData)
+		if err != nil {
+			return Event{}, fmt.Errorf("failed to build previous row key: %w", err)
+		}
 	}
 
 	return Event{
