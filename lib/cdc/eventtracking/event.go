@@ -83,6 +83,7 @@ func (e *EventPayload) GetColumns(reservedColumns map[string]bool) (*columns.Col
 
 	cols.AddColumn(columns.NewColumn(columns.EscapeName("id", reservedColumns), typing.Invalid))
 	cols.AddColumn(columns.NewColumn(columns.EscapeName("timestamp", reservedColumns), typing.Invalid))
+	cols.AddColumn(columns.NewColumn(columns.EscapeName("event", reservedColumns), typing.Invalid))
 
 	return &cols, nil
 }
