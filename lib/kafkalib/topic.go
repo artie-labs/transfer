@@ -123,9 +123,10 @@ func (sp SoftPartitioning) Validate() error {
 }
 
 type TopicConfig struct {
-	Database                   string `yaml:"db"`
+	Database string `yaml:"db"`
+	Schema   string `yaml:"schema"`
+	// [TableName] - if left empty, the table name will be deduced from each event.
 	TableName                  string `yaml:"tableName"`
-	Schema                     string `yaml:"schema"`
 	Topic                      string `yaml:"topic"`
 	CDCFormat                  string `yaml:"cdcFormat"`
 	CDCKeyFormat               string `yaml:"cdcKeyFormat"`

@@ -32,6 +32,7 @@ func (e *EventPayload) DeletePayload() bool {
 }
 
 func (e *EventPayload) GetTableName() string {
+	// This will be used if no table name is specified in the topic config.
 	return e.Event
 }
 
@@ -50,6 +51,8 @@ func (e *EventPayload) GetData(tc kafkalib.TopicConfig) (map[string]any, error) 
 	maps.Copy(retMap, e.ExtraFields)
 	retMap["id"] = e.MessageID
 	retMap["timestamp"] = e.Timestamp
+	// By default, include the event name as a column; it can be excluded via [ColumnsToExclude] if needed.
+	retMap["event"] = e.Event
 
 	// Add Artie-specific metadata columns
 	retMap[constants.DeleteColumnMarker] = false
