@@ -15,7 +15,6 @@ type WebhooksClient struct {
 	httpClient  http.Client
 	companyUUID string
 	dataplane   string
-	podID       string
 	pipelineID  string
 	source      Source
 	url         string
@@ -34,7 +33,6 @@ func NewWebhooksClient(companyUUID, dataplane, podID, pipelineID, apiKey, url st
 		},
 		companyUUID: companyUUID,
 		dataplane:   dataplane,
-		podID:       podID,
 		pipelineID:  pipelineID,
 		source:      source,
 		url:         url,
@@ -48,7 +46,6 @@ func (c *WebhooksClient) BuildProperties(eventType EventType, tableIDs []string)
 		"message":     BuildMessage(eventType),
 		"source":      c.source,
 		"severity":    BuildSeverity(eventType),
-		"pod_id":      c.podID,
 		"table_ids":   tableIDs,
 	}
 }

@@ -30,7 +30,6 @@ func (w *WebhooksClientTestSuite) TestNewWebhooksClient_Success() {
 	assert.NotNil(w.T(), client)
 	assert.Equal(w.T(), "company-123", client.companyUUID)
 	assert.Equal(w.T(), "prod", client.dataplane)
-	assert.Equal(w.T(), "pod-1", client.podID)
 	assert.Equal(w.T(), "pipeline-1", client.pipelineID)
 	assert.Equal(w.T(), Transfer, client.source)
 	assert.Equal(w.T(), "test-api-key", client.apiKey)
@@ -82,7 +81,6 @@ func (w *WebhooksClientTestSuite) TestSendEvent_Success() {
 		},
 		companyUUID: "company-123",
 		dataplane:   "prod",
-		podID:       "pod-1",
 		pipelineID:  "pipeline-1",
 		source:      Transfer,
 		url:         server.URL,
@@ -102,7 +100,6 @@ func (w *WebhooksClientTestSuite) TestSendEvent_Success() {
 	assert.Equal(w.T(), "Backfill completed", receivedEvent.Properties["message"])
 	assert.Equal(w.T(), string(Transfer), receivedEvent.Properties["source"])
 	assert.Equal(w.T(), string(SeverityInfo), receivedEvent.Properties["severity"])
-	assert.Equal(w.T(), "pod-1", receivedEvent.Properties["pod_id"])
 
 	// Check table IDs - JSON unmarshalling converts to []any
 	tableIDsInterface := receivedEvent.Properties["table_ids"].([]any)
@@ -136,7 +133,6 @@ func (w *WebhooksClientTestSuite) TestSendEvent_NilContext() {
 		source:      Transfer,
 		url:         server.URL,
 		apiKey:      "test-api-key",
-		podID:       "pod-1",
 		companyUUID: "company-123",
 		dataplane:   "prod",
 	}
@@ -158,7 +154,6 @@ func (w *WebhooksClientTestSuite) TestSendEvent_HTTPError() {
 		source:      Transfer,
 		url:         server.URL,
 		apiKey:      "test-api-key",
-		podID:       "pod-1",
 		companyUUID: "company-123",
 		dataplane:   "prod",
 	}
@@ -180,7 +175,6 @@ func (w *WebhooksClientTestSuite) TestSendEvent_HTTPClientError() {
 		source:      Transfer,
 		url:         server.URL,
 		apiKey:      "test-api-key",
-		podID:       "pod-1",
 		companyUUID: "company-123",
 		dataplane:   "prod",
 	}
@@ -204,7 +198,6 @@ func (w *WebhooksClientTestSuite) TestSendEvent_ContextCanceled() {
 		source:      Transfer,
 		url:         server.URL,
 		apiKey:      "test-api-key",
-		podID:       "pod-1",
 		companyUUID: "company-123",
 		dataplane:   "prod",
 	}
@@ -225,7 +218,6 @@ func (w *WebhooksClientTestSuite) TestSendEvent_InvalidURL() {
 		source:      Transfer,
 		url:         "://invalid-url",
 		apiKey:      "test-api-key",
-		podID:       "pod-1",
 		companyUUID: "company-123",
 		dataplane:   "prod",
 	}
@@ -243,7 +235,6 @@ func (w *WebhooksClientTestSuite) TestSendEvent_NetworkError() {
 		source:      Transfer,
 		url:         "http://localhost:1", // Port 1 is unlikely to be open
 		apiKey:      "test-api-key",
-		podID:       "pod-1",
 		companyUUID: "company-123",
 		dataplane:   "prod",
 	}
@@ -283,7 +274,6 @@ func (w *WebhooksClientTestSuite) TestSendEvent_AllEventTypes() {
 				source:      Debezium,
 				url:         server.URL,
 				apiKey:      "test-api-key",
-				podID:       "pod-1",
 				companyUUID: "company-123",
 				dataplane:   "prod",
 			}
@@ -317,7 +307,6 @@ func (w *WebhooksClientTestSuite) TestSendEvent_AllSources() {
 				source:      source,
 				url:         server.URL,
 				apiKey:      "test-api-key",
-				podID:       "pod-1",
 				companyUUID: "company-123",
 				dataplane:   "prod",
 			}
@@ -345,7 +334,6 @@ func (w *WebhooksClientTestSuite) TestSendEvent_EmptyTableID() {
 		source:      Transfer,
 		url:         server.URL,
 		apiKey:      "test-api-key",
-		podID:       "pod-1",
 		companyUUID: "company-123",
 		dataplane:   "prod",
 	}
@@ -371,7 +359,6 @@ func (w *WebhooksClientTestSuite) TestSendEvent_NilTableID() {
 		source:      Transfer,
 		url:         server.URL,
 		apiKey:      "test-api-key",
-		podID:       "pod-1",
 		companyUUID: "company-123",
 		dataplane:   "prod",
 	}
