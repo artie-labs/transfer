@@ -28,7 +28,7 @@ type WebhooksClient struct {
 	apiKey      string
 }
 
-func NewWebhooksClient(companyUUID, dataplane string, podID string, pipelineID string, source Source) *WebhooksClient {
+func NewWebhooksClient(companyUUID, dataplane, podID, pipelineID string, source Source) *WebhooksClient {
 	apiKey := os.Getenv(envWebhooksAPIKey)
 	url := os.Getenv(envWebhooksURL)
 	if apiKey == "" || url == "" {

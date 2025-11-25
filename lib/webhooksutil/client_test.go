@@ -19,8 +19,8 @@ type WebhooksClientTestSuite struct {
 
 func (w *WebhooksClientTestSuite) TearDownTest() {
 	// Clean up environment variables after each test
-	os.Unsetenv(envWebhooksAPIKey)
-	os.Unsetenv(envWebhooksURL)
+	_ = os.Unsetenv(envWebhooksAPIKey)
+	_ = os.Unsetenv(envWebhooksURL)
 }
 
 func TestWebhooksClientTestSuite(t *testing.T) {
@@ -28,8 +28,8 @@ func TestWebhooksClientTestSuite(t *testing.T) {
 }
 
 func (w *WebhooksClientTestSuite) TestNewWebhooksClient_Success() {
-	os.Setenv(envWebhooksAPIKey, "test-api-key")
-	os.Setenv(envWebhooksURL, "https://example.com/webhooks")
+	assert.NoError(w.T(), os.Setenv(envWebhooksAPIKey, "test-api-key"))
+	assert.NoError(w.T(), os.Setenv(envWebhooksURL, "https://example.com/webhooks"))
 
 	client := NewWebhooksClient("company-123", "prod", "pod-1", "pipeline-1", Transfer)
 
@@ -45,7 +45,7 @@ func (w *WebhooksClientTestSuite) TestNewWebhooksClient_Success() {
 }
 
 func (w *WebhooksClientTestSuite) TestNewWebhooksClient_MissingAPIKey() {
-	os.Setenv(envWebhooksURL, "https://example.com/webhooks")
+	assert.NoError(w.T(), os.Setenv(envWebhooksURL, "https://example.com/webhooks"))
 
 	client := NewWebhooksClient("company-123", "prod", "pod-1", "pipeline-1", Transfer)
 
@@ -53,7 +53,7 @@ func (w *WebhooksClientTestSuite) TestNewWebhooksClient_MissingAPIKey() {
 }
 
 func (w *WebhooksClientTestSuite) TestNewWebhooksClient_MissingURL() {
-	os.Setenv(envWebhooksAPIKey, "test-api-key")
+	assert.NoError(w.T(), os.Setenv(envWebhooksAPIKey, "test-api-key"))
 
 	client := NewWebhooksClient("company-123", "prod", "pod-1", "pipeline-1", Transfer)
 
