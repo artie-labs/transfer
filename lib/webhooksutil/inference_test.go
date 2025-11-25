@@ -51,7 +51,7 @@ func TestInferSeverity(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := InferSeverity(tt.eventType)
+			result := BuildSeverity(tt.eventType)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
@@ -102,7 +102,7 @@ func TestInferMessage(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := InferMessage(tt.eventType)
+			result := BuildMessage(tt.eventType)
 			assert.Equal(t, tt.expected, result)
 		})
 	}

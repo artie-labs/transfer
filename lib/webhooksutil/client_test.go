@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 	"time"
 
@@ -18,9 +17,7 @@ type WebhooksClientTestSuite struct {
 }
 
 func (w *WebhooksClientTestSuite) TearDownTest() {
-	// Clean up environment variables after each test
-	_ = os.Unsetenv(envWebhooksAPIKey)
-	_ = os.Unsetenv(envWebhooksURL)
+	// No cleanup needed anymore since we don't use environment variables in tests
 }
 
 func TestWebhooksClientTestSuite(t *testing.T) {
@@ -28,10 +25,7 @@ func TestWebhooksClientTestSuite(t *testing.T) {
 }
 
 func (w *WebhooksClientTestSuite) TestNewWebhooksClient_Success() {
-	assert.NoError(w.T(), os.Setenv(envWebhooksAPIKey, "test-api-key"))
-	assert.NoError(w.T(), os.Setenv(envWebhooksURL, "https://example.com/webhooks"))
-
-	client := NewWebhooksClient("company-123", "prod", "pod-1", "pipeline-1", Transfer)
+	client := NewWebhooksClient("company-123", "prod", "pod-1", "pipeline-1", "test-api-key", "https://example.com/webhooks", Transfer)
 
 	assert.NotNil(w.T(), client)
 	assert.Equal(w.T(), "company-123", client.companyUUID)
@@ -45,23 +39,19 @@ func (w *WebhooksClientTestSuite) TestNewWebhooksClient_Success() {
 }
 
 func (w *WebhooksClientTestSuite) TestNewWebhooksClient_MissingAPIKey() {
-	assert.NoError(w.T(), os.Setenv(envWebhooksURL, "https://example.com/webhooks"))
-
-	client := NewWebhooksClient("company-123", "prod", "pod-1", "pipeline-1", Transfer)
+	client := NewWebhooksClient("company-123", "prod", "pod-1", "pipeline-1", "", "https://example.com/webhooks", Transfer)
 
 	assert.Nil(w.T(), client)
 }
 
 func (w *WebhooksClientTestSuite) TestNewWebhooksClient_MissingURL() {
-	assert.NoError(w.T(), os.Setenv(envWebhooksAPIKey, "test-api-key"))
-
-	client := NewWebhooksClient("company-123", "prod", "pod-1", "pipeline-1", Transfer)
+	client := NewWebhooksClient("company-123", "prod", "pod-1", "pipeline-1", "test-api-key", "", Transfer)
 
 	assert.Nil(w.T(), client)
 }
 
 func (w *WebhooksClientTestSuite) TestNewWebhooksClient_MissingBoth() {
-	client := NewWebhooksClient("company-123", "prod", "pod-1", "pipeline-1", Transfer)
+	client := NewWebhooksClient("company-123", "prod", "pod-1", "pipeline-1", "", "", Transfer)
 
 	assert.Nil(w.T(), client)
 }
@@ -75,7 +65,7 @@ func (w *WebhooksClientTestSuite) TestSendEvent_NilClient() {
 
 func (w *WebhooksClientTestSuite) TestSendEvent_Success() {
 	// Create a test server
-	var receivedEvent Event
+	var receivedEvent WebhooksEvent
 	var receivedHeaders http.Header
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		receivedHeaders = req.Header.Clone()
@@ -108,16 +98,20 @@ func (w *WebhooksClientTestSuite) TestSendEvent_Success() {
 	err := client.SendEvent(context.Background(), eventContext, tableIDs, EventBackFillCompleted)
 
 	assert.NoError(w.T(), err)
-	assert.Equal(w.T(), "pipeline-1", receivedEvent.PipelineID)
-	assert.Equal(w.T(), EventBackFillCompleted, receivedEvent.EventType)
-	assert.Equal(w.T(), "Backfill completed", receivedEvent.Message)
-	assert.Equal(w.T(), Transfer, receivedEvent.Source)
-	assert.Equal(w.T(), SeverityInfo, receivedEvent.Severity)
-	assert.Equal(w.T(), "pod-1", receivedEvent.PodID)
-	assert.Equal(w.T(), tableIDs, receivedEvent.TableID)
+	assert.Equal(w.T(), "pipeline-1", receivedEvent.Properties["pipeline_id"])
+	assert.Equal(w.T(), "Backfill completed", receivedEvent.Properties["message"])
+	assert.Equal(w.T(), string(Transfer), receivedEvent.Properties["source"])
+	assert.Equal(w.T(), string(SeverityInfo), receivedEvent.Properties["severity"])
+	assert.Equal(w.T(), "pod-1", receivedEvent.Properties["pod_id"])
+
+	// Check table IDs - JSON unmarshalling converts to []any
+	tableIDsInterface := receivedEvent.Properties["table_ids"].([]any)
+	assert.Len(w.T(), tableIDsInterface, 2)
+	assert.Equal(w.T(), "schema.table1", tableIDsInterface[0])
+	assert.Equal(w.T(), "schema.table2", tableIDsInterface[1])
 	// JSON unmarshalling converts numbers to float64
-	assert.Equal(w.T(), float64(100), receivedEvent.Context["rows_processed"])
-	assert.Equal(w.T(), float64(5000), receivedEvent.Context["duration_ms"])
+	assert.Equal(w.T(), float64(100), receivedEvent.ExtraFields["rows_processed"])
+	assert.Equal(w.T(), float64(5000), receivedEvent.ExtraFields["duration_ms"])
 	assert.WithinDuration(w.T(), time.Now().UTC(), receivedEvent.Timestamp, 2*time.Second)
 
 	// Verify headers
@@ -127,11 +121,11 @@ func (w *WebhooksClientTestSuite) TestSendEvent_Success() {
 
 func (w *WebhooksClientTestSuite) TestSendEvent_NilContext() {
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		var event Event
+		var event WebhooksEvent
 		err := json.NewDecoder(req.Body).Decode(&event)
 		assert.NoError(w.T(), err)
-		assert.NotNil(w.T(), event.Context)
-		assert.Empty(w.T(), event.Context)
+		assert.NotNil(w.T(), event.ExtraFields)
+		assert.Empty(w.T(), event.ExtraFields)
 		rw.WriteHeader(http.StatusOK)
 	}))
 	defer server.Close()
@@ -275,7 +269,7 @@ func (w *WebhooksClientTestSuite) TestSendEvent_AllEventTypes() {
 
 	for _, tc := range eventTypes {
 		w.T().Run(string(tc.eventType), func(t *testing.T) {
-			var receivedEvent Event
+			var receivedEvent WebhooksEvent
 			server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 				err := json.NewDecoder(req.Body).Decode(&receivedEvent)
 				assert.NoError(t, err)
@@ -297,9 +291,9 @@ func (w *WebhooksClientTestSuite) TestSendEvent_AllEventTypes() {
 			err := client.SendEvent(context.Background(), nil, []string{"table1"}, tc.eventType)
 
 			assert.NoError(t, err)
-			assert.Equal(t, tc.eventType, receivedEvent.EventType)
-			assert.Equal(t, tc.message, receivedEvent.Message)
-			assert.Equal(t, tc.severity, receivedEvent.Severity)
+			assert.Equal(t, string(tc.eventType), receivedEvent.Event)
+			assert.Equal(t, tc.message, receivedEvent.Properties["message"])
+			assert.Equal(t, string(tc.severity), receivedEvent.Properties["severity"])
 		})
 	}
 }
@@ -309,7 +303,7 @@ func (w *WebhooksClientTestSuite) TestSendEvent_AllSources() {
 
 	for _, source := range sources {
 		w.T().Run(string(source), func(t *testing.T) {
-			var receivedEvent Event
+			var receivedEvent WebhooksEvent
 			server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 				err := json.NewDecoder(req.Body).Decode(&receivedEvent)
 				assert.NoError(t, err)
@@ -331,13 +325,13 @@ func (w *WebhooksClientTestSuite) TestSendEvent_AllSources() {
 			err := client.SendEvent(context.Background(), nil, []string{"table1"}, ReplicationStarted)
 
 			assert.NoError(t, err)
-			assert.Equal(t, source, receivedEvent.Source)
+			assert.Equal(t, string(source), receivedEvent.Properties["source"])
 		})
 	}
 }
 
 func (w *WebhooksClientTestSuite) TestSendEvent_EmptyTableID() {
-	var receivedEvent Event
+	var receivedEvent WebhooksEvent
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		err := json.NewDecoder(req.Body).Decode(&receivedEvent)
 		assert.NoError(w.T(), err)
@@ -359,11 +353,11 @@ func (w *WebhooksClientTestSuite) TestSendEvent_EmptyTableID() {
 	err := client.SendEvent(context.Background(), nil, []string{}, EventBackFillStarted)
 
 	assert.NoError(w.T(), err)
-	assert.Empty(w.T(), receivedEvent.TableID)
+	assert.Empty(w.T(), receivedEvent.Properties["table_ids"])
 }
 
 func (w *WebhooksClientTestSuite) TestSendEvent_NilTableID() {
-	var receivedEvent Event
+	var receivedEvent WebhooksEvent
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		err := json.NewDecoder(req.Body).Decode(&receivedEvent)
 		assert.NoError(w.T(), err)
@@ -385,5 +379,5 @@ func (w *WebhooksClientTestSuite) TestSendEvent_NilTableID() {
 	err := client.SendEvent(context.Background(), nil, nil, EventBackFillStarted)
 
 	assert.NoError(w.T(), err)
-	assert.Nil(w.T(), receivedEvent.TableID)
+	assert.Nil(w.T(), receivedEvent.Properties["table_ids"])
 }

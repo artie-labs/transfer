@@ -31,14 +31,9 @@ const (
 	EventsAPI Source = "eventsAPI"
 )
 
-type Event struct {
-	PipelineID string         `json:"pipeline_id"`
-	EventType  EventType      `json:"event_type"`
-	Message    string         `json:"message"`
-	Source     Source         `json:"source"`
-	Timestamp  time.Time      `json:"timestamp"`
-	Context    map[string]any `json:"context"`
-	Severity   Severity       `json:"severity"`
-	PodID      string         `json:"pod_id"`
-	TableID    []string       `json:"table_id,omitempty"`
+type WebhooksEvent struct {
+	Event       string         `json:"event"`
+	Timestamp   time.Time      `json:"timestamp"`
+	Properties  map[string]any `json:"properties"`
+	ExtraFields map[string]any `json:"extraFields"`
 }

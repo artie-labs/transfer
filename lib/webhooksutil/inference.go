@@ -1,7 +1,9 @@
 package webhooksutil
 
-// InferSeverity returns the appropriate severity level for a given event type.
-func InferSeverity(eventType EventType) Severity {
+import "log/slog"
+
+// BuildSeverity returns the appropriate severity level for a given event type.
+func BuildSeverity(eventType EventType) Severity {
 	switch eventType {
 	case EventBackFillStarted, EventBackFillCompleted, ReplicationStarted:
 		return SeverityInfo
@@ -11,8 +13,8 @@ func InferSeverity(eventType EventType) Severity {
 	return SeverityInfo
 }
 
-// InferMessage returns a message for a given event type.
-func InferMessage(eventType EventType) string {
+// BuildMessage returns a message for a given event type.
+func BuildMessage(eventType EventType) string {
 	switch eventType {
 	case EventBackFillStarted:
 		return "Backfill started"
@@ -27,6 +29,7 @@ func InferMessage(eventType EventType) string {
 	case ReplicationFailed:
 		return "Replication failed"
 	default:
+		slog.Error("Unknown event type", "eventType", eventType)
 		return "Unknown event type"
 	}
 }

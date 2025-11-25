@@ -7,13 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"os"
 	"time"
-)
-
-const (
-	envWebhooksAPIKey = "WEBHOOKS_API_KEY"
-	envWebhooksURL    = "WEBHOOKS_URL"
 )
 
 // WebhooksClient sends events to the webhooks service.
@@ -28,9 +22,7 @@ type WebhooksClient struct {
 	apiKey      string
 }
 
-func NewWebhooksClient(companyUUID, dataplane, podID, pipelineID string, source Source) *WebhooksClient {
-	apiKey := os.Getenv(envWebhooksAPIKey)
-	url := os.Getenv(envWebhooksURL)
+func NewWebhooksClient(companyUUID, dataplane, podID, pipelineID, apiKey, url string, source Source) *WebhooksClient {
 	if apiKey == "" || url == "" {
 		slog.Warn("Webhooks disabled: missing WEBHOOKS_API_KEY or WEBHOOKS_URL environment variables")
 		return nil
@@ -50,8 +42,19 @@ func NewWebhooksClient(companyUUID, dataplane, podID, pipelineID string, source 
 	}
 }
 
+func (c *WebhooksClient) BuildProperties(eventType EventType, tableIDs []string) map[string]any {
+	return map[string]any{
+		"pipeline_id": c.pipelineID,
+		"message":     BuildMessage(eventType),
+		"source":      c.source,
+		"severity":    BuildSeverity(eventType),
+		"pod_id":      c.podID,
+		"table_ids":   tableIDs,
+	}
+}
+
 // SendEvent sends an event to the webhooks service.
-func (c *WebhooksClient) SendEvent(ctx context.Context, eventContext map[string]any, tableID []string, eventType EventType) error {
+func (c *WebhooksClient) SendEvent(ctx context.Context, eventContext map[string]any, tableIDs []string, eventType EventType) error {
 	if c == nil {
 		return fmt.Errorf("webhooks client not initialized")
 	}
@@ -59,16 +62,13 @@ func (c *WebhooksClient) SendEvent(ctx context.Context, eventContext map[string]
 		eventContext = make(map[string]any)
 	}
 
-	event := Event{
-		PipelineID: c.pipelineID,
-		EventType:  eventType,
-		Message:    InferMessage(eventType),
-		Source:     c.source,
-		Timestamp:  time.Now().UTC(),
-		Context:    eventContext,
-		Severity:   InferSeverity(eventType),
-		PodID:      c.podID,
-		TableID:    tableID,
+	properties := c.BuildProperties(eventType, tableIDs)
+
+	event := WebhooksEvent{
+		Event:       string(eventType),
+		Timestamp:   time.Now().UTC(),
+		Properties:  properties,
+		ExtraFields: eventContext,
 	}
 	body, err := json.Marshal(event)
 	if err != nil {
