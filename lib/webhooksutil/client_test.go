@@ -47,6 +47,7 @@ func (w *WebhooksClientTestSuite) TestNewWebhooksClient_MissingBoth() {
 	_, err := NewWebhooksClient("", "", Transfer, map[string]any{"company_uuid": "company-123", "dataplane": "prod", "pipeline_id": "pipeline-1"})
 	assert.ErrorContains(w.T(), err, "apiKey and url are required")
 }
+
 func (w *WebhooksClientTestSuite) TestSendEvent_Success() {
 	// Create a test server
 	var receivedEvent WebhooksEvent

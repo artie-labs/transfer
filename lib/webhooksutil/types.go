@@ -32,8 +32,7 @@ const (
 )
 
 type WebhooksEvent struct {
-	Event       string         `json:"event"`
-	Timestamp   time.Time      `json:"timestamp"`
-	Properties  map[string]any `json:"properties"`
-	ExtraFields map[string]any `json:"extraFields"`
+	Event      string         `json:"event"`
+	Timestamp  time.Time      `json:"timestamp"`
+	Properties map[string]any `json:"properties"`
 }

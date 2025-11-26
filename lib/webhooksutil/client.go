@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"net/http"
 	"time"
 
@@ -25,6 +26,10 @@ func NewWebhooksClient(apiKey, url string, source Source, properties map[string]
 		return WebhooksClient{}, fmt.Errorf("apiKey and url are required")
 	}
 
+	if properties == nil {
+		properties = make(map[string]any)
+	}
+
 	return WebhooksClient{
 		httpClient: http.Client{
 			Timeout: 10 * time.Second,
@@ -36,26 +41,23 @@ func NewWebhooksClient(apiKey, url string, source Source, properties map[string]
 	}, nil
 }
 
-func (w WebhooksClient) BuildProperties(eventType EventType, tableIDs []string) map[string]any {
-	props := w.properties
-	props["source"] = w.source
-	props["message"] = BuildMessage(eventType)
-	props["severity"] = BuildSeverity(eventType)
-	props["table_ids"] = tableIDs
+func (w WebhooksClient) BuildProperties(eventType EventType, additionalProperties map[string]any) map[string]any {
+	props := map[string]any{
+		"source":   w.source,
+		"message":  BuildMessage(eventType),
+		"severity": BuildSeverity(eventType),
+	}
+	maps.Copy(props, w.properties)
+	maps.Copy(props, additionalProperties)
 	return props
 }
 
 // SendEvent sends an event to the webhooks service.
-func (w WebhooksClient) SendEvent(ctx context.Context, eventContext map[string]any, tableIDs []string, eventType EventType) error {
-	if eventContext == nil {
-		eventContext = make(map[string]any)
-	}
-
+func (w WebhooksClient) SendEvent(ctx context.Context, eventType EventType, additionalProperties map[string]any) error {
 	event := WebhooksEvent{
-		Event:       string(eventType),
-		Timestamp:   time.Now().UTC(),
-		Properties:  w.BuildProperties(eventType, tableIDs),
-		ExtraFields: eventContext,
+		Event:      string(eventType),
+		Timestamp:  time.Now().UTC(),
+		Properties: w.BuildProperties(eventType, additionalProperties),
 	}
 
 	body, err := json.Marshal(event)
