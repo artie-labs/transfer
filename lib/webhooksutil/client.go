@@ -38,6 +38,7 @@ func NewWebhooksClient(apiKey, url string, source Source, properties map[string]
 
 func (w WebhooksClient) BuildProperties(eventType EventType, tableIDs []string) map[string]any {
 	props := w.properties
+	props["source"] = w.source
 	props["message"] = BuildMessage(eventType)
 	props["severity"] = BuildSeverity(eventType)
 	props["table_ids"] = tableIDs

@@ -53,26 +53,21 @@ func (w *WebhooksClientTestSuite) TestSendEvent_Success() {
 	var receivedHeaders http.Header
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		receivedHeaders = req.Header.Clone()
-		err := json.NewDecoder(req.Body).Decode(&receivedEvent)
-		assert.NoError(w.T(), err)
+		assert.NoError(w.T(), json.NewDecoder(req.Body).Decode(&receivedEvent))
 		rw.WriteHeader(http.StatusOK)
 	}))
 	defer server.Close()
 
 	// Create client with test server URL
-	client := WebhooksClient{
-		httpClient: http.Client{
-			Timeout: 10 * time.Second,
-		},
-		properties: map[string]any{"company_uuid": "company-123", "dataplane": "prod", "pipeline_id": "pipeline-1"},
-	}
+	client, err := NewWebhooksClient("test-api-key", server.URL, Transfer, map[string]any{"company_uuid": "company-123", "dataplane": "prod", "pipeline_id": "pipeline-1"})
+	assert.NoError(w.T(), err)
 
 	eventContext := map[string]any{
 		"rows_processed": 100,
 		"duration_ms":    5000,
 	}
-	tableIDs := []string{"schema.table1", "schema.table2"}
-	assert.NoError(w.T(), client.SendEvent(w.T().Context(), eventContext, tableIDs, EventBackFillCompleted))
+
+	assert.NoError(w.T(), client.SendEvent(w.T().Context(), eventContext, []string{"schema.table1", "schema.table2"}, EventBackFillCompleted))
 
 	assert.Equal(w.T(), "pipeline-1", receivedEvent.Properties["pipeline_id"])
 	assert.Equal(w.T(), "Backfill completed", receivedEvent.Properties["message"])
@@ -234,14 +229,11 @@ func (w *WebhooksClientTestSuite) TestSendEvent_AllEventTypes() {
 }
 
 func (w *WebhooksClientTestSuite) TestSendEvent_AllSources() {
-	sources := []Source{Transfer, Reader, Debezium, EventsAPI}
-
-	for _, source := range sources {
+	for _, source := range []Source{Transfer, Reader, Debezium, EventsAPI} {
 		w.T().Run(string(source), func(t *testing.T) {
 			var receivedEvent WebhooksEvent
 			server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-				err := json.NewDecoder(req.Body).Decode(&receivedEvent)
-				assert.NoError(t, err)
+				assert.NoError(t, json.NewDecoder(req.Body).Decode(&receivedEvent))
 				rw.WriteHeader(http.StatusOK)
 			}))
 			defer server.Close()
