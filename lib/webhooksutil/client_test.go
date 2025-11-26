@@ -63,26 +63,25 @@ func (w *WebhooksClientTestSuite) TestSendEvent_Success() {
 	client, err := NewWebhooksClient("test-api-key", server.URL, Transfer, map[string]any{"company_uuid": "company-123", "dataplane": "prod", "pipeline_id": "pipeline-1"})
 	assert.NoError(w.T(), err)
 
-	eventContext := map[string]any{
+	assert.NoError(w.T(), client.SendEvent(w.T().Context(), EventBackFillCompleted, map[string]any{"rows_processed": 100, "duration_ms": 5000, "table_ids": []string{"schema.table1", "schema.table2"}}))
+
+	expectedBytes, err := json.Marshal(map[string]any{
+		"source":         "transfer",
+		"message":        "Backfill completed",
+		"severity":       "info",
+		"company_uuid":   "company-123",
+		"dataplane":      "prod",
+		"pipeline_id":    "pipeline-1",
 		"rows_processed": 100,
 		"duration_ms":    5000,
-	}
+		"table_ids":      []string{"schema.table1", "schema.table2"},
+	})
+	assert.NoError(w.T(), err)
 
-	assert.NoError(w.T(), client.SendEvent(w.T().Context(), eventContext, []string{"schema.table1", "schema.table2"}, EventBackFillCompleted))
+	var expectedMap map[string]any
+	assert.NoError(w.T(), json.Unmarshal(expectedBytes, &expectedMap))
 
-	assert.Equal(w.T(), "pipeline-1", receivedEvent.Properties["pipeline_id"])
-	assert.Equal(w.T(), "Backfill completed", receivedEvent.Properties["message"])
-	assert.Equal(w.T(), string(Transfer), receivedEvent.Properties["source"])
-	assert.Equal(w.T(), string(SeverityInfo), receivedEvent.Properties["severity"])
-
-	// Check table IDs - JSON unmarshalling converts to []any
-	tableIDsInterface := receivedEvent.Properties["table_ids"].([]any)
-	assert.Len(w.T(), tableIDsInterface, 2)
-	assert.Equal(w.T(), "schema.table1", tableIDsInterface[0])
-	assert.Equal(w.T(), "schema.table2", tableIDsInterface[1])
-	// JSON unmarshalling converts numbers to float64
-	assert.Equal(w.T(), float64(100), receivedEvent.ExtraFields["rows_processed"])
-	assert.Equal(w.T(), float64(5000), receivedEvent.ExtraFields["duration_ms"])
+	assert.Equal(w.T(), expectedMap, receivedEvent.Properties)
 	assert.WithinDuration(w.T(), time.Now().UTC(), receivedEvent.Timestamp, 2*time.Second)
 
 	// Verify headers
@@ -93,18 +92,14 @@ func (w *WebhooksClientTestSuite) TestSendEvent_Success() {
 func (w *WebhooksClientTestSuite) TestSendEvent_NilContext() {
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		var event WebhooksEvent
-		err := json.NewDecoder(req.Body).Decode(&event)
-		assert.NoError(w.T(), err)
-		assert.NotNil(w.T(), event.ExtraFields)
-		assert.Empty(w.T(), event.ExtraFields)
+		assert.NoError(w.T(), json.NewDecoder(req.Body).Decode(&event))
 		rw.WriteHeader(http.StatusOK)
 	}))
 	defer server.Close()
 
 	client, err := NewWebhooksClient("test-api-key", server.URL, Transfer, map[string]any{"company_uuid": "company-123", "dataplane": "prod", "pipeline_id": "pipeline-1"})
 	assert.NoError(w.T(), err)
-	client.SendEvent(w.T().Context(), nil, []string{"table1"}, ReplicationStarted)
-	assert.NoError(w.T(), err)
+	assert.NoError(w.T(), client.SendEvent(w.T().Context(), ReplicationStarted, map[string]any{"table_ids": []string{"table1"}}))
 }
 
 func (w *WebhooksClientTestSuite) TestSendEvent_HTTPError() {
@@ -122,7 +117,7 @@ func (w *WebhooksClientTestSuite) TestSendEvent_HTTPError() {
 		apiKey:     "test-api-key",
 	}
 
-	assert.ErrorContains(w.T(), client.SendEvent(w.T().Context(), nil, []string{"table1"}, EventBackFillFailed), "unexpected status code: 500")
+	assert.ErrorContains(w.T(), client.SendEvent(w.T().Context(), EventBackFillFailed, map[string]any{"table_ids": []string{"table1"}}), "unexpected status code: 500")
 }
 
 func (w *WebhooksClientTestSuite) TestSendEvent_HTTPClientError() {
@@ -139,7 +134,7 @@ func (w *WebhooksClientTestSuite) TestSendEvent_HTTPClientError() {
 		apiKey:     "test-api-key",
 	}
 
-	assert.ErrorContains(w.T(), client.SendEvent(w.T().Context(), nil, []string{"table1"}, EventBackFillFailed), "unexpected status code: 400")
+	assert.ErrorContains(w.T(), client.SendEvent(w.T().Context(), EventBackFillFailed, map[string]any{"table_ids": []string{"table1"}}), "unexpected status code: 400")
 }
 
 func (w *WebhooksClientTestSuite) TestSendEvent_ContextCanceled() {
@@ -161,7 +156,7 @@ func (w *WebhooksClientTestSuite) TestSendEvent_ContextCanceled() {
 	ctx, cancel := context.WithTimeout(w.T().Context(), 100*time.Millisecond)
 	defer cancel()
 
-	assert.ErrorContains(w.T(), client.SendEvent(ctx, nil, []string{"table1"}, EventBackFillFailed), "context deadline exceeded")
+	assert.ErrorContains(w.T(), client.SendEvent(ctx, EventBackFillFailed, map[string]any{"table_ids": []string{"table1"}}), "context deadline exceeded")
 }
 
 func (w *WebhooksClientTestSuite) TestSendEvent_InvalidURL() {
@@ -173,7 +168,7 @@ func (w *WebhooksClientTestSuite) TestSendEvent_InvalidURL() {
 		apiKey:     "test-api-key",
 	}
 
-	assert.ErrorContains(w.T(), client.SendEvent(w.T().Context(), nil, []string{"table1"}, EventBackFillFailed), "failed to create request")
+	assert.ErrorContains(w.T(), client.SendEvent(w.T().Context(), EventBackFillFailed, map[string]any{"table_ids": []string{"table1"}}), "failed to create request")
 }
 
 func (w *WebhooksClientTestSuite) TestSendEvent_NetworkError() {
@@ -186,7 +181,7 @@ func (w *WebhooksClientTestSuite) TestSendEvent_NetworkError() {
 		apiKey:     "test-api-key",
 	}
 
-	assert.ErrorContains(w.T(), client.SendEvent(w.T().Context(), nil, []string{"table1"}, EventBackFillFailed), "failed to send request")
+	assert.ErrorContains(w.T(), client.SendEvent(w.T().Context(), EventBackFillFailed, map[string]any{"table_ids": []string{"table1"}}), "failed to send request")
 }
 
 func (w *WebhooksClientTestSuite) TestSendEvent_AllEventTypes() {
@@ -221,7 +216,7 @@ func (w *WebhooksClientTestSuite) TestSendEvent_AllEventTypes() {
 				apiKey:     "test-api-key",
 			}
 
-			assert.NoError(t, client.SendEvent(w.T().Context(), nil, []string{"table1"}, tc.eventType))
+			assert.NoError(t, client.SendEvent(w.T().Context(), tc.eventType, map[string]any{"table_ids": []string{"table1"}}))
 			assert.Equal(t, string(tc.eventType), receivedEvent.Event)
 			assert.Equal(t, tc.message, receivedEvent.Properties["message"])
 			assert.Equal(t, string(tc.severity), receivedEvent.Properties["severity"])
@@ -247,7 +242,7 @@ func (w *WebhooksClientTestSuite) TestSendEvent_AllSources() {
 				apiKey:     "test-api-key",
 			}
 
-			assert.NoError(t, client.SendEvent(w.T().Context(), nil, []string{"table1"}, ReplicationStarted))
+			assert.NoError(t, client.SendEvent(w.T().Context(), ReplicationStarted, map[string]any{"table_ids": []string{"table1"}}))
 			assert.Equal(t, string(source), receivedEvent.Properties["source"])
 		})
 	}
@@ -270,7 +265,7 @@ func (w *WebhooksClientTestSuite) TestSendEvent_EmptyTableID() {
 		apiKey:     "test-api-key",
 	}
 
-	assert.NoError(w.T(), client.SendEvent(w.T().Context(), nil, []string{}, EventBackFillStarted))
+	assert.NoError(w.T(), client.SendEvent(w.T().Context(), EventBackFillStarted, map[string]any{"table_ids": []string{}}))
 	assert.Empty(w.T(), receivedEvent.Properties["table_ids"])
 }
 
@@ -291,6 +286,6 @@ func (w *WebhooksClientTestSuite) TestSendEvent_NilTableID() {
 		apiKey:     "test-api-key",
 	}
 
-	assert.NoError(w.T(), client.SendEvent(w.T().Context(), nil, nil, EventBackFillStarted))
+	assert.NoError(w.T(), client.SendEvent(w.T().Context(), EventBackFillStarted, map[string]any{}))
 	assert.Nil(w.T(), receivedEvent.Properties["table_ids"])
 }
