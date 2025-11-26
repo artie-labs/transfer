@@ -21,7 +21,7 @@ type WebhooksClient struct {
 	apiKey      string
 }
 
-func NewWebhooksClient(companyUUID, dataplane, podID, pipelineID, apiKey, url string, source Source) *WebhooksClient {
+func NewWebhooksClient(companyUUID, dataplane, pipelineID, apiKey, url string, source Source) *WebhooksClient {
 	if apiKey == "" || url == "" {
 		slog.Warn("Webhooks disabled: missing WEBHOOKS_API_KEY or WEBHOOKS_URL environment variables")
 		return nil

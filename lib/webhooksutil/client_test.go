@@ -25,7 +25,7 @@ func TestWebhooksClientTestSuite(t *testing.T) {
 }
 
 func (w *WebhooksClientTestSuite) TestNewWebhooksClient_Success() {
-	client := NewWebhooksClient("company-123", "prod", "pod-1", "pipeline-1", "test-api-key", "https://example.com/webhooks", Transfer)
+	client := NewWebhooksClient("company-123", "prod", "pipeline-1", "test-api-key", "https://example.com/webhooks", Transfer)
 
 	assert.NotNil(w.T(), client)
 	assert.Equal(w.T(), "company-123", client.companyUUID)
@@ -38,19 +38,19 @@ func (w *WebhooksClientTestSuite) TestNewWebhooksClient_Success() {
 }
 
 func (w *WebhooksClientTestSuite) TestNewWebhooksClient_MissingAPIKey() {
-	client := NewWebhooksClient("company-123", "prod", "pod-1", "pipeline-1", "", "https://example.com/webhooks", Transfer)
+	client := NewWebhooksClient("company-123", "prod", "pipeline-1", "", "https://example.com/webhooks", Transfer)
 
 	assert.Nil(w.T(), client)
 }
 
 func (w *WebhooksClientTestSuite) TestNewWebhooksClient_MissingURL() {
-	client := NewWebhooksClient("company-123", "prod", "pod-1", "pipeline-1", "test-api-key", "", Transfer)
+	client := NewWebhooksClient("company-123", "prod", "pipeline-1", "test-api-key", "", Transfer)
 
 	assert.Nil(w.T(), client)
 }
 
 func (w *WebhooksClientTestSuite) TestNewWebhooksClient_MissingBoth() {
-	client := NewWebhooksClient("company-123", "prod", "pod-1", "pipeline-1", "", "", Transfer)
+	client := NewWebhooksClient("company-123", "prod", "pipeline-1", "", "", Transfer)
 
 	assert.Nil(w.T(), client)
 }
