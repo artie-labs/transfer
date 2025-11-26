@@ -3,6 +3,7 @@ package config
 import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/lib/webhooksutil"
 )
 
 type Mode string
@@ -98,4 +99,15 @@ type Config struct {
 			Settings map[string]any         `yaml:"settings,omitempty"`
 		}
 	}
+
+	// [WebhookSettings] - This will enable the webhook settings for the transfer.
+	WebhookSettings *WebhookSettings `yaml:"webhookSettings,omitempty"`
+}
+
+type WebhookSettings struct {
+	Enabled    bool                `yaml:"enabled"`
+	URL        string              `yaml:"url"`
+	APIKey     string              `yaml:"apiKey"`
+	Properties map[string]any      `yaml:"properties,omitempty"`
+	Source     webhooksutil.Source `yaml:"source"`
 }
