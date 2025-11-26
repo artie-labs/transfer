@@ -25,43 +25,28 @@ func TestWebhooksClientTestSuite(t *testing.T) {
 }
 
 func (w *WebhooksClientTestSuite) TestNewWebhooksClient_Success() {
-	client := NewWebhooksClient("company-123", "prod", "pipeline-1", "test-api-key", "https://example.com/webhooks", Transfer)
-
-	assert.NotNil(w.T(), client)
-	assert.Equal(w.T(), "company-123", client.companyUUID)
-	assert.Equal(w.T(), "prod", client.dataplane)
-	assert.Equal(w.T(), "pipeline-1", client.pipelineID)
+	client, err := NewWebhooksClient("test-api-key", "https://example.com/webhooks", Transfer, map[string]any{"company_uuid": "company-123", "dataplane": "prod", "pipeline_id": "pipeline-1"})
+	assert.NoError(w.T(), err)
 	assert.Equal(w.T(), Transfer, client.source)
 	assert.Equal(w.T(), "test-api-key", client.apiKey)
 	assert.Equal(w.T(), "https://example.com/webhooks", client.url)
-	assert.Equal(w.T(), 10*time.Second, client.httpClient.Timeout)
+	assert.Equal(w.T(), map[string]any{"company_uuid": "company-123", "dataplane": "prod", "pipeline_id": "pipeline-1"}, client.properties)
 }
 
 func (w *WebhooksClientTestSuite) TestNewWebhooksClient_MissingAPIKey() {
-	client := NewWebhooksClient("company-123", "prod", "pipeline-1", "", "https://example.com/webhooks", Transfer)
-
-	assert.Nil(w.T(), client)
+	_, err := NewWebhooksClient("", "https://example.com/webhooks", Transfer, map[string]any{"company_uuid": "company-123", "dataplane": "prod", "pipeline_id": "pipeline-1"})
+	assert.ErrorContains(w.T(), err, "apiKey and url are required")
 }
 
 func (w *WebhooksClientTestSuite) TestNewWebhooksClient_MissingURL() {
-	client := NewWebhooksClient("company-123", "prod", "pipeline-1", "test-api-key", "", Transfer)
-
-	assert.Nil(w.T(), client)
+	_, err := NewWebhooksClient("test-api-key", "", Transfer, map[string]any{"company_uuid": "company-123", "dataplane": "prod", "pipeline_id": "pipeline-1"})
+	assert.ErrorContains(w.T(), err, "apiKey and url are required")
 }
 
 func (w *WebhooksClientTestSuite) TestNewWebhooksClient_MissingBoth() {
-	client := NewWebhooksClient("company-123", "prod", "pipeline-1", "", "", Transfer)
-
-	assert.Nil(w.T(), client)
+	_, err := NewWebhooksClient("", "", Transfer, map[string]any{"company_uuid": "company-123", "dataplane": "prod", "pipeline_id": "pipeline-1"})
+	assert.ErrorContains(w.T(), err, "apiKey and url are required")
 }
-
-func (w *WebhooksClientTestSuite) TestSendEvent_NilClient() {
-	var client *WebhooksClient
-	err := client.SendEvent(context.Background(), nil, []string{"table1"}, EventBackFillStarted)
-
-	assert.ErrorContains(w.T(), err, "webhooks client not initialized")
-}
-
 func (w *WebhooksClientTestSuite) TestSendEvent_Success() {
 	// Create a test server
 	var receivedEvent WebhooksEvent
@@ -75,16 +60,11 @@ func (w *WebhooksClientTestSuite) TestSendEvent_Success() {
 	defer server.Close()
 
 	// Create client with test server URL
-	client := &WebhooksClient{
+	client := WebhooksClient{
 		httpClient: http.Client{
 			Timeout: 10 * time.Second,
 		},
-		companyUUID: "company-123",
-		dataplane:   "prod",
-		pipelineID:  "pipeline-1",
-		source:      Transfer,
-		url:         server.URL,
-		apiKey:      "test-api-key",
+		properties: map[string]any{"company_uuid": "company-123", "dataplane": "prod", "pipeline_id": "pipeline-1"},
 	}
 
 	eventContext := map[string]any{
@@ -92,10 +72,8 @@ func (w *WebhooksClientTestSuite) TestSendEvent_Success() {
 		"duration_ms":    5000,
 	}
 	tableIDs := []string{"schema.table1", "schema.table2"}
+	assert.NoError(w.T(), client.SendEvent(w.T().Context(), eventContext, tableIDs, EventBackFillCompleted))
 
-	err := client.SendEvent(context.Background(), eventContext, tableIDs, EventBackFillCompleted)
-
-	assert.NoError(w.T(), err)
 	assert.Equal(w.T(), "pipeline-1", receivedEvent.Properties["pipeline_id"])
 	assert.Equal(w.T(), "Backfill completed", receivedEvent.Properties["message"])
 	assert.Equal(w.T(), string(Transfer), receivedEvent.Properties["source"])
@@ -127,17 +105,9 @@ func (w *WebhooksClientTestSuite) TestSendEvent_NilContext() {
 	}))
 	defer server.Close()
 
-	client := &WebhooksClient{
-		httpClient:  http.Client{Timeout: 10 * time.Second},
-		pipelineID:  "pipeline-1",
-		source:      Transfer,
-		url:         server.URL,
-		apiKey:      "test-api-key",
-		companyUUID: "company-123",
-		dataplane:   "prod",
-	}
-
-	err := client.SendEvent(context.Background(), nil, []string{"table1"}, ReplicationStarted)
+	client, err := NewWebhooksClient("test-api-key", server.URL, Transfer, map[string]any{"company_uuid": "company-123", "dataplane": "prod", "pipeline_id": "pipeline-1"})
+	assert.NoError(w.T(), err)
+	client.SendEvent(w.T().Context(), nil, []string{"table1"}, ReplicationStarted)
 	assert.NoError(w.T(), err)
 }
 
@@ -148,19 +118,15 @@ func (w *WebhooksClientTestSuite) TestSendEvent_HTTPError() {
 	}))
 	defer server.Close()
 
-	client := &WebhooksClient{
-		httpClient:  http.Client{Timeout: 10 * time.Second},
-		pipelineID:  "pipeline-1",
-		source:      Transfer,
-		url:         server.URL,
-		apiKey:      "test-api-key",
-		companyUUID: "company-123",
-		dataplane:   "prod",
+	client := WebhooksClient{
+		httpClient: http.Client{Timeout: 10 * time.Second},
+		properties: map[string]any{"company_uuid": "company-123", "dataplane": "prod", "pipeline_id": "pipeline-1"},
+		source:     Transfer,
+		url:        server.URL,
+		apiKey:     "test-api-key",
 	}
 
-	err := client.SendEvent(context.Background(), nil, []string{"table1"}, EventBackFillFailed)
-
-	assert.ErrorContains(w.T(), err, "unexpected status code: 500")
+	assert.ErrorContains(w.T(), client.SendEvent(w.T().Context(), nil, []string{"table1"}, EventBackFillFailed), "unexpected status code: 500")
 }
 
 func (w *WebhooksClientTestSuite) TestSendEvent_HTTPClientError() {
@@ -169,19 +135,15 @@ func (w *WebhooksClientTestSuite) TestSendEvent_HTTPClientError() {
 	}))
 	defer server.Close()
 
-	client := &WebhooksClient{
-		httpClient:  http.Client{Timeout: 10 * time.Second},
-		pipelineID:  "pipeline-1",
-		source:      Transfer,
-		url:         server.URL,
-		apiKey:      "test-api-key",
-		companyUUID: "company-123",
-		dataplane:   "prod",
+	client := WebhooksClient{
+		httpClient: http.Client{Timeout: 10 * time.Second},
+		properties: map[string]any{"company_uuid": "company-123", "dataplane": "prod", "pipeline_id": "pipeline-1"},
+		source:     Transfer,
+		url:        server.URL,
+		apiKey:     "test-api-key",
 	}
 
-	err := client.SendEvent(context.Background(), nil, []string{"table1"}, EventBackFillFailed)
-
-	assert.ErrorContains(w.T(), err, "unexpected status code: 400")
+	assert.ErrorContains(w.T(), client.SendEvent(w.T().Context(), nil, []string{"table1"}, EventBackFillFailed), "unexpected status code: 400")
 }
 
 func (w *WebhooksClientTestSuite) TestSendEvent_ContextCanceled() {
@@ -192,56 +154,43 @@ func (w *WebhooksClientTestSuite) TestSendEvent_ContextCanceled() {
 	}))
 	defer server.Close()
 
-	client := &WebhooksClient{
-		httpClient:  http.Client{Timeout: 10 * time.Second},
-		pipelineID:  "pipeline-1",
-		source:      Transfer,
-		url:         server.URL,
-		apiKey:      "test-api-key",
-		companyUUID: "company-123",
-		dataplane:   "prod",
+	client := WebhooksClient{
+		httpClient: http.Client{Timeout: 10 * time.Second},
+		properties: map[string]any{"company_uuid": "company-123", "dataplane": "prod", "pipeline_id": "pipeline-1"},
+		source:     Transfer,
+		url:        server.URL,
+		apiKey:     "test-api-key",
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	ctx, cancel := context.WithTimeout(w.T().Context(), 100*time.Millisecond)
 	defer cancel()
 
-	err := client.SendEvent(ctx, nil, []string{"table1"}, EventBackFillFailed)
-
-	assert.Error(w.T(), err)
-	assert.ErrorContains(w.T(), err, "context deadline exceeded")
+	assert.ErrorContains(w.T(), client.SendEvent(ctx, nil, []string{"table1"}, EventBackFillFailed), "context deadline exceeded")
 }
 
 func (w *WebhooksClientTestSuite) TestSendEvent_InvalidURL() {
-	client := &WebhooksClient{
-		httpClient:  http.Client{Timeout: 10 * time.Second},
-		pipelineID:  "pipeline-1",
-		source:      Transfer,
-		url:         "://invalid-url",
-		apiKey:      "test-api-key",
-		companyUUID: "company-123",
-		dataplane:   "prod",
+	client := WebhooksClient{
+		httpClient: http.Client{Timeout: 10 * time.Second},
+		properties: map[string]any{"company_uuid": "company-123", "dataplane": "prod", "pipeline_id": "pipeline-1"},
+		source:     Transfer,
+		url:        "://invalid-url",
+		apiKey:     "test-api-key",
 	}
 
-	err := client.SendEvent(context.Background(), nil, []string{"table1"}, EventBackFillFailed)
-
-	assert.ErrorContains(w.T(), err, "failed to create request")
+	assert.ErrorContains(w.T(), client.SendEvent(w.T().Context(), nil, []string{"table1"}, EventBackFillFailed), "failed to create request")
 }
 
 func (w *WebhooksClientTestSuite) TestSendEvent_NetworkError() {
 	// Use a URL that will fail to connect
-	client := &WebhooksClient{
-		httpClient:  http.Client{Timeout: 1 * time.Second},
-		pipelineID:  "pipeline-1",
-		source:      Transfer,
-		url:         "http://localhost:1", // Port 1 is unlikely to be open
-		apiKey:      "test-api-key",
-		companyUUID: "company-123",
-		dataplane:   "prod",
+	client := WebhooksClient{
+		httpClient: http.Client{Timeout: 1 * time.Second},
+		properties: map[string]any{"company_uuid": "company-123", "dataplane": "prod", "pipeline_id": "pipeline-1"},
+		source:     Transfer,
+		url:        "http://localhost:1", // Port 1 is unlikely to be open
+		apiKey:     "test-api-key",
 	}
 
-	err := client.SendEvent(context.Background(), nil, []string{"table1"}, EventBackFillFailed)
-
-	assert.ErrorContains(w.T(), err, "failed to send request")
+	assert.ErrorContains(w.T(), client.SendEvent(w.T().Context(), nil, []string{"table1"}, EventBackFillFailed), "failed to send request")
 }
 
 func (w *WebhooksClientTestSuite) TestSendEvent_AllEventTypes() {
@@ -268,19 +217,15 @@ func (w *WebhooksClientTestSuite) TestSendEvent_AllEventTypes() {
 			}))
 			defer server.Close()
 
-			client := &WebhooksClient{
-				httpClient:  http.Client{Timeout: 10 * time.Second},
-				pipelineID:  "pipeline-1",
-				source:      Debezium,
-				url:         server.URL,
-				apiKey:      "test-api-key",
-				companyUUID: "company-123",
-				dataplane:   "prod",
+			client := WebhooksClient{
+				httpClient: http.Client{Timeout: 10 * time.Second},
+				properties: map[string]any{"company_uuid": "company-123", "dataplane": "prod", "pipeline_id": "pipeline-1"},
+				source:     Debezium,
+				url:        server.URL,
+				apiKey:     "test-api-key",
 			}
 
-			err := client.SendEvent(context.Background(), nil, []string{"table1"}, tc.eventType)
-
-			assert.NoError(t, err)
+			assert.NoError(t, client.SendEvent(w.T().Context(), nil, []string{"table1"}, tc.eventType))
 			assert.Equal(t, string(tc.eventType), receivedEvent.Event)
 			assert.Equal(t, tc.message, receivedEvent.Properties["message"])
 			assert.Equal(t, string(tc.severity), receivedEvent.Properties["severity"])
@@ -301,19 +246,15 @@ func (w *WebhooksClientTestSuite) TestSendEvent_AllSources() {
 			}))
 			defer server.Close()
 
-			client := &WebhooksClient{
-				httpClient:  http.Client{Timeout: 10 * time.Second},
-				pipelineID:  "pipeline-1",
-				source:      source,
-				url:         server.URL,
-				apiKey:      "test-api-key",
-				companyUUID: "company-123",
-				dataplane:   "prod",
+			client := WebhooksClient{
+				httpClient: http.Client{Timeout: 10 * time.Second},
+				properties: map[string]any{"company_uuid": "company-123", "dataplane": "prod", "pipeline_id": "pipeline-1"},
+				source:     source,
+				url:        server.URL,
+				apiKey:     "test-api-key",
 			}
 
-			err := client.SendEvent(context.Background(), nil, []string{"table1"}, ReplicationStarted)
-
-			assert.NoError(t, err)
+			assert.NoError(t, client.SendEvent(w.T().Context(), nil, []string{"table1"}, ReplicationStarted))
 			assert.Equal(t, string(source), receivedEvent.Properties["source"])
 		})
 	}
@@ -328,19 +269,15 @@ func (w *WebhooksClientTestSuite) TestSendEvent_EmptyTableID() {
 	}))
 	defer server.Close()
 
-	client := &WebhooksClient{
-		httpClient:  http.Client{Timeout: 10 * time.Second},
-		pipelineID:  "pipeline-1",
-		source:      Transfer,
-		url:         server.URL,
-		apiKey:      "test-api-key",
-		companyUUID: "company-123",
-		dataplane:   "prod",
+	client := WebhooksClient{
+		httpClient: http.Client{Timeout: 10 * time.Second},
+		properties: map[string]any{"company_uuid": "company-123", "dataplane": "prod", "pipeline_id": "pipeline-1"},
+		source:     Transfer,
+		url:        server.URL,
+		apiKey:     "test-api-key",
 	}
 
-	err := client.SendEvent(context.Background(), nil, []string{}, EventBackFillStarted)
-
-	assert.NoError(w.T(), err)
+	assert.NoError(w.T(), client.SendEvent(w.T().Context(), nil, []string{}, EventBackFillStarted))
 	assert.Empty(w.T(), receivedEvent.Properties["table_ids"])
 }
 
@@ -354,17 +291,13 @@ func (w *WebhooksClientTestSuite) TestSendEvent_NilTableID() {
 	defer server.Close()
 
 	client := &WebhooksClient{
-		httpClient:  http.Client{Timeout: 10 * time.Second},
-		pipelineID:  "pipeline-1",
-		source:      Transfer,
-		url:         server.URL,
-		apiKey:      "test-api-key",
-		companyUUID: "company-123",
-		dataplane:   "prod",
+		httpClient: http.Client{Timeout: 10 * time.Second},
+		properties: map[string]any{"company_uuid": "company-123", "dataplane": "prod", "pipeline_id": "pipeline-1"},
+		source:     Transfer,
+		url:        server.URL,
+		apiKey:     "test-api-key",
 	}
 
-	err := client.SendEvent(context.Background(), nil, nil, EventBackFillStarted)
-
-	assert.NoError(w.T(), err)
+	assert.NoError(w.T(), client.SendEvent(w.T().Context(), nil, nil, EventBackFillStarted))
 	assert.Nil(w.T(), receivedEvent.Properties["table_ids"])
 }

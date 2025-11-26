@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
 // WebhooksClient sends events to the webhooks service.
@@ -18,7 +20,11 @@ type WebhooksClient struct {
 	properties map[string]any
 }
 
-func NewWebhooksClient(apiKey, url string, source Source, properties map[string]any) WebhooksClient {
+func NewWebhooksClient(apiKey, url string, source Source, properties map[string]any) (WebhooksClient, error) {
+	if stringutil.Empty(apiKey, url) {
+		return WebhooksClient{}, fmt.Errorf("apiKey and url are required")
+	}
+
 	return WebhooksClient{
 		httpClient: http.Client{
 			Timeout: 10 * time.Second,
@@ -27,7 +33,7 @@ func NewWebhooksClient(apiKey, url string, source Source, properties map[string]
 		url:        url,
 		source:     source,
 		properties: properties,
-	}
+	}, nil
 }
 
 func (w WebhooksClient) BuildProperties(eventType EventType, tableIDs []string) map[string]any {
