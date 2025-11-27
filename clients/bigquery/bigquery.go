@@ -331,6 +331,5 @@ func LoadBigQuery(ctx context.Context, cfg config.Config, _store *db.Store) (*St
 		config:              cfg,
 		Store:               store,
 		maxRequestBytesSize: maxRequestByteSize,
-		maxPercent:          maxPercent,
 	}, nil
 }
