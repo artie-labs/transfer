@@ -44,6 +44,8 @@ const (
 
 	DBZRelationalFormat = "debezium.relational"
 
+	EventTrackingFormat = "artie.trackevents"
+
 	DefaultS3TablesPackage = "software.amazon.s3tables:s3-tables-catalog-for-iceberg-runtime:0.1.4"
 )
 
@@ -83,23 +85,27 @@ type DestinationKind string
 const (
 	BigQuery   DestinationKind = "bigquery"
 	Databricks DestinationKind = "databricks"
+	GCS        DestinationKind = "gcs"
+	Iceberg    DestinationKind = "iceberg"
 	MSSQL      DestinationKind = "mssql"
+	MotherDuck DestinationKind = "motherduck"
 	Postgres   DestinationKind = "postgres"
 	Redshift   DestinationKind = "redshift"
 	S3         DestinationKind = "s3"
 	Snowflake  DestinationKind = "snowflake"
-	Iceberg    DestinationKind = "iceberg"
 )
 
 var ValidDestinations = []DestinationKind{
 	BigQuery,
 	Databricks,
+	GCS,
+	Iceberg,
 	MSSQL,
+	MotherDuck,
+	Postgres,
 	Redshift,
 	S3,
 	Snowflake,
-	Iceberg,
-	Postgres,
 }
 
 func IsValidDestination(destination DestinationKind) bool {

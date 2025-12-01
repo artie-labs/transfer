@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+
+	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
 
 type Int64Converter struct{}
@@ -37,6 +39,13 @@ func (Int64Converter) Convert(value any) (int64, error) {
 		}
 
 		return int64(castValue), nil
+	case *decimal.Decimal:
+		val, err := castValue.Value().Int64()
+		if err != nil {
+			return 0, fmt.Errorf("failed to convert decimal to int64: %w", err)
+		}
+
+		return val, nil
 	}
 
 	return 0, fmt.Errorf("failed to parse int64, unsupported type: %T", value)

@@ -72,10 +72,6 @@ func (PostgresDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdent
 	panic("not implemented") // We don't currently support deduping for Postgres.
 }
 
-func (PostgresDialect) BuildDedupeTableQuery(tableID sql.TableIdentifier, primaryKeys []string) string {
-	panic("not implemented")
-}
-
 func (PostgresDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (string, []any, error) {
 	castedTableID, err := typing.AssertType[TableIdentifier](tableID)
 	if err != nil {

@@ -40,6 +40,22 @@ func (s *S3Settings) Validate() error {
 	return nil
 }
 
+func (g *GCSSettings) Validate() error {
+	if g == nil {
+		return fmt.Errorf("gcs settings are nil")
+	}
+
+	if stringutil.Empty(g.Bucket) {
+		return fmt.Errorf("gcs bucket is empty")
+	}
+
+	if !constants.IsValidS3OutputFormat(g.OutputFormat) {
+		return fmt.Errorf("invalid gcs output format %q", g.OutputFormat)
+	}
+
+	return nil
+}
+
 func (c Config) TopicConfigs() []*kafkalib.TopicConfig {
 	return c.Kafka.TopicConfigs
 }
@@ -117,6 +133,26 @@ func (c Config) ValidateMSSQL() error {
 	return nil
 }
 
+func (c Config) ValidateMotherDuck() error {
+	if c.Output != constants.MotherDuck {
+		return fmt.Errorf("output is not motherduck, output: %q", c.Output)
+	}
+
+	if c.MotherDuck == nil {
+		return fmt.Errorf("MotherDuck config is nil")
+	}
+
+	if stringutil.Empty(c.MotherDuck.DucktapeURL) {
+		return fmt.Errorf("MotherDuck ducktape URL is empty")
+	}
+
+	if empty := stringutil.Empty(c.MotherDuck.Token); empty {
+		return fmt.Errorf("MotherDuck access token is empty")
+	}
+
+	return nil
+}
+
 // Validate will check the output source validity
 // It will also check if a topic exists + iterate over each topic to make sure it's valid.
 // The actual output source (like Snowflake) and CDC parser will be loaded and checked by other funcs.
@@ -149,6 +185,14 @@ func (c Config) Validate() error {
 		}
 	case constants.S3:
 		if err := c.S3.Validate(); err != nil {
+			return err
+		}
+	case constants.GCS:
+		if err := c.GCS.Validate(); err != nil {
+			return err
+		}
+	case constants.MotherDuck:
+		if err := c.ValidateMotherDuck(); err != nil {
 			return err
 		}
 	}

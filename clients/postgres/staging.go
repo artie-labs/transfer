@@ -60,14 +60,14 @@ func (s *Store) buildStagingIterator(tableData *optimization.TableData) (pgx.Cop
 	return &stagingIterator{data: values, idx: 0}, nil
 }
 
-func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tempTableID, _ sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
+func (s *Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tableID, _ sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
-		if err := shared.CreateTempTable(ctx, s, tableData, dwh, opts.ColumnSettings, tempTableID); err != nil {
+		if err := shared.CreateTempTable(ctx, s, tableData, dwh, opts.ColumnSettings, tableID); err != nil {
 			return err
 		}
 	}
 
-	castedTableID, ok := tempTableID.(dialect.TableIdentifier)
+	castedTableID, ok := tableID.(dialect.TableIdentifier)
 	if !ok {
 		return fmt.Errorf("failed to cast table identifier to dialect.TableIdentifier")
 	}

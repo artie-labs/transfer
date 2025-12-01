@@ -75,8 +75,8 @@ func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTa
 	return file.FilePath, nil
 }
 
-func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tempTableID sql.TableIdentifier) error {
-	fp, err := s.writeTemporaryTableFile(tableData, tempTableID)
+func (s Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tableID sql.TableIdentifier) error {
+	fp, err := s.writeTemporaryTableFile(tableData, tableID)
 	if err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
 	}
@@ -99,7 +99,7 @@ func (s Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizatio
 	}
 
 	// Load the data into a temporary view
-	command := s.Dialect().BuildCreateTemporaryView(tempTableID.EscapedTable(), colParts, s3URI)
+	command := s.Dialect().BuildCreateTemporaryView(tableID.EscapedTable(), colParts, s3URI)
 	if err := s.apacheLivyClient.ExecContext(ctx, command); err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
 	}

@@ -14,9 +14,9 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tempTableID, _ sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
+func (s *Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tableID, _ sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
-		if err := shared.CreateTempTable(ctx, s, tableData, dwh, opts.ColumnSettings, tempTableID); err != nil {
+		if err := shared.CreateTempTable(ctx, s, tableData, dwh, opts.ColumnSettings, tableID); err != nil {
 			return err
 		}
 	}
@@ -36,7 +36,7 @@ func (s *Store) PrepareTemporaryTable(ctx context.Context, tableData *optimizati
 	}()
 
 	cols := tableData.ReadOnlyInMemoryCols().ValidColumns()
-	stmt, err := tx.Prepare(mssql.CopyIn(tempTableID.FullyQualifiedName(), mssql.BulkOptions{}, columns.ColumnNames(cols)...))
+	stmt, err := tx.Prepare(mssql.CopyIn(tableID.FullyQualifiedName(), mssql.BulkOptions{}, columns.ColumnNames(cols)...))
 	if err != nil {
 		return fmt.Errorf("failed to prepare bulk insert: %w", err)
 	}

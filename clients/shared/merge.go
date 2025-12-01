@@ -85,9 +85,6 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 			}
 
 			subQuery = stagingTableID.FullyQualifiedName()
-			if opts.SubQueryDedupe {
-				subQuery = dest.Dialect().BuildDedupeTableQuery(stagingTableID, tableData.PrimaryKeys())
-			}
 		} else {
 			return fmt.Errorf("destination %T does not support staging table reuse", dest)
 		}
@@ -98,14 +95,11 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 			}
 		}()
 
-		if err = dest.PrepareTemporaryTable(ctx, tableData, tableConfig, temporaryTableID, tableID, types.AdditionalSettings{ColumnSettings: opts.ColumnSettings}, true); err != nil {
+		if err = dest.LoadDataIntoTable(ctx, tableData, tableConfig, temporaryTableID, tableID, types.AdditionalSettings{ColumnSettings: opts.ColumnSettings}, true); err != nil {
 			return fmt.Errorf("failed to prepare temporary table: %w", err)
 		}
 
 		subQuery = temporaryTableID.FullyQualifiedName()
-		if opts.SubQueryDedupe {
-			subQuery = dest.Dialect().BuildDedupeTableQuery(temporaryTableID, tableData.PrimaryKeys())
-		}
 	}
 
 	// Now iterate over all the in-memory cols and see which ones require a backfill.

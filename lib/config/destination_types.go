@@ -65,6 +65,17 @@ type S3Settings struct {
 	TableNameSeparator string                   `yaml:"tableNameSeparator"`
 }
 
+type GCSSettings struct {
+	FolderName string `yaml:"folderName"`
+	Bucket     string `yaml:"bucket"`
+	// PathToCredentials is _optional_ if you have GOOGLE_APPLICATION_CREDENTIALS set as an env var
+	// Links to credentials: https://cloud.google.com/docs/authentication/application-default-credentials#GAC
+	PathToCredentials  string                   `yaml:"pathToCredentials"`
+	ProjectID          string                   `yaml:"projectID"`
+	OutputFormat       constants.S3OutputFormat `yaml:"outputFormat"`
+	TableNameSeparator string                   `yaml:"tableNameSeparator"`
+}
+
 type Snowflake struct {
 	AccountID string `yaml:"account"`
 	Username  string `yaml:"username"`
@@ -152,4 +163,9 @@ func (s S3Tables) ApacheLivyConfig() map[string]any {
 
 func (s S3Tables) CatalogName() string {
 	return "s3tablesbucket"
+}
+
+type MotherDuck struct {
+	DucktapeURL string `yaml:"ducktapeUrl"`
+	Token       string `yaml:"token"`
 }

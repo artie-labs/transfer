@@ -45,10 +45,6 @@ func (d DatabricksDialect) BuildIsNotToastValueExpression(tableAlias constants.T
 	}
 }
 
-func (DatabricksDialect) BuildDedupeTableQuery(tableID sql.TableIdentifier, primaryKeys []string) string {
-	panic("not implemented")
-}
-
 func (d DatabricksDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string {
 	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, d)
 	orderColsToIterate := primaryKeysEscaped

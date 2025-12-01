@@ -62,10 +62,11 @@ Transfer is aiming to provide coverage across all OLTPs and OLAPs databases. Cur
     - Databricks
     - Iceberg (through S3 Tables)
     - Microsoft SQL Server
+    - MotherDuck
+    - PostgreSQL
     - Redshift
     - S3
     - Snowflake
-    - PostgreSQL
 
 - [Sources](https://artie.com/docs/sources):
     - DocumentDB

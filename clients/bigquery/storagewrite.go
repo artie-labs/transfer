@@ -259,9 +259,24 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 // Relational will return a string representation of the struct such as `{"hello": "world"}`
 func encodeStructToJSONString(value any) (string, error) {
 	if stringValue, ok := value.(string); ok {
+		if stringValue == "" {
+			return "", nil
+		}
+
 		if strings.Contains(stringValue, constants.ToastUnavailableValuePlaceholder) {
 			return fmt.Sprintf(`{"key":"%s"}`, constants.ToastUnavailableValuePlaceholder), nil
 		}
+
+		// If the value is invalid JSON, then let's wrap it in quotes, so it doesn't get misinterpreted as a JSON string by BigQuery.
+		// Use json.Marshal to properly escape the string for JSON format (not Go's %q format).
+		if !json.Valid([]byte(stringValue)) {
+			bytes, err := json.Marshal(stringValue)
+			if err != nil {
+				return "", fmt.Errorf("failed to marshal string value: %w", err)
+			}
+			return string(bytes), nil
+		}
+
 		return stringValue, nil
 	}
 

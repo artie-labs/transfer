@@ -81,9 +81,7 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, _
 }
 
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
-	if err := shared.Merge(ctx, s, tableData, types.MergeOpts{
-		SubQueryDedupe: false,
-	}); err != nil {
+	if err := shared.Merge(ctx, s, tableData, types.MergeOpts{}); err != nil {
 		return false, fmt.Errorf("failed to merge: %w", err)
 	}
 
@@ -175,7 +173,7 @@ func LoadRedshift(ctx context.Context, cfg config.Config, _store *db.Store) (*St
 			return nil, err
 		}
 
-		creds, err := awslib.GenerateSTSCredentials(ctx, os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), cfg.Redshift.RoleARN, "ArtieTransfer")
+		creds, err := awslib.GenerateSTSCredentials(ctx, os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), cfg.Redshift.RoleARN, "ArtieTransfer", awslib.OptionalParams{})
 		if err != nil {
 			return nil, err
 		}

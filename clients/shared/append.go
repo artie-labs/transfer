@@ -68,7 +68,7 @@ func Append(ctx context.Context, dest destination.Destination, tableData *optimi
 			// Override tableID with tempTableID if we're using a temporary table
 			tempTableID = opts.TempTableID
 		}
-		return dest.PrepareTemporaryTable(
+		return dest.LoadDataIntoTable(
 			ctx,
 			tableData,
 			tableConfig,
