@@ -76,6 +76,13 @@ type GCSSettings struct {
 	TableNameSeparator string                   `yaml:"tableNameSeparator"`
 }
 
+type Redis struct {
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	Password string `yaml:"password"`
+	Database int    `yaml:"database"`
+}
+
 type Snowflake struct {
 	AccountID string `yaml:"account"`
 	Username  string `yaml:"username"`
