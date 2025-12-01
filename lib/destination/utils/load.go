@@ -53,6 +53,8 @@ func LoadBaseline(ctx context.Context, cfg config.Config) (destination.Baseline,
 
 func LoadDestination(ctx context.Context, cfg config.Config, store *db.Store) (destination.Destination, error) {
 	switch cfg.Output {
+	case constants.Redis:
+		return redis.LoadRedis(ctx, cfg, store)
 	case constants.Snowflake:
 		return snowflake.LoadSnowflake(ctx, cfg, store)
 	case constants.BigQuery:

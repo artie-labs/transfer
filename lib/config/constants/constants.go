@@ -93,6 +93,7 @@ const (
 	Redshift   DestinationKind = "redshift"
 	S3         DestinationKind = "s3"
 	Snowflake  DestinationKind = "snowflake"
+	Redis      DestinationKind = "redis"
 )
 
 var ValidDestinations = []DestinationKind{
@@ -106,6 +107,7 @@ var ValidDestinations = []DestinationKind{
 	Redshift,
 	S3,
 	Snowflake,
+	Redis,
 }
 
 func IsValidDestination(destination DestinationKind) bool {
