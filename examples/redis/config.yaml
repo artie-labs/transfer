@@ -1,0 +1,46 @@
+outputSource: redis
+
+# Redis configuration
+redis:
+  host: localhost
+  port: 6379
+  password: ""  # Optional: Leave empty if no password is required
+  database: 0   # Redis database number (0-15)
+
+# Transfer mode
+mode: replication  # or "history"
+
+# Flush settings
+flushIntervalSeconds: 10
+flushSizeKb: 10240
+bufferRows: 10000
+
+# Kafka configuration
+queue: kafka
+kafka:
+  bootstrapServer: localhost:29092
+  groupID: transfer-redis-consumer
+  username: ""  # Optional
+  password: ""  # Optional
+  
+  topicConfigs:
+    - db: postgres
+      schema: inventory
+      tableName: customers
+      topic: transfer-redis.inventory.customers
+      cdcFormat: debezium.relational
+      cdcKeyFormat: org.apache.kafka.connect.json.JsonConverter
+
+# Optional: Reporting configuration
+reporting:
+  emitExecutionTime: true
+  sentry:
+    dsn: ""  # Optional: Sentry DSN for error reporting
+
+# Optional: Webhook notifications
+# webhookSettings:
+#   enabled: true
+#   url: https://your-webhook-url.com
+#   apiKey: your-api-key
+#   source: redis
+

@@ -22,7 +22,7 @@ import (
 )
 
 func IsOutputBaseline(cfg config.Config) bool {
-	return cfg.Output == constants.S3 || cfg.Output == constants.GCS || cfg.Output == constants.Iceberg
+	return cfg.Output == constants.S3 || cfg.Output == constants.GCS || cfg.Output == constants.Iceberg || cfg.Output == constants.Redis
 }
 
 func LoadBaseline(ctx context.Context, cfg config.Config) (destination.Baseline, error) {
@@ -47,6 +47,12 @@ func LoadBaseline(ctx context.Context, cfg config.Config) (destination.Baseline,
 			return nil, fmt.Errorf("failed to load Iceberg: %w", err)
 		}
 		return store, nil
+	case constants.Redis:
+		store, err := redis.LoadRedis(ctx, cfg, nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load Redis: %w", err)
+		}
+		return store, nil
 	}
 
 	return nil, fmt.Errorf("invalid baseline output source specified: %q", cfg.Output)
@@ -54,8 +60,6 @@ func LoadBaseline(ctx context.Context, cfg config.Config) (destination.Baseline,
 
 func LoadDestination(ctx context.Context, cfg config.Config, store *db.Store) (destination.Destination, error) {
 	switch cfg.Output {
-	case constants.Redis:
-		return redis.LoadRedis(ctx, cfg, store)
 	case constants.Snowflake:
 		return snowflake.LoadSnowflake(ctx, cfg, store)
 	case constants.BigQuery:
