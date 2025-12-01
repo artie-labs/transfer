@@ -138,16 +138,19 @@ func flush(ctx context.Context, dest destination.Baseline, _tableData *models.Ta
 	// This is added so that we have a new temporary table suffix for each merge / append.
 	_tableData.ResetTempTableSuffix()
 
-	// Merge or Append depending on the mode.
-	switch _tableData.Mode() {
-	case config.History:
+	mode := _tableData.Mode()
+	if !mode.IsValid() {
+		return flushResult{}, fmt.Errorf("invalid mode: %q", mode)
+	}
+
+	if mode == config.History || _tableData.TopicConfig().AppendOnly {
 		err := dest.Append(ctx, _tableData.TableData, false)
 		if err != nil {
 			return flushResult{What: "merge_fail"}, fmt.Errorf("failed to append: %w", err)
 		}
 
 		return flushResult{What: "success", CommitOffset: true}, nil
-	case config.Replication:
+	} else {
 		commitTransaction, err := dest.Merge(ctx, _tableData.TableData)
 		if err != nil {
 			return flushResult{What: "merge_fail"}, fmt.Errorf("failed to merge: %w", err)
@@ -155,6 +158,4 @@ func flush(ctx context.Context, dest destination.Baseline, _tableData *models.Ta
 
 		return flushResult{What: "success", CommitOffset: commitTransaction}, nil
 	}
-
-	return flushResult{}, fmt.Errorf("invalid mode: %q", _tableData.Mode())
 }
