@@ -78,7 +78,7 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 				}
 
 				action := "merge"
-				if table.Mode() == config.History {
+				if table.Mode() == config.History || table.TopicConfig().AppendOnly {
 					action = "append"
 				}
 
