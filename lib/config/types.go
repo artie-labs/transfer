@@ -13,6 +13,10 @@ const (
 	Replication Mode = "replication"
 )
 
+func (m Mode) IsValid() bool {
+	return m == History || m == Replication
+}
+
 type KafkaClient string
 
 const (

@@ -161,6 +161,9 @@ type TopicConfig struct {
 	// [SoftPartitioning] can be used to specify soft partitioning settings for the table.
 	SoftPartitioning SoftPartitioning `yaml:"softPartitioning,omitempty"`
 
+	// [AppendOnly] - if true, data will always be appended instead of merged.
+	AppendOnly bool `yaml:"appendOnly,omitempty"`
+
 	// Internal metadata
 	opsToSkipMap map[string]bool `yaml:"-"`
 }
