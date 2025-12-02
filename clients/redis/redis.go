@@ -103,9 +103,8 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, _
 	return nil
 }
 
-// Merge writes table data to Redis Streams
-// Each row becomes an entry in a Redis Stream with key pattern: namespace:schema:table
-// Redis automatically generates unique IDs for stream entries
+// Merge writes rows from TableData as individual entries into a Redis Stream.
+// Each entry contains two fields: the CDC event JSON (artieData) and an emitted-at timestamp (artieEmittedAt).
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
 	if tableData.ShouldSkipUpdate() {
 		return false, nil
@@ -125,16 +124,15 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (b
 	cols := tableData.ReadOnlyInMemoryCols().ValidColumns()
 	streamKey := redisTableID.StreamKey()
 	recordsWritten := 0
+	pipeline := s.redisClient.Pipeline()
 
 	for _, row := range rows {
-		// Convert row to map for JSON serialization
 		rowData := make(map[string]any)
 		for _, col := range cols {
 			value, _ := row.GetValue(col.Name())
 			rowData[col.Name()] = value
 		}
 
-		// Serialize row data to JSON
 		jsonData, err := json.Marshal(rowData)
 		if err != nil {
 			return false, fmt.Errorf("failed to marshal row data: %w", err)
@@ -146,9 +144,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (b
 			slog.Int("jsonDataLen", len(jsonData)),
 		)
 
-		// Add entry to Redis Stream directly (not pipelined for now to debug)
-		// Each entry has two fields: _artie_emitted_at and _artie_data
-		result, err := s.redisClient.XAdd(ctx, &redis.XAddArgs{
+		pipeline.XAdd(ctx, &redis.XAddArgs{
 			Stream: streamKey,
 			MaxLen: streamMaxLen,
 			Approx: true,
@@ -157,13 +153,13 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (b
 				artieEmittedAtField: time.Now().UTC().Format(time.RFC3339),
 				artieDataField:      string(jsonData),
 			},
-		}).Result()
-		if err != nil {
-			return false, fmt.Errorf("failed to add to stream: %w", err)
-		}
-
-		slog.Info("Stream entry added", slog.String("id", result))
+		})
 		recordsWritten++
+	}
+
+	_, err := pipeline.Exec(ctx)
+	if err != nil && !s.IsRetryableError(err) {
+		return false, fmt.Errorf("failed to execute pipeline: %w", err)
 	}
 
 	slog.Info("Successfully wrote records to Redis Stream",
@@ -176,7 +172,6 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (b
 
 func (s *Store) IsRetryableError(err error) bool {
 	// Network errors, connection errors, etc. are retryable
-	// This is a simplified implementation
 	return err != nil && (err == context.DeadlineExceeded || err == context.Canceled)
 }
 

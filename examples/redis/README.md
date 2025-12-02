@@ -6,7 +6,7 @@ This example demonstrates how to use Artie Transfer with Redis as a destination.
 
 - Redis server (6.0+)
 - Kafka cluster
-- Debezium connector (or another CDC source) sending data to Kafka
+- Debezium or Artie Reader sending data to Kafka
 
 ## Quick Start
 
