@@ -205,9 +205,8 @@ func (s *Store) IsRetryableError(err error) bool {
 	if err == nil {
 		return false
 	}
-
 	// Check for standard network errors (connection reset, refused, timeout, etc.)
-	// These are handled by the lib/db package
+
 	if isRetryableNetworkError(err) {
 		return true
 	}
@@ -215,27 +214,23 @@ func (s *Store) IsRetryableError(err error) bool {
 	// Check for Redis-specific retryable errors
 	errMsg := err.Error()
 
-	// Server busy or loading errors
 	if strings.Contains(errMsg, "BUSY") ||
 		strings.Contains(errMsg, "TRYAGAIN") ||
 		strings.Contains(errMsg, "LOADING") {
 		return true
 	}
 
-	// Connection pool errors
 	if strings.Contains(errMsg, "connection pool timeout") ||
 		strings.Contains(errMsg, "i/o timeout") {
 		return true
 	}
 
-	// Cluster-specific retryable errors
 	if strings.Contains(errMsg, "CLUSTERDOWN") ||
 		strings.Contains(errMsg, "MOVED") ||
 		strings.Contains(errMsg, "ASK") {
 		return true
 	}
 
-	// Master/replica errors
 	if strings.Contains(errMsg, "READONLY") ||
 		strings.Contains(errMsg, "MASTERDOWN") {
 		return true
@@ -261,7 +256,6 @@ func (s *Store) DropTable(ctx context.Context, tableID sqllib.TableIdentifier) e
 		slog.String("stream", streamKey),
 	)
 
-	// Remove from config map
 	s.configMap.RemoveTable(tableID)
 
 	return nil
