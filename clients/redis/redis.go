@@ -28,7 +28,7 @@ const (
 type Store struct {
 	config      config.Config
 	redisClient *redis.Client
-	configMap   types.DestinationTableConfigMap
+	configMap   *types.DestinationTableConfigMap
 }
 
 func (s *Store) GetConfig() config.Config {
@@ -138,7 +138,6 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (b
 
 		slog.Info("Writing stream entry",
 			slog.String("stream", streamKey),
-			slog.String("jsonData", string(jsonData)),
 			slog.Int("jsonDataLen", len(jsonData)),
 		)
 
@@ -216,6 +215,7 @@ func LoadRedis(ctx context.Context, cfg config.Config, _ *db.Store) (destination
 	store := &Store{
 		config:      cfg,
 		redisClient: rdb,
+		configMap:   &types.DestinationTableConfigMap{},
 	}
 
 	if err := store.Validate(); err != nil {
