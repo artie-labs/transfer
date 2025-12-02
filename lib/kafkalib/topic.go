@@ -123,9 +123,10 @@ func (sp SoftPartitioning) Validate() error {
 }
 
 type TopicConfig struct {
-	Database                   string `yaml:"db"`
+	Database string `yaml:"db"`
+	Schema   string `yaml:"schema"`
+	// [TableName] - if left empty, the table name will be deduced from each event.
 	TableName                  string `yaml:"tableName"`
-	Schema                     string `yaml:"schema"`
 	Topic                      string `yaml:"topic"`
 	CDCFormat                  string `yaml:"cdcFormat"`
 	CDCKeyFormat               string `yaml:"cdcKeyFormat"`
@@ -159,6 +160,9 @@ type TopicConfig struct {
 
 	// [SoftPartitioning] can be used to specify soft partitioning settings for the table.
 	SoftPartitioning SoftPartitioning `yaml:"softPartitioning,omitempty"`
+
+	// [AppendOnly] - if true, data will always be appended instead of merged.
+	AppendOnly bool `yaml:"appendOnly,omitempty"`
 
 	// Internal metadata
 	opsToSkipMap map[string]bool `yaml:"-"`

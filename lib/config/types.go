@@ -3,6 +3,7 @@ package config
 import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/lib/webhooksutil"
 )
 
 type Mode string
@@ -11,6 +12,10 @@ const (
 	History     Mode = "history"
 	Replication Mode = "replication"
 )
+
+func (m Mode) IsValid() bool {
+	return m == History || m == Replication
+}
 
 type KafkaClient string
 
@@ -78,15 +83,16 @@ type Config struct {
 	Kafka *kafkalib.Kafka `yaml:"kafka,omitempty"`
 
 	// Supported destinations
-	BigQuery   *BigQuery   `yaml:"bigquery,omitempty"`
-	Databricks *Databricks `yaml:"databricks,omitempty"`
-	MSSQL      *MSSQL      `yaml:"mssql,omitempty"`
-	Postgres   *Postgres   `yaml:"postgres,omitempty"`
-	Snowflake  *Snowflake  `yaml:"snowflake,omitempty"`
-	Redshift   *Redshift   `yaml:"redshift,omitempty"`
-	S3         *S3Settings `yaml:"s3,omitempty"`
-	Iceberg    *Iceberg    `yaml:"iceberg,omitempty"`
-	MotherDuck *MotherDuck `yaml:"motherduck,omitempty"`
+	BigQuery   *BigQuery    `yaml:"bigquery,omitempty"`
+	Databricks *Databricks  `yaml:"databricks,omitempty"`
+	MSSQL      *MSSQL       `yaml:"mssql,omitempty"`
+	Postgres   *Postgres    `yaml:"postgres,omitempty"`
+	Snowflake  *Snowflake   `yaml:"snowflake,omitempty"`
+	Redshift   *Redshift    `yaml:"redshift,omitempty"`
+	S3         *S3Settings  `yaml:"s3,omitempty"`
+	GCS        *GCSSettings `yaml:"gcs,omitempty"`
+	Iceberg    *Iceberg     `yaml:"iceberg,omitempty"`
+	MotherDuck *MotherDuck  `yaml:"motherduck,omitempty"`
 
 	SharedDestinationSettings SharedDestinationSettings `yaml:"sharedDestinationSettings"`
 	StagingTableReuse         *StagingTableReuseConfig  `yaml:"stagingTableReuse,omitempty"`
@@ -97,4 +103,15 @@ type Config struct {
 			Settings map[string]any         `yaml:"settings,omitempty"`
 		}
 	}
+
+	// [WebhookSettings] - This will enable the webhook settings for the transfer.
+	WebhookSettings *WebhookSettings `yaml:"webhookSettings,omitempty"`
+}
+
+type WebhookSettings struct {
+	Enabled    bool                `yaml:"enabled"`
+	URL        string              `yaml:"url"`
+	APIKey     string              `yaml:"apiKey"`
+	Properties map[string]any      `yaml:"properties,omitempty"`
+	Source     webhooksutil.Source `yaml:"source"`
 }

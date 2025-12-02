@@ -85,25 +85,27 @@ type DestinationKind string
 const (
 	BigQuery   DestinationKind = "bigquery"
 	Databricks DestinationKind = "databricks"
+	GCS        DestinationKind = "gcs"
+	Iceberg    DestinationKind = "iceberg"
 	MSSQL      DestinationKind = "mssql"
+	MotherDuck DestinationKind = "motherduck"
 	Postgres   DestinationKind = "postgres"
 	Redshift   DestinationKind = "redshift"
 	S3         DestinationKind = "s3"
 	Snowflake  DestinationKind = "snowflake"
-	Iceberg    DestinationKind = "iceberg"
-	MotherDuck DestinationKind = "motherduck"
 )
 
 var ValidDestinations = []DestinationKind{
 	BigQuery,
 	Databricks,
+	GCS,
+	Iceberg,
 	MSSQL,
+	MotherDuck,
+	Postgres,
 	Redshift,
 	S3,
 	Snowflake,
-	Iceberg,
-	Postgres,
-	MotherDuck,
 }
 
 func IsValidDestination(destination DestinationKind) bool {

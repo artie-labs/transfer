@@ -24,10 +24,15 @@ type Credentials struct {
 	_awsAccessKeyID     string
 	_awsSecretAccessKey string
 	_awsRoleARN         string
+	_awsExternalID      string
 	_sessionLabel       string
 }
 
-func GenerateSTSCredentials(ctx context.Context, awsAccessKeyID, awsSecretAccessKey, roleARN, sessionLabel string) (Credentials, error) {
+type OptionalParams struct {
+	ExternalID string
+}
+
+func GenerateSTSCredentials(ctx context.Context, awsAccessKeyID, awsSecretAccessKey, roleARN, sessionLabel string, optionalParams OptionalParams) (Credentials, error) {
 	creds := credentials.NewStaticCredentialsProvider(awsAccessKeyID, awsSecretAccessKey, "")
 	cfg, err := config.LoadDefaultConfig(ctx, config.WithCredentialsProvider(creds))
 	if err != nil {
@@ -35,10 +40,17 @@ func GenerateSTSCredentials(ctx context.Context, awsAccessKeyID, awsSecretAccess
 	}
 
 	stsClient := sts.NewFromConfig(cfg)
-	stsOutput, err := stsClient.AssumeRole(ctx, &sts.AssumeRoleInput{
+
+	assumeRoleInput := &sts.AssumeRoleInput{
 		RoleArn:         &roleARN,
 		RoleSessionName: &sessionLabel,
-	})
+	}
+
+	if optionalParams.ExternalID != "" {
+		assumeRoleInput.ExternalId = &optionalParams.ExternalID
+	}
+
+	stsOutput, err := stsClient.AssumeRole(ctx, assumeRoleInput)
 	if err != nil {
 		return Credentials{}, err
 	}
@@ -54,11 +66,13 @@ func GenerateSTSCredentials(ctx context.Context, awsAccessKeyID, awsSecretAccess
 		_sessionLabel:       sessionLabel,
 		_awsAccessKeyID:     awsAccessKeyID,
 		_awsSecretAccessKey: awsSecretAccessKey,
+		_awsExternalID:      optionalParams.ExternalID,
 	}, nil
 }
 
 func (c *Credentials) refresh(ctx context.Context) error {
-	creds, err := GenerateSTSCredentials(ctx, c._awsAccessKeyID, c._awsSecretAccessKey, c._awsRoleARN, c._sessionLabel)
+	optionalParams := OptionalParams{ExternalID: c._awsExternalID}
+	creds, err := GenerateSTSCredentials(ctx, c._awsAccessKeyID, c._awsSecretAccessKey, c._awsRoleARN, c._sessionLabel, optionalParams)
 	if err != nil {
 		return err
 	}

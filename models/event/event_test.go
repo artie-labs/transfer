@@ -65,72 +65,10 @@ func (e *EventsTestSuite) TestEvent_Validate() {
 	}
 }
 
-func (e *EventsTestSuite) TestTransformData() {
-	{
-		// Hashing columns
-		{
-			// No columns to hash
-			data := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{})
-			assert.Equal(e.T(), map[string]any{"foo": "bar", "abc": "def"}, data)
-		}
-		{
-			// There's a column to hash, but the event does not have any data
-			data := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToHash: []string{"super duper"}})
-			assert.Equal(e.T(), map[string]any{"foo": "bar", "abc": "def"}, data)
-		}
-		{
-			// Hash the column foo (value is set)
-			data := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToHash: []string{"foo"}})
-			assert.Equal(e.T(), map[string]any{"foo": "fcde2b2edba56bf408601fb721fe9b5c338d10ee429ea04fae5511b68fbf8fb9", "abc": "def"}, data)
-		}
-		{
-			// Hash the column foo (value is nil)
-			data := transformData(map[string]any{"foo": nil, "abc": "def"}, kafkalib.TopicConfig{ColumnsToHash: []string{"foo"}})
-			assert.Equal(e.T(), map[string]any{"foo": nil, "abc": "def"}, data)
-		}
-	}
-	{
-		// Excluding columns
-		{
-			// No columns to exclude
-			data := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToExclude: []string{}})
-			assert.Equal(e.T(), map[string]any{"foo": "bar", "abc": "def"}, data)
-		}
-		{
-			// Exclude the column foo
-			data := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToExclude: []string{"foo"}})
-			assert.Equal(e.T(), map[string]any{"abc": "def"}, data)
-		}
-	}
-	{
-		// Include columns
-		{
-			// No columns to include
-			data := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToInclude: []string{}})
-			assert.Equal(e.T(), map[string]any{"foo": "bar", "abc": "def"}, data)
-		}
-		{
-			// Include the column foo
-			data := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToInclude: []string{"foo"}})
-			assert.Equal(e.T(), map[string]any{"foo": "bar"}, data)
-		}
-		{
-			// include foo, but also artie columns
-			data := transformData(map[string]any{"foo": "bar", "abc": "def", constants.DeleteColumnMarker: true}, kafkalib.TopicConfig{ColumnsToInclude: []string{"foo"}})
-			assert.Equal(e.T(), map[string]any{"foo": "bar", constants.DeleteColumnMarker: true}, data)
-		}
-		{
-			// Includes static columns
-			data := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToInclude: []string{"foo"}, StaticColumns: []kafkalib.StaticColumn{{Name: "dusty", Value: "mini aussie"}}})
-			assert.Equal(e.T(), map[string]any{"foo": "bar", "dusty": "mini aussie"}, data)
-		}
-	}
-}
-
 func testBuildFilteredColumns(t *testing.T, fakeEvent *mocks.FakeEvent, topicConfig kafkalib.TopicConfig, fakeColumns []columns.Column, expectedCols *columns.Columns) {
 	fakeEvent.GetColumnsReturns(columns.NewColumns(fakeColumns), nil)
 
-	cols, err := buildFilteredColumns(fakeEvent, topicConfig, nil)
+	cols, err := buildColumns(fakeEvent, topicConfig, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedCols.GetColumns(), cols.GetColumns())
 }

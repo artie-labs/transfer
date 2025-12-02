@@ -12,7 +12,6 @@ import (
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/cryptography"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/maputil"
@@ -46,122 +45,14 @@ func (e Event) GetTable() string {
 	return e.table
 }
 
-func transformData(data map[string]any, tc kafkalib.TopicConfig) map[string]any {
-	for _, columnToHash := range tc.ColumnsToHash {
-		if value, ok := data[columnToHash]; ok {
-			data[columnToHash] = cryptography.HashValue(value)
-		}
-	}
-
-	// Exclude certain columns
-	for _, col := range tc.ColumnsToExclude {
-		delete(data, col)
-	}
-
-	// If column inclusion is specified, then we need to include only the specified columns
-	if len(tc.ColumnsToInclude) > 0 {
-		filteredData := make(map[string]any)
-		for _, col := range tc.ColumnsToInclude {
-			if value, ok := data[col]; ok {
-				filteredData[col] = value
-			}
-		}
-
-		// Include Artie columns
-		for _, col := range constants.ArtieColumns {
-			if value, ok := data[col]; ok {
-				filteredData[col] = value
-			}
-		}
-
-		for _, col := range tc.StaticColumns {
-			filteredData[col.Name] = col.Value
-		}
-
-		return filteredData
-	}
-
-	return data
-}
-
-func buildFilteredColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns map[string]bool) (*columns.Columns, error) {
-	cols, err := event.GetColumns(reservedColumns)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, col := range tc.ColumnsToExclude {
-		cols.DeleteColumn(col)
-	}
-
-	if len(tc.ColumnsToInclude) > 0 {
-		var filteredColumns columns.Columns
-		for _, col := range tc.ColumnsToInclude {
-			if existingColumn, ok := cols.GetColumn(col); ok {
-				filteredColumns.AddColumn(existingColumn)
-			}
-		}
-
-		for _, col := range constants.ArtieColumns {
-			if existingColumn, ok := cols.GetColumn(col); ok {
-				filteredColumns.AddColumn(existingColumn)
-			}
-		}
-
-		// If columns to include is specified, we should always include static columns.
-		for _, col := range tc.StaticColumns {
-			filteredColumns.AddColumn(columns.NewColumn(col.Name, typing.String))
-		}
-
-		return &filteredColumns, nil
-	}
-
-	// Include static columns
-	for _, col := range tc.StaticColumns {
-		cols.AddColumn(columns.NewColumn(col.Name, typing.String))
-	}
-
-	return cols, nil
-}
-
-func buildPrimaryKeys(tc kafkalib.TopicConfig, pkMap map[string]any, reservedColumns map[string]bool) []string {
-	var pks []string
-	if len(tc.PrimaryKeysOverride) > 0 {
-		for _, pk := range tc.PrimaryKeysOverride {
-			pks = append(pks, columns.EscapeName(pk, reservedColumns))
-		}
-
-		return pks
-	}
-
-	// [pkMap] is already escaped.
-	for pk := range pkMap {
-		pks = append(pks, pk)
-	}
-
-	for _, pk := range tc.IncludePrimaryKeys {
-		escapedPk := columns.EscapeName(pk, reservedColumns)
-		if _, ok := pkMap[escapedPk]; !ok {
-			pks = append(pks, escapedPk)
-		}
-	}
-
-	return pks
-}
-
 func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfig, cfgMode config.Mode) (Event, error) {
-	var reservedColumns map[string]bool
-	if _dest, ok := dest.(destination.Destination); ok {
-		reservedColumns = _dest.Dialect().ReservedColumnNames()
-	}
-
-	cols, err := buildFilteredColumns(event, tc, reservedColumns)
+	reservedColumns := destination.BuildReservedColumnNames(dest)
+	cols, err := buildColumns(event, tc, reservedColumns)
 	if err != nil {
 		return Event{}, fmt.Errorf("failed to build filtered columns: %w", err)
 	}
 
 	pks := buildPrimaryKeys(tc, pkMap, reservedColumns)
-
 	if cols != nil {
 		// All keys in pks are already escaped, so don't escape again
 		for _, pk := range pks {
@@ -177,13 +68,9 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 		}
 	}
 
-	evtData, err := event.GetData(tc)
+	data, err := buildEventData(event, tc)
 	if err != nil {
-		return Event{}, fmt.Errorf("failed to get data: %w", err)
-	}
-
-	if tc.IncludeArtieOperation {
-		evtData[constants.OperationColumnMarker] = string(event.Operation())
+		return Event{}, fmt.Errorf("failed to load artie metadata: %w", err)
 	}
 
 	if tc.IncludeSourceMetadata {
@@ -192,16 +79,11 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 			return Event{}, fmt.Errorf("failed to get source metadata: %w", err)
 		}
 
-		evtData[constants.SourceMetadataColumnMarker] = metadata
+		data[constants.SourceMetadataColumnMarker] = metadata
 		cols.AddColumn(columns.NewColumn(constants.SourceMetadataColumnMarker, typing.Struct))
 	}
 
-	if tc.IncludeFullSourceTableName {
-		evtData[constants.FullSourceTableNameColumnMarker] = event.GetFullTableName()
-	}
-
 	tblName := cmp.Or(tc.TableName, event.GetTableName())
-
 	if cfgMode == config.History {
 		if !strings.HasSuffix(tblName, constants.HistoryModeSuffix) {
 			// History mode will include a table suffix and operation column
@@ -210,14 +92,14 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 		}
 
 		// If this is already set, it's a no-op.
-		evtData[constants.OperationColumnMarker] = string(event.Operation())
+		data[constants.OperationColumnMarker] = string(event.Operation())
 
 		// We don't need the deletion markers either.
-		delete(evtData, constants.DeleteColumnMarker)
-		delete(evtData, constants.OnlySetDeleteColumnMarker)
+		delete(data, constants.DeleteColumnMarker)
+		delete(data, constants.OnlySetDeleteColumnMarker)
 	} else if tc.SoftPartitioning.Enabled {
 		// TODO: cache exact match or fix upstream to pass the column name from source table
-		maybeDatetime, ok := maputil.GetCaseInsensitiveValue(evtData, tc.SoftPartitioning.PartitionColumn)
+		maybeDatetime, ok := maputil.GetCaseInsensitiveValue(data, tc.SoftPartitioning.PartitionColumn)
 		if !ok {
 			return Event{}, fmt.Errorf("partition column %q not found in data", tc.SoftPartitioning.PartitionColumn)
 		}
@@ -240,12 +122,12 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 
 	// Static columns cannot collide with the event data.
 	for _, staticColumn := range tc.StaticColumns {
-		if _, ok := evtData[staticColumn.Name]; ok {
+		if _, ok := data[staticColumn.Name]; ok {
 			return Event{}, fmt.Errorf("static column %q collides with event data", staticColumn.Name)
 		}
 
 		// Inject static columns into the event data.
-		evtData[staticColumn.Name] = staticColumn.Value
+		data[staticColumn.Name] = staticColumn.Value
 	}
 
 	sort.Strings(pks)
@@ -258,7 +140,7 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 		tableID:        cdc.NewTableID(tc.Schema, tblName),
 		optionalSchema: optionalSchema,
 		columns:        cols,
-		data:           transformData(evtData, tc),
+		data:           transformData(data, tc),
 		deleted:        event.DeletePayload(),
 	}, nil
 }

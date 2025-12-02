@@ -86,3 +86,11 @@ func ExecContextStatements(ctx context.Context, dest Destination, statements []s
 		return results, nil
 	}
 }
+
+func BuildReservedColumnNames(baseline Baseline) map[string]bool {
+	if _dest, ok := baseline.(Destination); ok {
+		return _dest.Dialect().ReservedColumnNames()
+	}
+
+	return nil
+}
