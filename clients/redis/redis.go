@@ -275,7 +275,9 @@ func LoadRedis(ctx context.Context, cfg config.Config, _ *db.Store) (destination
 
 	// Test connection
 	if err := rdb.Ping(ctx).Err(); err != nil {
-		rdb.Close()
+		if closeErr := rdb.Close(); closeErr != nil {
+			slog.Error("Failed to close Redis client after ping failure", slog.Any("error", closeErr))
+		}
 		return nil, fmt.Errorf("failed to connect to Redis: %w", err)
 	}
 
@@ -286,7 +288,9 @@ func LoadRedis(ctx context.Context, cfg config.Config, _ *db.Store) (destination
 	}
 
 	if err := store.Validate(); err != nil {
-		rdb.Close()
+		if closeErr := rdb.Close(); closeErr != nil {
+			slog.Error("Failed to close Redis client after validation failure", slog.Any("error", closeErr))
+		}
 		return nil, err
 	}
 
