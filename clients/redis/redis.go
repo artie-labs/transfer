@@ -4,13 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
 	"log/slog"
-	"net"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -30,36 +26,6 @@ const (
 	streamMaxLen        = 1000 // Auto trim to 1000 entries
 )
 
-var retryableNetworkErrors = []error{
-	syscall.ECONNRESET,
-	syscall.ECONNREFUSED,
-	io.EOF,
-	syscall.ETIMEDOUT,
-}
-
-// isRetryableNetworkError checks for common network errors that are retryable
-func isRetryableNetworkError(err error) bool {
-	if err == nil {
-		return false
-	}
-
-	// Check for standard network errors
-	for _, retryableErr := range retryableNetworkErrors {
-		if errors.Is(err, retryableErr) {
-			return true
-		}
-	}
-
-	// Check for net.Error timeout
-	if netErr, ok := err.(net.Error); ok {
-		if netErr.Timeout() {
-			return true
-		}
-	}
-
-	return false
-}
-
 type Store struct {
 	config      config.Config
 	redisClient *redis.Client
@@ -71,19 +37,7 @@ func (s *Store) GetConfig() config.Config {
 }
 
 func (s *Store) Validate() error {
-	if s.config.Redis == nil {
-		return fmt.Errorf("redis config is nil")
-	}
-
-	if s.config.Redis.Host == "" {
-		return fmt.Errorf("redis host is empty")
-	}
-
-	if s.config.Redis.Port <= 0 {
-		return fmt.Errorf("invalid redis port: %d", s.config.Redis.Port)
-	}
-
-	return nil
+	return s.config.Redis.Validate()
 }
 
 func (s *Store) IdentifierFor(topicConfig kafkalib.DatabaseAndSchemaPair, table string) sqllib.TableIdentifier {
@@ -189,8 +143,16 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (b
 		recordsWritten++
 	}
 
-	if _, err := pipeline.Exec(ctx); err != nil {
+	cmds, err := pipeline.Exec(ctx)
+	if err != nil {
 		return false, fmt.Errorf("failed to execute pipeline: %w", err)
+	}
+
+	// Check individual command errors
+	for i, cmd := range cmds {
+		if err := cmd.Err(); err != nil {
+			return false, fmt.Errorf("failed to execute XAdd command %d: %w", i, err)
+		}
 	}
 
 	slog.Info("Successfully wrote records to Redis Stream",
@@ -205,34 +167,50 @@ func (s *Store) IsRetryableError(err error) bool {
 	if err == nil {
 		return false
 	}
-	// Check for standard network errors (connection reset, refused, timeout, etc.)
 
-	if isRetryableNetworkError(err) {
+	// Check for standard network errors using the generic db package
+	if db.IsRetryableError(err) {
 		return true
 	}
 
-	// Check for Redis-specific retryable errors
+	// Check for Redis-specific retryable errors using typed error checks
+	if isRedisRetryableError(err) {
+		return true
+	}
+
 	errMsg := err.Error()
-
-	if strings.Contains(errMsg, "BUSY") ||
-		strings.Contains(errMsg, "TRYAGAIN") ||
-		strings.Contains(errMsg, "LOADING") {
-		return true
-	}
-
 	if strings.Contains(errMsg, "connection pool timeout") ||
 		strings.Contains(errMsg, "i/o timeout") {
 		return true
 	}
 
-	if strings.Contains(errMsg, "CLUSTERDOWN") ||
-		strings.Contains(errMsg, "MOVED") ||
-		strings.Contains(errMsg, "ASK") {
+	return false
+}
+
+// isRedisRetryableError checks for Redis-specific errors that are retryable
+func isRedisRetryableError(err error) bool {
+	if _, moved := redis.IsMovedError(err); moved {
 		return true
 	}
-
-	if strings.Contains(errMsg, "READONLY") ||
-		strings.Contains(errMsg, "MASTERDOWN") {
+	if _, ask := redis.IsAskError(err); ask {
+		return true
+	}
+	if redis.IsClusterDownError(err) {
+		return true
+	}
+	if redis.IsTryAgainError(err) {
+		return true
+	}
+	if redis.IsLoadingError(err) {
+		return true
+	}
+	if redis.IsReadOnlyError(err) {
+		return true
+	}
+	if redis.IsMasterDownError(err) {
+		return true
+	}
+	if strings.Contains(err.Error(), "BUSY") {
 		return true
 	}
 

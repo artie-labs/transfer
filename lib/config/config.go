@@ -158,23 +158,7 @@ func (c Config) ValidateRedis() error {
 		return fmt.Errorf("output is not Redis, output: %q", c.Output)
 	}
 
-	if c.Redis == nil {
-		return fmt.Errorf("redis config is nil")
-	}
-
-	if stringutil.Empty(c.Redis.Host) {
-		return fmt.Errorf("redis host is empty")
-	}
-
-	if c.Redis.Port <= 0 {
-		return fmt.Errorf("invalid redis port: %d", c.Redis.Port)
-	}
-
-	if c.Redis.Database < 0 {
-		return fmt.Errorf("invalid redis database: %d", c.Redis.Database)
-	}
-
-	return nil
+	return c.Redis.Validate()
 }
 
 // Validate will check the output source validity
