@@ -4,8 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"log/slog"
+	"net"
+	"strings"
+	"syscall"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -24,6 +29,36 @@ const (
 	artieDataField      = "_artie_data"
 	streamMaxLen        = 1000 // Auto trim to 1000 entries
 )
+
+var retryableNetworkErrors = []error{
+	syscall.ECONNRESET,
+	syscall.ECONNREFUSED,
+	io.EOF,
+	syscall.ETIMEDOUT,
+}
+
+// isRetryableNetworkError checks for common network errors that are retryable
+func isRetryableNetworkError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	// Check for standard network errors
+	for _, retryableErr := range retryableNetworkErrors {
+		if errors.Is(err, retryableErr) {
+			return true
+		}
+	}
+
+	// Check for net.Error timeout
+	if netErr, ok := err.(net.Error); ok {
+		if netErr.Timeout() {
+			return true
+		}
+	}
+
+	return false
+}
 
 type Store struct {
 	config      config.Config
@@ -154,8 +189,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (b
 		recordsWritten++
 	}
 
-	_, err := pipeline.Exec(ctx)
-	if err != nil && !s.IsRetryableError(err) {
+	if _, err := pipeline.Exec(ctx); err != nil {
 		return false, fmt.Errorf("failed to execute pipeline: %w", err)
 	}
 
@@ -168,8 +202,46 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (b
 }
 
 func (s *Store) IsRetryableError(err error) bool {
-	// Network errors, connection errors, etc. are retryable
-	return err != nil && (err == context.DeadlineExceeded || err == context.Canceled)
+	if err == nil {
+		return false
+	}
+
+	// Check for standard network errors (connection reset, refused, timeout, etc.)
+	// These are handled by the lib/db package
+	if isRetryableNetworkError(err) {
+		return true
+	}
+
+	// Check for Redis-specific retryable errors
+	errMsg := err.Error()
+
+	// Server busy or loading errors
+	if strings.Contains(errMsg, "BUSY") ||
+		strings.Contains(errMsg, "TRYAGAIN") ||
+		strings.Contains(errMsg, "LOADING") {
+		return true
+	}
+
+	// Connection pool errors
+	if strings.Contains(errMsg, "connection pool timeout") ||
+		strings.Contains(errMsg, "i/o timeout") {
+		return true
+	}
+
+	// Cluster-specific retryable errors
+	if strings.Contains(errMsg, "CLUSTERDOWN") ||
+		strings.Contains(errMsg, "MOVED") ||
+		strings.Contains(errMsg, "ASK") {
+		return true
+	}
+
+	// Master/replica errors
+	if strings.Contains(errMsg, "READONLY") ||
+		strings.Contains(errMsg, "MASTERDOWN") {
+		return true
+	}
+
+	return false
 }
 
 func (s *Store) DropTable(ctx context.Context, tableID sqllib.TableIdentifier) error {
