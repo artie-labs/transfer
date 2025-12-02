@@ -179,7 +179,6 @@ func (s *Store) IsRetryableError(err error) bool {
 
 	// Check for substring matches to handle prefixed errors (e.g., "redis: connection pool timeout")
 	return strings.Contains(errMsg, "connection pool timeout") || strings.Contains(errMsg, "i/o timeout")
-
 }
 
 // isRedisRetryableError checks for Redis-specific errors that are retryable
