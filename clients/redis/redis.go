@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"slices"
 	"strings"
-	"time"
 
 	"github.com/redis/go-redis/v9"
 
@@ -21,9 +21,8 @@ import (
 )
 
 const (
-	artieEmittedAtField = "_artie_emitted_at"
-	artieDataField      = "_artie_data"
-	streamMaxLen        = 1000 // Auto trim to 1000 entries
+	dataField    = "data"
+	streamMaxLen = 1000 // Auto trim to 1000 entries
 )
 
 type Store struct {
@@ -136,8 +135,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (b
 			Approx: true,
 			ID:     "*",
 			Values: map[string]interface{}{
-				artieEmittedAtField: time.Now().UTC().Format(time.RFC3339),
-				artieDataField:      string(jsonData),
+				dataField: string(jsonData),
 			},
 		})
 		recordsWritten++
@@ -179,12 +177,9 @@ func (s *Store) IsRetryableError(err error) bool {
 	}
 
 	errMsg := err.Error()
-	if strings.Contains(errMsg, "connection pool timeout") ||
-		strings.Contains(errMsg, "i/o timeout") {
-		return true
-	}
 
-	return false
+	return slices.Contains([]string{"connection pool timeout", "i/o timeout"}, errMsg)
+
 }
 
 // isRedisRetryableError checks for Redis-specific errors that are retryable
