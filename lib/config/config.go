@@ -170,6 +170,10 @@ func (c Config) ValidateRedis() error {
 		return fmt.Errorf("invalid redis port: %d", c.Redis.Port)
 	}
 
+	if c.Redis.Database < 0 {
+		return fmt.Errorf("invalid redis database: %d", c.Redis.Database)
+	}
+
 	return nil
 }
 

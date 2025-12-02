@@ -156,7 +156,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (b
 
 	cols := tableData.ReadOnlyInMemoryCols().ValidColumns()
 	streamKey := redisTableID.StreamKey()
-	recordsWritten := 0
+	var recordsWritten int
 	pipeline := s.redisClient.Pipeline()
 
 	for _, row := range rows {
@@ -275,6 +275,7 @@ func LoadRedis(ctx context.Context, cfg config.Config, _ *db.Store) (destination
 
 	// Test connection
 	if err := rdb.Ping(ctx).Err(); err != nil {
+		rdb.Close()
 		return nil, fmt.Errorf("failed to connect to Redis: %w", err)
 	}
 
@@ -285,6 +286,7 @@ func LoadRedis(ctx context.Context, cfg config.Config, _ *db.Store) (destination
 	}
 
 	if err := store.Validate(); err != nil {
+		rdb.Close()
 		return nil, err
 	}
 
