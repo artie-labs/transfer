@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"slices"
 	"strings"
 
 	"github.com/redis/go-redis/v9"
@@ -178,7 +177,8 @@ func (s *Store) IsRetryableError(err error) bool {
 
 	errMsg := err.Error()
 
-	return slices.Contains([]string{"connection pool timeout", "i/o timeout"}, errMsg)
+	// Check for substring matches to handle prefixed errors (e.g., "redis: connection pool timeout")
+	return strings.Contains(errMsg, "connection pool timeout") || strings.Contains(errMsg, "i/o timeout")
 
 }
 
