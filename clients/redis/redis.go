@@ -22,6 +22,7 @@ import (
 const (
 	artieEmittedAtField = "_artie_emitted_at"
 	artieDataField      = "_artie_data"
+	streamMaxLen        = 1000 // Auto trim to 1000 entries
 )
 
 type Store struct {
@@ -102,9 +103,9 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, _
 	return nil
 }
 
-// Merge writes table data to Redis as Hash entries
-// Each row becomes a Redis Hash with key pattern: namespace:schema:table:id
-// The ID is generated using Redis INCR on a counter key
+// Merge writes table data to Redis Streams
+// Each row becomes an entry in a Redis Stream with key pattern: namespace:schema:table
+// Redis automatically generates unique IDs for stream entries
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
 	if tableData.ShouldSkipUpdate() {
 		return false, nil
@@ -122,11 +123,8 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (b
 	}
 
 	cols := tableData.ReadOnlyInMemoryCols().ValidColumns()
-	counterKey := redisTableID.CounterKey()
+	streamKey := redisTableID.StreamKey()
 	recordsWritten := 0
-
-	// Use a pipeline for better performance
-	pipe := s.redisClient.Pipeline()
 
 	for _, row := range rows {
 		// Convert row to map for JSON serialization
@@ -142,29 +140,34 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (b
 			return false, fmt.Errorf("failed to marshal row data: %w", err)
 		}
 
-		// Generate unique ID for this record using INCR
-		id, err := s.redisClient.Incr(ctx, counterKey).Result()
+		slog.Info("Writing stream entry",
+			slog.String("stream", streamKey),
+			slog.String("jsonData", string(jsonData)),
+			slog.Int("jsonDataLen", len(jsonData)),
+		)
+
+		// Add entry to Redis Stream directly (not pipelined for now to debug)
+		// Each entry has two fields: _artie_emitted_at and _artie_data
+		result, err := s.redisClient.XAdd(ctx, &redis.XAddArgs{
+			Stream: streamKey,
+			MaxLen: streamMaxLen,
+			Approx: true,
+			ID:     "*",
+			Values: map[string]interface{}{
+				artieEmittedAtField: time.Now().UTC().Format(time.RFC3339),
+				artieDataField:      string(jsonData),
+			},
+		}).Result()
 		if err != nil {
-			return false, fmt.Errorf("failed to generate ID: %w", err)
+			return false, fmt.Errorf("failed to add to stream: %w", err)
 		}
 
-		// Create the Redis key for this record
-		recordKey := redisTableID.RecordKey(id)
-
-		// Store as Hash with two fields: _artie_emitted_at and _artie_data
-		pipe.HSet(ctx, recordKey, artieEmittedAtField, time.Now().UTC().Format(time.RFC3339))
-		pipe.HSet(ctx, recordKey, artieDataField, string(jsonData))
-
+		slog.Info("Stream entry added", slog.String("id", result))
 		recordsWritten++
 	}
 
-	// Execute the pipeline
-	if _, err := pipe.Exec(ctx); err != nil {
-		return false, fmt.Errorf("failed to execute Redis pipeline: %w", err)
-	}
-
-	slog.Info("Successfully wrote records to Redis",
-		slog.String("table", redisTableID.FullyQualifiedName()),
+	slog.Info("Successfully wrote records to Redis Stream",
+		slog.String("stream", streamKey),
 		slog.Int("recordCount", recordsWritten),
 	)
 
@@ -183,32 +186,16 @@ func (s *Store) DropTable(ctx context.Context, tableID sqllib.TableIdentifier) e
 		return fmt.Errorf("expected tableID to be a TableIdentifier, got %T", tableID)
 	}
 
-	// Delete all keys matching the pattern: namespace:schema:table:*
-	pattern := redisTableID.KeyPattern()
-	iter := s.redisClient.Scan(ctx, 0, pattern, 100).Iterator()
+	// Delete the stream key
+	streamKey := redisTableID.StreamKey()
 
-	keysToDelete := []string{}
-	for iter.Next(ctx) {
-		keysToDelete = append(keysToDelete, iter.Val())
+	if err := s.redisClient.Del(ctx, streamKey).Err(); err != nil {
+		return fmt.Errorf("failed to delete stream: %w", err)
 	}
 
-	if err := iter.Err(); err != nil {
-		return fmt.Errorf("failed to scan keys: %w", err)
-	}
-
-	if len(keysToDelete) > 0 {
-		// Also delete the counter key
-		keysToDelete = append(keysToDelete, redisTableID.CounterKey())
-
-		if err := s.redisClient.Del(ctx, keysToDelete...).Err(); err != nil {
-			return fmt.Errorf("failed to delete keys: %w", err)
-		}
-
-		slog.Info("Dropped Redis table",
-			slog.String("table", redisTableID.FullyQualifiedName()),
-			slog.Int("keysDeleted", len(keysToDelete)),
-		)
-	}
+	slog.Info("Dropped Redis stream",
+		slog.String("stream", streamKey),
+	)
 
 	// Remove from config map
 	s.configMap.RemoveTable(tableID)

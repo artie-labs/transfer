@@ -14,9 +14,7 @@ func TestTableIdentifier(t *testing.T) {
 	assert.Equal(t, "users", ti.Table())
 	assert.Equal(t, "users", ti.EscapedTable())
 	assert.Equal(t, "mydb:public:users", ti.FullyQualifiedName())
-	assert.Equal(t, "mydb:public:users:*", ti.KeyPattern())
-	assert.Equal(t, "mydb:public:users:__counter", ti.CounterKey())
-	assert.Equal(t, "mydb:public:users:123", ti.RecordKey(123))
+	assert.Equal(t, "mydb:public:users", ti.StreamKey())
 }
 
 func TestTableIdentifier_NoNamespace(t *testing.T) {
@@ -26,9 +24,7 @@ func TestTableIdentifier_NoNamespace(t *testing.T) {
 	assert.Equal(t, "public", ti.Schema())
 	assert.Equal(t, "users", ti.Table())
 	assert.Equal(t, "public:users", ti.FullyQualifiedName())
-	assert.Equal(t, "public:users:*", ti.KeyPattern())
-	assert.Equal(t, "public:users:__counter", ti.CounterKey())
-	assert.Equal(t, "public:users:456", ti.RecordKey(456))
+	assert.Equal(t, "public:users", ti.StreamKey())
 }
 
 func TestTableIdentifier_NoSchema(t *testing.T) {
@@ -38,9 +34,7 @@ func TestTableIdentifier_NoSchema(t *testing.T) {
 	assert.Equal(t, "", ti.Schema())
 	assert.Equal(t, "users", ti.Table())
 	assert.Equal(t, "mydb:users", ti.FullyQualifiedName())
-	assert.Equal(t, "mydb:users:*", ti.KeyPattern())
-	assert.Equal(t, "mydb:users:__counter", ti.CounterKey())
-	assert.Equal(t, "mydb:users:789", ti.RecordKey(789))
+	assert.Equal(t, "mydb:users", ti.StreamKey())
 }
 
 func TestTableIdentifier_WithTable(t *testing.T) {

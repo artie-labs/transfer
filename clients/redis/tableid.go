@@ -1,7 +1,6 @@
 package redis
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/sql"
@@ -59,17 +58,7 @@ func (ti TableIdentifier) TemporaryTable() bool {
 	return false
 }
 
-// KeyPattern returns the pattern for this table's keys: namespace:schema:table:*
-func (ti TableIdentifier) KeyPattern() string {
-	return fmt.Sprintf("%s:*", ti.FullyQualifiedName())
-}
-
-// CounterKey returns the key used for generating IDs: namespace:schema:table:__counter
-func (ti TableIdentifier) CounterKey() string {
-	return fmt.Sprintf("%s:__counter", ti.FullyQualifiedName())
-}
-
-// RecordKey returns the key for a specific record: namespace:schema:table:id
-func (ti TableIdentifier) RecordKey(id int64) string {
-	return fmt.Sprintf("%s:%d", ti.FullyQualifiedName(), id)
+// StreamKey returns the key for the Redis Stream: namespace:schema:table
+func (ti TableIdentifier) StreamKey() string {
+	return ti.FullyQualifiedName()
 }
