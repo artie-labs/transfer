@@ -67,7 +67,6 @@ func (s *Store) Dedupe(_ context.Context, _ sqllib.TableIdentifier, _ []string, 
 func (s *Store) GetTableConfig(_ context.Context, tableID sqllib.TableIdentifier, _ bool) (*types.DestinationTableConfig, error) {
 	tableConfig := s.configMap.GetTableConfig(tableID)
 	if tableConfig == nil {
-		// Return an empty config - Redis doesn't need to track columns like SQL databases
 		tableConfig = types.NewDestinationTableConfig(nil, false)
 		s.configMap.AddTable(tableID, tableConfig)
 	}
@@ -75,7 +74,6 @@ func (s *Store) GetTableConfig(_ context.Context, tableID sqllib.TableIdentifier
 }
 
 func (s *Store) SweepTemporaryTables(_ context.Context) error {
-	// Redis doesn't use temporary tables
 	return nil
 }
 
