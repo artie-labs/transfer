@@ -76,6 +76,33 @@ type GCSSettings struct {
 	TableNameSeparator string                   `yaml:"tableNameSeparator"`
 }
 
+type Redis struct {
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	Password string `yaml:"password"`
+	Database int    `yaml:"database"`
+}
+
+func (r *Redis) Validate() error {
+	if r == nil {
+		return fmt.Errorf("redis config is nil")
+	}
+
+	if r.Host == "" {
+		return fmt.Errorf("redis host is empty")
+	}
+
+	if r.Port <= 0 {
+		return fmt.Errorf("invalid redis port: %d", r.Port)
+	}
+
+	if r.Database < 0 {
+		return fmt.Errorf("invalid redis database: %d", r.Database)
+	}
+
+	return nil
+}
+
 type Snowflake struct {
 	AccountID string `yaml:"account"`
 	Username  string `yaml:"username"`
