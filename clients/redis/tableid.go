@@ -25,7 +25,6 @@ func (ti TableIdentifier) Schema() string {
 }
 
 func (ti TableIdentifier) EscapedTable() string {
-	// Redis doesn't require escaping
 	return ti.table
 }
 
@@ -37,7 +36,6 @@ func (ti TableIdentifier) WithTable(table string) sql.TableIdentifier {
 	return NewTableIdentifier(ti.namespace, ti.schema, table)
 }
 
-// FullyQualifiedName returns the Redis key prefix: namespace:schema:table
 func (ti TableIdentifier) FullyQualifiedName() string {
 	parts := []string{}
 	if ti.namespace != "" {
@@ -58,7 +56,6 @@ func (ti TableIdentifier) TemporaryTable() bool {
 	return false
 }
 
-// StreamKey returns the key for the Redis Stream: namespace:schema:table
 func (ti TableIdentifier) StreamKey() string {
 	return ti.FullyQualifiedName()
 }
