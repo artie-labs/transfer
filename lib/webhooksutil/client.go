@@ -41,6 +41,18 @@ func NewWebhooksClient(apiKey, url string, source Source, properties map[string]
 	}, nil
 }
 
+// AllEventTypes returns a slice of all defined event types
+func GetAllEventTypes() []EventType {
+	return []EventType{
+		EventBackFillStarted,
+		EventBackFillCompleted,
+		EventBackFillFailed,
+		ReplicationStarted,
+		ReplicationFailed,
+		UnableToReplicate,
+	}
+}
+
 func (w WebhooksClient) BuildProperties(eventType EventType, additionalProperties map[string]any) map[string]any {
 	props := map[string]any{
 		"source":   w.source,
