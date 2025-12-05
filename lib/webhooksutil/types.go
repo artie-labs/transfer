@@ -14,6 +14,17 @@ const (
 	UnableToReplicate  EventType = "unable.to.replicate"
 )
 
+// AllEventTypes contains all defined event types
+// Add new event types here when you define them above
+var AllEventTypes = []EventType{
+	EventBackFillStarted,
+	EventBackFillCompleted,
+	EventBackFillFailed,
+	ReplicationStarted,
+	ReplicationFailed,
+	UnableToReplicate,
+}
+
 type Severity string
 
 const (
