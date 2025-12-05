@@ -2,6 +2,7 @@ package redis
 
 import (
 	"context"
+	"crypto/tls"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -238,12 +239,20 @@ func LoadRedis(ctx context.Context, cfg config.Config, _ *db.Store) (destination
 		return nil, fmt.Errorf("redis config is nil")
 	}
 
-	// Create Redis client
-	rdb := redis.NewClient(&redis.Options{
+	opts := &redis.Options{
 		Addr:     fmt.Sprintf("%s:%d", cfg.Redis.Host, cfg.Redis.Port),
 		Password: cfg.Redis.Password,
 		DB:       cfg.Redis.Database,
-	})
+	}
+
+	// Enable TLS
+	if cfg.Redis.TLS {
+		opts.TLSConfig = &tls.Config{
+			MinVersion: tls.VersionTLS12,
+		}
+	}
+
+	rdb := redis.NewClient(opts)
 
 	// Test connection
 	if err := rdb.Ping(ctx).Err(); err != nil {

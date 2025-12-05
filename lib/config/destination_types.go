@@ -81,6 +81,7 @@ type Redis struct {
 	Port     int    `yaml:"port"`
 	Password string `yaml:"password"`
 	Database int    `yaml:"database"`
+	TLS      bool   `yaml:"tls"` // Enable TLS/SSL connection
 }
 
 func (r *Redis) Validate() error {
