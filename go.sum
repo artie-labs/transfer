@@ -698,8 +698,8 @@ github.com/apache/arrow/go/v17 v17.0.0/go.mod h1:jR7QHkODl15PfYyjM2nU+yTLScZ/qfj
 github.com/apache/thrift v0.16.0/go.mod h1:PHK3hniurgQaNMZYaCLEqXKsYK8upmhPbmdP2FXSqgU=
 github.com/apache/thrift v0.22.0 h1:r7mTJdj51TMDe6RtcmNdQxgn9XcyfGDOzegMDRg47uc=
 github.com/apache/thrift v0.22.0/go.mod h1:1e7J/O1Ae6ZQMTYdy9xa3w9k+XHWPfRvdPyJeynQ+/g=
-github.com/artie-labs/ducktape/api v0.1.4 h1:kZ/wcceH+RYs+tKO/+fjQm98E9DM58lQ7jVg3yh96xA=
-github.com/artie-labs/ducktape/api v0.1.4/go.mod h1:3wVFmxGoT1EJd18eJHm5GlJcI+1CCb2i7gkM7HYC9Q4=
+github.com/artie-labs/ducktape/api v0.1.5 h1:ELmiUksiBu7IsSuLsJ+qDQYAFvw/KnbezjZwSDUDCRY=
+github.com/artie-labs/ducktape/api v0.1.5/go.mod h1:3wVFmxGoT1EJd18eJHm5GlJcI+1CCb2i7gkM7HYC9Q4=
 github.com/aws/aws-sdk-go-v2 v1.16.12/go.mod h1:C+Ym0ag2LIghJbXhfXZ0YEEp49rBWowxKzJLUoob0ts=
 github.com/aws/aws-sdk-go-v2 v1.38.1 h1:j7sc33amE74Rz0M/PoCpsZQ6OunLqys/m5antM0J+Z8=
 github.com/aws/aws-sdk-go-v2 v1.38.1/go.mod h1:9Q0OoGQoboYIAJyslFyF1f5K1Ryddop8gqMhWx/n4Wg=
