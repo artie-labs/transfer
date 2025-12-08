@@ -241,6 +241,7 @@ func LoadRedis(ctx context.Context, cfg config.Config, _ *db.Store) (destination
 
 	opts := &redis.Options{
 		Addr:     fmt.Sprintf("%s:%d", cfg.Redis.Host, cfg.Redis.Port),
+		Username: cfg.Redis.Username,
 		Password: cfg.Redis.Password,
 		DB:       cfg.Redis.Database,
 	}

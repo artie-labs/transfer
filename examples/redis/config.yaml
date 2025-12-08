@@ -4,8 +4,10 @@ outputSource: redis
 redis:
   host: localhost
   port: 6379
+  username: ""  # Optional: Redis username (leave empty if not required)
   password: ""  # Optional: Leave empty if no password is required
   database: 0   # Redis database number (0-15)
+  tls: false    # Enable TLS/SSL connection
 
 # Transfer mode
 mode: replication  # or "history"
@@ -25,9 +27,9 @@ kafka:
   
   topicConfigs:
     - db: postgres
-      schema: inventory
-      tableName: customers
-      topic: transfer-redis.inventory.customers
+      schema: public  
+      tableName: webhook_eevnts
+      topic: transfer-redis.webhooks.events
       cdcFormat: debezium.relational
       cdcKeyFormat: org.apache.kafka.connect.json.JsonConverter
 
