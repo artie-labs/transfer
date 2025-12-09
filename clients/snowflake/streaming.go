@@ -48,9 +48,9 @@ func (s *SnowpipeStreamingChannel) UpdateToken(token string) string {
 }
 
 type SnowpipeStreamingChannelManager struct {
-	mu     sync.Mutex
+	mu          sync.Mutex
 	maxChannels int
-	config *gosnowflake.Config
+	config      *gosnowflake.Config
 
 	channelNameToChannel map[string]*SnowpipeStreamingChannel
 
