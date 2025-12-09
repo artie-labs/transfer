@@ -149,7 +149,13 @@ func LoadSnowflake(ctx context.Context, cfg config.Config, _store *db.Store) (*S
 	}
 
 	if cfg.Snowflake.Streaming {
-		s.snowpipeStreamingChannelManager = NewSnowpipeStreamingChannelManager(snowflakeCfg)
+		var maxChannels int
+		if cfg.Snowflake.MaxStreamingChannels == 0 {
+			maxChannels = 1
+		} else {
+			maxChannels = cfg.Snowflake.MaxStreamingChannels
+		}
+		s.snowpipeStreamingChannelManager = NewSnowpipeStreamingChannelManager(snowflakeCfg, maxChannels)
 	}
 
 	return s, nil

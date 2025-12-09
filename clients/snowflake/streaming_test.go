@@ -45,7 +45,7 @@ func TestSnowpipeStreamingChannelManager_ChannelCreation(t *testing.T) {
 		User:    "test",
 	}
 
-	manager := NewSnowpipeStreamingChannelManager(cfg)
+	manager := NewSnowpipeStreamingChannelManager(cfg, 1)
 
 	// Initially no channels
 	assert.Len(t, manager.channelNameToChannel, 0)
@@ -78,7 +78,7 @@ func TestSnowpipeStreamingChannelManager_ChannelReuse(t *testing.T) {
 		User:    "test",
 	}
 
-	manager := NewSnowpipeStreamingChannelManager(cfg)
+	manager := NewSnowpipeStreamingChannelManager(cfg, 1)
 
 	// Mock server
 	server := createMockSnowflakeServer(t)
@@ -120,7 +120,7 @@ func TestSnowpipeStreamingChannelManager_MultipleChannels(t *testing.T) {
 		User:    "test",
 	}
 
-	manager := NewSnowpipeStreamingChannelManager(cfg)
+	manager := NewSnowpipeStreamingChannelManager(cfg, 1)
 
 	server := createMockSnowflakeServer(t)
 	defer server.Close()
@@ -158,7 +158,7 @@ func TestSnowpipeStreamingChannelManager_OversizedRowRejection(t *testing.T) {
 		User:    "test",
 	}
 
-	manager := NewSnowpipeStreamingChannelManager(cfg)
+	manager := NewSnowpipeStreamingChannelManager(cfg, 1)
 
 	server := createMockSnowflakeServer(t)
 	defer server.Close()
@@ -213,7 +213,7 @@ func TestSnowpipeStreamingChannelManager_SmallBatchSingleRequest(t *testing.T) {
 		User:    "test",
 	}
 
-	manager := NewSnowpipeStreamingChannelManager(cfg)
+	manager := NewSnowpipeStreamingChannelManager(cfg, 1)
 	manager.ingestHost = strings.TrimPrefix(server.URL, "https://")
 	manager.scopedToken = "mock-token"
 	manager.expiresAt = time.Now().Add(1 * time.Hour)
@@ -269,7 +269,7 @@ func TestSnowpipeStreamingChannelManager_LargeBatchMultipleRequests(t *testing.T
 		User:    "test",
 	}
 
-	manager := NewSnowpipeStreamingChannelManager(cfg)
+	manager := NewSnowpipeStreamingChannelManager(cfg, 1)
 	manager.ingestHost = strings.TrimPrefix(server.URL, "https://")
 	manager.scopedToken = "mock-token"
 	manager.expiresAt = time.Now().Add(1 * time.Hour)
@@ -301,7 +301,7 @@ func TestSnowpipeStreamingChannelManager_EmptyTableData(t *testing.T) {
 		User:    "test",
 	}
 
-	manager := NewSnowpipeStreamingChannelManager(cfg)
+	manager := NewSnowpipeStreamingChannelManager(cfg, 1)
 
 	server := createMockSnowflakeServer(t)
 	defer server.Close()
@@ -360,7 +360,7 @@ func TestSnowpipeStreamingChannelManager_ContinuationTokenChaining(t *testing.T)
 		User:    "test",
 	}
 
-	manager := NewSnowpipeStreamingChannelManager(cfg)
+	manager := NewSnowpipeStreamingChannelManager(cfg, 1)
 	manager.ingestHost = strings.TrimPrefix(server.URL, "https://")
 	manager.scopedToken = "mock-token"
 	manager.expiresAt = time.Now().Add(1 * time.Hour)
@@ -393,7 +393,7 @@ func TestSnowpipeStreamingChannelManager_SingleRowBatch(t *testing.T) {
 		User:    "test",
 	}
 
-	manager := NewSnowpipeStreamingChannelManager(cfg)
+	manager := NewSnowpipeStreamingChannelManager(cfg, 1)
 
 	server := createMockSnowflakeServer(t)
 	defer server.Close()

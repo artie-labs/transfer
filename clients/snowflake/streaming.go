@@ -49,6 +49,7 @@ func (s *SnowpipeStreamingChannel) UpdateToken(token string) string {
 
 type SnowpipeStreamingChannelManager struct {
 	mu     sync.Mutex
+	maxChannels int
 	config *gosnowflake.Config
 
 	channelNameToChannel map[string]*SnowpipeStreamingChannel
@@ -58,9 +59,10 @@ type SnowpipeStreamingChannelManager struct {
 	expiresAt   time.Time
 }
 
-func NewSnowpipeStreamingChannelManager(config *gosnowflake.Config) *SnowpipeStreamingChannelManager {
+func NewSnowpipeStreamingChannelManager(config *gosnowflake.Config, maxChannels int) *SnowpipeStreamingChannelManager {
 	return &SnowpipeStreamingChannelManager{
 		config:               config,
+		maxChannels:          maxChannels,
 		channelNameToChannel: make(map[string]*SnowpipeStreamingChannel),
 	}
 }
