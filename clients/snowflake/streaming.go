@@ -137,23 +137,25 @@ func (s *SnowpipeStreamingChannelManager) LoadData(ctx context.Context, db, sche
 
 	channelName := fmt.Sprintf("%s-%d", data.Name(), 0)
 
-	// Double-checked locking pattern to safely get or create channel
+	// Get or create channel and open it if needed, all while holding manager lock
+	// This prevents multiple goroutines from calling OpenChannel() concurrently
 	s.mu.Lock()
 	channel, ok := s.channelNameToChannel[channelName]
 	if !ok {
 		channel = NewSnowpipeStreamingChannel()
 		s.channelNameToChannel[channelName] = channel
 	}
-	s.mu.Unlock()
 
-	contToken := channel.GetContinuationToken()
-	if contToken == "" {
-		channelResponse, err := OpenChannel(ctx, s.scopedToken, s.ingestHost, db, schema, pipe, channelName)
-		if err != nil {
+	// Check if channel needs to be opened
+	if contToken := channel.GetContinuationToken(); contToken == "" {
+		if channelResponse, err := OpenChannel(ctx, s.scopedToken, s.ingestHost, db, schema, pipe, channelName); err != nil {
+			s.mu.Unlock()
 			return fmt.Errorf("failed to open channel for snowpipe streaming: %w", err)
+		} else {
+			channel.UpdateContinuationToken(channelResponse.NextContinuationToken)
 		}
-		contToken = channel.UpdateContinuationToken(channelResponse.NextContinuationToken)
 	}
+	s.mu.Unlock()
 
 	_, err := batch.BySize(
 		data.Rows(),
@@ -178,12 +180,12 @@ func (s *SnowpipeStreamingChannelManager) LoadData(ctx context.Context, db, sche
 			}
 			reader := io.MultiReader(readers...)
 
-			appendResp, err := AppendRows(ctx, s.scopedToken, s.ingestHost, db, schema, pipe, channelName, contToken, reader)
+			appendResp, err := AppendRows(ctx, s.scopedToken, s.ingestHost, db, schema, pipe, channelName, channel.GetContinuationToken(), reader)
 			if err != nil {
 				return fmt.Errorf("failed to append rows for snowpipe streaming channel %q: %w", channelName, err)
 			}
 
-			contToken = channel.UpdateContinuationToken(appendResp.NextContinuationToken)
+			channel.UpdateContinuationToken(appendResp.NextContinuationToken)
 			return nil
 		},
 	)
