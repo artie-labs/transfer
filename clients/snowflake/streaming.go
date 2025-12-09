@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"strings"
 	"sync"
@@ -63,25 +64,51 @@ type SnowpipeStreamingChannelManager struct {
 	ingestHost  string
 	scopedToken string
 	expiresAt   time.Time
+
+	refreshCh chan struct{}
 }
 
-func NewSnowpipeStreamingChannelManager(config *gosnowflake.Config, maxChannels int) *SnowpipeStreamingChannelManager {
-	return &SnowpipeStreamingChannelManager{
+func NewSnowpipeStreamingChannelManager(ctx context.Context, config *gosnowflake.Config, maxChannels int) *SnowpipeStreamingChannelManager {
+	mgr := &SnowpipeStreamingChannelManager{
 		config:               config,
 		maxChannels:          maxChannels,
 		channelNameToChannel: make(map[string]*SnowpipeStreamingChannel),
+		refreshCh:            make(chan struct{}, 1),
+	}
+	go mgr.refreshLoop(ctx)
+	return mgr
+}
+
+func (s *SnowpipeStreamingChannelManager) refreshLoop(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-s.refreshCh:
+			// Refresh requested, check if needed and perform refresh
+			if err := s.checkAndRefresh(ctx); err != nil {
+				slog.Error("failed to refresh scoped token for snowpipe streaming", slog.Any("error", err))
+				// Retry after a short delay by sending another refresh request
+				go func() {
+					time.Sleep(2 * time.Second)
+					select {
+					case s.refreshCh <- struct{}{}:
+					case <-ctx.Done():
+					}
+				}()
+			}
+		}
 	}
 }
 
-func (s *SnowpipeStreamingChannelManager) refresh(ctx context.Context) error {
-	// Double-checked locking: check again under lock if refresh is still needed
-	// This prevents multiple goroutines from refreshing simultaneously
+func (s *SnowpipeStreamingChannelManager) checkAndRefresh(ctx context.Context) error {
 	s.mu.Lock()
-	if !s.expiresAt.Before(time.Now().Add(1 * time.Minute)) {
-		s.mu.Unlock()
-		return nil // Another goroutine already refreshed
-	}
+	needsRefresh := s.expiresAt.Before(time.Now().Add(2 * time.Minute))
 	s.mu.Unlock()
+
+	if !needsRefresh {
+		return nil // Token is still valid
+	}
 
 	jwt, err := PrepareJWTToken(s.config)
 	if err != nil {
@@ -107,15 +134,18 @@ func (s *SnowpipeStreamingChannelManager) refresh(ctx context.Context) error {
 	return nil
 }
 
-func (s *SnowpipeStreamingChannelManager) LoadData(ctx context.Context, db, schema, pipe string, now time.Time, data optimization.TableData) error {
+func (s *SnowpipeStreamingChannelManager) getCredentials() (scopedToken, ingestHost string) {
 	s.mu.Lock()
-	needsRefresh := s.expiresAt.Before(now.Add(1 * time.Minute))
-	s.mu.Unlock()
+	defer s.mu.Unlock()
+	return s.scopedToken, s.ingestHost
+}
 
-	if needsRefresh {
-		if err := s.refresh(ctx); err != nil {
-			return fmt.Errorf("failed to refresh scoped token for snowpipe streaming: %w", err)
-		}
+func (s *SnowpipeStreamingChannelManager) LoadData(ctx context.Context, db, schema, pipe string, now time.Time, data optimization.TableData) error {
+	// Request refresh check via channel (non-blocking)
+	select {
+	case s.refreshCh <- struct{}{}:
+	default:
+		// Refresh already queued, skip
 	}
 
 	channelName := fmt.Sprintf("%s-%d", data.Name(), 0)
@@ -131,7 +161,8 @@ func (s *SnowpipeStreamingChannelManager) LoadData(ctx context.Context, db, sche
 
 	contToken := channel.GetContinuationToken()
 	if contToken == "" {
-		channelResponse, err := OpenChannel(ctx, s.scopedToken, s.ingestHost, db, schema, pipe, channelName)
+		scopedToken, ingestHost := s.getCredentials()
+		channelResponse, err := OpenChannel(ctx, scopedToken, ingestHost, db, schema, pipe, channelName)
 		if err != nil {
 			return fmt.Errorf("failed to open channel for snowpipe streaming: %w", err)
 		}
@@ -161,7 +192,8 @@ func (s *SnowpipeStreamingChannelManager) LoadData(ctx context.Context, db, sche
 			}
 			reader := io.MultiReader(readers...)
 
-			appendResp, err := AppendRows(ctx, s.scopedToken, s.ingestHost, db, schema, pipe, channelName, contToken, reader)
+			scopedToken, ingestHost := s.getCredentials()
+			appendResp, err := AppendRows(ctx, scopedToken, ingestHost, db, schema, pipe, channelName, contToken, reader)
 			if err != nil {
 				return fmt.Errorf("failed to append rows for snowpipe streaming channel %q: %w", channelName, err)
 			}
