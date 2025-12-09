@@ -13,7 +13,7 @@ require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/DataDog/datadog-go/v5 v5.6.0
 	github.com/apache/arrow/go/v17 v17.0.0
-	github.com/artie-labs/ducktape/api v0.1.4
+	github.com/artie-labs/ducktape/api v0.1.5
 	github.com/aws/aws-sdk-go-v2 v1.38.1
 	github.com/aws/aws-sdk-go-v2/config v1.29.12
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.65
@@ -32,6 +32,7 @@ require (
 	github.com/lmittmann/tint v1.0.7
 	github.com/mattn/go-isatty v0.0.20
 	github.com/microsoft/go-mssqldb v1.8.0
+	github.com/redis/go-redis/v9 v9.17.2
 	github.com/samber/slog-multi v1.4.0
 	github.com/samber/slog-sentry/v2 v2.9.3
 	github.com/segmentio/kafka-go v0.4.49
@@ -97,6 +98,7 @@ require (
 	github.com/danieljoos/wincred v1.2.2 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.3.0 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/dnephin/pflag v1.0.7 // indirect
 	github.com/dvsekhvalnov/jose2go v1.8.0 // indirect
 	github.com/envoyproxy/go-control-plane/envoy v1.32.4 // indirect

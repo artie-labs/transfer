@@ -153,6 +153,14 @@ func (c Config) ValidateMotherDuck() error {
 	return nil
 }
 
+func (c Config) ValidateRedis() error {
+	if c.Output != constants.Redis {
+		return fmt.Errorf("output is not Redis, output: %q", c.Output)
+	}
+
+	return c.Redis.Validate()
+}
+
 // Validate will check the output source validity
 // It will also check if a topic exists + iterate over each topic to make sure it's valid.
 // The actual output source (like Snowflake) and CDC parser will be loaded and checked by other funcs.
@@ -181,6 +189,10 @@ func (c Config) Validate() error {
 		}
 	case constants.Redshift:
 		if err := c.ValidateRedshift(); err != nil {
+			return err
+		}
+	case constants.Redis:
+		if err := c.ValidateRedis(); err != nil {
 			return err
 		}
 	case constants.S3:

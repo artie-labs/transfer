@@ -93,6 +93,7 @@ type Config struct {
 	GCS        *GCSSettings `yaml:"gcs,omitempty"`
 	Iceberg    *Iceberg     `yaml:"iceberg,omitempty"`
 	MotherDuck *MotherDuck  `yaml:"motherduck,omitempty"`
+	Redis      *Redis       `yaml:"redis,omitempty"`
 
 	SharedDestinationSettings SharedDestinationSettings `yaml:"sharedDestinationSettings"`
 	StagingTableReuse         *StagingTableReuseConfig  `yaml:"stagingTableReuse,omitempty"`

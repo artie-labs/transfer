@@ -15,7 +15,8 @@ var retryableErrs = []error{
 	syscall.ETIMEDOUT,
 }
 
-func isRetryableError(err error) bool {
+// IsRetryableError checks for common retryable errors. (example: network errors)
+func IsRetryableError(err error) bool {
 	if err == nil {
 		return false
 	}
@@ -34,4 +35,9 @@ func isRetryableError(err error) bool {
 	}
 
 	return false
+}
+
+// backward compat
+func isRetryableError(err error) bool {
+	return IsRetryableError(err)
 }
