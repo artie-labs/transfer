@@ -307,14 +307,21 @@ func GetScopedToken(ctx context.Context, jwtToken, account, ingestHost string) (
 
 	parser := jwt.Parser{}
 	token, _, err := parser.ParseUnverified(scopedToken, jwt.MapClaims{})
-	if err == nil {
-		if claims, ok := token.Claims.(jwt.MapClaims); ok {
-			if exp, ok := claims["exp"].(float64); ok {
-				expiresAt = time.Unix(int64(exp), 0)
-			}
-		}
+	if err != nil {
+		return "", time.Time{}, fmt.Errorf("failed to parse scoped token JWT: %w", err)
 	}
 
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return "", time.Time{}, fmt.Errorf("failed to extract claims from scoped token: claims are not MapClaims")
+	}
+
+	exp, ok := claims["exp"].(float64)
+	if !ok {
+		return "", time.Time{}, fmt.Errorf("failed to extract expiration time from scoped token: exp claim is missing or invalid type")
+	}
+
+	expiresAt = time.Unix(int64(exp), 0)
 	return scopedToken, expiresAt, nil
 }
 
