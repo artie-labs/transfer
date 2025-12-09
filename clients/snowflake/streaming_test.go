@@ -24,19 +24,19 @@ import (
 func TestSnowpipeStreamingChannel_RateLimiterInitialization(t *testing.T) {
 	channel := NewSnowpipeStreamingChannel()
 	assert.NotNil(t, channel.RateLimiter, "RateLimiter should be initialized")
-	assert.Equal(t, "", channel.ContinuationToken, "ContinuationToken should be empty")
+	assert.Equal(t, "", channel.GetContinuationToken(), "ContinuationToken should be empty")
 }
 
 func TestSnowpipeStreamingChannel_UpdateToken(t *testing.T) {
 	channel := NewSnowpipeStreamingChannel()
 
-	token := channel.UpdateToken("token1")
+	token := channel.UpdateContinuationToken("token1")
 	assert.Equal(t, "token1", token)
-	assert.Equal(t, "token1", channel.ContinuationToken)
+	assert.Equal(t, "token1", channel.GetContinuationToken())
 
-	token = channel.UpdateToken("token2")
+	token = channel.UpdateContinuationToken("token2")
 	assert.Equal(t, "token2", token)
-	assert.Equal(t, "token2", channel.ContinuationToken)
+	assert.Equal(t, "token2", channel.GetContinuationToken())
 }
 
 func TestSnowpipeStreamingChannelManager_ChannelCreation(t *testing.T) {
@@ -412,7 +412,7 @@ func TestSnowpipeStreamingChannelManager_SingleRowBatch(t *testing.T) {
 
 	// Verify channel was created and has updated continuation token
 	channel := manager.channelNameToChannel["test_table-0"]
-	assert.NotEmpty(t, channel.ContinuationToken)
+	assert.NotEmpty(t, channel.GetContinuationToken())
 }
 
 // Helper function to create a mock Snowflake TLS server

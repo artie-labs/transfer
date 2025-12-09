@@ -28,23 +28,29 @@ const maxChunkSize = 4 * 1024 * 1024 // 4MB
 
 type SnowpipeStreamingChannel struct {
 	mu                sync.Mutex
-	ContinuationToken string
+	continuationToken string
 	RateLimiter       *rate.Limiter
 }
 
 func NewSnowpipeStreamingChannel() *SnowpipeStreamingChannel {
 	return &SnowpipeStreamingChannel{
 		mu:                sync.Mutex{},
-		ContinuationToken: "",
+		continuationToken: "",
 		RateLimiter:       rate.NewLimiter(rate.Limit(10), 1),
 	}
 }
 
-func (s *SnowpipeStreamingChannel) UpdateToken(token string) string {
+func (s *SnowpipeStreamingChannel) GetContinuationToken() string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.ContinuationToken = token
-	return s.ContinuationToken
+	return s.continuationToken
+}
+
+func (s *SnowpipeStreamingChannel) UpdateContinuationToken(token string) string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.continuationToken = token
+	return s.continuationToken
 }
 
 type SnowpipeStreamingChannelManager struct {
@@ -123,13 +129,13 @@ func (s *SnowpipeStreamingChannelManager) LoadData(ctx context.Context, db, sche
 	}
 	s.mu.Unlock()
 
-	contToken := channel.ContinuationToken
+	contToken := channel.GetContinuationToken()
 	if contToken == "" {
 		channelResponse, err := OpenChannel(ctx, s.scopedToken, s.ingestHost, db, schema, pipe, channelName)
 		if err != nil {
 			return fmt.Errorf("failed to open channel for snowpipe streaming: %w", err)
 		}
-		contToken = channel.UpdateToken(channelResponse.NextContinuationToken)
+		contToken = channel.UpdateContinuationToken(channelResponse.NextContinuationToken)
 	}
 
 	_, err := batch.BySize(
@@ -160,7 +166,7 @@ func (s *SnowpipeStreamingChannelManager) LoadData(ctx context.Context, db, sche
 				return fmt.Errorf("failed to append rows for snowpipe streaming channel %q: %w", channelName, err)
 			}
 
-			contToken = channel.UpdateToken(appendResp.NextContinuationToken)
+			contToken = channel.UpdateContinuationToken(appendResp.NextContinuationToken)
 			return nil
 		},
 	)
