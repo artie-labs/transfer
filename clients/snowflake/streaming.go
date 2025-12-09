@@ -110,17 +110,19 @@ func (s *SnowpipeStreamingChannelManager) LoadData(ctx context.Context, db, sche
 		}
 	}
 
-	if _, ok := s.channelNameToChannel[data.Name()]; !ok {
+	channelName := fmt.Sprintf("%s-%d", data.Name(), 0)
+
+	if _, ok := s.channelNameToChannel[channelName]; !ok {
 		s.mu.Lock()
-		s.channelNameToChannel[data.Name()] = NewSnowpipeStreamingChannel()
+		s.channelNameToChannel[channelName] = NewSnowpipeStreamingChannel()
 		s.mu.Unlock()
 	}
 
-	channel := s.channelNameToChannel[data.Name()]
+	channel := s.channelNameToChannel[channelName]
 
 	contToken := channel.ContinuationToken
 	if contToken == "" {
-		channelResponse, err := OpenChannel(ctx, s.scopedToken, s.ingestHost, db, schema, pipe, data.Name())
+		channelResponse, err := OpenChannel(ctx, s.scopedToken, s.ingestHost, db, schema, pipe, channelName)
 		if err != nil {
 			return fmt.Errorf("failed to open channel for snowpipe streaming: %w", err)
 		}
@@ -141,7 +143,7 @@ func (s *SnowpipeStreamingChannelManager) LoadData(ctx context.Context, db, sche
 		},
 		func(encodedBytes [][]byte, rows []optimization.Row) error {
 			if err := channel.RateLimiter.Wait(ctx); err != nil {
-				return fmt.Errorf("rate limiter error for channel %q: %w", data.Name(), err)
+				return fmt.Errorf("rate limiter error for channel %q: %w", channelName, err)
 			}
 
 			readers := make([]io.Reader, len(encodedBytes))
@@ -150,9 +152,9 @@ func (s *SnowpipeStreamingChannelManager) LoadData(ctx context.Context, db, sche
 			}
 			reader := io.MultiReader(readers...)
 
-			appendResp, err := AppendRows(ctx, s.scopedToken, s.ingestHost, db, schema, pipe, data.Name(), contToken, reader)
+			appendResp, err := AppendRows(ctx, s.scopedToken, s.ingestHost, db, schema, pipe, channelName, contToken, reader)
 			if err != nil {
-				return fmt.Errorf("failed to append rows for snowpipe streaming channel %q: %w", data.Name(), err)
+				return fmt.Errorf("failed to append rows for snowpipe streaming channel %q: %w", channelName, err)
 			}
 
 			contToken = channel.UpdateToken(appendResp.NextContinuationToken)
