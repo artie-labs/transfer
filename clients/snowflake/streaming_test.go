@@ -69,7 +69,7 @@ func TestSnowpipeStreamingChannelManager_ChannelCreation(t *testing.T) {
 
 	// Channel should be created
 	assert.Len(t, manager.channelNameToChannel, 1)
-	assert.NotNil(t, manager.channelNameToChannel["table1"])
+	assert.NotNil(t, manager.channelNameToChannel["table1-0"])
 }
 
 func TestSnowpipeStreamingChannelManager_ChannelReuse(t *testing.T) {
@@ -97,7 +97,7 @@ func TestSnowpipeStreamingChannelManager_ChannelReuse(t *testing.T) {
 	err := manager.LoadData(ctx, "db", "schema", "pipe", time.Now(), *tableData1)
 	require.NoError(t, err)
 
-	channel1 := manager.channelNameToChannel["table1"]
+	channel1 := manager.channelNameToChannel["table1-0"]
 
 	// Second call with same table name
 	tableData2 := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "table1")
@@ -107,7 +107,7 @@ func TestSnowpipeStreamingChannelManager_ChannelReuse(t *testing.T) {
 	err = manager.LoadData(ctx, "db", "schema", "pipe", time.Now(), *tableData2)
 	require.NoError(t, err)
 
-	channel2 := manager.channelNameToChannel["table1"]
+	channel2 := manager.channelNameToChannel["table1-0"]
 
 	// Should be the same channel instance
 	assert.Same(t, channel1, channel2, "Channel should be reused")
@@ -147,9 +147,9 @@ func TestSnowpipeStreamingChannelManager_MultipleChannels(t *testing.T) {
 
 	// Should have two separate channels
 	assert.Len(t, manager.channelNameToChannel, 2)
-	assert.NotNil(t, manager.channelNameToChannel["table1"])
-	assert.NotNil(t, manager.channelNameToChannel["table2"])
-	assert.NotSame(t, manager.channelNameToChannel["table1"], manager.channelNameToChannel["table2"])
+	assert.NotNil(t, manager.channelNameToChannel["table1-0"])
+	assert.NotNil(t, manager.channelNameToChannel["table2-0"])
+	assert.NotSame(t, manager.channelNameToChannel["table1-0"], manager.channelNameToChannel["table2-0"])
 }
 
 func TestSnowpipeStreamingChannelManager_OversizedRowRejection(t *testing.T) {
@@ -411,7 +411,7 @@ func TestSnowpipeStreamingChannelManager_SingleRowBatch(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify channel was created and has updated continuation token
-	channel := manager.channelNameToChannel["test_table"]
+	channel := manager.channelNameToChannel["test_table-0"]
 	assert.NotEmpty(t, channel.ContinuationToken)
 }
 
