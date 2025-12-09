@@ -114,13 +114,14 @@ func (s *SnowpipeStreamingChannelManager) LoadData(ctx context.Context, db, sche
 
 	channelName := fmt.Sprintf("%s-%d", data.Name(), 0)
 
-	if _, ok := s.channelNameToChannel[channelName]; !ok {
-		s.mu.Lock()
-		s.channelNameToChannel[channelName] = NewSnowpipeStreamingChannel()
-		s.mu.Unlock()
+	// Double-checked locking pattern to safely get or create channel
+	s.mu.Lock()
+	channel, ok := s.channelNameToChannel[channelName]
+	if !ok {
+		channel = NewSnowpipeStreamingChannel()
+		s.channelNameToChannel[channelName] = channel
 	}
-
-	channel := s.channelNameToChannel[channelName]
+	s.mu.Unlock()
 
 	contToken := channel.ContinuationToken
 	if contToken == "" {
