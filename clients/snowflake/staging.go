@@ -79,7 +79,8 @@ func (s *Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.T
 		}
 
 		// Create the pipe if it doesn't exist
-		pipe := dialect.NewTableIdentifier(castedTempTableID.Database(), castedTempTableID.Schema(), castedTempTableID.Table()+"_PIPE")
+		pipeName := castedTempTableID.Table() + "_PIPE"
+		pipe := dialect.NewTableIdentifier(castedTempTableID.Database(), castedTempTableID.Schema(), pipeName)
 		columnNames := columns.ColumnNames(tableData.ReadOnlyInMemoryCols().ValidColumns())
 
 		createPipeQuery := s.dialect().BuildCreatePipeQuery(
@@ -92,8 +93,7 @@ func (s *Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.T
 			return fmt.Errorf("failed to create pipe for streaming: %w", err)
 		}
 
-		// pipe name is the same as the table name
-		return s.snowpipeStreamingChannelManager.LoadData(ctx, castedTempTableID.Database(), castedTempTableID.Schema(), castedTempTableID.Table(), time.Now(), *tableData)
+		return s.snowpipeStreamingChannelManager.LoadData(ctx, castedTempTableID.Database(), castedTempTableID.Schema(), pipeName, time.Now(), *tableData)
 	}
 
 	// Write data into CSV
