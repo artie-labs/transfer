@@ -79,6 +79,7 @@ type GCSSettings struct {
 type Redis struct {
 	Host     string `yaml:"host"`
 	Port     int    `yaml:"port"`
+	Username string `yaml:"username"`
 	Password string `yaml:"password"`
 	Database int    `yaml:"database"`
 	TLS      bool   `yaml:"tls"` // Enable TLS/SSL connection
