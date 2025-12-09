@@ -63,6 +63,9 @@ type SnowpipeStreamingChannelManager struct {
 	ingestHost  string
 	scopedToken string
 	expiresAt   time.Time
+
+	// refreshMutex ensures only one refresh operation happens at a time
+	refreshMutex sync.Mutex
 }
 
 func NewSnowpipeStreamingChannelManager(config *gosnowflake.Config, maxChannels int) *SnowpipeStreamingChannelManager {
@@ -74,15 +77,29 @@ func NewSnowpipeStreamingChannelManager(config *gosnowflake.Config, maxChannels 
 }
 
 func (s *SnowpipeStreamingChannelManager) refresh(ctx context.Context) error {
-	// Double-checked locking: check again under lock if refresh is still needed
-	// This prevents multiple goroutines from refreshing simultaneously
+	// Fast path: check without lock first
 	s.mu.Lock()
-	if !s.expiresAt.Before(time.Now().Add(1 * time.Minute)) {
-		s.mu.Unlock()
-		return nil // Another goroutine already refreshed
-	}
+	needsRefresh := s.expiresAt.Before(time.Now().Add(1 * time.Minute))
 	s.mu.Unlock()
 
+	if !needsRefresh {
+		return nil // No refresh needed
+	}
+
+	// Acquire refresh mutex to ensure only one refresh operation happens at a time
+	s.refreshMutex.Lock()
+	defer s.refreshMutex.Unlock()
+
+	// Double-check: another goroutine may have refreshed while we were waiting
+	s.mu.Lock()
+	needsRefresh = s.expiresAt.Before(time.Now().Add(1 * time.Minute))
+	s.mu.Unlock()
+
+	if !needsRefresh {
+		return nil // Another goroutine already refreshed
+	}
+
+	// Perform network operations (only one goroutine can be here at a time)
 	jwt, err := PrepareJWTToken(s.config)
 	if err != nil {
 		return fmt.Errorf("failed to prepare JWT token: %w", err)
