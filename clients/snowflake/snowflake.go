@@ -150,7 +150,7 @@ func LoadSnowflake(ctx context.Context, cfg config.Config, _store *db.Store) (*S
 
 	if cfg.Snowflake.Streaming {
 		var maxChannels int
-		if cfg.Snowflake.MaxStreamingChannels == 0 {
+		if cfg.Snowflake.MaxStreamingChannels <= 0 {
 			maxChannels = 1
 		} else {
 			maxChannels = cfg.Snowflake.MaxStreamingChannels
