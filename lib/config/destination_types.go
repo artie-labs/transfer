@@ -109,13 +109,15 @@ type Snowflake struct {
 	AccountID string `yaml:"account"`
 	Username  string `yaml:"username"`
 	// If pathToPrivateKey is specified, the password field will be ignored
-	PathToPrivateKey string `yaml:"pathToPrivateKey,omitempty"`
-	Password         string `yaml:"password,omitempty"`
-	Role             string `yaml:"role"`
-	Warehouse        string `yaml:"warehouse"`
-	Region           string `yaml:"region"`
-	Host             string `yaml:"host"`
-	Application      string `yaml:"application"`
+	PathToPrivateKey     string `yaml:"pathToPrivateKey,omitempty"`
+	Password             string `yaml:"password,omitempty"`
+	Role                 string `yaml:"role"`
+	Warehouse            string `yaml:"warehouse"`
+	Region               string `yaml:"region"`
+	Host                 string `yaml:"host"`
+	Application          string `yaml:"application"`
+	Streaming            bool   `yaml:"streaming"`
+	MaxStreamingChannels int    `yaml:"maxStreamingChannels,omitempty"`
 
 	// ExternalStage configuration
 	ExternalStage *ExternalStage `yaml:"externalStage,omitempty"`

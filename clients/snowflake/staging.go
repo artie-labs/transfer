@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/clients/snowflake/dialect"
@@ -16,6 +17,7 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/values"
 )
 
@@ -68,6 +70,30 @@ func (s *Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.T
 		if err := shared.CreateTempTable(ctx, s, tableData, dwh, additionalSettings.ColumnSettings, tempTableID); err != nil {
 			return err
 		}
+	}
+
+	if s.config.Snowflake.Streaming && s.snowpipeStreamingChannelManager != nil {
+		castedTempTableID, ok := tempTableID.(dialect.TableIdentifier)
+		if !ok {
+			return fmt.Errorf("failed to cast temp table ID to TableIdentifier")
+		}
+
+		// Create the pipe if it doesn't exist
+		pipeName := castedTempTableID.Table() + "_PIPE"
+		pipe := dialect.NewTableIdentifier(castedTempTableID.Database(), castedTempTableID.Schema(), pipeName)
+		columnNames := columns.ColumnNames(tableData.ReadOnlyInMemoryCols().ValidColumns())
+
+		createPipeQuery := s.dialect().BuildCreatePipeQuery(
+			pipe,
+			castedTempTableID,
+			columnNames,
+		)
+
+		if _, err := s.ExecContext(ctx, createPipeQuery); err != nil {
+			return fmt.Errorf("failed to create pipe for streaming: %w", err)
+		}
+
+		return s.snowpipeStreamingChannelManager.LoadData(ctx, castedTempTableID.Database(), castedTempTableID.Schema(), pipeName, time.Now(), *tableData)
 	}
 
 	// Write data into CSV
