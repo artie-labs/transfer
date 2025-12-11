@@ -94,6 +94,7 @@ type Config struct {
 	Iceberg    *Iceberg     `yaml:"iceberg,omitempty"`
 	MotherDuck *MotherDuck  `yaml:"motherduck,omitempty"`
 	Redis      *Redis       `yaml:"redis,omitempty"`
+	Clickhouse *Clickhouse  `yaml:"clickhouse,omitempty"`
 
 	SharedDestinationSettings SharedDestinationSettings `yaml:"sharedDestinationSettings"`
 	StagingTableReuse         *StagingTableReuseConfig  `yaml:"stagingTableReuse,omitempty"`
