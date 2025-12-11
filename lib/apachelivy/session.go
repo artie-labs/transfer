@@ -57,14 +57,23 @@ func (c *Client) newSession(ctx context.Context, kind SessionKind, blockUntilRea
 	if err != nil {
 		return err
 	}
+	sleepTime := jitter.Jitter(sleepBaseMs, sleepMaxMs, 0)
 
 	for _, session := range sessions.Sessions {
 		// there can only be one session with this name - Livy enforces this
-		if session.Name == c.sessionName && !session.TerminalState() {
+		if session.Name == c.sessionName && session.CreatingState() {
+			slog.Info("Session is in a creating state, sleeping",
+				slog.Int("sessionID", session.ID),
+				slog.String("sessionName", c.sessionName),
+				slog.Duration("sleepTime", sleepTime),
+				slog.String("current session state", string(session.State)),
+			)
+			time.Sleep(sleepTime)
+			return c.newSession(ctx, kind, blockUntilReady)
+		} else if session.Name == c.sessionName && !session.TerminalState() {
 			c.sessionID = session.ID
 			return nil
 		} else if session.Name == c.sessionName && session.TerminalState() {
-			sleepTime := jitter.Jitter(sleepBaseMs, sleepMaxMs, 0)
 			slog.Warn("Session is in a terminal state, deleting",
 				slog.Int("sessionID", session.ID),
 				slog.String("sessionName", c.sessionName),
