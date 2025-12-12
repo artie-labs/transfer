@@ -143,10 +143,9 @@ func (f Field) ParseValue(value any) (any, error) {
 		}
 	case Bytes:
 		var err error
-		originalValue := value // Capture original value for error reporting
 		value, err = converters.Bytes{}.Convert(value)
 		if err != nil {
-			return nil, fmt.Errorf("failed to convert to bytes: %w, value: %v, value type: %T", err, originalValue, originalValue)
+			return nil, fmt.Errorf("failed to convert to bytes: %w", err)
 		}
 	}
 
