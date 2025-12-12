@@ -31,7 +31,7 @@ func MultiStepMerge(ctx context.Context, dest destination.Destination, tableData
 		return false, nil
 	}
 
-	msmTableID := dest.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), fmt.Sprintf("%s_%s_msm", constants.ArtiePrefix, tableData.Name()))
+	msmTableID := dest.IdentifierFor(tableData.TopicConfig().BuildStagingDatabaseAndSchemaPair(), fmt.Sprintf("%s_%s_msm", constants.ArtiePrefix, tableData.Name()))
 	msmTableID = msmTableID.WithTemporaryTable(true)
 	targetTableID := dest.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name())
 	targetTableConfig, err := dest.GetTableConfig(ctx, targetTableID, tableData.TopicConfig().DropDeletedColumns)
@@ -100,7 +100,7 @@ func MultiStepMerge(ctx context.Context, dest destination.Destination, tableData
 		}
 	} else {
 		// Upon subsequent flushes, we'll want to load data into a staging table and then merge it into the MSM table.
-		temporaryTableID := TempTableIDWithSuffix(targetTableID, tableData.TempTableSuffix())
+		temporaryTableID := TempTableIDWithSuffix(dest.IdentifierFor(tableData.TopicConfig().BuildStagingDatabaseAndSchemaPair(), tableData.Name()), tableData.TempTableSuffix())
 		opts.UseBuildMergeQueryIntoStagingTable = true
 		opts.PrepareTemporaryTable = true
 		if err := merge(ctx, dest, tableData, msmTableConfig, temporaryTableID, msmTableID, opts); err != nil {

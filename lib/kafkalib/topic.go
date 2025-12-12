@@ -1,6 +1,7 @@
 package kafkalib
 
 import (
+	"cmp"
 	"fmt"
 	"maps"
 	"slices"
@@ -125,6 +126,8 @@ func (sp SoftPartitioning) Validate() error {
 type TopicConfig struct {
 	Database string `yaml:"db"`
 	Schema   string `yaml:"schema"`
+	// [StagingSchema] - Optional schema to use for staging tables. If not specified, Schema will be used.
+	StagingSchema string `yaml:"stagingSchema,omitempty"`
 	// [TableName] - if left empty, the table name will be deduced from each event.
 	TableName                  string `yaml:"tableName"`
 	Topic                      string `yaml:"topic"`
@@ -170,6 +173,14 @@ type TopicConfig struct {
 
 func (t TopicConfig) BuildDatabaseAndSchemaPair() DatabaseAndSchemaPair {
 	return DatabaseAndSchemaPair{Database: t.Database, Schema: t.Schema}
+}
+
+func (t TopicConfig) GetStagingSchema() string {
+	return cmp.Or(t.StagingSchema, t.Schema)
+}
+
+func (t TopicConfig) BuildStagingDatabaseAndSchemaPair() DatabaseAndSchemaPair {
+	return DatabaseAndSchemaPair{Database: t.Database, Schema: t.GetStagingSchema()}
 }
 
 const (
