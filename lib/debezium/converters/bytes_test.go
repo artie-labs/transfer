@@ -8,6 +8,18 @@ import (
 
 func TestBytes_Convert(t *testing.T) {
 	{
+		// nil
+		actual, err := Bytes{}.Convert(nil)
+		assert.NoError(t, err)
+		assert.Nil(t, actual)
+	}
+	{
+		// empty string - should return nil, not error
+		actual, err := Bytes{}.Convert("")
+		assert.NoError(t, err)
+		assert.Nil(t, actual)
+	}
+	{
 		// []byte
 		actual, err := Bytes{}.Convert([]byte{40, 39, 38})
 		assert.NoError(t, err)

@@ -17,6 +17,10 @@ func (Bytes) Convert(value any) (any, error) {
 	case []byte:
 		return castedValue, nil
 	case string:
+		// Handle empty strings as nil/empty bytes
+		if castedValue == "" {
+			return nil, nil
+		}
 		data, err := base64.StdEncoding.DecodeString(castedValue)
 		if err != nil {
 			return nil, fmt.Errorf("failed to base64 decode: %w", err)
