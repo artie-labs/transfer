@@ -55,6 +55,10 @@ func (s SessionState) IsReady() bool {
 	return s == StateIdle
 }
 
+func (s SessionState) UsableState() bool {
+	return s == StateIdle || s == StateBusy
+}
+
 type ListSessonResponse struct {
 	Sessions []GetSessionResponse `json:"sessions"`
 }

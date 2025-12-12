@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"net/http"
 	"slices"
-	"strings"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/jitter"
@@ -57,7 +56,7 @@ func (c *Client) newSession(ctx context.Context, kind SessionKind, blockUntilRea
 	if err != nil {
 		return err
 	}
-	sleepTime := jitter.Jitter(sleepBaseMs, sleepMaxMs, 0)
+	// sleepTime := jitter.Jitter(sleepBaseMs, sleepMaxMs, 0)
 
 	for _, session := range sessions.Sessions {
 		// there can only be one session with this name - Livy enforces this
@@ -67,14 +66,7 @@ func (c *Client) newSession(ctx context.Context, kind SessionKind, blockUntilRea
 
 		// If session is being created, wait for it to finish
 		if session.CreatingState() {
-			slog.Info("Session is in a creating state, sleeping",
-				slog.Int("sessionID", session.ID),
-				slog.String("sessionName", c.sessionName),
-				slog.Duration("sleepTime", sleepTime),
-				slog.String("current session state", string(session.State)),
-			)
-			time.Sleep(sleepTime)
-			return c.newSession(ctx, kind, blockUntilReady)
+			return fmt.Errorf("session %d is in a creating state (%s)", session.ID, session.State)
 		}
 
 		// If session is idle or busy, reuse it (both are valid, usable states)
@@ -84,17 +76,7 @@ func (c *Client) newSession(ctx context.Context, kind SessionKind, blockUntilRea
 		}
 
 		// For all other states (terminal or unexpected), delete and recreate
-		slog.Warn("Session is in an unusable state, deleting",
-			slog.Int("sessionID", session.ID),
-			slog.String("sessionName", c.sessionName),
-			slog.String("current session state", string(session.State)),
-			slog.String("logs", strings.Join(session.Logs, "\n")),
-		)
-		if err := c.DeleteSession(ctx, session.ID); err != nil {
-			slog.Warn("Failed to delete session", slog.Any("error", err))
-		}
-		time.Sleep(sleepTime)
-		return c.newSession(ctx, kind, blockUntilReady)
+		return fmt.Errorf("session %d is in an unusable state (%s), deleting and retrying", session.ID, session.State)
 	}
 
 	request := CreateSessionRequest{
@@ -120,10 +102,7 @@ func (c *Client) newSession(ctx context.Context, kind SessionKind, blockUntilRea
 		}
 
 		if errorResponse.Message == ErrTooManySessionsCreated {
-			sleepTime := jitter.Jitter(sleepBaseMs, sleepMaxMs, 0)
-			slog.Info("Too many sessions created, throttling", slog.String("message", errorResponse.Message), slog.Duration("sleepTime", sleepTime))
-			time.Sleep(sleepTime)
-			return c.newSession(ctx, kind, blockUntilReady)
+			return fmt.Errorf("too many sessions created, throttling and retrying")
 		}
 
 		slog.Warn("Failed to create session", slog.Any("err", err), slog.String("response", string(resp.body)))
