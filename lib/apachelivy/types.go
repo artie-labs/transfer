@@ -41,8 +41,22 @@ var TerminalSessionStates = []SessionState{
 	StateDead,
 }
 
+var CreatingSessionStates = []SessionState{
+	StateNotStarted,
+	StateStarting,
+}
+
+var UsableSessionStates = []SessionState{
+	StateIdle,
+	StateBusy,
+}
+
 func (s SessionState) IsReady() bool {
 	return s == StateIdle
+}
+
+func (s SessionState) UsableState() bool {
+	return s == StateIdle || s == StateBusy
 }
 
 type ListSessonResponse struct {
@@ -59,6 +73,14 @@ type GetSessionResponse struct {
 
 func (g GetSessionResponse) TerminalState() bool {
 	return slices.Contains(TerminalSessionStates, g.State)
+}
+
+func (g GetSessionResponse) CreatingState() bool {
+	return slices.Contains(CreatingSessionStates, g.State)
+}
+
+func (g GetSessionResponse) UsableState() bool {
+	return slices.Contains(UsableSessionStates, g.State)
 }
 
 type CreateSessionRequest struct {
