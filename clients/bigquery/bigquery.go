@@ -71,7 +71,7 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, u
 	// See: https://cloud.google.com/bigquery/docs/write-api#use_data_manipulation_language_dml_with_recently_streamed_data
 	// For now, we'll need to append this to a temporary table and then append temporary table onto the target table
 	tableID := s.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name())
-	temporaryTableID := shared.TempTableID(tableID)
+	temporaryTableID := shared.TempTableID(s.IdentifierFor(tableData.TopicConfig().BuildStagingDatabaseAndSchemaPair(), tableData.Name()))
 
 	defer func() { _ = ddl.DropTemporaryTable(ctx, s, temporaryTableID, false) }()
 

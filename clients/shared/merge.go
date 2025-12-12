@@ -67,14 +67,14 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 		return fmt.Errorf("failed to merge columns from destination: %w for table %q", err, tableData.Name())
 	}
 
-	temporaryTableID := TempTableIDWithSuffix(dest.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name()), tableData.TempTableSuffix())
+	temporaryTableID := TempTableIDWithSuffix(dest.IdentifierFor(tableData.TopicConfig().BuildStagingDatabaseAndSchemaPair(), tableData.Name()), tableData.TempTableSuffix())
 
 	config := dest.GetConfig()
 	var subQuery string
 	if config.IsStagingTableReuseEnabled() {
 		if stagingManager, ok := dest.(ReusableStagingTableManager); ok {
 			stagingTableID := dest.IdentifierFor(
-				tableData.TopicConfig().BuildDatabaseAndSchemaPair(),
+				tableData.TopicConfig().BuildStagingDatabaseAndSchemaPair(),
 				GenerateReusableStagingTableName(
 					tableID.Table(),
 					config.GetStagingTableSuffix(),
