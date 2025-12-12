@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetUniqueDatabaseAndSchemaPairs(t *testing.T) {
+func TestGetUniqueStagingDatabaseAndSchemaPairs(t *testing.T) {
 	{
 		// No topic configs
 		assert.Empty(t, GetUniqueStagingDatabaseAndSchemaPairs(nil))
@@ -24,7 +24,7 @@ func TestGetUniqueDatabaseAndSchemaPairs(t *testing.T) {
 
 		actual := GetUniqueStagingDatabaseAndSchemaPairs(tcs)
 		assert.Len(t, actual, 1)
-		assert.Equal(t, tcs[0].BuildDatabaseAndSchemaPair(), actual[0])
+		assert.Equal(t, tcs[0].BuildStagingDatabaseAndSchemaPair(), actual[0])
 	}
 	{
 		// 2 topic configs (both the same)
@@ -41,7 +41,7 @@ func TestGetUniqueDatabaseAndSchemaPairs(t *testing.T) {
 
 		actual := GetUniqueStagingDatabaseAndSchemaPairs(tcs)
 		assert.Len(t, actual, 1)
-		assert.Equal(t, tcs[0].BuildDatabaseAndSchemaPair(), actual[0])
+		assert.Equal(t, tcs[0].BuildStagingDatabaseAndSchemaPair(), actual[0])
 	}
 	{
 		// 3 topic configs (2 the same)
@@ -63,8 +63,8 @@ func TestGetUniqueDatabaseAndSchemaPairs(t *testing.T) {
 		actual := GetUniqueStagingDatabaseAndSchemaPairs(tcs)
 		assert.Len(t, actual, 2)
 		assert.ElementsMatch(t, []DatabaseAndSchemaPair{
-			tcs[0].BuildDatabaseAndSchemaPair(),
-			tcs[2].BuildDatabaseAndSchemaPair(),
+			tcs[0].BuildStagingDatabaseAndSchemaPair(),
+			tcs[2].BuildStagingDatabaseAndSchemaPair(),
 		}, actual)
 	}
 }
