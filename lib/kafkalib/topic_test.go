@@ -11,7 +11,7 @@ import (
 func TestGetUniqueDatabaseAndSchemaPairs(t *testing.T) {
 	{
 		// No topic configs
-		assert.Empty(t, GetUniqueDatabaseAndSchemaPairs(nil))
+		assert.Empty(t, GetUniqueStagingDatabaseAndSchemaPairs(nil))
 	}
 	{
 		// 1 topic config
@@ -22,7 +22,7 @@ func TestGetUniqueDatabaseAndSchemaPairs(t *testing.T) {
 			},
 		}
 
-		actual := GetUniqueDatabaseAndSchemaPairs(tcs)
+		actual := GetUniqueStagingDatabaseAndSchemaPairs(tcs)
 		assert.Len(t, actual, 1)
 		assert.Equal(t, tcs[0].BuildDatabaseAndSchemaPair(), actual[0])
 	}
@@ -39,7 +39,7 @@ func TestGetUniqueDatabaseAndSchemaPairs(t *testing.T) {
 			},
 		}
 
-		actual := GetUniqueDatabaseAndSchemaPairs(tcs)
+		actual := GetUniqueStagingDatabaseAndSchemaPairs(tcs)
 		assert.Len(t, actual, 1)
 		assert.Equal(t, tcs[0].BuildDatabaseAndSchemaPair(), actual[0])
 	}
@@ -60,7 +60,7 @@ func TestGetUniqueDatabaseAndSchemaPairs(t *testing.T) {
 			},
 		}
 
-		actual := GetUniqueDatabaseAndSchemaPairs(tcs)
+		actual := GetUniqueStagingDatabaseAndSchemaPairs(tcs)
 		assert.Len(t, actual, 2)
 		assert.ElementsMatch(t, []DatabaseAndSchemaPair{
 			tcs[0].BuildDatabaseAndSchemaPair(),

@@ -17,10 +17,10 @@ type DatabaseAndSchemaPair struct {
 	Schema   string
 }
 
-func GetUniqueDatabaseAndSchemaPairs(tcs []*TopicConfig) []DatabaseAndSchemaPair {
+func GetUniqueStagingDatabaseAndSchemaPairs(tcs []*TopicConfig) []DatabaseAndSchemaPair {
 	seenMap := make(map[DatabaseAndSchemaPair]bool)
 	for _, tc := range tcs {
-		seenMap[tc.BuildDatabaseAndSchemaPair()] = true
+		seenMap[tc.BuildStagingDatabaseAndSchemaPair()] = true
 	}
 
 	return slices.Collect(maps.Keys(seenMap))

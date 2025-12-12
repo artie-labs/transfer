@@ -200,7 +200,7 @@ func (s Store) SweepTemporaryTables(ctx context.Context) error {
 	ctx = driverctx.NewContextWithStagingInfo(ctx, []string{"/var", "tmp"})
 	// Remove the temporary files from volumes
 	for _, tc := range tcs {
-		rows, err := s.QueryContext(ctx, s.dialect().BuildSweepFilesFromVolumesQuery(tc.Database, tc.Schema, s.volume))
+		rows, err := s.QueryContext(ctx, s.dialect().BuildSweepFilesFromVolumesQuery(tc.Database, tc.StagingSchema, s.volume))
 		if err != nil {
 			return fmt.Errorf("failed to sweep files from volumes: %w", err)
 		}
