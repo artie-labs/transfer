@@ -77,7 +77,7 @@ func (c *Client) newSession(ctx context.Context, kind SessionKind, blockUntilRea
 			return c.newSession(ctx, kind, blockUntilReady)
 		}
 
-		// If session is idle and ready to use, reuse it
+		// If session is idle and ready to use, reuse it ( can technically attach to session as livy will queue, but its useless if there is a crash in between)
 		if session.State == StateIdle {
 			c.sessionID = session.ID
 			return nil
