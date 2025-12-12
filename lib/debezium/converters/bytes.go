@@ -19,7 +19,6 @@ func (Bytes) Convert(value any) (any, error) {
 	case []byte:
 		return castedValue, nil
 	case string:
-		// Handle empty strings as nil/empty bytes
 		if castedValue == constants.ToastUnavailableValuePlaceholder {
 			return constants.ToastUnavailableValuePlaceholder, nil
 		}
