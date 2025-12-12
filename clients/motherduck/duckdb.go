@@ -150,7 +150,7 @@ func (s Store) SweepTemporaryTables(ctx context.Context) error {
 		}
 
 		if response.Error != nil {
-			return fmt.Errorf("query failed: %s", *response.Error)
+			return fmt.Errorf("query failed: %q", *response.Error)
 		}
 
 		for _, row := range response.Rows {
