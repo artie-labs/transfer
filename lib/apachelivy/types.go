@@ -46,6 +46,11 @@ var CreatingSessionStates = []SessionState{
 	StateStarting,
 }
 
+var UsableSessionStates = []SessionState{
+	StateIdle,
+	StateBusy,
+}
+
 func (s SessionState) IsReady() bool {
 	return s == StateIdle
 }
@@ -68,6 +73,10 @@ func (g GetSessionResponse) TerminalState() bool {
 
 func (g GetSessionResponse) CreatingState() bool {
 	return slices.Contains(CreatingSessionStates, g.State)
+}
+
+func (g GetSessionResponse) UsableState() bool {
+	return slices.Contains(UsableSessionStates, g.State)
 }
 
 type CreateSessionRequest struct {
