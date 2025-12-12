@@ -80,7 +80,9 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 		}
 
 		data[constants.SourceMetadataColumnMarker] = metadata
-		cols.AddColumn(columns.NewColumn(constants.SourceMetadataColumnMarker, typing.Struct))
+		if cols != nil {
+			cols.AddColumn(columns.NewColumn(constants.SourceMetadataColumnMarker, typing.Struct))
+		}
 	}
 
 	tblName := cmp.Or(tc.TableName, event.GetTableName())
