@@ -11,9 +11,12 @@ type Bytes struct{}
 // - If value is already a slice of bytes it will be directly returned.
 // - If value is a string we will attempt to base64 decode it.
 func (Bytes) Convert(value any) (any, error) {
-	switch castedValue := value.(type) {
-	case nil:
+	// Defensive check for nil (should be handled upstream but adding for safety)
+	if value == nil {
 		return nil, nil
+	}
+
+	switch castedValue := value.(type) {
 	case []byte:
 		return castedValue, nil
 	case string:
