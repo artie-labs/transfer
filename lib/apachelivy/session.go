@@ -61,7 +61,12 @@ func (c *Client) newSession(ctx context.Context, kind SessionKind, blockUntilRea
 
 	for _, session := range sessions.Sessions {
 		// there can only be one session with this name - Livy enforces this
-		if session.Name == c.sessionName && session.CreatingState() {
+		if session.Name != c.sessionName {
+			continue
+		}
+
+		// If session is being created, wait for it to finish
+		if session.CreatingState() {
 			slog.Info("Session is in a creating state, sleeping",
 				slog.Int("sessionID", session.ID),
 				slog.String("sessionName", c.sessionName),
@@ -70,22 +75,26 @@ func (c *Client) newSession(ctx context.Context, kind SessionKind, blockUntilRea
 			)
 			time.Sleep(sleepTime)
 			return c.newSession(ctx, kind, blockUntilReady)
-		} else if session.Name == c.sessionName && !session.TerminalState() {
+		}
+
+		// If session is idle and ready to use, reuse it
+		if session.State == StateIdle {
 			c.sessionID = session.ID
 			return nil
-		} else if session.Name == c.sessionName && session.TerminalState() {
-			slog.Warn("Session is in a terminal state, deleting",
-				slog.Int("sessionID", session.ID),
-				slog.String("sessionName", c.sessionName),
-				slog.Duration("sleepTime", sleepTime),
-				slog.String("logs", strings.Join(session.Logs, "\n")),
-			)
-			if err := c.DeleteSession(ctx, session.ID); err != nil {
-				slog.Warn("Failed to delete session", slog.Any("error", err))
-			}
-			time.Sleep(sleepTime)
-			return c.newSession(ctx, kind, blockUntilReady)
 		}
+
+		// For all other states (terminal or unexpected), delete and recreate
+		slog.Warn("Session is in an unusable state, deleting",
+			slog.Int("sessionID", session.ID),
+			slog.String("sessionName", c.sessionName),
+			slog.String("current session state", string(session.State)),
+			slog.String("logs", strings.Join(session.Logs, "\n")),
+		)
+		if err := c.DeleteSession(ctx, session.ID); err != nil {
+			slog.Warn("Failed to delete session", slog.Any("error", err))
+		}
+		time.Sleep(sleepTime)
+		return c.newSession(ctx, kind, blockUntilReady)
 	}
 
 	request := CreateSessionRequest{
