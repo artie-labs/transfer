@@ -27,7 +27,13 @@ LEFT JOIN pg_catalog.pg_attribute a ON a.attname = c.column_name AND a.attrelid 
 LEFT JOIN pg_catalog.pg_attrdef d ON d.adrelid = a.attrelid AND d.adnum = a.attnum
 WHERE c.table_schema = $1 AND c.table_name = $2;`
 
-type PostgresDialect struct{}
+type PostgresDialect struct {
+	disableMerge bool
+}
+
+func NewPostgresDialect(disableMerge bool) PostgresDialect {
+	return PostgresDialect{disableMerge: disableMerge}
+}
 
 func (PostgresDialect) ReservedColumnNames() map[string]bool {
 	return nil
@@ -117,18 +123,21 @@ func (pd PostgresDialect) BuildMergeQueries(
 	softDelete bool,
 	containsHardDeletes bool,
 ) ([]string, error) {
+	cols, err := columns.RemoveOnlySetDeleteColumnMarker(cols)
+	if err != nil {
+		return nil, err
+	}
+
+	if pd.disableMerge {
+		return pd.buildNoMergeQueries(tableID, subQuery, primaryKeys, cols, softDelete, containsHardDeletes)
+	}
+
 	// Build equality conditions for the MERGE ON clause
 	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, pd)
 	if len(additionalEqualityStrings) > 0 {
 		equalitySQLParts = append(equalitySQLParts, additionalEqualityStrings...)
 	}
 	joinCondition := strings.Join(equalitySQLParts, " AND ")
-
-	// Remove columns that are handled separately
-	cols, err := columns.RemoveOnlySetDeleteColumnMarker(cols)
-	if err != nil {
-		return nil, err
-	}
 
 	if softDelete {
 		return []string{pd.buildSoftDeleteMergeQuery(tableID, subQuery, joinCondition, cols)}, nil
