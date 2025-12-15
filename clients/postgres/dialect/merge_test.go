@@ -154,7 +154,7 @@ func TestPostgresDialect_BuildMergeQueries_DisableMerge(t *testing.T) {
 		queries[0])
 
 	assert.Equal(t,
-		`INSERT INTO "schema"."table" ("id","name") SELECT stg."id",stg."name" FROM "schema"."table__temp" AS stg LEFT JOIN "schema"."table" AS tgt ON tgt."id" = stg."id" WHERE tgt."id" IS NULL;`,
+		`INSERT INTO "schema"."table" ("id","name") SELECT stg."id",stg."name" FROM "schema"."table__temp" AS stg LEFT JOIN "schema"."table" AS tgt ON tgt."id" = stg."id" WHERE tgt."id" IS NULL AND COALESCE(stg."__artie_delete", false) = false;`,
 		queries[1])
 
 	assert.Equal(t,
@@ -209,5 +209,6 @@ func TestPostgresDialect_BuildMergeQueries_DisableMerge_CompositeKey(t *testing.
 
 	assert.Contains(t, queries[0], `tgt."id" = stg."id" AND tgt."tenant_id" = stg."tenant_id"`)
 	assert.Contains(t, queries[1], `tgt."id" = stg."id" AND tgt."tenant_id" = stg."tenant_id"`)
+	assert.Contains(t, queries[1], `COALESCE(stg."__artie_delete", false) = false`)
 	assert.Contains(t, queries[2], `("id","tenant_id")`)
 }

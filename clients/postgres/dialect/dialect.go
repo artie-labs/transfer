@@ -227,7 +227,7 @@ func (pd PostgresDialect) buildNoMergeQueries(
 		}
 
 		parts := pd.buildNoMergeUpdateQueries(tableID, subQuery, primaryKeys, cols, false)
-		parts = append(parts, pd.buildNoMergeInsertQuery(tableID, subQuery, primaryKeys, cols))
+		parts = append(parts, pd.buildNoMergeInsertQuery(tableID, subQuery, primaryKeys, cols, false))
 		if containsHardDeletes {
 			parts = append(parts, pd.buildNoMergeDeleteQuery(tableID, subQuery, primaryKeys))
 		}
@@ -235,7 +235,7 @@ func (pd PostgresDialect) buildNoMergeQueries(
 	}
 
 	parts := pd.buildNoMergeUpdateQueries(tableID, subQuery, primaryKeys, cols, true)
-	parts = append(parts, pd.buildNoMergeInsertQuery(tableID, subQuery, primaryKeys, cols))
+	parts = append(parts, pd.buildNoMergeInsertQuery(tableID, subQuery, primaryKeys, cols, true))
 	return parts, nil
 }
 
@@ -244,12 +244,18 @@ func (pd PostgresDialect) buildNoMergeInsertQuery(
 	subQuery string,
 	primaryKeys []columns.Column,
 	cols []columns.Column,
+	softDelete bool,
 ) string {
-	return fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s AS %s LEFT JOIN %s AS %s ON %s WHERE %s IS NULL;`,
+	whereClause := fmt.Sprintf("%s IS NULL", sql.QuoteTableAliasColumn(constants.TargetAlias, primaryKeys[0], pd))
+	if !softDelete {
+		whereClause += fmt.Sprintf(" AND COALESCE(%s, false) = false", sql.QuotedDeleteColumnMarker(constants.StagingAlias, pd))
+	}
+
+	return fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s AS %s LEFT JOIN %s AS %s ON %s WHERE %s;`,
 		tableID.FullyQualifiedName(), strings.Join(sql.QuoteColumns(cols, pd), ","),
 		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, pd), ","), subQuery, constants.StagingAlias,
 		tableID.FullyQualifiedName(), constants.TargetAlias, strings.Join(sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, pd), " AND "),
-		sql.QuoteTableAliasColumn(constants.TargetAlias, primaryKeys[0], pd),
+		whereClause,
 	)
 }
 
