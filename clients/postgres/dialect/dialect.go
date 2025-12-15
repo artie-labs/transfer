@@ -210,6 +210,86 @@ WHEN NOT MATCHED AND COALESCE(%s, false) = false THEN INSERT (%s) VALUES (%s)`,
 	)
 }
 
+// buildNoMergeQueries builds separate UPDATE, INSERT, and DELETE queries for PostgreSQL
+// versions that don't support the MERGE statement (prior to PostgreSQL 15).
+func (pd PostgresDialect) buildNoMergeQueries(
+	tableID sql.TableIdentifier,
+	subQuery string,
+	primaryKeys []columns.Column,
+	cols []columns.Column,
+	softDelete bool,
+	containsHardDeletes bool,
+) ([]string, error) {
+	if !softDelete {
+		cols, err := columns.RemoveDeleteColumnMarker(cols)
+		if err != nil {
+			return nil, err
+		}
+
+		parts := pd.buildNoMergeUpdateQueries(tableID, subQuery, primaryKeys, cols, false)
+		parts = append(parts, pd.buildNoMergeInsertQuery(tableID, subQuery, primaryKeys, cols))
+		if containsHardDeletes {
+			parts = append(parts, pd.buildNoMergeDeleteQuery(tableID, subQuery, primaryKeys))
+		}
+		return parts, nil
+	}
+
+	parts := pd.buildNoMergeUpdateQueries(tableID, subQuery, primaryKeys, cols, true)
+	parts = append(parts, pd.buildNoMergeInsertQuery(tableID, subQuery, primaryKeys, cols))
+	return parts, nil
+}
+
+func (pd PostgresDialect) buildNoMergeInsertQuery(
+	tableID sql.TableIdentifier,
+	subQuery string,
+	primaryKeys []columns.Column,
+	cols []columns.Column,
+) string {
+	return fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s AS %s LEFT JOIN %s AS %s ON %s WHERE %s IS NULL;`,
+		tableID.FullyQualifiedName(), strings.Join(sql.QuoteColumns(cols, pd), ","),
+		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, pd), ","), subQuery, constants.StagingAlias,
+		tableID.FullyQualifiedName(), constants.TargetAlias, strings.Join(sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, pd), " AND "),
+		sql.QuoteTableAliasColumn(constants.TargetAlias, primaryKeys[0], pd),
+	)
+}
+
+func (pd PostgresDialect) buildNoMergeUpdateQueries(
+	tableID sql.TableIdentifier,
+	subQuery string,
+	primaryKeys []columns.Column,
+	cols []columns.Column,
+	softDelete bool,
+) []string {
+	clauses := sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, pd)
+
+	if !softDelete {
+		clauses = append(clauses, fmt.Sprintf("COALESCE(%s, false) = false", sql.QuotedDeleteColumnMarker(constants.StagingAlias, pd)))
+		return []string{fmt.Sprintf(`UPDATE %s AS %s SET %s FROM %s AS %s WHERE %s;`,
+			tableID.FullyQualifiedName(), constants.TargetAlias, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, pd),
+			subQuery, constants.StagingAlias, strings.Join(clauses, " AND "),
+		)}
+	}
+
+	return []string{
+		fmt.Sprintf(`UPDATE %s AS %s SET %s FROM %s AS %s WHERE %s AND COALESCE(%s, false) = false;`,
+			tableID.FullyQualifiedName(), constants.TargetAlias, sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, pd),
+			subQuery, constants.StagingAlias, strings.Join(clauses, " AND "), sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, pd),
+		),
+		fmt.Sprintf(`UPDATE %s AS %s SET %s FROM %s AS %s WHERE %s AND COALESCE(%s, false) = true;`,
+			tableID.FullyQualifiedName(), constants.TargetAlias, sql.BuildColumnsUpdateFragment([]columns.Column{columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean)}, constants.StagingAlias, constants.TargetAlias, pd),
+			subQuery, constants.StagingAlias, strings.Join(clauses, " AND "), sql.GetQuotedOnlySetDeleteColumnMarker(constants.StagingAlias, pd),
+		),
+	}
+}
+
+func (pd PostgresDialect) buildNoMergeDeleteQuery(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column) string {
+	return fmt.Sprintf(`DELETE FROM %s WHERE (%s) IN (SELECT %s FROM %s AS %s WHERE %s = true);`,
+		tableID.FullyQualifiedName(), strings.Join(sql.QuoteColumns(primaryKeys, pd), ","),
+		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, primaryKeys, pd), ","), subQuery, constants.StagingAlias,
+		sql.QuotedDeleteColumnMarker(constants.StagingAlias, pd),
+	)
+}
+
 var kindDetailsMap = map[typing.KindDetails]string{
 	typing.Float:        "double precision",
 	typing.Boolean:      "boolean",

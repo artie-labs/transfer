@@ -126,3 +126,88 @@ WHEN NOT MATCHED AND COALESCE(stg."__artie_delete", false) = false THEN INSERT (
 	assert.Len(t, queries, 1)
 	assert.Contains(t, queries[0], `tgt."id" = stg."id" AND "partition_date" = '2023-01-01'`)
 }
+
+func TestPostgresDialect_BuildMergeQueries_DisableMerge(t *testing.T) {
+	dialect := NewPostgresDialect(true)
+	tableID := &mocks.FakeTableIdentifier{}
+	tableID.FullyQualifiedNameReturns(`"schema"."table"`)
+
+	subQuery := `"schema"."table__temp"`
+	primaryKeys := []columns.Column{
+		columns.NewColumn("id", typing.String),
+	}
+
+	cols := []columns.Column{
+		columns.NewColumn("id", typing.String),
+		columns.NewColumn("name", typing.String),
+		columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean),
+		columns.NewColumn(constants.OnlySetDeleteColumnMarker, typing.Boolean),
+	}
+
+	// Test regular mode with hard deletes
+	queries, err := dialect.BuildMergeQueries(tableID, subQuery, primaryKeys, nil, cols, false, true)
+	assert.NoError(t, err)
+	assert.Len(t, queries, 3)
+
+	assert.Equal(t,
+		`UPDATE "schema"."table" AS tgt SET "id"=stg."id","name"=stg."name" FROM "schema"."table__temp" AS stg WHERE tgt."id" = stg."id" AND COALESCE(stg."__artie_delete", false) = false;`,
+		queries[0])
+
+	assert.Equal(t,
+		`INSERT INTO "schema"."table" ("id","name") SELECT stg."id",stg."name" FROM "schema"."table__temp" AS stg LEFT JOIN "schema"."table" AS tgt ON tgt."id" = stg."id" WHERE tgt."id" IS NULL;`,
+		queries[1])
+
+	assert.Equal(t,
+		`DELETE FROM "schema"."table" WHERE ("id") IN (SELECT stg."id" FROM "schema"."table__temp" AS stg WHERE stg."__artie_delete" = true);`,
+		queries[2])
+
+	// Test regular mode without hard deletes
+	queries, err = dialect.BuildMergeQueries(tableID, subQuery, primaryKeys, nil, cols, false, false)
+	assert.NoError(t, err)
+	assert.Len(t, queries, 2)
+
+	// Test soft delete mode
+	queries, err = dialect.BuildMergeQueries(tableID, subQuery, primaryKeys, nil, cols, true, false)
+	assert.NoError(t, err)
+	assert.Len(t, queries, 3)
+
+	assert.Equal(t,
+		`UPDATE "schema"."table" AS tgt SET "id"=stg."id","name"=stg."name","__artie_delete"=stg."__artie_delete" FROM "schema"."table__temp" AS stg WHERE tgt."id" = stg."id" AND COALESCE(stg."__artie_only_set_delete", false) = false;`,
+		queries[0])
+
+	assert.Equal(t,
+		`UPDATE "schema"."table" AS tgt SET "__artie_delete"=stg."__artie_delete" FROM "schema"."table__temp" AS stg WHERE tgt."id" = stg."id" AND COALESCE(stg."__artie_only_set_delete", false) = true;`,
+		queries[1])
+
+	assert.Equal(t,
+		`INSERT INTO "schema"."table" ("id","name","__artie_delete") SELECT stg."id",stg."name",stg."__artie_delete" FROM "schema"."table__temp" AS stg LEFT JOIN "schema"."table" AS tgt ON tgt."id" = stg."id" WHERE tgt."id" IS NULL;`,
+		queries[2])
+}
+
+func TestPostgresDialect_BuildMergeQueries_DisableMerge_CompositeKey(t *testing.T) {
+	dialect := NewPostgresDialect(true)
+	tableID := &mocks.FakeTableIdentifier{}
+	tableID.FullyQualifiedNameReturns(`"schema"."table"`)
+
+	subQuery := `"schema"."table__temp"`
+	primaryKeys := []columns.Column{
+		columns.NewColumn("id", typing.String),
+		columns.NewColumn("tenant_id", typing.String),
+	}
+
+	cols := []columns.Column{
+		columns.NewColumn("id", typing.String),
+		columns.NewColumn("tenant_id", typing.String),
+		columns.NewColumn("name", typing.String),
+		columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean),
+		columns.NewColumn(constants.OnlySetDeleteColumnMarker, typing.Boolean),
+	}
+
+	queries, err := dialect.BuildMergeQueries(tableID, subQuery, primaryKeys, nil, cols, false, true)
+	assert.NoError(t, err)
+	assert.Len(t, queries, 3)
+
+	assert.Contains(t, queries[0], `tgt."id" = stg."id" AND tgt."tenant_id" = stg."tenant_id"`)
+	assert.Contains(t, queries[1], `tgt."id" = stg."id" AND tgt."tenant_id" = stg."tenant_id"`)
+	assert.Contains(t, queries[2], `("id","tenant_id")`)
+}

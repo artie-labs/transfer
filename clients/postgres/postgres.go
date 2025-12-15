@@ -37,7 +37,7 @@ func LoadStore(cfg config.Config) (*Store, error) {
 }
 
 func (s Store) dialect() dialect.PostgresDialect {
-	return dialect.PostgresDialect{}
+	return dialect.NewPostgresDialect(s.config.Postgres.DisableMerge)
 }
 
 func (s Store) Dialect() sql.Dialect {
