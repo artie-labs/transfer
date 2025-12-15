@@ -270,10 +270,14 @@ func (pd PostgresDialect) buildNoMergeUpdateQueries(
 	tableID sql.TableIdentifier,
 	subQuery string,
 	primaryKeys []columns.Column,
+	additionalEqualityStrings []string,
 	cols []columns.Column,
 	softDelete bool,
 ) []string {
 	clauses := sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, pd)
+	if len(additionalEqualityStrings) > 0 {
+		clauses = append(clauses, additionalEqualityStrings...)
+	}
 
 	if !softDelete {
 		clauses = append(clauses, fmt.Sprintf("COALESCE(%s, false) = false", sql.QuotedDeleteColumnMarker(constants.StagingAlias, pd)))
@@ -295,11 +299,16 @@ func (pd PostgresDialect) buildNoMergeUpdateQueries(
 	}
 }
 
-func (pd PostgresDialect) buildNoMergeDeleteQuery(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column) string {
-	return fmt.Sprintf(`DELETE FROM %s WHERE (%s) IN (SELECT %s FROM %s AS %s WHERE %s = true);`,
+func (pd PostgresDialect) buildNoMergeDeleteQuery(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string) string {
+	whereClauses := []string{fmt.Sprintf("%s = true", sql.QuotedDeleteColumnMarker(constants.StagingAlias, pd))}
+	if len(additionalEqualityStrings) > 0 {
+		whereClauses = append(whereClauses, additionalEqualityStrings...)
+	}
+
+	return fmt.Sprintf(`DELETE FROM %s WHERE (%s) IN (SELECT %s FROM %s AS %s WHERE %s);`,
 		tableID.FullyQualifiedName(), strings.Join(sql.QuoteColumns(primaryKeys, pd), ","),
 		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, primaryKeys, pd), ","), subQuery, constants.StagingAlias,
-		sql.QuotedDeleteColumnMarker(constants.StagingAlias, pd),
+		strings.Join(whereClauses, " AND "),
 	)
 }
 

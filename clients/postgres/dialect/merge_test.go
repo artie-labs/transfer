@@ -212,3 +212,42 @@ func TestPostgresDialect_BuildMergeQueries_DisableMerge_CompositeKey(t *testing.
 	assert.Contains(t, queries[1], `COALESCE(stg."__artie_delete", false) = false`)
 	assert.Contains(t, queries[2], `("id","tenant_id")`)
 }
+
+func TestPostgresDialect_BuildMergeQueries_DisableMerge_AdditionalEqualityStrings(t *testing.T) {
+	dialect := NewPostgresDialect(true)
+	tableID := &mocks.FakeTableIdentifier{}
+	tableID.FullyQualifiedNameReturns(`"schema"."table"`)
+
+	subQuery := `"schema"."table__temp"`
+	primaryKeys := []columns.Column{columns.NewColumn("id", typing.String)}
+	additionalEqualityStrings := []string{`"partition_date" = '2023-01-01'`}
+	cols := []columns.Column{
+		columns.NewColumn("id", typing.String),
+		columns.NewColumn("name", typing.String),
+		columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean),
+		columns.NewColumn(constants.OnlySetDeleteColumnMarker, typing.Boolean),
+	}
+
+	// Test with hard deletes
+	queries, err := dialect.BuildMergeQueries(tableID, subQuery, primaryKeys, additionalEqualityStrings, cols, false, true)
+	assert.NoError(t, err)
+	assert.Len(t, queries, 3)
+
+	// UPDATE should include the additional equality string
+	assert.Contains(t, queries[0], `tgt."id" = stg."id" AND "partition_date" = '2023-01-01'`)
+	// INSERT should include the additional equality string in the JOIN condition
+	assert.Contains(t, queries[1], `tgt."id" = stg."id" AND "partition_date" = '2023-01-01'`)
+	// DELETE should include the additional equality string
+	assert.Contains(t, queries[2], `"partition_date" = '2023-01-01'`)
+
+	// Test soft delete mode
+	queries, err = dialect.BuildMergeQueries(tableID, subQuery, primaryKeys, additionalEqualityStrings, cols, true, false)
+	assert.NoError(t, err)
+	assert.Len(t, queries, 3)
+
+	// Both UPDATE queries should include the additional equality string
+	assert.Contains(t, queries[0], `tgt."id" = stg."id" AND "partition_date" = '2023-01-01'`)
+	assert.Contains(t, queries[1], `tgt."id" = stg."id" AND "partition_date" = '2023-01-01'`)
+	// INSERT should include the additional equality string
+	assert.Contains(t, queries[2], `tgt."id" = stg."id" AND "partition_date" = '2023-01-01'`)
+}
