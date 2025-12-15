@@ -32,7 +32,7 @@ type Postgres struct {
 	Password   string `yaml:"password"`
 	Database   string `yaml:"database"`
 	DisableSSL bool   `yaml:"disableSSL"`
-	// DisableMerge - If enabled, we will use UPDATE + INSERT + DELETE instead of MERGE statement.
+	// [DisableMerge] - If enabled, we will use UPDATE + INSERT + DELETE instead of MERGE statement.
 	// This is useful for PostgreSQL versions prior to 15 that do not support MERGE.
 	DisableMerge bool `yaml:"disableMerge"`
 }
