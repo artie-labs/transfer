@@ -129,7 +129,7 @@ func (pd PostgresDialect) BuildMergeQueries(
 	}
 
 	if pd.disableMerge {
-		return pd.buildNoMergeQueries(tableID, subQuery, primaryKeys, cols, softDelete, containsHardDeletes)
+		return pd.buildNoMergeQueries(tableID, subQuery, primaryKeys, additionalEqualityStrings, cols, softDelete, containsHardDeletes)
 	}
 
 	// Build equality conditions for the MERGE ON clause
@@ -216,6 +216,7 @@ func (pd PostgresDialect) buildNoMergeQueries(
 	tableID sql.TableIdentifier,
 	subQuery string,
 	primaryKeys []columns.Column,
+	additionalEqualityStrings []string,
 	cols []columns.Column,
 	softDelete bool,
 	containsHardDeletes bool,
@@ -226,16 +227,16 @@ func (pd PostgresDialect) buildNoMergeQueries(
 			return nil, err
 		}
 
-		parts := pd.buildNoMergeUpdateQueries(tableID, subQuery, primaryKeys, cols, false)
-		parts = append(parts, pd.buildNoMergeInsertQuery(tableID, subQuery, primaryKeys, cols, false))
+		parts := pd.buildNoMergeUpdateQueries(tableID, subQuery, primaryKeys, additionalEqualityStrings, cols, false)
+		parts = append(parts, pd.buildNoMergeInsertQuery(tableID, subQuery, primaryKeys, additionalEqualityStrings, cols, false))
 		if containsHardDeletes {
-			parts = append(parts, pd.buildNoMergeDeleteQuery(tableID, subQuery, primaryKeys))
+			parts = append(parts, pd.buildNoMergeDeleteQuery(tableID, subQuery, primaryKeys, additionalEqualityStrings))
 		}
 		return parts, nil
 	}
 
-	parts := pd.buildNoMergeUpdateQueries(tableID, subQuery, primaryKeys, cols, true)
-	parts = append(parts, pd.buildNoMergeInsertQuery(tableID, subQuery, primaryKeys, cols, true))
+	parts := pd.buildNoMergeUpdateQueries(tableID, subQuery, primaryKeys, additionalEqualityStrings, cols, true)
+	parts = append(parts, pd.buildNoMergeInsertQuery(tableID, subQuery, primaryKeys, additionalEqualityStrings, cols, true))
 	return parts, nil
 }
 
@@ -243,9 +244,15 @@ func (pd PostgresDialect) buildNoMergeInsertQuery(
 	tableID sql.TableIdentifier,
 	subQuery string,
 	primaryKeys []columns.Column,
+	additionalEqualityStrings []string,
 	cols []columns.Column,
 	softDelete bool,
 ) string {
+	joinClauses := sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, pd)
+	if len(additionalEqualityStrings) > 0 {
+		joinClauses = append(joinClauses, additionalEqualityStrings...)
+	}
+
 	whereClause := fmt.Sprintf("%s IS NULL", sql.QuoteTableAliasColumn(constants.TargetAlias, primaryKeys[0], pd))
 	if !softDelete {
 		whereClause += fmt.Sprintf(" AND COALESCE(%s, false) = false", sql.QuotedDeleteColumnMarker(constants.StagingAlias, pd))
@@ -254,7 +261,7 @@ func (pd PostgresDialect) buildNoMergeInsertQuery(
 	return fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s AS %s LEFT JOIN %s AS %s ON %s WHERE %s;`,
 		tableID.FullyQualifiedName(), strings.Join(sql.QuoteColumns(cols, pd), ","),
 		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, pd), ","), subQuery, constants.StagingAlias,
-		tableID.FullyQualifiedName(), constants.TargetAlias, strings.Join(sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, pd), " AND "),
+		tableID.FullyQualifiedName(), constants.TargetAlias, strings.Join(joinClauses, " AND "),
 		whereClause,
 	)
 }
