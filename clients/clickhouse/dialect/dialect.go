@@ -58,11 +58,7 @@ func (ClickhouseDialect) BuildMergeQueries(
 }
 
 func (ClickhouseDialect) BuildSweepQuery(dbName, schemaName string) (string, []any) {
-	panic("not implemented")
-}
-
-func (ClickhouseDialect) BuildRemoveFileFromVolumeQuery(filePath string) string {
-	panic("not implemented")
+	return "SELECT table_schema, table_name FROM information_schema.tables WHERE table_catalog = ? AND table_schema = ? AND table_name LIKE ?;", []any{dbName, schemaName, "%" + constants.ArtiePrefix + "%"}
 }
 
 func (ClickhouseDialect) GetDefaultValueStrategy() sql.DefaultValueStrategy {
@@ -78,11 +74,11 @@ func (ClickhouseDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdenti
 }
 
 func (ClickhouseDialect) BuildAddColumnQuery(tableID sql.TableIdentifier, sqlPart string) string {
-	panic("not implemented")
+	return fmt.Sprintf("ALTER TABLE %s ADD COLUMN IF NOT EXISTS %s;", tableID.FullyQualifiedName(), sqlPart)
 }
 
 func (ClickhouseDialect) BuildDropColumnQuery(tableID sql.TableIdentifier, colName string) string {
-	panic("not implemented")
+	return fmt.Sprintf("ALTER TABLE %s DROP COLUMN IF EXISTS %s;", tableID.FullyQualifiedName(), colName)
 }
 
 func (ClickhouseDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, temporary bool, colSQLParts []string) string {
@@ -149,7 +145,7 @@ func (ClickhouseDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, setti
 }
 
 func (ClickhouseDialect) KindForDataType(_type string) (typing.KindDetails, error) {
-	dataType, parameters, err := sql.ParseDataTypeDefinition(strings.ToLower(_type))
+	dataType, parameters, err := sql.ParseDataTypeDefinition(_type)
 	if err != nil {
 		return typing.Invalid, err
 	}

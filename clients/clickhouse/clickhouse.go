@@ -52,8 +52,8 @@ func (s Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier, 
 		Destination:           s,
 		TableID:               tableID,
 		ConfigMap:             s.configMap,
-		ColumnNameForName:     "col_name",
-		ColumnNameForDataType: "data_type",
+		ColumnNameForName:     "name",
+		ColumnNameForDataType: "type",
 		ColumnNameForComment:  "comment",
 		DropDeletedColumns:    dropDeletedColumns,
 	}.GetTableConfig(ctx)
@@ -88,9 +88,19 @@ func (s Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.Ta
 }
 
 func (s Store) SweepTemporaryTables(ctx context.Context) error {
-	return nil
+	return shared.Sweep(ctx, s, s.config.TopicConfigs(), dialect.ClickhouseDialect{}.BuildSweepQuery)
 }
 
 func (s Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error {
+	if !tableID.TemporaryTable() {
+		return fmt.Errorf("table %q is not a temporary table, so it cannot be dropped", tableID.FullyQualifiedName())
+	}
+
+	if _, err := s.ExecContext(ctx, s.Dialect().BuildDropTableQuery(tableID)); err != nil {
+		return fmt.Errorf("failed to drop table: %w", err)
+	}
+
+	// We'll then clear it from our cache
+	s.configMap.RemoveTable(tableID)
 	return nil
 }
