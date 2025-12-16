@@ -21,12 +21,11 @@ func main() {
 		Database: "postgres",
 	}
 
-	store, err := postgres.LoadStore(config.Config{Postgres: &cfg})
+	ctx := context.Background()
+	store, err := postgres.LoadStore(ctx, config.Config{Postgres: &cfg})
 	if err != nil {
 		log.Fatalf("failed to create postgres client: %v", err)
 	}
-
-	ctx := context.Background()
 
 	if err := checks.TestDialect(ctx, store, store.Dialect()); err != nil {
 		log.Fatalf("failed to test dialect: %v", err)
