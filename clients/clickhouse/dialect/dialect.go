@@ -30,10 +30,12 @@ func (ClickhouseDialect) EscapeStruct(value string) string {
 }
 
 func (ClickhouseDialect) IsColumnAlreadyExistsErr(err error) bool {
-	return err != nil && strings.Contains(err.Error(), "[FIELDS_ALREADY_EXISTS]")
+	// https://github.com/ClickHouse/ClickHouse/blob/master/src/Common/ErrorCodes.cpp
+	return err != nil && strings.Contains(err.Error(), "code: 15")
 }
 
 func (ClickhouseDialect) IsTableDoesNotExistErr(err error) bool {
+	// https://github.com/ClickHouse/ClickHouse/blob/master/src/Common/ErrorCodes.cpp
 	return err != nil && strings.Contains(err.Error(), "code: 60")
 }
 
