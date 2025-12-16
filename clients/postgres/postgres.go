@@ -51,7 +51,7 @@ func LoadStore(ctx context.Context, cfg config.Config) (*Store, error) {
 
 func (s Store) dialect() dialect.PostgresDialect {
 	// https://www.postgresql.org/docs/current/sql-merge.html
-	return dialect.NewPostgresDialect(s.version >= 15)
+	return dialect.NewPostgresDialect(s.version < 15)
 }
 
 func (s Store) Dialect() sql.Dialect {
