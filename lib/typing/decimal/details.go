@@ -123,5 +123,6 @@ func (d Details) DuckDBKind() string {
 }
 
 func (d Details) ClickHouseKind() string {
-	return d.toKind(MaxPrecisionBeforeString, "STRING")
+	// https://clickhouse.com/docs/sql-reference/data-types/decimal#parameters
+	return d.toDecimalKind(76, "STRING")
 }
