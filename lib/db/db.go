@@ -22,6 +22,8 @@ type Store interface {
 	Conn(ctx context.Context) (*sql.Conn, error)
 	Begin() (*sql.Tx, error)
 	IsRetryableError(err error) bool
+	GetDatabase() *sql.DB
+	Close() error
 }
 
 type storeWrapper struct {
@@ -32,6 +34,14 @@ func NewStoreWrapperForTest(db *sql.DB) Store {
 	return &storeWrapper{
 		DB: db,
 	}
+}
+
+func (s *storeWrapper) Close() error {
+	return s.DB.Close()
+}
+
+func (s *storeWrapper) GetDatabase() *sql.DB {
+	return s.DB
 }
 
 func (s *storeWrapper) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
