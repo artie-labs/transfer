@@ -19,20 +19,27 @@ import (
 type Store struct {
 	configMap *types.DestinationTableConfigMap
 	config    config.Config
+	version   int
 
 	db.Store
 }
 
-func LoadStore(cfg config.Config) (*Store, error) {
+func LoadStore(ctx context.Context, cfg config.Config) (*Store, error) {
 	store, err := db.Open("pgx", cfg.Postgres.DSN())
 	if err != nil {
 		return nil, err
+	}
+
+	version, err := db.RetrieveVersion(ctx, store.GetDatabase())
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve version: %w", err)
 	}
 
 	return &Store{
 		Store:     store,
 		configMap: &types.DestinationTableConfigMap{},
 		config:    cfg,
+		version:   version,
 	}, nil
 }
 
