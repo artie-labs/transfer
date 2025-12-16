@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	_ "github.com/ClickHouse/clickhouse-go/v2"
+
 	"github.com/artie-labs/transfer/clients/clickhouse/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
