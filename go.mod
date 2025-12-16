@@ -10,7 +10,7 @@ tool (
 require (
 	cloud.google.com/go/bigquery v1.71.0
 	cloud.google.com/go/storage v1.56.0
-	github.com/ClickHouse/clickhouse-go/v2 v2.41.0
+	github.com/ClickHouse/clickhouse-go/v2 v2.40.3
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/DataDog/datadog-go/v5 v5.6.0
 	github.com/apache/arrow/go/v17 v17.0.0
