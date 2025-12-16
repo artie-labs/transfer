@@ -14,7 +14,10 @@ import (
 type ClickhouseDialect struct{}
 
 func (ClickhouseDialect) ReservedColumnNames() map[string]bool {
-	return nil
+	// https://clickhouse.com/docs/engines/table-engines#table_engines-virtual_columns
+	return map[string]bool{
+		"_table": true,
+	}
 }
 
 func (ClickhouseDialect) QuoteIdentifier(identifier string) string {
