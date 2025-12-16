@@ -84,7 +84,7 @@ func (ClickhouseDialect) BuildDropColumnQuery(tableID sql.TableIdentifier, colNa
 func (ClickhouseDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, temporary bool, colSQLParts []string) string {
 	// We will create temporary tables in Clickhouse the exact same way as we do for permanent tables.
 	// This is because temporary tables are session scoped and this will not work for us as we leverage connection pooling.
-	return fmt.Sprintf("CREATE TABLE %s (%s);", tableID.FullyQualifiedName(), strings.Join(colSQLParts, ","))
+	return fmt.Sprintf("CREATE TABLE %s (%s) ENGINE = ReplacingMergeTree;", tableID.FullyQualifiedName(), strings.Join(colSQLParts, ","))
 }
 
 func (ClickhouseDialect) BuildDropTableQuery(tableID sql.TableIdentifier) string {
@@ -138,7 +138,7 @@ func (ClickhouseDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, setti
 	case typing.TimestampNTZ.Kind:
 		return "DateTime", nil
 	case typing.TimestampTZ.Kind:
-		return "timestamp with time zone", nil
+		return "DateTime", nil
 	default:
 		return "", fmt.Errorf("unsupported kind: %q", kd.Kind)
 	}
@@ -177,8 +177,6 @@ func (ClickhouseDialect) KindForDataType(_type string) (typing.KindDetails, erro
 	case "Time":
 		return typing.Time, nil
 	case "DateTime":
-		return typing.TimestampNTZ, nil
-	case "timestamp with time zone", "timestamptz":
 		return typing.TimestampTZ, nil
 	}
 	return typing.Invalid, fmt.Errorf("unsupported data type: %s", dataType)
