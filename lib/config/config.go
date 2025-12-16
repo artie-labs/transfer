@@ -161,6 +161,26 @@ func (c Config) ValidateRedis() error {
 	return c.Redis.Validate()
 }
 
+func (c Config) ValidateClickhouse() error {
+	if c.Output != constants.Clickhouse {
+		return fmt.Errorf("output is not Clickhouse, output: %q", c.Output)
+	}
+
+	if c.Clickhouse == nil {
+		return fmt.Errorf("Clickhouse config is nil")
+	}
+
+	if c.Clickhouse.Address == "" {
+		return fmt.Errorf("Clickhouse address is empty")
+	}
+
+	if c.Clickhouse.Database == "" {
+		return fmt.Errorf("Clickhouse database is empty")
+	}
+
+	return nil
+}
+
 // Validate will check the output source validity
 // It will also check if a topic exists + iterate over each topic to make sure it's valid.
 // The actual output source (like Snowflake) and CDC parser will be loaded and checked by other funcs.
@@ -205,6 +225,10 @@ func (c Config) Validate() error {
 		}
 	case constants.MotherDuck:
 		if err := c.ValidateMotherDuck(); err != nil {
+			return err
+		}
+	case constants.Clickhouse:
+		if err := c.ValidateClickhouse(); err != nil {
 			return err
 		}
 	}
