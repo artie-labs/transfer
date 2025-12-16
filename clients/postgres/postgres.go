@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 
@@ -32,6 +33,10 @@ func LoadStore(ctx context.Context, cfg config.Config) (*Store, error) {
 
 	version, err := db.RetrieveVersion(ctx, store.GetDatabase())
 	if err != nil {
+		if closeErr := store.Close(); closeErr != nil {
+			slog.Warn("Failed to close database after error", slog.Any("error", closeErr))
+		}
+
 		return nil, fmt.Errorf("failed to retrieve version: %w", err)
 	}
 

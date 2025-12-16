@@ -23,6 +23,7 @@ type Store interface {
 	Begin() (*sql.Tx, error)
 	IsRetryableError(err error) bool
 	GetDatabase() *sql.DB
+	Close() error
 }
 
 type storeWrapper struct {
@@ -33,6 +34,10 @@ func NewStoreWrapperForTest(db *sql.DB) Store {
 	return &storeWrapper{
 		DB: db,
 	}
+}
+
+func (s *storeWrapper) Close() error {
+	return s.DB.Close()
 }
 
 func (s *storeWrapper) GetDatabase() *sql.DB {
