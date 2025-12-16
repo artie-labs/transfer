@@ -48,11 +48,19 @@ func (s Store) GetConfig() config.Config {
 }
 
 func (s Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
-	return nil, nil
+	return shared.GetTableCfgArgs{
+		Destination:           s,
+		TableID:               tableID,
+		ConfigMap:             s.configMap,
+		ColumnNameForName:     "col_name",
+		ColumnNameForDataType: "data_type",
+		ColumnNameForComment:  "comment",
+		DropDeletedColumns:    dropDeletedColumns,
+	}.GetTableConfig(ctx)
 }
 
 func (s Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, table string) sql.TableIdentifier {
-	return dialect.NewTableIdentifier(databaseAndSchema.Schema, table)
+	return dialect.NewTableIdentifier(databaseAndSchema.Database, table)
 }
 
 func (s Store) Append(ctx context.Context, tableData *optimization.TableData, useTempTable bool) error {

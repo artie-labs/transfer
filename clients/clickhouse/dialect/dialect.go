@@ -22,7 +22,7 @@ func (ClickhouseDialect) QuoteIdentifier(identifier string) string {
 }
 
 func (ClickhouseDialect) EscapeStruct(value string) string {
-	panic("not implemented")
+	return sql.QuoteLiteral(value)
 }
 
 func (ClickhouseDialect) IsColumnAlreadyExistsErr(err error) bool {
@@ -30,7 +30,7 @@ func (ClickhouseDialect) IsColumnAlreadyExistsErr(err error) bool {
 }
 
 func (ClickhouseDialect) IsTableDoesNotExistErr(err error) bool {
-	return err != nil && strings.Contains(err.Error(), "[TABLE_OR_VIEW_NOT_FOUND]")
+	return err != nil && strings.Contains(err.Error(), "code: 60")
 }
 
 func (ClickhouseDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
@@ -82,19 +82,21 @@ func (ClickhouseDialect) BuildDropColumnQuery(tableID sql.TableIdentifier, colNa
 }
 
 func (ClickhouseDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, temporary bool, colSQLParts []string) string {
-	panic("not implemented")
+	// We will create temporary tables in Clickhouse the exact same way as we do for permanent tables.
+	// This is because temporary tables are session scoped and this will not work for us as we leverage connection pooling.
+	return fmt.Sprintf("CREATE TABLE %s (%s);", tableID.FullyQualifiedName(), strings.Join(colSQLParts, ","))
 }
 
 func (ClickhouseDialect) BuildDropTableQuery(tableID sql.TableIdentifier) string {
-	panic("not implemented")
+	return fmt.Sprintf("DROP TABLE IF EXISTS %s", tableID.FullyQualifiedName())
 }
 
 func (ClickhouseDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) string {
-	panic("not implemented")
+	return fmt.Sprintf("TRUNCATE TABLE %s", tableID.FullyQualifiedName())
 }
 
 func (ClickhouseDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (string, []any, error) {
-	panic("not implemented")
+	return fmt.Sprintf("DESCRIBE TABLE %s", tableID.FullyQualifiedName()), nil, nil
 }
 
 func (ClickhouseDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, settings config.SharedDestinationColumnSettings) (string, error) {
