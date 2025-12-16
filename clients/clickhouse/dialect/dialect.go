@@ -9,6 +9,7 @@ import (
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
 
 type ClickhouseDialect struct{}
@@ -103,9 +104,86 @@ func (ClickhouseDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (s
 }
 
 func (ClickhouseDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, settings config.SharedDestinationColumnSettings) (string, error) {
-	panic("not implemented")
+	// https://clickhouse.com/docs/sql-reference/data-types
+	switch kd.Kind {
+	case typing.Float.Kind:
+		return "Float64", nil
+	case typing.Integer.Kind:
+		switch *kd.OptionalIntegerKind {
+		case typing.NotSpecifiedKind:
+			return "Int64", nil
+		case typing.SmallIntegerKind:
+			return "Int16", nil
+		case typing.IntegerKind:
+			return "Int32", nil
+		case typing.BigIntegerKind:
+			return "Int64", nil
+		default:
+			return "", fmt.Errorf("unexpected integer kind: %d", *kd.OptionalIntegerKind)
+		}
+	case typing.EDecimal.Kind:
+		if kd.ExtendedDecimalDetails == nil {
+			return "", fmt.Errorf("expected extended decimal details to be set for %q", kd.Kind)
+		}
+		return kd.ExtendedDecimalDetails.ClickHouseKind(), nil
+	case typing.Boolean.Kind:
+		return "Bool", nil
+	case typing.Array.Kind:
+		// Clickhouse supports typed arrays.
+		return "text[]", nil
+	case typing.Struct.Kind:
+		return "JSON", nil
+	case typing.String.Kind:
+		return "String", nil
+	case typing.Date.Kind:
+		return "Date", nil
+	case typing.Time.Kind:
+		return "Time", nil
+	case typing.TimestampNTZ.Kind:
+		return "DateTime", nil
+	case typing.TimestampTZ.Kind:
+		return "timestamp with time zone", nil
+	default:
+		return "", fmt.Errorf("unsupported kind: %q", kd.Kind)
+	}
 }
 
 func (ClickhouseDialect) KindForDataType(_type string) (typing.KindDetails, error) {
-	panic("not implemented")
+	dataType, parameters, err := sql.ParseDataTypeDefinition(strings.ToLower(_type))
+	if err != nil {
+		return typing.Invalid, err
+	}
+
+	switch dataType {
+	case "Float32", "FLOAT", "REAL", "SINGLE", "Float64", "DOUBLE", "DOUBLE PRECISION":
+		return typing.Float, nil
+	case "Int32", "INTEGER", "MEDIUMINT", "MEDIUMINT SIGNED", "INT SIGNED", "INTEGER SIGNED":
+		return typing.BuildIntegerKind(typing.IntegerKind), nil
+	case "Int64", "BIGINT", "SIGNED", "BIGINT SIGNED":
+		return typing.BuildIntegerKind(typing.BigIntegerKind), nil
+	case "Int16", "SMALLINT", "SMALLINT SIGNED":
+		return typing.BuildIntegerKind(typing.SmallIntegerKind), nil
+	case "Decimal", "Decimal32", "Decimal64", "Decimal128", "Decimal256":
+		if len(parameters) == 0 {
+			return typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale)), nil
+		}
+		return typing.ParseNumeric(parameters)
+	case "Bool", "bool":
+		return typing.Boolean, nil
+	case "Array", "array":
+		return typing.Array, nil
+	case "JSON":
+		return typing.Struct, nil
+	case "String":
+		return typing.String, nil
+	case "Date":
+		return typing.Date, nil
+	case "Time":
+		return typing.Time, nil
+	case "DateTime":
+		return typing.TimestampNTZ, nil
+	case "timestamp with time zone", "timestamptz":
+		return typing.TimestampTZ, nil
+	}
+	return typing.Invalid, fmt.Errorf("unsupported data type: %s", dataType)
 }

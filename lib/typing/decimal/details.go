@@ -121,3 +121,7 @@ func (d Details) DuckDBKind() string {
 
 	return fmt.Sprintf("DECIMAL(%d, %d)", d.precision, d.scale)
 }
+
+func (d Details) ClickHouseKind() string {
+	return d.toKind(MaxPrecisionBeforeString, "STRING")
+}
