@@ -72,7 +72,8 @@ func (s Store) IsRetryableError(err error) bool {
 }
 
 func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
-	if err := shared.Merge(ctx, s, tableData, types.MergeOpts{}); err != nil {
+	err := shared.Append(ctx, s, tableData, types.AdditionalSettings{})
+	if err != nil {
 		return false, fmt.Errorf("failed to merge: %w", err)
 	}
 
@@ -80,10 +81,6 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bo
 }
 
 func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
-	return nil
-}
-
-func (s Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, tableID, parentTableID sql.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error {
 	return nil
 }
 
