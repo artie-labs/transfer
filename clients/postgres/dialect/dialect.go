@@ -300,14 +300,15 @@ func (pd PostgresDialect) buildNoMergeUpdateQueries(
 }
 
 func (pd PostgresDialect) buildNoMergeDeleteQuery(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string) string {
-	whereClauses := []string{fmt.Sprintf("%s = true", sql.QuotedDeleteColumnMarker(constants.StagingAlias, pd))}
+	whereClauses := sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, pd)
+	whereClauses = append(whereClauses, fmt.Sprintf("%s = true", sql.QuotedDeleteColumnMarker(constants.StagingAlias, pd)))
 	if len(additionalEqualityStrings) > 0 {
 		whereClauses = append(whereClauses, additionalEqualityStrings...)
 	}
 
-	return fmt.Sprintf(`DELETE FROM %s WHERE (%s) IN (SELECT %s FROM %s AS %s WHERE %s);`,
-		tableID.FullyQualifiedName(), strings.Join(sql.QuoteColumns(primaryKeys, pd), ","),
-		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, primaryKeys, pd), ","), subQuery, constants.StagingAlias,
+	return fmt.Sprintf(`DELETE FROM %s AS %s USING %s AS %s WHERE %s;`,
+		tableID.FullyQualifiedName(), constants.TargetAlias,
+		subQuery, constants.StagingAlias,
 		strings.Join(whereClauses, " AND "),
 	)
 }

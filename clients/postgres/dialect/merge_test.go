@@ -158,7 +158,7 @@ func TestPostgresDialect_BuildMergeQueries_DisableMerge(t *testing.T) {
 		queries[1])
 
 	assert.Equal(t,
-		`DELETE FROM "schema"."table" WHERE ("id") IN (SELECT stg."id" FROM "schema"."table__temp" AS stg WHERE stg."__artie_delete" = true);`,
+		`DELETE FROM "schema"."table" AS tgt USING "schema"."table__temp" AS stg WHERE tgt."id" = stg."id" AND stg."__artie_delete" = true;`,
 		queries[2])
 
 	// Test regular mode without hard deletes
@@ -210,7 +210,7 @@ func TestPostgresDialect_BuildMergeQueries_DisableMerge_CompositeKey(t *testing.
 	assert.Contains(t, queries[0], `tgt."id" = stg."id" AND tgt."tenant_id" = stg."tenant_id"`)
 	assert.Contains(t, queries[1], `tgt."id" = stg."id" AND tgt."tenant_id" = stg."tenant_id"`)
 	assert.Contains(t, queries[1], `COALESCE(stg."__artie_delete", false) = false`)
-	assert.Contains(t, queries[2], `("id","tenant_id")`)
+	assert.Contains(t, queries[2], `tgt."id" = stg."id" AND tgt."tenant_id" = stg."tenant_id"`)
 }
 
 func TestPostgresDialect_BuildMergeQueries_DisableMerge_AdditionalEqualityStrings(t *testing.T) {
@@ -220,7 +220,8 @@ func TestPostgresDialect_BuildMergeQueries_DisableMerge_AdditionalEqualityString
 
 	subQuery := `"schema"."table__temp"`
 	primaryKeys := []columns.Column{columns.NewColumn("id", typing.String)}
-	additionalEqualityStrings := []string{`"partition_date" = '2023-01-01'`}
+	// Use production-like predicates with tgt and stg aliases (as produced by BuildAdditionalEqualityStrings)
+	additionalEqualityStrings := []string{`tgt."partition_date" = stg."partition_date"`}
 	cols := []columns.Column{
 		columns.NewColumn("id", typing.String),
 		columns.NewColumn("name", typing.String),
@@ -234,11 +235,12 @@ func TestPostgresDialect_BuildMergeQueries_DisableMerge_AdditionalEqualityString
 	assert.Len(t, queries, 3)
 
 	// UPDATE should include the additional equality string
-	assert.Contains(t, queries[0], `tgt."id" = stg."id" AND "partition_date" = '2023-01-01'`)
+	assert.Contains(t, queries[0], `tgt."id" = stg."id" AND tgt."partition_date" = stg."partition_date"`)
 	// INSERT should include the additional equality string in the JOIN condition
-	assert.Contains(t, queries[1], `tgt."id" = stg."id" AND "partition_date" = '2023-01-01'`)
-	// DELETE should include the additional equality string
-	assert.Contains(t, queries[2], `"partition_date" = '2023-01-01'`)
+	assert.Contains(t, queries[1], `tgt."id" = stg."id" AND tgt."partition_date" = stg."partition_date"`)
+	// DELETE should include the additional equality string (this was the bug - tgt alias must be defined)
+	assert.Contains(t, queries[2], `tgt."partition_date" = stg."partition_date"`)
+	assert.Contains(t, queries[2], `DELETE FROM "schema"."table" AS tgt USING`)
 
 	// Test soft delete mode
 	queries, err = dialect.BuildMergeQueries(tableID, subQuery, primaryKeys, additionalEqualityStrings, cols, true, false)
@@ -246,8 +248,8 @@ func TestPostgresDialect_BuildMergeQueries_DisableMerge_AdditionalEqualityString
 	assert.Len(t, queries, 3)
 
 	// Both UPDATE queries should include the additional equality string
-	assert.Contains(t, queries[0], `tgt."id" = stg."id" AND "partition_date" = '2023-01-01'`)
-	assert.Contains(t, queries[1], `tgt."id" = stg."id" AND "partition_date" = '2023-01-01'`)
+	assert.Contains(t, queries[0], `tgt."id" = stg."id" AND tgt."partition_date" = stg."partition_date"`)
+	assert.Contains(t, queries[1], `tgt."id" = stg."id" AND tgt."partition_date" = stg."partition_date"`)
 	// INSERT should include the additional equality string
-	assert.Contains(t, queries[2], `tgt."id" = stg."id" AND "partition_date" = '2023-01-01'`)
+	assert.Contains(t, queries[2], `tgt."id" = stg."id" AND tgt."partition_date" = stg."partition_date"`)
 }
