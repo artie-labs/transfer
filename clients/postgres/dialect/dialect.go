@@ -54,7 +54,7 @@ func (PostgresDialect) IsTableDoesNotExistErr(err error) bool {
 	return false
 }
 
-func (PostgresDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, _ bool, colSQLParts []string) string {
+func (PostgresDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, _ bool, _ config.Mode, colSQLParts []string) string {
 	// We will create temporary tables in Postgres the exact same way as we do for permanent tables.
 	// This is because temporary tables are session scoped and this will not work for us as we leverage connection pooling.
 	return fmt.Sprintf("CREATE TABLE %s (%s);", tableID.FullyQualifiedName(), strings.Join(colSQLParts, ","))

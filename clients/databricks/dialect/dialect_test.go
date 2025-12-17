@@ -11,6 +11,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/mocks"
 )
@@ -84,14 +85,14 @@ func TestDatabricksDialect_BuildCreateTableQuery(t *testing.T) {
 		// Temporary
 		assert.Equal(t,
 			`CREATE TABLE IF NOT EXISTS {TABLE} ({PART_1}, {PART_2})`,
-			DatabricksDialect{}.BuildCreateTableQuery(fakeTableID, true, []string{"{PART_1}", "{PART_2}"}),
+			DatabricksDialect{}.BuildCreateTableQuery(fakeTableID, true, config.Replication, []string{"{PART_1}", "{PART_2}"}),
 		)
 	}
 	{
 		// Not temporary
 		assert.Equal(t,
 			`CREATE TABLE IF NOT EXISTS {TABLE} ({PART_1}, {PART_2})`,
-			DatabricksDialect{}.BuildCreateTableQuery(fakeTableID, false, []string{"{PART_1}", "{PART_2}"}),
+			DatabricksDialect{}.BuildCreateTableQuery(fakeTableID, false, config.Replication, []string{"{PART_1}", "{PART_2}"}),
 		)
 	}
 }

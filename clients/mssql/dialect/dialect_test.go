@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -61,12 +62,12 @@ func TestMSSQLDialect_BuildCreateTableQuery(t *testing.T) {
 	// Temporary:
 	assert.Equal(t,
 		`CREATE TABLE {TABLE} ({PART_1},{PART_2});`,
-		MSSQLDialect{}.BuildCreateTableQuery(fakeTableID, true, []string{"{PART_1}", "{PART_2}"}),
+		MSSQLDialect{}.BuildCreateTableQuery(fakeTableID, true, config.Replication, []string{"{PART_1}", "{PART_2}"}),
 	)
 	// Not temporary:
 	assert.Equal(t,
 		`CREATE TABLE {TABLE} ({PART_1},{PART_2});`,
-		MSSQLDialect{}.BuildCreateTableQuery(fakeTableID, false, []string{"{PART_1}", "{PART_2}"}),
+		MSSQLDialect{}.BuildCreateTableQuery(fakeTableID, false, config.Replication, []string{"{PART_1}", "{PART_2}"}),
 	)
 }
 

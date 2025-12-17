@@ -8,6 +8,7 @@ import (
 	"github.com/artie-labs/transfer/clients/postgres"
 	"github.com/artie-labs/transfer/clients/postgres/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/kafkalib"
@@ -100,7 +101,7 @@ func testTable(ctx context.Context, store *postgres.Store, pgDialect dialect.Pos
 	}
 
 	// Now let's create the table and it should then exist.
-	if _, err := store.ExecContext(ctx, pgDialect.BuildCreateTableQuery(testTableID, false, []string{"pk int PRIMARY KEY", "col text"})); err != nil {
+	if _, err := store.ExecContext(ctx, pgDialect.BuildCreateTableQuery(testTableID, false, config.Replication, []string{"pk int PRIMARY KEY", "col text"})); err != nil {
 		return fmt.Errorf("failed to create table: %w", err)
 	}
 
@@ -168,7 +169,7 @@ func testAddDropColumn(ctx context.Context, store *postgres.Store, pgDialect dia
 	testTableID := store.IdentifierFor(kafkalib.DatabaseAndSchemaPair{Schema: "public"}, testTableName)
 
 	// Create a test table first
-	createTableSQL := pgDialect.BuildCreateTableQuery(testTableID, false, []string{"pk int PRIMARY KEY", "col1 text"})
+	createTableSQL := pgDialect.BuildCreateTableQuery(testTableID, false, config.Replication, []string{"pk int PRIMARY KEY", "col1 text"})
 	if _, err := store.ExecContext(ctx, createTableSQL); err != nil {
 		return fmt.Errorf("failed to create test table: %w", err)
 	}
@@ -239,7 +240,7 @@ func testSweep(ctx context.Context, store *postgres.Store, pgDialect dialect.Pos
 	for range 5 {
 		tableID := shared.TempTableID(dialect.NewTableIdentifier("public", "test_sweep"))
 		expectedNames = append(expectedNames, tableID.FullyQualifiedName())
-		if _, err := store.ExecContext(ctx, pgDialect.BuildCreateTableQuery(tableID, true, []string{"pk int PRIMARY KEY"})); err != nil {
+		if _, err := store.ExecContext(ctx, pgDialect.BuildCreateTableQuery(tableID, true, config.Replication, []string{"pk int PRIMARY KEY"})); err != nil {
 			return fmt.Errorf("failed to create table: %w", err)
 		}
 	}
@@ -277,7 +278,7 @@ func testSweep(ctx context.Context, store *postgres.Store, pgDialect dialect.Pos
 func testBuildIsNotToastValueExpression(ctx context.Context, store *postgres.Store, pgDialect dialect.PostgresDialect) error {
 	tableName := fmt.Sprintf("test_toast_%s", strings.ToLower(stringutil.Random(5)))
 	tableID := store.IdentifierFor(kafkalib.DatabaseAndSchemaPair{Schema: "public"}, tableName)
-	if _, err := store.ExecContext(ctx, pgDialect.BuildCreateTableQuery(tableID, false, []string{"id int PRIMARY KEY", "col text"})); err != nil {
+	if _, err := store.ExecContext(ctx, pgDialect.BuildCreateTableQuery(tableID, false, config.Replication, []string{"id int PRIMARY KEY", "col text"})); err != nil {
 		return fmt.Errorf("failed to create test table: %w", err)
 	}
 
