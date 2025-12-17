@@ -5,6 +5,21 @@ import (
 	"time"
 )
 
+// Snowflake (and most databases) support years between 1 and 9999.
+const (
+	minValidYear = 1
+	maxValidYear = 9999
+)
+
+// ValidateTimestampYear checks if the year is within the valid range for most databases.
+func ValidateTimestampYear(ts time.Time) error {
+	year := ts.Year()
+	if year < minValidYear || year > maxValidYear {
+		return NewParseError(fmt.Sprintf("year %d is out of range [%d, %d]", year, minValidYear, maxValidYear), YearOutOfRange)
+	}
+	return nil
+}
+
 // ParseTimeExactMatch will return an error if it was not an exact match.
 // We need this function because things may parse correctly but actually truncate precision
 func ParseTimeExactMatch(layout, value string) (time.Time, error) {

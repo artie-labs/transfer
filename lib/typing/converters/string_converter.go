@@ -142,6 +142,10 @@ func (DateConverter) Convert(value any) (string, error) {
 		return "", fmt.Errorf("failed to cast colVal as date, colVal: '%v', err: %w", value, err)
 	}
 
+	if err := typing.ValidateTimestampYear(_time); err != nil {
+		return "", fmt.Errorf("invalid date value '%v': %w", value, err)
+	}
+
 	return _time.Format(time.DateOnly), nil
 }
 
@@ -172,6 +176,10 @@ func (t TimestampNTZConverter) Convert(value any) (string, error) {
 		return "", fmt.Errorf("failed to cast colVal as timestampNTZ, colVal: '%v', err: %w", value, err)
 	}
 
+	if err := typing.ValidateTimestampYear(_time); err != nil {
+		return "", fmt.Errorf("invalid timestampNTZ value '%v': %w", value, err)
+	}
+
 	return _time.Format(cmp.Or(t.layoutOverride, typing.RFC3339NoTZ)), nil
 }
 
@@ -189,6 +197,10 @@ func (t TimestampTZConverter) Convert(value any) (string, error) {
 	_time, err := typing.ParseTimestampTZFromAny(value)
 	if err != nil {
 		return "", fmt.Errorf("failed to cast colVal as timestampTZ, colVal: '%v', err: %w", value, err)
+	}
+
+	if err := typing.ValidateTimestampYear(_time); err != nil {
+		return "", fmt.Errorf("invalid timestampTZ value '%v': %w", value, err)
 	}
 
 	return _time.Format(cmp.Or(t.layoutOverride, time.RFC3339Nano)), nil

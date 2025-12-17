@@ -127,3 +127,40 @@ func TestParseTimestampNTZFromAny(t *testing.T) {
 		assert.Equal(t, tsString, ts.Format(RFC3339NoTZ))
 	}
 }
+
+func TestValidateTimestampYear(t *testing.T) {
+	{
+		// Valid years
+		for _, year := range []int{1, 1000, 2024, 9999} {
+			ts := time.Date(year, 1, 1, 0, 0, 0, 0, time.UTC)
+			assert.NoError(t, ValidateTimestampYear(ts), "year %d should be valid", year)
+		}
+	}
+	{
+		// Year too large (e.g., 262025)
+		ts := time.Date(262025, 10, 6, 7, 0, 0, 0, time.UTC)
+		err := ValidateTimestampYear(ts)
+		assert.ErrorContains(t, err, "year 262025 is out of range [1, 9999]")
+		parseError, ok := BuildParseError(err)
+		assert.True(t, ok)
+		assert.Equal(t, YearOutOfRange, parseError.GetKind())
+	}
+	{
+		// Year 0 (invalid)
+		ts := time.Date(0, 1, 1, 0, 0, 0, 0, time.UTC)
+		err := ValidateTimestampYear(ts)
+		assert.ErrorContains(t, err, "year 0 is out of range [1, 9999]")
+	}
+	{
+		// Negative year (invalid)
+		ts := time.Date(-1, 1, 1, 0, 0, 0, 0, time.UTC)
+		err := ValidateTimestampYear(ts)
+		assert.ErrorContains(t, err, "year -1 is out of range [1, 9999]")
+	}
+	{
+		// Year 10000 (invalid)
+		ts := time.Date(10000, 1, 1, 0, 0, 0, 0, time.UTC)
+		err := ValidateTimestampYear(ts)
+		assert.ErrorContains(t, err, "year 10000 is out of range [1, 9999]")
+	}
+}

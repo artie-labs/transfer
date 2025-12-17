@@ -48,7 +48,7 @@ func castColValStaging(colVal any, colKind typing.KindDetails, config config.Sha
 	if err != nil {
 		if config.SkipBadTimestamps {
 			if parseError, ok := typing.BuildParseError(err); ok {
-				if parseError.GetKind() == typing.UnsupportedDateLayout {
+				if parseError.GetKind() == typing.UnsupportedDateLayout || parseError.GetKind() == typing.YearOutOfRange {
 					slog.Info("Skipping a bad timestamp, returning null", slog.Any("err", err), slog.Any("value", colVal))
 					return shared.ValueConvertResponse{Value: constants.NullValuePlaceholder}, nil
 				}

@@ -330,8 +330,49 @@ func TestStringConverter_Convert(t *testing.T) {
 }
 
 func TestTimestampNTZConverter_Convert(t *testing.T) {
-	_time := time.Date(2023, 4, 24, 17, 29, 5, 699_000_000, time.UTC)
-	value, err := NewTimestampNTZConverter("").Convert(_time)
-	assert.NoError(t, err)
-	assert.Equal(t, "2023-04-24T17:29:05.699", value)
+	{
+		// Valid timestamp
+		_time := time.Date(2023, 4, 24, 17, 29, 5, 699_000_000, time.UTC)
+		value, err := NewTimestampNTZConverter("").Convert(_time)
+		assert.NoError(t, err)
+		assert.Equal(t, "2023-04-24T17:29:05.699", value)
+	}
+	{
+		// Invalid year (too large)
+		_time := time.Date(262025, 10, 6, 7, 0, 0, 0, time.UTC)
+		_, err := NewTimestampNTZConverter("").Convert(_time)
+		assert.ErrorContains(t, err, "year 262025 is out of range")
+	}
+}
+
+func TestTimestampTZConverter_Convert(t *testing.T) {
+	{
+		// Valid timestamp
+		_time := time.Date(2023, 4, 24, 17, 29, 5, 699_000_000, time.UTC)
+		value, err := NewTimestampTZConverter("").Convert(_time)
+		assert.NoError(t, err)
+		assert.Equal(t, "2023-04-24T17:29:05.699Z", value)
+	}
+	{
+		// Invalid year (too large)
+		_time := time.Date(262025, 10, 6, 7, 0, 0, 0, time.UTC)
+		_, err := NewTimestampTZConverter("").Convert(_time)
+		assert.ErrorContains(t, err, "year 262025 is out of range")
+	}
+}
+
+func TestDateConverter_Convert(t *testing.T) {
+	{
+		// Valid date
+		_time := time.Date(2023, 4, 24, 0, 0, 0, 0, time.UTC)
+		value, err := DateConverter{}.Convert(_time)
+		assert.NoError(t, err)
+		assert.Equal(t, "2023-04-24", value)
+	}
+	{
+		// Invalid year (too large)
+		_time := time.Date(262025, 10, 6, 0, 0, 0, 0, time.UTC)
+		_, err := DateConverter{}.Convert(_time)
+		assert.ErrorContains(t, err, "year 262025 is out of range")
+	}
 }
