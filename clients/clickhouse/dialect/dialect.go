@@ -163,11 +163,11 @@ func (ClickhouseDialect) KindForDataType(_type string) (typing.KindDetails, erro
 	switch dataType {
 	case "Float32", "FLOAT", "REAL", "SINGLE", "Float64", "DOUBLE", "DOUBLE PRECISION":
 		return typing.Float, nil
-	case "Int32", "INTEGER", "MEDIUMINT", "MEDIUMINT SIGNED", "INT SIGNED", "INTEGER SIGNED":
+	case "UInt32", "Int32", "INTEGER", "MEDIUMINT", "MEDIUMINT SIGNED", "INT SIGNED", "INTEGER SIGNED":
 		return typing.BuildIntegerKind(typing.IntegerKind), nil
-	case "Int64", "BIGINT", "SIGNED", "BIGINT SIGNED":
+	case "UInt64", "Int64", "BIGINT", "SIGNED", "BIGINT SIGNED":
 		return typing.BuildIntegerKind(typing.BigIntegerKind), nil
-	case "Int16", "SMALLINT", "SMALLINT SIGNED":
+	case "UInt8", "UInt16", "Int8", "Int16", "SMALLINT", "SMALLINT SIGNED":
 		return typing.BuildIntegerKind(typing.SmallIntegerKind), nil
 	case "Decimal", "Decimal32", "Decimal64", "Decimal128", "Decimal256":
 		if len(parameters) == 0 {
