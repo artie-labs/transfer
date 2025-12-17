@@ -19,6 +19,11 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
 
+var allowedArtieColumns = map[string]bool{
+	constants.DeleteColumnMarker: true,
+	constants.UpdateColumnMarker: true,
+}
+
 func (s Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, tableID, _ sql.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error {
 	if createTempTable {
 		if err := shared.CreateTempTable(ctx, s, tableData, tableConfig, additionalSettings.ColumnSettings, tableID); err != nil {
@@ -35,7 +40,7 @@ func (s Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.Ta
 	colNames := []string{}
 	placeholders := []string{}
 	for _, col := range cols {
-		if strings.HasPrefix(col.Name(), "__artie_") {
+		if strings.HasPrefix(col.Name(), constants.ArtiePrefix) && !allowedArtieColumns[col.Name()] {
 			continue
 		}
 		colNames = append(colNames, s.Dialect().QuoteIdentifier(col.Name()))
@@ -72,7 +77,7 @@ func (s Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.Ta
 	for _, row := range tableData.Rows() {
 		values := []any{}
 		for _, col := range cols {
-			if strings.HasPrefix(col.Name(), "__artie_") {
+			if strings.HasPrefix(col.Name(), constants.ArtiePrefix) && !allowedArtieColumns[col.Name()] {
 				continue
 			}
 			value, _ := row.GetValue(col.Name())
