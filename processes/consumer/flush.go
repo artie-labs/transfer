@@ -95,7 +95,6 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 					slog.Info("Flushing table", slog.String("tableID", table.GetTableID().String()), slog.String("reason", args.Reason))
 					return flush(ctx, dest, table)
 				})
-
 				if err != nil {
 					tags["what"] = result.What
 					metricsClient.Timing("flush", time.Since(start), tags)
