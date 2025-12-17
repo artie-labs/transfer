@@ -2,6 +2,7 @@ package eventtracking
 
 import (
 	"maps"
+	"strings"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -75,15 +76,27 @@ func (e *EventPayload) GetOptionalSchema() (map[string]typing.KindDetails, error
 func (e *EventPayload) GetColumns(reservedColumns map[string]bool) (*columns.Columns, error) {
 	var cols columns.Columns
 	for k := range e.Properties {
-		cols.AddColumn(columns.NewColumn(columns.EscapeName(k, reservedColumns), typing.Invalid))
+		colName := columns.EscapeName(k, reservedColumns)
+		cols.AddColumn(columns.NewColumn(colName, getTypeForColumn(colName)))
 	}
 	for k := range e.ExtraFields {
-		cols.AddColumn(columns.NewColumn(columns.EscapeName(k, reservedColumns), typing.Invalid))
+		colName := columns.EscapeName(k, reservedColumns)
+		cols.AddColumn(columns.NewColumn(colName, getTypeForColumn(colName)))
 	}
 
-	cols.AddColumn(columns.NewColumn(columns.EscapeName("id", reservedColumns), typing.Invalid))
-	cols.AddColumn(columns.NewColumn(columns.EscapeName("timestamp", reservedColumns), typing.Invalid))
-	cols.AddColumn(columns.NewColumn(columns.EscapeName("event", reservedColumns), typing.Invalid))
+	cols.AddColumn(columns.NewColumn(columns.EscapeName("id", reservedColumns), typing.String))
+	cols.AddColumn(columns.NewColumn(columns.EscapeName("timestamp", reservedColumns), typing.TimestampTZ))
+	cols.AddColumn(columns.NewColumn(columns.EscapeName("event", reservedColumns), typing.String))
 
 	return &cols, nil
+}
+
+func getTypeForColumn(column string) typing.KindDetails {
+	if strings.EqualFold(column, "IFRAME_VISIT_ID") || strings.EqualFold(column, "ENTITY_ID") || strings.EqualFold(column, "RESULT_ID") {
+		return typing.String
+	} else if strings.EqualFold(column, "SESSION_STARTED_AT") || strings.EqualFold(column, "SESSION_STARTED") {
+		return typing.TimestampTZ
+	}
+
+	return typing.Invalid
 }
