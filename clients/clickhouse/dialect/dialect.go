@@ -83,14 +83,18 @@ func (ClickhouseDialect) BuildDropColumnQuery(tableID sql.TableIdentifier, colNa
 	return fmt.Sprintf("ALTER TABLE %s DROP COLUMN IF EXISTS %s;", tableID.FullyQualifiedName(), colName)
 }
 
-func (ClickhouseDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, temporary bool, colSQLParts []string) string {
+func (ClickhouseDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, temporary bool, mode config.Mode, colSQLParts []string) string {
 	// We will create temporary tables in Clickhouse the exact same way as we do for permanent tables.
 	// This is because temporary tables are session scoped and this will not work for us as we leverage connection pooling.
-	// We will add the __artie_delete column to the table so that we can use it in ReplacingMergeTree.
-	finalColSQLParts := append(colSQLParts, fmt.Sprintf("%s %s", constants.DeleteColumnMarker, "UInt8"))
-	// Adding the __artie_updated_at column in the column definition section of the CREATE TABLE statement will result in "code: 44, message: Cannot add column __artie_updated_at: column with this name already exists"
-	// So we only add it to the engine definition section instead.
-	return fmt.Sprintf("CREATE TABLE %s (%s) ENGINE = ReplacingMergeTree(%s, %s);", tableID.FullyQualifiedName(), strings.Join(finalColSQLParts, ","), constants.UpdateColumnMarker, constants.DeleteColumnMarker)
+	if mode == config.Replication {
+		// We will add the __artie_delete column to the table so that we can use it in ReplacingMergeTree.
+		finalColSQLParts := append(colSQLParts, fmt.Sprintf("%s %s", constants.DeleteColumnMarker, "UInt8"))
+		// Adding the __artie_updated_at column in the column definition section of the CREATE TABLE statement will result in "code: 44, message: Cannot add column __artie_updated_at: column with this name already exists"
+		// So we only add it to the engine definition section instead.
+		return fmt.Sprintf("CREATE TABLE %s (%s) ENGINE = ReplacingMergeTree(%s, %s);", tableID.FullyQualifiedName(), strings.Join(finalColSQLParts, ","), constants.UpdateColumnMarker, constants.DeleteColumnMarker)
+	} else {
+		return fmt.Sprintf("CREATE TABLE %s (%s) ENGINE = MergeTree();", tableID.FullyQualifiedName(), strings.Join(colSQLParts, ","))
+	}
 }
 
 func (ClickhouseDialect) BuildDropTableQuery(tableID sql.TableIdentifier) string {
