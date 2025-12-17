@@ -53,7 +53,7 @@ func BuildCreateTableSQL(settings config.SharedDestinationColumnSettings, dialec
 		parts = append(parts, pkStatement)
 	}
 
-	return dialect.BuildCreateTableQuery(tableIdentifier, temporaryTable, parts), nil
+	return dialect.BuildCreateTableQuery(tableIdentifier, temporaryTable, mode, parts), nil
 }
 
 // DropTemporaryTable - this will drop the temporary table from Snowflake w/ stages and BigQuery
