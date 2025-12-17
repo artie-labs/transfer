@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/maputil"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -13,7 +14,7 @@ import (
 )
 
 func SnowflakeCreateTable(ctx context.Context, dest destination.Destination, tableID sql.TableIdentifier) error {
-	query := dest.Dialect().BuildCreateTableQuery(tableID, false, []string{
+	query := dest.Dialect().BuildCreateTableQuery(tableID, false, config.Replication, []string{
 		"c_array ARRAY",
 		"c_bigint BIGINT",
 		"c_boolean BOOLEAN",

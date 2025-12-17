@@ -132,7 +132,7 @@ func (DuckDBDialect) IsTableDoesNotExistErr(err error) bool {
 	return strings.Contains(err.Error(), "does not exist")
 }
 
-func (DuckDBDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, temporary bool, colSQLParts []string) string {
+func (DuckDBDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, temporary bool, _ config.Mode, colSQLParts []string) string {
 	// We will create temporary tables in DuckDB the exact same way as we do for permanent tables.
 	// This is because temporary tables are session scoped and this will not work for us as we leverage connection pooling.
 	return fmt.Sprintf("CREATE TABLE %s (%s);", tableID.FullyQualifiedName(), strings.Join(colSQLParts, ","))
