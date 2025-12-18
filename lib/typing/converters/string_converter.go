@@ -254,14 +254,9 @@ func (FloatConverter) Convert(value any) (string, error) {
 	case *decimal.Decimal:
 		return parsedVal.String(), nil
 	case string:
-		// If it's a string, verify it can be parsed as a float
-		if _, err := strconv.ParseFloat(parsedVal, 64); err != nil {
-			return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.UnexpectedValue)
-		}
-
 		return parsedVal, nil
 	default:
-		return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.UnexpectedValue)
+		return "", fmt.Errorf("unexpected value: '%v', type: %T", value, value)
 	}
 }
 
@@ -276,14 +271,11 @@ func (DecimalConverter) Convert(value any) (string, error) {
 	case int, int8, int16, int32, int64:
 		return fmt.Sprint(castedColVal), nil
 	case string:
-		if _, _, err := apd.NewFromString(castedColVal); err != nil {
-			return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.UnexpectedValue)
-		}
 		return castedColVal, nil
 	case *decimal.Decimal:
 		return castedColVal.String(), nil
 	default:
-		return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.UnexpectedValue)
+		return "", fmt.Errorf("unexpected value: '%v' type: %T", value, value)
 	}
 }
 
