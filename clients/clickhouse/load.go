@@ -127,6 +127,7 @@ func parseValue(value any, col columns.Column) (any, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse time: %w", err)
 		}
+		// TODO: revisit this when we support native Time type instead of String
 		return parsedTime.Format(typing.PostgresTimeFormatNoTZ), nil
 
 	case typing.TimestampNTZ.Kind:
