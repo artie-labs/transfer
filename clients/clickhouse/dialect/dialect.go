@@ -144,7 +144,12 @@ func (ClickhouseDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, setti
 	case typing.Date.Kind:
 		return "Date", nil
 	case typing.Time.Kind:
-		return "Time", nil
+		// clickhouse-go v2.40.3 does not support the Time type.
+		// Using v2.41.0 requires us to upgrade our Go toolchain to 1.25.x
+		// See: https://github.com/ClickHouse/clickhouse-go/releases/tag/v2.41.0
+		// So we will use the String type instead.
+		// also requires this flag to be set for Clickhouse < v25.12: https://clickhouse.com/docs/operations/settings/settings#enable_time_time64_type
+		return "String", nil
 	case typing.TimestampNTZ.Kind:
 		return "DateTime", nil
 	case typing.TimestampTZ.Kind:

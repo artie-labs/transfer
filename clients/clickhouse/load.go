@@ -2,10 +2,11 @@ package clickhouse
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
+
+	jsoniter "github.com/json-iterator/go"
 
 	_ "github.com/ClickHouse/clickhouse-go/v2"
 
@@ -103,6 +104,13 @@ func (s Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.Ta
 // parseValue converts a value to the appropriate type for ClickHouse insertion
 func parseValue(value any, col columns.Column) (any, error) {
 	if value == nil {
+		// ClickHouse driver requires typed nil values for certain column types
+		switch col.KindDetails.Kind {
+		case typing.Array.Kind:
+			return []string{}, nil
+		case typing.Struct.Kind:
+			return "{}", nil // JSON columns need empty object, not nil
+		}
 		return nil, nil
 	}
 
@@ -119,7 +127,7 @@ func parseValue(value any, col columns.Column) (any, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse time: %w", err)
 		}
-		return parsedTime, nil
+		return parsedTime.Format(typing.PostgresTimeFormatNoTZ), nil
 
 	case typing.TimestampNTZ.Kind:
 		parsedTime, err := typing.ParseTimestampNTZFromAny(value)
@@ -140,7 +148,7 @@ func parseValue(value any, col columns.Column) (any, error) {
 		if err != nil {
 			// If it's not a string, try to marshal it to JSON
 			if reflect.ValueOf(value).Kind() == reflect.Slice || reflect.ValueOf(value).Kind() == reflect.Map {
-				jsonBytes, jsonErr := json.Marshal(value)
+				jsonBytes, jsonErr := jsoniter.Marshal(value)
 				if jsonErr != nil {
 					return nil, fmt.Errorf("failed to marshal to JSON: %w", jsonErr)
 				}
@@ -155,20 +163,46 @@ func parseValue(value any, col columns.Column) (any, error) {
 			return fmt.Sprintf(`{"key":%q}`, constants.ToastUnavailableValuePlaceholder), nil
 		}
 		if reflect.TypeOf(value).Kind() == reflect.String {
-			return value, nil
+			strVal := value.(string)
+			if strVal == "" {
+				return "{}", nil // Empty string should be empty JSON object
+			}
+			return strVal, nil
 		}
-		jsonBytes, err := json.Marshal(value)
+		jsonBytes, err := jsoniter.Marshal(value)
 		if err != nil {
 			return nil, fmt.Errorf("failed to marshal struct to JSON: %w", err)
 		}
 		return string(jsonBytes), nil
 
 	case typing.Array.Kind:
-		jsonBytes, err := json.Marshal(value)
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal array to JSON: %w", err)
+		// ClickHouse driver expects []string for Array(String) columns
+		switch v := value.(type) {
+		case []string:
+			return v, nil
+		case []any:
+			result := make([]string, len(v))
+			for i, elem := range v {
+				if elem == nil {
+					result[i] = ""
+				} else {
+					result[i] = fmt.Sprint(elem)
+				}
+			}
+			return result, nil
+		default:
+			// Try to marshal and unmarshal as JSON array
+			jsonBytes, err := jsoniter.Marshal(value)
+			if err != nil {
+				return nil, fmt.Errorf("failed to marshal array to JSON: %w", err)
+			}
+			var result []string
+			if err := jsoniter.Unmarshal(jsonBytes, &result); err != nil {
+				// If it can't be parsed as []string, return it as a single-element array
+				return []string{string(jsonBytes)}, nil
+			}
+			return result, nil
 		}
-		return string(jsonBytes), nil
 
 	case typing.Boolean.Kind:
 		boolVal, ok := value.(bool)
