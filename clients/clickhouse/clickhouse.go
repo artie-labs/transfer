@@ -2,9 +2,10 @@ package clickhouse
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 
-	_ "github.com/ClickHouse/clickhouse-go/v2"
+	clickhouse "github.com/ClickHouse/clickhouse-go/v2"
 
 	"github.com/artie-labs/transfer/clients/clickhouse/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
@@ -27,9 +28,23 @@ func LoadClickhouse(ctx context.Context, cfg config.Config, _store *db.Store) (*
 		return nil, fmt.Errorf("clickhouse config is nil")
 	}
 
-	store, err := db.Open("clickhouse", fmt.Sprintf("clickhouse://%s?username=%s&password=%s", cfg.Clickhouse.Address, cfg.Clickhouse.Username, cfg.Clickhouse.Password))
-	if err != nil {
-		return &Store{}, err
+	var tlsConfig *tls.Config
+	if !cfg.Clickhouse.IsInsecure {
+		tlsConfig = &tls.Config{}
+	}
+
+	store := db.NewStoreWrapperForTest(clickhouse.OpenDB(&clickhouse.Options{
+		Addr: cfg.Clickhouse.Addresses,
+		Auth: clickhouse.Auth{
+			Database: cfg.Clickhouse.Database,
+			Username: cfg.Clickhouse.Username,
+			Password: cfg.Clickhouse.Password,
+		},
+		TLS: tlsConfig,
+	}))
+
+	if err := store.GetDatabase().Ping(); err != nil {
+		return nil, fmt.Errorf("failed to ping clickhouse: %w", err)
 	}
 
 	return &Store{

@@ -170,12 +170,8 @@ func (c Config) ValidateClickhouse() error {
 		return fmt.Errorf("Clickhouse config is nil")
 	}
 
-	if c.Clickhouse.Address == "" {
-		return fmt.Errorf("Clickhouse address is empty")
-	}
-
-	if c.Clickhouse.Database == "" {
-		return fmt.Errorf("Clickhouse database is empty")
+	if len(c.Clickhouse.Addresses) == 0 {
+		return fmt.Errorf("Clickhouse addresses are empty")
 	}
 
 	return nil
