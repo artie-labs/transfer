@@ -81,9 +81,11 @@ func castColValStaging(colVal any, colKind typing.KindDetails, sharedDestination
 		TimestampNTZLayoutOverride: typing.RFC3339MicroTZNoTZ,
 	})
 	if err != nil {
-		if parseError, ok := typing.BuildParseError(err); ok {
-			if (sharedDestinationSettings.SkipBadValues || sharedDestinationSettings.SkipBadIntegers) && parseError.GetKind() == typing.UnexpectedValue {
-				return shared.ValueConvertResponse{Value: constants.NullValuePlaceholder}, nil
+		if sharedDestinationSettings.SkipBadIntegers {
+			if parseError, ok := typing.BuildParseError(err); ok {
+				if parseError.GetKind() == typing.UnexpectedValue {
+					return shared.ValueConvertResponse{Value: constants.NullValuePlaceholder}, nil
+				}
 			}
 		}
 
