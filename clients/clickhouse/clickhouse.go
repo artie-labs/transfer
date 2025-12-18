@@ -33,7 +33,7 @@ func LoadClickhouse(ctx context.Context, cfg config.Config, _store *db.Store) (*
 		tlsConfig = &tls.Config{}
 	}
 
-	store := db.NewStoreWrapperForTest(clickhouse.OpenDB(&clickhouse.Options{
+	store := db.NewStoreWrapper(clickhouse.OpenDB(&clickhouse.Options{
 		Addr: cfg.Clickhouse.Addresses,
 		Auth: clickhouse.Auth{
 			Database: cfg.Clickhouse.Database,

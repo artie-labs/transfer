@@ -30,7 +30,7 @@ type storeWrapper struct {
 	*sql.DB
 }
 
-func NewStoreWrapperForTest(db *sql.DB) Store {
+func NewStoreWrapper(db *sql.DB) Store {
 	return &storeWrapper{
 		DB: db,
 	}
