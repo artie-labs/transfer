@@ -203,8 +203,8 @@ type MotherDuck struct {
 
 type Clickhouse struct {
 	Addresses  []string `json:"addresses" yaml:"addresses"`
-	Username string `json:"username" yaml:"username"`
-	Password string `json:"password" yaml:"password"`
-	Database string `json:"database" yaml:"database"`
-	IsInsecure bool `json:"isInsecure,omitempty" yaml:"isInsecure,omitempty"`
+	Username   string   `json:"username" yaml:"username"`
+	Password   string   `json:"password" yaml:"password"`
+	Database   string   `json:"database" yaml:"database"`
+	IsInsecure bool     `json:"isInsecure,omitempty" yaml:"isInsecure,omitempty"`
 }
