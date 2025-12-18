@@ -75,16 +75,58 @@ func (s *SnowflakeTestSuite) TestCastColValStaging() {
 		assert.Equal(s.T(), "foo", result.Value)
 	}
 	{
-		// Bad timestamp
+		// Bad Date values
 		{
-			// Config is enabled, so we won't error, we'll just return null.
+			// SkipBadTimestamps is enabled, so we won't error, we'll just return null.
 			result, err := castColValStaging("foo", typing.Date, config.SharedDestinationSettings{SkipBadTimestamps: true})
 			assert.NoError(s.T(), err)
 			assert.Equal(s.T(), constants.NullValuePlaceholder, result.Value)
 		}
 		{
-			// Config is disabled, so we'll error.
+			// SkipBadTimestamps is disabled, so we'll error.
 			_, err := castColValStaging("foo", typing.Date, config.SharedDestinationSettings{SkipBadTimestamps: false})
+			assert.Error(s.T(), err)
+		}
+	}
+	{
+		// Bad Time values
+		{
+			// SkipBadTimestamps is enabled, so we won't error, we'll just return null.
+			result, err := castColValStaging("not-a-time", typing.Time, config.SharedDestinationSettings{SkipBadTimestamps: true})
+			assert.NoError(s.T(), err)
+			assert.Equal(s.T(), constants.NullValuePlaceholder, result.Value)
+		}
+		{
+			// SkipBadTimestamps is disabled, so we'll error.
+			_, err := castColValStaging("not-a-time", typing.Time, config.SharedDestinationSettings{SkipBadTimestamps: false})
+			assert.Error(s.T(), err)
+		}
+	}
+	{
+		// Bad TimestampNTZ values
+		{
+			// SkipBadTimestamps is enabled, so we won't error, we'll just return null.
+			result, err := castColValStaging("invalid-timestamp", typing.TimestampNTZ, config.SharedDestinationSettings{SkipBadTimestamps: true})
+			assert.NoError(s.T(), err)
+			assert.Equal(s.T(), constants.NullValuePlaceholder, result.Value)
+		}
+		{
+			// SkipBadTimestamps is disabled, so we'll error.
+			_, err := castColValStaging("invalid-timestamp", typing.TimestampNTZ, config.SharedDestinationSettings{SkipBadTimestamps: false})
+			assert.Error(s.T(), err)
+		}
+	}
+	{
+		// Bad TimestampTZ values
+		{
+			// SkipBadTimestamps is enabled, so we won't error, we'll just return null.
+			result, err := castColValStaging("invalid-timestamp", typing.TimestampTZ, config.SharedDestinationSettings{SkipBadTimestamps: true})
+			assert.NoError(s.T(), err)
+			assert.Equal(s.T(), constants.NullValuePlaceholder, result.Value)
+		}
+		{
+			// SkipBadTimestamps is disabled, so we'll error.
+			_, err := castColValStaging("invalid-timestamp", typing.TimestampTZ, config.SharedDestinationSettings{SkipBadTimestamps: false})
 			assert.Error(s.T(), err)
 		}
 	}
@@ -117,8 +159,26 @@ func (s *SnowflakeTestSuite) TestCastColValStaging() {
 	{
 		// SkipBadValues - generic setting that covers all bad value types
 		{
-			// SkipBadValues handles bad timestamps
+			// SkipBadValues handles bad Date values
 			result, err := castColValStaging("foo", typing.Date, config.SharedDestinationSettings{SkipBadValues: true})
+			assert.NoError(s.T(), err)
+			assert.Equal(s.T(), constants.NullValuePlaceholder, result.Value)
+		}
+		{
+			// SkipBadValues handles bad Time values
+			result, err := castColValStaging("not-a-time", typing.Time, config.SharedDestinationSettings{SkipBadValues: true})
+			assert.NoError(s.T(), err)
+			assert.Equal(s.T(), constants.NullValuePlaceholder, result.Value)
+		}
+		{
+			// SkipBadValues handles bad TimestampNTZ values
+			result, err := castColValStaging("invalid-timestamp", typing.TimestampNTZ, config.SharedDestinationSettings{SkipBadValues: true})
+			assert.NoError(s.T(), err)
+			assert.Equal(s.T(), constants.NullValuePlaceholder, result.Value)
+		}
+		{
+			// SkipBadValues handles bad TimestampTZ values
+			result, err := castColValStaging("invalid-timestamp", typing.TimestampTZ, config.SharedDestinationSettings{SkipBadValues: true})
 			assert.NoError(s.T(), err)
 			assert.Equal(s.T(), constants.NullValuePlaceholder, result.Value)
 		}
