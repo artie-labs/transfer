@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -183,7 +184,7 @@ func (IcebergDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (stri
 	return fmt.Sprintf("DESCRIBE TABLE %s", tableID.FullyQualifiedName()), nil, nil
 }
 
-func (IcebergDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, _ bool, colSQLParts []string) string {
+func (IcebergDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, _ bool, _ config.Mode, colSQLParts []string) string {
 	// Iceberg does not support temporary tables.
 	// Format version is required: https://iceberg.apache.org/spec/#table-metadata-fields
 	return fmt.Sprintf(
