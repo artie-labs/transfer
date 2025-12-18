@@ -136,7 +136,7 @@ func (ClickhouseDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, setti
 		return "Bool", nil
 	case typing.Array.Kind:
 		// Clickhouse supports typed arrays.
-		return "text[]", nil
+		return "Array(String)", nil
 	case typing.Struct.Kind:
 		return "JSON", nil
 	case typing.String.Kind:
