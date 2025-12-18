@@ -9,11 +9,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/apd/v3"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
-	"github.com/cockroachdb/apd/v3"
 )
 
 type Converter interface {
