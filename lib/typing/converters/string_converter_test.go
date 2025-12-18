@@ -265,6 +265,18 @@ func TestDecimalConverter_Convert(t *testing.T) {
 		}
 	}
 	{
+		// Large decimal strings that exceed float64 range but are valid for NUMERIC
+		// These would fail with strconv.ParseFloat (ErrRange) but should work with apd.NewFromString
+		for _, input := range []string{
+			"99999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999", // 309 nines
+			"123456789012345678901234567890.123456789012345678901234567890", // high precision
+		} {
+			val, err := DecimalConverter{}.Convert(input)
+			assert.NoError(t, err, "input: %s", input)
+			assert.Equal(t, input, val)
+		}
+	}
+	{
 		// Invalid string that can't be parsed as a number
 		_, err := DecimalConverter{}.Convert("tNLc2OHz")
 		assert.ErrorContains(t, err, `unexpected value: 'tNLc2OHz', type: string`)

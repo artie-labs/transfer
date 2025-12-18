@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/apd/v3"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -273,8 +275,11 @@ func (DecimalConverter) Convert(value any) (string, error) {
 	case int, int8, int16, int32, int64:
 		return fmt.Sprint(castedColVal), nil
 	case string:
-		// If it's a string, verify it can be parsed as a number
-		if _, err := strconv.ParseFloat(castedColVal, 64); err != nil {
+		// If it's a string, verify it can be parsed as a number.
+		// We use apd.NewFromString instead of strconv.ParseFloat because ParseFloat
+		// can fail with ErrRange for large/precise decimal strings that are still
+		// valid for a decimal/NUMERIC destination.
+		if _, _, err := apd.NewFromString(castedColVal); err != nil {
 			return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.UnexpectedValue)
 		}
 		return castedColVal, nil
