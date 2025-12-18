@@ -52,6 +52,7 @@ type SharedDestinationSettings struct {
 	EnableMergeAssertion bool `yaml:"enableMergeAssertion,omitempty"`
 	// [SkipBadValues] - If enabled, we'll skip over all bad values (timestamps, integers, etc.) instead of throwing an error.
 	// This is a catch-all setting that supersedes the more specific settings below.
+	// Currently only supported for Snowflake.
 	SkipBadValues bool `yaml:"skipBadValues"`
 	// [SkipBadTimestamps] - If enabled, we'll skip over bad timestamp (or alike) values instead of throwing an error.
 	SkipBadTimestamps bool `yaml:"skipBadTimestamps"`
