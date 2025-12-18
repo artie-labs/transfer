@@ -134,6 +134,12 @@ func (s *SnowflakeTestSuite) TestCastColValStaging() {
 			assert.NoError(s.T(), err)
 			assert.Equal(s.T(), constants.NullValuePlaceholder, result.Value)
 		}
+		{
+			// SkipBadValues handles bad boolean values
+			result, err := castColValStaging("notABoolean", typing.Boolean, config.SharedDestinationSettings{SkipBadValues: true})
+			assert.NoError(s.T(), err)
+			assert.Equal(s.T(), constants.NullValuePlaceholder, result.Value)
+		}
 	}
 }
 

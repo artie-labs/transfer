@@ -93,7 +93,12 @@ func TestBooleanConverter_Convert(t *testing.T) {
 	{
 		// Not boolean
 		_, err := BooleanConverter{}.Convert("foo")
-		assert.ErrorContains(t, err, `failed to cast colVal as boolean, colVal: 'foo', type: string`)
+		assert.ErrorContains(t, err, `unexpected value: 'foo', type: string`)
+
+		// Should be a ParseError with UnexpectedValue kind
+		parseError, ok := typing.BuildParseError(err)
+		assert.True(t, ok)
+		assert.Equal(t, typing.UnexpectedValue, parseError.GetKind())
 	}
 	{
 		// True
