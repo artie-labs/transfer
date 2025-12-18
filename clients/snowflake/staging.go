@@ -56,6 +56,11 @@ func castColValStaging(colVal any, colKind typing.KindDetails, config config.Sha
 				slog.Info("Skipping a bad numeric value, returning null", slog.Any("err", err), slog.Any("value", colVal))
 				return shared.ValueConvertResponse{Value: constants.NullValuePlaceholder}, nil
 			}
+
+			if config.SkipBadValues && parseError.GetKind() == typing.InvalidBooleanValue {
+				slog.Info("Skipping a bad boolean value, returning null", slog.Any("err", err), slog.Any("value", colVal))
+				return shared.ValueConvertResponse{Value: constants.NullValuePlaceholder}, nil
+			}
 		}
 
 		return shared.ValueConvertResponse{}, err

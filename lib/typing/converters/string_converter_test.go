@@ -95,10 +95,10 @@ func TestBooleanConverter_Convert(t *testing.T) {
 		_, err := BooleanConverter{}.Convert("foo")
 		assert.ErrorContains(t, err, `unexpected value: 'foo', type: string`)
 
-		// Should be a ParseError with UnexpectedValue kind
+		// Should be a ParseError with UnexpectedBooleanValue kind
 		parseError, ok := typing.BuildParseError(err)
 		assert.True(t, ok)
-		assert.Equal(t, typing.UnexpectedValue, parseError.GetKind())
+		assert.Equal(t, typing.InvalidBooleanValue, parseError.GetKind())
 	}
 	{
 		// True

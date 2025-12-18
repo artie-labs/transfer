@@ -77,7 +77,7 @@ func (BooleanConverter) Convert(value any) (string, error) {
 		case "1", "true":
 			return "true", nil
 		default:
-			return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.UnexpectedValue)
+			return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.InvalidBooleanValue)
 		}
 	}
 }
