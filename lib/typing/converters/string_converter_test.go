@@ -134,12 +134,39 @@ func TestFloatConverter_Convert(t *testing.T) {
 		// Unexpected type
 		_, err := FloatConverter{}.Convert(true)
 		assert.ErrorContains(t, err, `unexpected value: 'true', type: bool`)
+
+		// Should be a ParseError with UnexpectedValue kind
+		parseError, ok := typing.BuildParseError(err)
+		assert.True(t, ok)
+		assert.Equal(t, typing.UnexpectedValue, parseError.GetKind())
+	}
+	{
+		// Invalid string that can't be parsed as a float
+		_, err := FloatConverter{}.Convert("tNLc2OHz")
+		assert.ErrorContains(t, err, `unexpected value: 'tNLc2OHz', type: string`)
+
+		// Should be a ParseError with UnexpectedValue kind
+		parseError, ok := typing.BuildParseError(err)
+		assert.True(t, ok)
+		assert.Equal(t, typing.UnexpectedValue, parseError.GetKind())
 	}
 	{
 		// String
 		val, err := FloatConverter{}.Convert("123.45")
 		assert.NoError(t, err)
 		assert.Equal(t, "123.45", val)
+	}
+	{
+		// String with scientific notation
+		val, err := FloatConverter{}.Convert("1.23e10")
+		assert.NoError(t, err)
+		assert.Equal(t, "1.23e10", val)
+	}
+	{
+		// Negative string
+		val, err := FloatConverter{}.Convert("-123.45")
+		assert.NoError(t, err)
+		assert.Equal(t, "-123.45", val)
 	}
 	{
 		// Float32
@@ -223,6 +250,34 @@ func TestDecimalConverter_Convert(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, "42", val)
 		}
+	}
+	{
+		// Valid numeric strings
+		for _, input := range []string{"123.45", "-123.45", "1.23e10", "42"} {
+			val, err := DecimalConverter{}.Convert(input)
+			assert.NoError(t, err)
+			assert.Equal(t, input, val)
+		}
+	}
+	{
+		// Invalid string that can't be parsed as a number
+		_, err := DecimalConverter{}.Convert("tNLc2OHz")
+		assert.ErrorContains(t, err, `unexpected value: 'tNLc2OHz', type: string`)
+
+		// Should be a ParseError with UnexpectedValue kind
+		parseError, ok := typing.BuildParseError(err)
+		assert.True(t, ok)
+		assert.Equal(t, typing.UnexpectedValue, parseError.GetKind())
+	}
+	{
+		// Unexpected type
+		_, err := DecimalConverter{}.Convert(true)
+		assert.ErrorContains(t, err, `unexpected value: 'true', type: bool`)
+
+		// Should be a ParseError with UnexpectedValue kind
+		parseError, ok := typing.BuildParseError(err)
+		assert.True(t, ok)
+		assert.Equal(t, typing.UnexpectedValue, parseError.GetKind())
 	}
 }
 

@@ -88,6 +88,53 @@ func (s *SnowflakeTestSuite) TestCastColValStaging() {
 			assert.Error(s.T(), err)
 		}
 	}
+	{
+		// Bad numeric value (string that can't be parsed as a number)
+		{
+			// SkipBadIntegers is enabled, so we won't error, we'll just return null.
+			result, err := castColValStaging("tNLc2OHz", typing.Float, config.SharedDestinationSettings{SkipBadIntegers: true})
+			assert.NoError(s.T(), err)
+			assert.Equal(s.T(), constants.NullValuePlaceholder, result.Value)
+		}
+		{
+			// SkipBadIntegers is enabled for EDecimal type
+			result, err := castColValStaging("notANumber", typing.EDecimal, config.SharedDestinationSettings{SkipBadIntegers: true})
+			assert.NoError(s.T(), err)
+			assert.Equal(s.T(), constants.NullValuePlaceholder, result.Value)
+		}
+		{
+			// SkipBadIntegers is disabled, so we'll error.
+			_, err := castColValStaging("tNLc2OHz", typing.Float, config.SharedDestinationSettings{SkipBadIntegers: false})
+			assert.Error(s.T(), err)
+		}
+		{
+			// Valid numeric string should work fine
+			result, err := castColValStaging("123.45", typing.Float, config.SharedDestinationSettings{SkipBadIntegers: false})
+			assert.NoError(s.T(), err)
+			assert.Equal(s.T(), "123.45", result.Value)
+		}
+	}
+	{
+		// SkipBadValues - generic setting that covers all bad value types
+		{
+			// SkipBadValues handles bad timestamps
+			result, err := castColValStaging("foo", typing.Date, config.SharedDestinationSettings{SkipBadValues: true})
+			assert.NoError(s.T(), err)
+			assert.Equal(s.T(), constants.NullValuePlaceholder, result.Value)
+		}
+		{
+			// SkipBadValues handles bad numeric values
+			result, err := castColValStaging("notANumber", typing.Float, config.SharedDestinationSettings{SkipBadValues: true})
+			assert.NoError(s.T(), err)
+			assert.Equal(s.T(), constants.NullValuePlaceholder, result.Value)
+		}
+		{
+			// SkipBadValues handles bad decimal values
+			result, err := castColValStaging("notANumber", typing.EDecimal, config.SharedDestinationSettings{SkipBadValues: true})
+			assert.NoError(s.T(), err)
+			assert.Equal(s.T(), constants.NullValuePlaceholder, result.Value)
+		}
+	}
 }
 
 // runTestCaseWithReset runs a test case with a fresh store state
