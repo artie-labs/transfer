@@ -62,7 +62,7 @@ func ParseTimeFromAny(val any) (time.Time, error) {
 			return ts, nil
 		}
 
-		return time.Time{}, fmt.Errorf("unsupported value: %q", convertedVal)
+		return time.Time{}, NewParseError(fmt.Sprintf("unsupported value: %q", convertedVal), UnsupportedDateLayout)
 	default:
 		return time.Time{}, fmt.Errorf("unsupported type: %T", convertedVal)
 	}
@@ -77,7 +77,7 @@ func ParseTimestampNTZFromAny(val any) (time.Time, error) {
 	case string:
 		ts, err := ParseTimeExactMatch(RFC3339NoTZ, convertedVal)
 		if err != nil {
-			return time.Time{}, fmt.Errorf("unsupported value: %q: %w", convertedVal, err)
+			return time.Time{}, NewParseError(fmt.Sprintf("unsupported value: %q", convertedVal), UnsupportedDateLayout)
 		}
 
 		return ts, nil
@@ -106,5 +106,5 @@ func parseTimestampTZ(value string) (time.Time, error) {
 		}
 	}
 
-	return time.Time{}, fmt.Errorf("unsupported value: %q", value)
+	return time.Time{}, NewParseError(fmt.Sprintf("unsupported value: %q", value), UnsupportedDateLayout)
 }
