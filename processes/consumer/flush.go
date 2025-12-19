@@ -96,6 +96,8 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 					return flush(ctx, dest, table)
 				})
 				if err != nil {
+					tags["what"] = result.What
+					metricsClient.Timing("flush", time.Since(start), tags)
 					return fmt.Errorf("failed to %s for %q: %w", action, table.GetTableID().String(), err)
 				}
 
