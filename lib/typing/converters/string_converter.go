@@ -141,7 +141,7 @@ type DateConverter struct{}
 func (DateConverter) Convert(value any) (string, error) {
 	_time, err := typing.ParseDateFromAny(value)
 	if err != nil {
-		return "", typing.NewParseError(fmt.Sprintf("failed to cast colVal as date, colVal: '%v', err: %s", value, err.Error()), typing.UnexpectedValue)
+		return "", fmt.Errorf("failed to cast colVal as date, colVal: '%v', err: %w", value, err)
 	}
 
 	return _time.Format(time.DateOnly), nil
@@ -152,7 +152,7 @@ type TimeConverter struct{}
 func (TimeConverter) Convert(value any) (string, error) {
 	_time, err := typing.ParseTimeFromAny(value)
 	if err != nil {
-		return "", typing.NewParseError(fmt.Sprintf("failed to cast colVal as time, colVal: '%v', err: %s", value, err.Error()), typing.UnexpectedValue)
+		return "", fmt.Errorf("failed to cast colVal as time, colVal: '%v', err: %w", value, err)
 	}
 
 	return _time.Format(typing.PostgresTimeFormatNoTZ), nil
@@ -171,7 +171,7 @@ type TimestampNTZConverter struct {
 func (t TimestampNTZConverter) Convert(value any) (string, error) {
 	_time, err := typing.ParseTimestampNTZFromAny(value)
 	if err != nil {
-		return "", typing.NewParseError(fmt.Sprintf("failed to cast colVal as timestampNTZ, colVal: '%v', err: %s", value, err.Error()), typing.UnexpectedValue)
+		return "", fmt.Errorf("failed to cast colVal as timestampNTZ, colVal: '%v', err: %w", value, err)
 	}
 
 	return _time.Format(cmp.Or(t.layoutOverride, typing.RFC3339NoTZ)), nil
@@ -190,7 +190,7 @@ type TimestampTZConverter struct {
 func (t TimestampTZConverter) Convert(value any) (string, error) {
 	_time, err := typing.ParseTimestampTZFromAny(value)
 	if err != nil {
-		return "", typing.NewParseError(fmt.Sprintf("failed to cast colVal as timestampTZ, colVal: '%v', err: %s", value, err.Error()), typing.UnexpectedValue)
+		return "", fmt.Errorf("failed to cast colVal as timestampTZ, colVal: '%v', err: %w", value, err)
 	}
 
 	return _time.Format(cmp.Or(t.layoutOverride, time.RFC3339Nano)), nil
