@@ -44,7 +44,7 @@ func LoadStore(ctx context.Context, cfg config.Config) (*Store, error) {
 		Store:     store,
 		configMap: &types.DestinationTableConfigMap{},
 		config:    cfg,
-		version:   version.MajorVersion,
+		version:   version.Major,
 	}, nil
 }
 
