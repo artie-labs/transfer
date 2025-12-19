@@ -3,8 +3,6 @@ package typing
 import (
 	"fmt"
 	"time"
-
-	"github.com/artie-labs/transfer/lib/typing/converters/primitives"
 )
 
 // ParseTimeExactMatch will return an error if it was not an exact match.
@@ -96,22 +94,9 @@ func ParseTimestampTZFromAny(val any) (time.Time, error) {
 		return convertedVal, nil
 	case string:
 		return parseTimestampTZ(convertedVal)
-	case float64:
-		value, err := primitives.Int64Converter{}.Convert(val)
-		if err != nil {
-			return time.Time{}, fmt.Errorf("failed to convert float64 to int64: %w", err)
-		}
-
-		return parseTimestampTZInt64(value)
-	case int64:
-		return parseTimestampTZInt64(convertedVal)
 	default:
 		return time.Time{}, fmt.Errorf("unsupported type: %T", convertedVal)
 	}
-}
-
-func parseTimestampTZInt64(value int64) (time.Time, error) {
-	return time.UnixMilli(value), nil
 }
 
 func parseTimestampTZ(value string) (time.Time, error) {
