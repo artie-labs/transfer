@@ -68,6 +68,21 @@ func ParseTimeFromAny(val any) (time.Time, error) {
 	}
 }
 
+// floatMillisToTime converts a float64 Unix timestamp in milliseconds to time.Time,
+// preserving fractional milliseconds as nanoseconds.
+func floatMillisToTime(ms float64) time.Time {
+	msInt := int64(ms)
+	fracMs := ms - float64(msInt)
+	// Convert fractional milliseconds to nanoseconds (1 ms = 1,000,000 ns)
+	additionalNanos := int64(fracMs * 1e6)
+	return time.UnixMilli(msInt).Add(time.Duration(additionalNanos) * time.Nanosecond)
+}
+
+// int64MillisToTime converts an int64 Unix timestamp in milliseconds to time.Time.
+func int64MillisToTime(ms int64) time.Time {
+	return time.UnixMilli(ms)
+}
+
 func ParseTimestampNTZFromAny(val any) (time.Time, error) {
 	switch convertedVal := val.(type) {
 	case nil:
@@ -81,6 +96,10 @@ func ParseTimestampNTZFromAny(val any) (time.Time, error) {
 		}
 
 		return ts, nil
+	case float64:
+		return floatMillisToTime(convertedVal), nil
+	case int64:
+		return int64MillisToTime(convertedVal), nil
 	default:
 		return time.Time{}, fmt.Errorf("unsupported type: %T", convertedVal)
 	}
@@ -94,6 +113,10 @@ func ParseTimestampTZFromAny(val any) (time.Time, error) {
 		return convertedVal, nil
 	case string:
 		return parseTimestampTZ(convertedVal)
+	case float64:
+		return floatMillisToTime(convertedVal), nil
+	case int64:
+		return int64MillisToTime(convertedVal), nil
 	default:
 		return time.Time{}, fmt.Errorf("unsupported type: %T", convertedVal)
 	}
