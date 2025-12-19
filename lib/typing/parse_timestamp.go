@@ -102,14 +102,10 @@ func ParseTimestampTZFromAny(val any) (time.Time, error) {
 		additionalNanos := int64(fracMs * 1e6)
 		return time.UnixMilli(msInt).Add(time.Duration(additionalNanos) * time.Nanosecond), nil
 	case int64:
-		return parseTimestampTZInt64(convertedVal)
+		return time.UnixMilli(convertedVal), nil
 	default:
 		return time.Time{}, fmt.Errorf("unsupported type: %T", convertedVal)
 	}
-}
-
-func parseTimestampTZInt64(value int64) (time.Time, error) {
-	return time.UnixMilli(value), nil
 }
 
 func parseTimestampTZ(value string) (time.Time, error) {
