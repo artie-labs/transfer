@@ -37,9 +37,8 @@ func (s Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.Ta
 		return nil
 	}
 
-	// Build column names and placeholders for the INSERT statement
-	colNames := []string{}
-	placeholders := []string{}
+	var colNames []string
+	var placeholders []string
 	for _, col := range cols {
 		if dontWriteArtieColumns[col.Name()] {
 			continue
