@@ -50,9 +50,15 @@ type SharedDestinationSettings struct {
 	UseNewStringMethod bool `yaml:"useNewStringMethod"`
 	// [EnableMergeAssertion] - This will enable the merge assertion checks for the destination.
 	EnableMergeAssertion bool `yaml:"enableMergeAssertion,omitempty"`
+	// [SkipBadValues] - If enabled, we'll skip over all bad values (timestamps, integers, etc.) instead of throwing an error.
+	// This is a catch-all setting that supersedes the more specific settings below.
+	// Currently only supported for Snowflake.
+	SkipBadValues bool `yaml:"skipBadValues"`
 	// [SkipBadTimestamps] - If enabled, we'll skip over bad timestamp (or alike) values instead of throwing an error.
+	// Currently only supported for Snowflake.
 	SkipBadTimestamps bool `yaml:"skipBadTimestamps"`
 	// [SkipBadIntegers] - If enabled, we'll skip over bad integer values instead of throwing an error.
+	// Currently only supported for Snowflake and Redshift.
 	SkipBadIntegers bool `yaml:"skipBadIntegers"`
 }
 
