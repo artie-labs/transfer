@@ -168,33 +168,33 @@ func (ClickhouseDialect) KindForDataType(_type string) (typing.KindDetails, erro
 		return typing.Invalid, err
 	}
 
-	switch dataType {
-	case "Float32", "FLOAT", "REAL", "SINGLE", "Float64", "DOUBLE", "DOUBLE PRECISION":
+	switch strings.ToLower(dataType) {
+	case "float32", "float", "real", "single", "float64", "double", "double precision":
 		return typing.Float, nil
-	case "UInt32", "Int32", "INTEGER", "MEDIUMINT", "MEDIUMINT SIGNED", "INT SIGNED", "INTEGER SIGNED":
+	case "uint32", "int32", "integer", "mediumint", "mediumint signed", "int signed", "integer signed":
 		return typing.BuildIntegerKind(typing.IntegerKind), nil
-	case "UInt64", "Int64", "BIGINT", "SIGNED", "BIGINT SIGNED":
+	case "uint64", "int64", "bigint", "signed", "bigint signed":
 		return typing.BuildIntegerKind(typing.BigIntegerKind), nil
-	case "UInt8", "UInt16", "Int8", "Int16", "SMALLINT", "SMALLINT SIGNED":
+	case "uint8", "uint16", "int8", "int16", "smallint", "smallint signed":
 		return typing.BuildIntegerKind(typing.SmallIntegerKind), nil
-	case "Decimal", "Decimal32", "Decimal64", "Decimal128", "Decimal256":
+	case "decimal", "decimal32", "decimal64", "decimal128", "decimal256":
 		if len(parameters) == 0 {
 			return typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale)), nil
 		}
 		return typing.ParseNumeric(parameters)
-	case "Bool", "bool":
+	case "bool":
 		return typing.Boolean, nil
-	case "Array", "array":
+	case "array":
 		return typing.Array, nil
-	case "JSON":
+	case "json":
 		return typing.Struct, nil
-	case "String":
+	case "string":
 		return typing.String, nil
-	case "Date":
+	case "date":
 		return typing.Date, nil
-	case "Time":
+	case "time":
 		return typing.Time, nil
-	case "DateTime":
+	case "datetime":
 		return typing.TimestampNTZ, nil
 	}
 	return typing.Invalid, fmt.Errorf("unsupported data type: %s", dataType)
