@@ -155,6 +155,8 @@ func (ClickhouseDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, setti
 		return "String", nil
 	case typing.TimestampNTZ.Kind:
 		return "DateTime", nil
+	case typing.TimestampTZ.Kind:
+		return "DateTime", nil
 	default:
 		return "", fmt.Errorf("unsupported kind: %q", kd.Kind)
 	}

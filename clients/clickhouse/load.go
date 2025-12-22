@@ -142,7 +142,7 @@ func parseValue(value any, col columns.Column) (any, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse timestamp with timezone: %w", err)
 		}
-		return parsedTime, nil
+		return parsedTime.UTC(), nil
 
 	case typing.String.Kind:
 		stringVal, err := typing.AssertType[string](value)
