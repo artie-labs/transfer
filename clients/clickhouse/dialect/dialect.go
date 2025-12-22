@@ -59,8 +59,8 @@ func (ClickhouseDialect) BuildMergeQueries(
 	panic("not implemented")
 }
 
-func (ClickhouseDialect) BuildSweepQuery(dbName, schemaName string) (string, []any) {
-	return "SELECT table_schema, table_name FROM information_schema.tables WHERE table_catalog = ? AND table_schema = ? AND table_name LIKE ?;", []any{dbName, schemaName, "%" + constants.ArtiePrefix + "%"}
+func (ClickhouseDialect) BuildSweepQuery(dbName, _ string) (string, []any) {
+	return "SELECT table_schema, table_name FROM information_schema.tables WHERE table_catalog = ? AND table_name LIKE ?;", []any{dbName, "%" + constants.ArtiePrefix + "%"}
 }
 
 func (ClickhouseDialect) GetDefaultValueStrategy() sql.DefaultValueStrategy {
