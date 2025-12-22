@@ -24,6 +24,15 @@ type Store struct {
 }
 
 func LoadClickhouse(ctx context.Context, cfg config.Config, _store *db.Store) (*Store, error) {
+	if _store != nil {
+		// Used for tests.
+		return &Store{
+			Store: *_store,
+			configMap: &types.DestinationTableConfigMap{},
+			config:    cfg,
+		}, nil
+	}
+
 	if cfg.Clickhouse == nil {
 		return nil, fmt.Errorf("clickhouse config is nil")
 	}
