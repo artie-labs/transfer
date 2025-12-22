@@ -84,6 +84,7 @@ type DestinationKind string
 
 const (
 	BigQuery   DestinationKind = "bigquery"
+	Clickhouse DestinationKind = "clickhouse"
 	Databricks DestinationKind = "databricks"
 	GCS        DestinationKind = "gcs"
 	Iceberg    DestinationKind = "iceberg"
@@ -98,6 +99,7 @@ const (
 
 var ValidDestinations = []DestinationKind{
 	BigQuery,
+	Clickhouse,
 	Databricks,
 	GCS,
 	Iceberg,
