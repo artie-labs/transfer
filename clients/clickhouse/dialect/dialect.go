@@ -115,6 +115,9 @@ func (ClickhouseDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, setti
 	case typing.Float.Kind:
 		return "Float64", nil
 	case typing.Integer.Kind:
+		if kd.OptionalIntegerKind == nil {
+			return "Int64", nil
+		}
 		switch *kd.OptionalIntegerKind {
 		case typing.NotSpecifiedKind:
 			return "Int64", nil
