@@ -11,6 +11,7 @@ import (
 	_ "github.com/ClickHouse/clickhouse-go/v2"
 
 	"github.com/artie-labs/transfer/clients/shared"
+	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -177,33 +178,7 @@ func parseValue(value any, col columns.Column) (any, error) {
 		return string(jsonBytes), nil
 
 	case typing.Array.Kind:
-		// ClickHouse driver expects []string for Array(String) columns
-		switch v := value.(type) {
-		case []string:
-			return v, nil
-		case []any:
-			result := make([]string, len(v))
-			for i, elem := range v {
-				if elem == nil {
-					result[i] = ""
-				} else {
-					result[i] = fmt.Sprint(elem)
-				}
-			}
-			return result, nil
-		default:
-			// Try to marshal and unmarshal as JSON array
-			jsonBytes, err := jsoniter.Marshal(value)
-			if err != nil {
-				return nil, fmt.Errorf("failed to marshal array to JSON: %w", err)
-			}
-			var result []string
-			if err := jsoniter.Unmarshal(jsonBytes, &result); err != nil {
-				// If it can't be parsed as []string, return it as a single-element array
-				return []string{string(jsonBytes)}, nil
-			}
-			return result, nil
-		}
+		return array.InterfaceToArrayString(value, true)
 
 	case typing.Boolean.Kind:
 		boolVal, ok := value.(bool)
