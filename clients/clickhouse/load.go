@@ -163,8 +163,7 @@ func parseValue(value any, col columns.Column) (any, error) {
 		if value == constants.ToastUnavailableValuePlaceholder {
 			return fmt.Sprintf(`{"key":%q}`, constants.ToastUnavailableValuePlaceholder), nil
 		}
-		if reflect.TypeOf(value).Kind() == reflect.String {
-			strVal := value.(string)
+		if strVal, ok := value.(string); ok {
 			if strVal == "" {
 				return "{}", nil // Empty string should be empty JSON object
 			}
