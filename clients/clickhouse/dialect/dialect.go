@@ -155,8 +155,6 @@ func (ClickhouseDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, setti
 		return "String", nil
 	case typing.TimestampNTZ.Kind:
 		return "DateTime", nil
-	case typing.TimestampTZ.Kind:
-		return "DateTime", nil
 	default:
 		return "", fmt.Errorf("unsupported kind: %q", kd.Kind)
 	}
@@ -195,7 +193,7 @@ func (ClickhouseDialect) KindForDataType(_type string) (typing.KindDetails, erro
 	case "Time":
 		return typing.Time, nil
 	case "DateTime":
-		return typing.TimestampTZ, nil
+		return typing.TimestampNTZ, nil
 	}
 	return typing.Invalid, fmt.Errorf("unsupported data type: %s", dataType)
 }
