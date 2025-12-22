@@ -27,7 +27,7 @@ func LoadClickhouse(ctx context.Context, cfg config.Config, _store *db.Store) (*
 	if _store != nil {
 		// Used for tests.
 		return &Store{
-			Store: *_store,
+			Store:     *_store,
 			configMap: &types.DestinationTableConfigMap{},
 			config:    cfg,
 		}, nil
