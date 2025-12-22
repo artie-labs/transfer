@@ -174,6 +174,14 @@ func (c Config) ValidateClickhouse() error {
 		return fmt.Errorf("Clickhouse addresses are empty")
 	}
 
+	if c.Mode == Replication {
+		for _, topicConfig := range c.TopicConfigs() {
+			if !topicConfig.IncludeArtieUpdatedAt {
+				return fmt.Errorf("includeArtieUpdatedAt is required in replication mode, topic: %s", topicConfig.String())
+			}
+		}
+	}
+
 	return nil
 }
 
