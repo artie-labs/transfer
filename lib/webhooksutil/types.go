@@ -4,6 +4,21 @@ import "time"
 
 type EventType string
 type Severity string
+type Source string
+
+const (
+	Transfer  Source = "transfer"
+	Reader    Source = "reader"
+	Debezium  Source = "debezium"
+	EventsAPI Source = "events-api"
+)
+
+// WebhooksEvent represents the event payload sent to the webhooks service.
+type WebhooksEvent struct {
+	Event      string         `json:"event"`
+	Timestamp  time.Time      `json:"timestamp"`
+	Properties map[string]any `json:"properties"`
+}
 
 const (
 	SeverityInfo    Severity = "info"
