@@ -45,7 +45,6 @@ func LoadClickhouse(ctx context.Context, cfg config.Config, _store *db.Store) (*
 	store := db.NewStoreWrapper(clickhouse.OpenDB(&clickhouse.Options{
 		Addr: cfg.Clickhouse.Addresses,
 		Auth: clickhouse.Auth{
-			Database: cfg.Clickhouse.Database,
 			Username: cfg.Clickhouse.Username,
 			Password: cfg.Clickhouse.Password,
 		},
