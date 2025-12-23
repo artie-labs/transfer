@@ -93,6 +93,7 @@ func (ClickhouseDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, temp
 			}
 		}
 		// We will add the __artie_delete column to the table so that we can use it in ReplacingMergeTree.
+		// https://clickhouse.com/docs/engines/table-engines/mergetree-family/replacingmergetree#is_deleted
 		finalColSQLParts = append(finalColSQLParts, fmt.Sprintf("%s %s", _dialect.QuoteIdentifier(constants.DeleteColumnMarker), "UInt8"))
 		// Adding the __artie_updated_at column in the column definition section of the CREATE TABLE statement will result in "code: 44, message: Cannot add column __artie_updated_at: column with this name already exists"
 		// So we only add it to the engine definition section instead.
