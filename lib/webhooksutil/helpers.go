@@ -26,7 +26,6 @@ func GetEventSeverity(eventType EventType) Severity {
 	}
 }
 
-// GetEventCategory returns the category for an event type
 func GetEventCategory(eventType EventType) string {
 	switch eventType {
 	case EventBackFillStarted, EventBackFillCompleted, EventBackFillFailed, BackfillProgress:
@@ -52,12 +51,10 @@ func GetEventCategory(eventType EventType) string {
 	}
 }
 
-// IsErrorEvent returns true if the event represents an error condition
 func IsErrorEvent(eventType EventType) bool {
 	return GetEventSeverity(eventType) == SeverityError
 }
 
-// IsWarningEvent returns true if the event represents a warning condition
 func IsWarningEvent(eventType EventType) bool {
 	return GetEventSeverity(eventType) == SeverityWarning
 }

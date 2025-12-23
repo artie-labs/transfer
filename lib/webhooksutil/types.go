@@ -13,7 +13,6 @@ const (
 	EventsAPI Source = "events-api"
 )
 
-// WebhooksEvent represents the event payload sent to the webhooks service.
 type WebhooksEvent struct {
 	Event      string         `json:"event"`
 	Timestamp  time.Time      `json:"timestamp"`
@@ -35,76 +34,36 @@ const (
 	UnableToReplicate  EventType = "unable.to.replicate"
 )
 
-// --- TABLE-LEVEL EVENTS  ---
-
 const (
-	// TableStarted - Individual table processing started
-	TableStarted EventType = "table.started"
-
-	// TableCompleted - Individual table processing completed
+	TableStarted   EventType = "table.started"
 	TableCompleted EventType = "table.completed"
-
-	// TableFailed - Individual table processing failed
-	TableFailed EventType = "table.failed"
-
-	// TableSkipped - Table intentionally skipped (e.g., filter rules, regex mismatch)
-	TableSkipped EventType = "table.skipped"
-
-	// TableEmpty - Table has no data to process
-	TableEmpty EventType = "table.empty"
+	TableFailed    EventType = "table.failed"
+	TableSkipped   EventType = "table.skipped"
+	TableEmpty     EventType = "table.empty"
 )
 
-// --- PROGRESS EVENTS  ---
-
 const (
-	// BackfillProgress - Periodic progress updates during snapshot
 	BackfillProgress EventType = "backfill.progress"
 )
 
-// --- DEDUPE & DATA QUALITY EVENTS  ---
-
 const (
-	// DedupeStarted - Deduplication operation started
-	DedupeStarted EventType = "dedupe.started"
-
-	// DedupeCompleted - Deduplication completed
+	DedupeStarted   EventType = "dedupe.started"
 	DedupeCompleted EventType = "dedupe.completed"
-
-	// DedupeFailed - Deduplication failed
-	DedupeFailed EventType = "dedupe.failed"
+	DedupeFailed    EventType = "dedupe.failed"
 )
 
-// --- CONNECTION EVENTS  ---
-
 const (
-	// ConnectionEstablished - Connection to source/destination established
 	ConnectionEstablished EventType = "connection.established"
-
-	// ConnectionLost - Connection lost (before retry)
-	ConnectionLost EventType = "connection.lost"
-
-	// ConnectionRetry - Attempting to reconnect
-	ConnectionRetry EventType = "connection.retry"
-
-	// ConnectionFailed - Connection permanently failed after retries
-	ConnectionFailed EventType = "connection.failed"
+	ConnectionLost        EventType = "connection.lost"
+	ConnectionRetry       EventType = "connection.retry"
+	ConnectionFailed      EventType = "connection.failed"
 )
-
-// --- CONFIGURATION EVENTS  ---
 
 const (
-	// ConfigValidated - Configuration validated successfully
 	ConfigValidated EventType = "config.validated"
-
-	// ConfigInvalid - Configuration validation failed
-	ConfigInvalid EventType = "config.invalid"
+	ConfigInvalid   EventType = "config.invalid"
 )
 
-// ============================================================================
-// HELPER TYPES FOR COMMON EVENT PROPERTIES
-// ============================================================================
-
-// ProgressProperties contains common fields for progress events
 type ProgressProperties struct {
 	RowsWritten         int64         `json:"rows_written"`
 	Duration            time.Duration `json:"duration"`
@@ -112,7 +71,6 @@ type ProgressProperties struct {
 	ThroughputPerSecond float64       `json:"throughput_per_second,omitempty"`
 }
 
-// TableProperties contains common fields for table events
 type TableProperties struct {
 	Table    string `json:"table"`
 	Schema   string `json:"schema,omitempty"`
@@ -120,7 +78,6 @@ type TableProperties struct {
 	RowCount int64  `json:"row_count,omitempty"`
 }
 
-// ConnectionProperties contains fields for connection events
 type ConnectionProperties struct {
 	Host            string        `json:"host,omitempty"`
 	Port            int           `json:"port,omitempty"`
@@ -130,7 +87,6 @@ type ConnectionProperties struct {
 	MaxRetries      int           `json:"max_retries,omitempty"`
 }
 
-// ErrorProperties contains fields for error events
 type ErrorProperties struct {
 	Error             string `json:"error"`
 	StackTrace        string `json:"stack_trace,omitempty"`
@@ -146,24 +102,19 @@ var AllReadyEventTypes = []EventType{
 	ReplicationStarted,
 	ReplicationFailed,
 	UnableToReplicate,
-
 	TableStarted,
 	TableCompleted,
 	TableFailed,
 	TableSkipped,
 	TableEmpty,
-
 	BackfillProgress,
-
 	DedupeStarted,
 	DedupeCompleted,
 	DedupeFailed,
-
 	ConnectionEstablished,
 	ConnectionLost,
 	ConnectionRetry,
 	ConnectionFailed,
-
 	ConfigValidated,
 	ConfigInvalid,
 }
