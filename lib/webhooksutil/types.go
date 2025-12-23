@@ -20,7 +20,7 @@ const (
 	UnableToReplicate  EventType = "unable.to.replicate"
 )
 
-// --- TABLE-LEVEL EVENTS (5 events) ---
+// --- TABLE-LEVEL EVENTS  ---
 
 const (
 	// TableStarted - Individual table processing started
@@ -39,14 +39,14 @@ const (
 	TableEmpty EventType = "table.empty"
 )
 
-// --- PROGRESS EVENTS (1 event) ---
+// --- PROGRESS EVENTS  ---
 
 const (
 	// BackfillProgress - Periodic progress updates during snapshot
 	BackfillProgress EventType = "backfill.progress"
 )
 
-// --- DEDUPE & DATA QUALITY EVENTS (3 events) ---
+// --- DEDUPE & DATA QUALITY EVENTS  ---
 
 const (
 	// DedupeStarted - Deduplication operation started
@@ -59,7 +59,7 @@ const (
 	DedupeFailed EventType = "dedupe.failed"
 )
 
-// --- CONNECTION EVENTS (4 events) ---
+// --- CONNECTION EVENTS  ---
 
 const (
 	// ConnectionEstablished - Connection to source/destination established
@@ -75,7 +75,7 @@ const (
 	ConnectionFailed EventType = "connection.failed"
 )
 
-// --- CONFIGURATION EVENTS (2 events) ---
+// --- CONFIGURATION EVENTS  ---
 
 const (
 	// ConfigValidated - Configuration validated successfully
@@ -124,18 +124,7 @@ type ErrorProperties struct {
 	Fatal             bool   `json:"fatal,omitempty"`
 }
 
-// ============================================================================
-// SEVERITY MAPPING HELPERS
-// ============================================================================
-
-// ============================================================================
-// ALL READY EVENT TYPES (for iteration/validation)
-// ============================================================================
-
-// AllReadyEventTypes contains all event types that are ready to use now
-// 6 existing + 15 new = 21 total
 var AllReadyEventTypes = []EventType{
-	// Existing (6)
 	EventBackFillStarted,
 	EventBackFillCompleted,
 	EventBackFillFailed,
@@ -143,85 +132,23 @@ var AllReadyEventTypes = []EventType{
 	ReplicationFailed,
 	UnableToReplicate,
 
-	// New - Table (5)
 	TableStarted,
 	TableCompleted,
 	TableFailed,
 	TableSkipped,
 	TableEmpty,
 
-	// New - Progress (1)
 	BackfillProgress,
 
-	// New - Dedupe (3)
 	DedupeStarted,
 	DedupeCompleted,
 	DedupeFailed,
 
-	// New - Connection (4)
 	ConnectionEstablished,
 	ConnectionLost,
 	ConnectionRetry,
 	ConnectionFailed,
 
-	// New - Config (2)
 	ConfigValidated,
 	ConfigInvalid,
 }
-
-// ============================================================================
-// USAGE EXAMPLES
-// ============================================================================
-
-/*
-Example usage in reader:
-
-// Table started
-webhookClient.SendEvent(ctx, TableStarted, map[string]any{
-	"table": "users",
-	"schema": "public",
-	"database": "production_db",
-	"operation_type": "snapshot",
-})
-
-// Table completed
-webhookClient.SendEvent(ctx, TableCompleted, map[string]any{
-	"table": "users",
-	"schema": "public",
-	"database": "production_db",
-	"rows_written": 1500000,
-	"duration_seconds": 145.5,
-	"throughput_per_second": 10309.3,
-})
-
-// Backfill progress (emit every 100k rows)
-webhookClient.SendEvent(ctx, BackfillProgress, map[string]any{
-	"table": "orders",
-	"rows_written": 250000,
-	"total_duration_seconds": 45.2,
-	"batch_size": 10000,
-	"batch_duration_seconds": 1.8,
-})
-
-// Dedupe started
-webhookClient.SendEvent(ctx, DedupeStarted, map[string]any{
-	"table": "customers",
-	"schema": "public",
-	"database": "production_db",
-	"primary_keys": []string{"id"},
-	"rows_to_dedupe": 1500000,
-})
-
-// Connection established
-webhookClient.SendEvent(ctx, ConnectionEstablished, map[string]any{
-	"database_type": "postgres",
-	"database": "production_db",
-})
-
-// Config validated
-webhookClient.SendEvent(ctx, ConfigValidated, map[string]any{
-	"source": "postgres",
-	"destination": "snowflake",
-	"mode": "snapshot",
-})
-*/
