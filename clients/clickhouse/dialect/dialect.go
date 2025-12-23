@@ -93,7 +93,7 @@ func (ClickhouseDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, temp
 		// So we only add it to the engine definition section instead.
 		return fmt.Sprintf("CREATE TABLE %s (%s) ENGINE = ReplacingMergeTree(%s, %s);", tableID.FullyQualifiedName(), strings.Join(finalColSQLParts, ","), _dialect.QuoteIdentifier(constants.UpdateColumnMarker), _dialect.QuoteIdentifier(constants.DeleteColumnMarker))
 	} else {
-		return fmt.Sprintf("CREATE TABLE %s (%s) ENGINE = MergeTree();", tableID.FullyQualifiedName(), strings.Join(colSQLParts, ","))
+		return fmt.Sprintf("CREATE TABLE %s (%s) ENGINE = MergeTree() ORDER BY %s;", tableID.FullyQualifiedName(), strings.Join(colSQLParts, ","), _dialect.QuoteIdentifier(constants.UpdateColumnMarker))
 	}
 }
 
