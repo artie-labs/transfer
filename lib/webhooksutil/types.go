@@ -3,27 +3,7 @@ package webhooksutil
 import "time"
 
 type EventType string
-type Severity string
-type Source string
 
-const (
-	Transfer  Source = "transfer"
-	Reader    Source = "reader"
-	Debezium  Source = "debezium"
-	EventsAPI Source = "events-api"
-)
-
-type WebhooksEvent struct {
-	Event      string         `json:"event"`
-	Timestamp  time.Time      `json:"timestamp"`
-	Properties map[string]any `json:"properties"`
-}
-
-const (
-	SeverityInfo    Severity = "info"
-	SeverityWarning Severity = "warning"
-	SeverityError   Severity = "error"
-)
 const (
 	EventBackFillStarted   EventType = "backfill.started"
 	EventBackFillCompleted EventType = "backfill.completed"
@@ -64,6 +44,55 @@ const (
 	ConfigInvalid   EventType = "config.invalid"
 )
 
+// AllEventTypes contains all defined event types
+// Add new event types here when you define them above
+var AllEventTypes = []EventType{
+	EventBackFillStarted,
+	EventBackFillCompleted,
+	EventBackFillFailed,
+	ReplicationStarted,
+	ReplicationFailed,
+	UnableToReplicate,
+	TableStarted,
+	TableCompleted,
+	TableFailed,
+	TableSkipped,
+	TableEmpty,
+	BackfillProgress,
+	DedupeStarted,
+	DedupeCompleted,
+	DedupeFailed,
+	ConnectionEstablished,
+	ConnectionLost,
+	ConnectionRetry,
+	ConnectionFailed,
+	ConfigValidated,
+	ConfigInvalid,
+}
+
+type Severity string
+
+const (
+	SeverityInfo    Severity = "info"
+	SeverityWarning Severity = "warning"
+	SeverityError   Severity = "error"
+)
+
+type Source string
+
+const (
+	Transfer  Source = "transfer"
+	Reader    Source = "reader"
+	Debezium  Source = "debezium"
+	EventsAPI Source = "eventsAPI"
+)
+
+type WebhooksEvent struct {
+	Event      string         `json:"event"`
+	Timestamp  time.Time      `json:"timestamp"`
+	Properties map[string]any `json:"properties"`
+}
+
 type ProgressProperties struct {
 	RowsWritten         int64         `json:"rows_written"`
 	Duration            time.Duration `json:"duration"`
@@ -93,28 +122,4 @@ type ErrorProperties struct {
 	RetryCount        int    `json:"retry_count,omitempty"`
 	ConsecutiveErrors int    `json:"consecutive_errors,omitempty"`
 	Fatal             bool   `json:"fatal,omitempty"`
-}
-
-var AllReadyEventTypes = []EventType{
-	EventBackFillStarted,
-	EventBackFillCompleted,
-	EventBackFillFailed,
-	ReplicationStarted,
-	ReplicationFailed,
-	UnableToReplicate,
-	TableStarted,
-	TableCompleted,
-	TableFailed,
-	TableSkipped,
-	TableEmpty,
-	BackfillProgress,
-	DedupeStarted,
-	DedupeCompleted,
-	DedupeFailed,
-	ConnectionEstablished,
-	ConnectionLost,
-	ConnectionRetry,
-	ConnectionFailed,
-	ConfigValidated,
-	ConfigInvalid,
 }
