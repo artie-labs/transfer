@@ -1,83 +1,60 @@
 package webhooksutil
 
-import "context"
+import "log/slog"
 
-func IsErrorEvent(eventType EventType) bool {
-	return GetEventSeverity(eventType) == SeverityError
+// EventMetadata contains all metadata for an event type.
+type EventMetadata struct {
+	Severity Severity
+	Category string
+	Message  string
 }
 
-func IsWarningEvent(eventType EventType) bool {
-	return GetEventSeverity(eventType) == SeverityWarning
+var eventMetadataMap = map[EventType]EventMetadata{
+	// Backfill events
+	EventBackFillStarted:   {SeverityInfo, "backfill", "Backfill started"},
+	EventBackFillCompleted: {SeverityInfo, "backfill", "Backfill completed"},
+	EventBackFillFailed:    {SeverityError, "backfill", "Backfill failed"},
+	BackfillProgress:       {SeverityInfo, "backfill", "Backfill progress"},
+	// Replication events
+	ReplicationStarted: {SeverityInfo, "replication", "Replication started"},
+	ReplicationFailed:  {SeverityError, "replication", "Replication failed"},
+	UnableToReplicate:  {SeverityError, "replication", "Unable to replicate"},
+	// Table events
+	TableStarted:   {SeverityInfo, "table", "Table processing started"},
+	TableCompleted: {SeverityInfo, "table", "Table processing completed"},
+	TableFailed:    {SeverityError, "table", "Table processing failed"},
+	TableSkipped:   {SeverityWarning, "table", "Table skipped"},
+	TableEmpty:     {SeverityInfo, "table", "Table is empty"},
+	// Dedupe events
+	DedupeStarted:   {SeverityInfo, "data_quality", "Deduplication started"},
+	DedupeCompleted: {SeverityInfo, "data_quality", "Deduplication completed"},
+	DedupeFailed:    {SeverityError, "data_quality", "Deduplication failed"},
+	// Connection events
+	ConnectionEstablished: {SeverityInfo, "connection", "Connection established"},
+	ConnectionLost:        {SeverityWarning, "connection", "Connection lost"},
+	ConnectionRetry:       {SeverityWarning, "connection", "Connection retry"},
+	ConnectionFailed:      {SeverityError, "connection", "Connection failed"},
+	// Configuration events
+	ConfigValidated: {SeverityInfo, "configuration", "Configuration validated"},
+	ConfigInvalid:   {SeverityError, "configuration", "Configuration invalid"},
 }
 
-func (w *WebhooksClient) SendBackfillStarted(ctx context.Context, properties map[string]any) error {
-	return w.SendEvent(ctx, EventBackFillStarted, properties)
+func GetEventMetadata(eventType EventType) EventMetadata {
+	if metadata, ok := eventMetadataMap[eventType]; ok {
+		return metadata
+	}
+	slog.Error("Unknown event type", "eventType", eventType)
+	return EventMetadata{SeverityInfo, "operation", "Unknown event type"}
 }
 
-func (w *WebhooksClient) SendBackfillCompleted(ctx context.Context, properties map[string]any) error {
-	return w.SendEvent(ctx, EventBackFillCompleted, properties)
+func GetEventSeverity(eventType EventType) Severity {
+	return GetEventMetadata(eventType).Severity
 }
 
-func (w *WebhooksClient) SendBackfillFailed(ctx context.Context, properties map[string]any) error {
-	return w.SendEvent(ctx, EventBackFillFailed, properties)
+func GetEventCategory(eventType EventType) string {
+	return GetEventMetadata(eventType).Category
 }
 
-func (w *WebhooksClient) SendBackfillProgress(ctx context.Context, properties map[string]any) error {
-	return w.SendEvent(ctx, BackfillProgress, properties)
-}
-
-func (w *WebhooksClient) SendReplicationStarted(ctx context.Context, properties map[string]any) error {
-	return w.SendEvent(ctx, ReplicationStarted, properties)
-}
-
-func (w *WebhooksClient) SendUnableToReplicate(ctx context.Context, properties map[string]any) error {
-	return w.SendEvent(ctx, UnableToReplicate, properties)
-}
-
-func (w *WebhooksClient) SendTableStarted(ctx context.Context, properties map[string]any) error {
-	return w.SendEvent(ctx, TableStarted, properties)
-}
-
-func (w *WebhooksClient) SendTableCompleted(ctx context.Context, properties map[string]any) error {
-	return w.SendEvent(ctx, TableCompleted, properties)
-}
-
-func (w *WebhooksClient) SendTableFailed(ctx context.Context, properties map[string]any) error {
-	return w.SendEvent(ctx, TableFailed, properties)
-}
-
-func (w *WebhooksClient) SendTableSkipped(ctx context.Context, properties map[string]any) error {
-	return w.SendEvent(ctx, TableSkipped, properties)
-}
-
-func (w *WebhooksClient) SendTableEmpty(ctx context.Context, properties map[string]any) error {
-	return w.SendEvent(ctx, TableEmpty, properties)
-}
-
-func (w *WebhooksClient) SendDedupeStarted(ctx context.Context, properties map[string]any) error {
-	return w.SendEvent(ctx, DedupeStarted, properties)
-}
-
-func (w *WebhooksClient) SendDedupeCompleted(ctx context.Context, properties map[string]any) error {
-	return w.SendEvent(ctx, DedupeCompleted, properties)
-}
-
-func (w *WebhooksClient) SendDedupeFailed(ctx context.Context, properties map[string]any) error {
-	return w.SendEvent(ctx, DedupeFailed, properties)
-}
-
-func (w *WebhooksClient) SendConnectionEstablished(ctx context.Context, properties map[string]any) error {
-	return w.SendEvent(ctx, ConnectionEstablished, properties)
-}
-
-func (w *WebhooksClient) SendConnectionLost(ctx context.Context, properties map[string]any) error {
-	return w.SendEvent(ctx, ConnectionLost, properties)
-}
-
-func (w *WebhooksClient) SendConnectionRetry(ctx context.Context, properties map[string]any) error {
-	return w.SendEvent(ctx, ConnectionRetry, properties)
-}
-
-func (w *WebhooksClient) SendConnectionFailed(ctx context.Context, properties map[string]any) error {
-	return w.SendEvent(ctx, ConnectionFailed, properties)
+func GetEventMessage(eventType EventType) string {
+	return GetEventMetadata(eventType).Message
 }
