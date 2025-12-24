@@ -25,6 +25,8 @@ func init() {
 	_ = gosnowflake.GetLogger().SetLogLevel("fatal")
 }
 
+var _dialect = dialect.SnowflakeDialect{}
+
 type Store struct {
 	db.Store
 	configMap *types.DestinationTableConfigMap
@@ -80,7 +82,7 @@ func (s *Store) Dialect() sql.Dialect {
 }
 
 func (s *Store) dialect() dialect.SnowflakeDialect {
-	return dialect.SnowflakeDialect{}
+	return _dialect
 }
 
 func (s *Store) GetConfigMap() *types.DestinationTableConfigMap {
