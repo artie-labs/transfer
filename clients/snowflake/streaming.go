@@ -162,12 +162,7 @@ func (s *SnowpipeStreamingChannelManager) LoadData(ctx context.Context, db, sche
 		maxChunkSize,
 		true,
 		func(row optimization.Row) ([]byte, error) {
-			originalRow := row.GetData()
-			finalRow := make(map[string]any)
-			for key, value := range originalRow {
-				finalRow[strings.ToUpper(key)] = value
-			}
-			rowBytes, err := jsoniter.Marshal(finalRow)
+			rowBytes, err := jsoniter.Marshal(_dialect.NormalizeColumnNames(row))
 			if err != nil {
 				return nil, err
 			}
