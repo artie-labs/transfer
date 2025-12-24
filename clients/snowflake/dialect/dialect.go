@@ -36,12 +36,12 @@ func (SnowflakeDialect) QuoteIdentifier(identifier string) string {
 	return fmt.Sprintf(`"%s"`, strings.ToUpper(strings.ReplaceAll(identifier, `"`, ``)))
 }
 
-func (SnowflakeDialect) NormalizeColumnNames(row optimization.Row) map[string]any {
+func (SnowflakeDialect) NormalizeColumnNames(row optimization.Row) optimization.Row {
 	normalizedRow := make(map[string]any)
 	for key, value := range row.GetData() {
 		normalizedRow[strings.ToUpper(key)] = value
 	}
-	return normalizedRow
+	return optimization.NewRow(normalizedRow)
 }
 
 func (SnowflakeDialect) EscapeStruct(value string) string {
