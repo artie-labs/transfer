@@ -94,32 +94,32 @@ type WebhooksEvent struct {
 }
 
 type ProgressProperties struct {
-	RowsWritten         int64         `json:"rows_written"`
+	RowsWritten         int64         `json:"rowsWritten"`
 	Duration            time.Duration `json:"duration"`
-	EstimatedCompletion *time.Time    `json:"estimated_completion,omitempty"`
-	ThroughputPerSecond float64       `json:"throughput_per_second,omitempty"`
+	EstimatedCompletion *time.Time    `json:"estimatedCompletion,omitempty"`
+	ThroughputPerSecond float64       `json:"throughputPerSecond,omitempty"`
 }
 
 type TableProperties struct {
 	Table    string `json:"table"`
 	Schema   string `json:"schema,omitempty"`
 	Database string `json:"database,omitempty"`
-	RowCount int64  `json:"row_count,omitempty"`
+	RowCount int64  `json:"rowCount,omitempty"`
 }
 
 type ConnectionProperties struct {
 	Host            string        `json:"host,omitempty"`
 	Port            int           `json:"port,omitempty"`
-	DatabaseType    string        `json:"database_type"` // postgres, mysql, mssql, mongodb, etc.
-	RetryCount      int           `json:"retry_count,omitempty"`
-	BackoffDuration time.Duration `json:"backoff_duration,omitempty"`
-	MaxRetries      int           `json:"max_retries,omitempty"`
+	DatabaseType    string        `json:"databaseType"` // postgres, mysql, mssql, mongodb, etc.
+	RetryCount      int           `json:"retryCount,omitempty"`
+	BackoffDuration time.Duration `json:"backoffDuration,omitempty"`
+	MaxRetries      int           `json:"maxRetries,omitempty"`
 }
 
 type ErrorProperties struct {
 	Error             string `json:"error"`
-	StackTrace        string `json:"stack_trace,omitempty"`
-	RetryCount        int    `json:"retry_count,omitempty"`
-	ConsecutiveErrors int    `json:"consecutive_errors,omitempty"`
+	StackTrace        string `json:"stackTrace,omitempty"`
+	RetryCount        int    `json:"retryCount,omitempty"`
+	ConsecutiveErrors int    `json:"consecutiveErrors,omitempty"`
 	Fatal             bool   `json:"fatal,omitempty"`
 }
