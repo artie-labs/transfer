@@ -2,55 +2,6 @@ package webhooksutil
 
 import "context"
 
-// GetEventSeverity returns the appropriate severity for an event type
-func GetEventSeverity(eventType EventType) Severity {
-	switch eventType {
-	// Error severity
-	case EventBackFillFailed, ReplicationFailed, UnableToReplicate,
-		TableFailed, DedupeFailed, ConnectionFailed, ConfigInvalid:
-		return SeverityError
-
-	// Warning severity
-	case TableSkipped, ConnectionLost, ConnectionRetry:
-		return SeverityWarning
-
-	// Info severity (default)
-	case EventBackFillStarted, EventBackFillCompleted, ReplicationStarted,
-		TableStarted, TableCompleted, TableEmpty,
-		BackfillProgress, DedupeStarted, DedupeCompleted,
-		ConnectionEstablished, ConfigValidated:
-		return SeverityInfo
-
-	default:
-		return SeverityInfo
-	}
-}
-
-func GetEventCategory(eventType EventType) string {
-	switch eventType {
-	case EventBackFillStarted, EventBackFillCompleted, EventBackFillFailed, BackfillProgress:
-		return "backfill"
-
-	case ReplicationStarted, ReplicationFailed, UnableToReplicate:
-		return "replication"
-
-	case TableStarted, TableCompleted, TableFailed, TableSkipped, TableEmpty:
-		return "table"
-
-	case DedupeStarted, DedupeCompleted, DedupeFailed:
-		return "data_quality"
-
-	case ConnectionEstablished, ConnectionLost, ConnectionRetry, ConnectionFailed:
-		return "connection"
-
-	case ConfigValidated, ConfigInvalid:
-		return "configuration"
-
-	default:
-		return "operation"
-	}
-}
-
 func IsErrorEvent(eventType EventType) bool {
 	return GetEventSeverity(eventType) == SeverityError
 }
