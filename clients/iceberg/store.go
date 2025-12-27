@@ -19,6 +19,7 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing/columns"
+	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
 )
 
 type Store struct {
@@ -46,7 +47,7 @@ func (s Store) Dialect() dialect.IcebergDialect {
 	return dialect.IcebergDialect{}
 }
 
-func (s Store) Append(ctx context.Context, tableData *optimization.TableData, useTempTable bool) error {
+func (s Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, useTempTable bool) error {
 	if tableData.ShouldSkipUpdate() {
 		return nil
 	}
@@ -132,7 +133,7 @@ func (s Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier, 
 	return tableCfg, nil
 }
 
-func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
+func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client) (bool, error) {
 	if tableData.ShouldSkipUpdate() {
 		return false, nil
 	}
@@ -220,6 +221,15 @@ func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryK
 	}
 
 	return nil
+}
+
+func (s Store) SweepTemporaryTables(ctx context.Context, _ *webhooksclient.Client) error {
+	namespaces := make(map[string]bool)
+	for _, tc := range s.config.Kafka.TopicConfigs {
+		namespaces[tc.Schema] = true
+	}
+
+	return SweepTemporaryTables(ctx, s.s3TablesAPI, s.Dialect(), slices.Collect(maps.Keys(namespaces)))
 }
 
 func (s Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, table string) sql.TableIdentifier {

@@ -8,11 +8,12 @@ import (
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/kafkalib"
+	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
 )
 
 type GetQueryFunc func(dbName, schemaName string) (string, []any)
 
-func Sweep(ctx context.Context, dest destination.Destination, topicConfigs []*kafkalib.TopicConfig, getQueryFunc GetQueryFunc) error {
+func Sweep(ctx context.Context, dest destination.Destination, topicConfigs []*kafkalib.TopicConfig, whClient *webhooksclient.Client, getQueryFunc GetQueryFunc) error {
 	slog.Info("Looking to see if there are any dangling artie temporary tables to delete...")
 	for _, dbAndSchemaPair := range kafkalib.GetUniqueDatabaseAndSchemaPairs(topicConfigs) {
 		query, args := getQueryFunc(dbAndSchemaPair.Database, dbAndSchemaPair.Schema)

@@ -95,7 +95,7 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 
 				result, err := retry.WithRetriesAndResult(retryCfg, func(_ int, _ error) (flushResult, error) {
 					slog.Info("Flushing table", slog.String("tableID", table.GetTableID().String()), slog.String("reason", args.Reason))
-					return flush(ctx, dest, table)
+					return flush(ctx, dest, table, whClient)
 				})
 				if err != nil {
 					tags["what"] = result.What
@@ -142,7 +142,7 @@ type flushResult struct {
 	CommitOffset bool
 }
 
-func flush(ctx context.Context, dest destination.Baseline, _tableData *models.TableData) (flushResult, error) {
+func flush(ctx context.Context, dest destination.Baseline, _tableData *models.TableData, whClient *webhooksclient.Client) (flushResult, error) {
 	// This is added so that we have a new temporary table suffix for each merge / append.
 	_tableData.ResetTempTableSuffix()
 
@@ -152,14 +152,14 @@ func flush(ctx context.Context, dest destination.Baseline, _tableData *models.Ta
 	}
 
 	if mode == config.History || _tableData.TopicConfig().AppendOnly {
-		err := dest.Append(ctx, _tableData.TableData, false)
+		err := dest.Append(ctx, _tableData.TableData, whClient, false)
 		if err != nil {
 			return flushResult{What: "merge_fail"}, fmt.Errorf("failed to append: %w", err)
 		}
 
 		return flushResult{What: "success", CommitOffset: true}, nil
 	} else {
-		commitTransaction, err := dest.Merge(ctx, _tableData.TableData)
+		commitTransaction, err := dest.Merge(ctx, _tableData.TableData, whClient)
 		if err != nil {
 			return flushResult{What: "merge_fail"}, fmt.Errorf("failed to merge: %w", err)
 		}

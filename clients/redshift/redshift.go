@@ -18,6 +18,7 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
+	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
 )
 
 type Store struct {
@@ -76,12 +77,12 @@ func (s *Store) TruncateTable(ctx context.Context, tableID sql.TableIdentifier) 
 	return nil
 }
 
-func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, _ bool) error {
-	return shared.Append(ctx, s, tableData, types.AdditionalSettings{})
+func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, _ bool) error {
+	return shared.Append(ctx, s, tableData, whClient, types.AdditionalSettings{})
 }
 
-func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
-	if err := shared.Merge(ctx, s, tableData, types.MergeOpts{}); err != nil {
+func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client) (bool, error) {
+	if err := shared.Merge(ctx, s, tableData, types.MergeOpts{}, whClient); err != nil {
 		return false, fmt.Errorf("failed to merge: %w", err)
 	}
 
@@ -120,8 +121,8 @@ func (s *Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier,
 	}.GetTableConfig(ctx)
 }
 
-func (s *Store) SweepTemporaryTables(ctx context.Context) error {
-	return shared.Sweep(ctx, s, s.config.TopicConfigs(), s.dialect().BuildSweepQuery)
+func (s *Store) SweepTemporaryTables(ctx context.Context, whClient *webhooksclient.Client) error {
+	return shared.Sweep(ctx, s, s.config.TopicConfigs(), whClient, s.dialect().BuildSweepQuery)
 }
 
 func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {

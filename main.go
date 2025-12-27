@@ -79,7 +79,7 @@ func main() {
 			logger.Fatal("Unable to load destination", slog.Any("err", err))
 		}
 
-		if err = _dest.SweepTemporaryTables(ctx); err != nil {
+		if err = _dest.SweepTemporaryTables(ctx, whClient); err != nil {
 			logger.Fatal("Failed to clean up temporary tables", slog.Any("err", err))
 		}
 
