@@ -223,15 +223,6 @@ func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryK
 	return nil
 }
 
-func (s Store) SweepTemporaryTables(ctx context.Context, _ *webhooksclient.Client) error {
-	namespaces := make(map[string]bool)
-	for _, tc := range s.config.Kafka.TopicConfigs {
-		namespaces[tc.Schema] = true
-	}
-
-	return SweepTemporaryTables(ctx, s.s3TablesAPI, s.Dialect(), slices.Collect(maps.Keys(namespaces)))
-}
-
 func (s Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, table string) sql.TableIdentifier {
 	return dialect.NewTableIdentifier(s.catalogName, databaseAndSchema.Schema, table)
 }

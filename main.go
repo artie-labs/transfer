@@ -40,6 +40,7 @@ func main() {
 		logger.Fatal("Failed to initialize config", slog.Any("err", err))
 	}
 
+	// Initialize default logger
 	_logger, cleanUpHandlers := logger.NewLogger(settings.VerboseLogging, settings.Config.Reporting.Sentry, version)
 	slog.SetDefault(_logger)
 
