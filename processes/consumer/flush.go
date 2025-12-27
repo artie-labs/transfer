@@ -14,6 +14,8 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/retry"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
+	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
+	"github.com/artie-labs/transfer/lib/webhooksutil"
 	"github.com/artie-labs/transfer/models"
 )
 
@@ -24,13 +26,13 @@ type Args struct {
 	Reason string
 }
 
-func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, topics []string, args Args) error {
+func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, whClient *webhooksclient.Client, topics []string, args Args) error {
 	if inMemDB == nil {
 		return nil
 	}
 
 	for _, topic := range topics {
-		if err := FlushSingleTopic(ctx, inMemDB, dest, metricsClient, args, topic, true); err != nil {
+		if err := FlushSingleTopic(ctx, inMemDB, dest, metricsClient, whClient, args, topic, true); err != nil {
 			slog.Error("Failed to flush topic", slog.String("topic", topic), slog.Any("err", err))
 		}
 	}
@@ -38,7 +40,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 	return nil
 }
 
-func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, args Args, topic string, shouldLock bool) error {
+func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, whClient *webhooksclient.Client, args Args, topic string, shouldLock bool) error {
 	if inMemDB == nil {
 		return nil
 	}
@@ -111,6 +113,10 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 		}
 
 		if err = grp.Wait(); err != nil {
+			whClient.SendEvent(ctx, webhooksutil.TableFailed, map[string]any{
+				"topic": topic,
+				"error": err.Error(),
+			})
 			return fmt.Errorf("failed to flush table: %w", err)
 		}
 

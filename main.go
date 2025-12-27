@@ -17,6 +17,8 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
+	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
+	"github.com/artie-labs/transfer/lib/webhooksutil"
 	"github.com/artie-labs/transfer/models"
 	"github.com/artie-labs/transfer/processes/consumer"
 	"github.com/artie-labs/transfer/processes/pool"
@@ -30,6 +32,9 @@ func main() {
 	if err != nil {
 		logger.Fatal("Failed to initialize config", slog.Any("err", err))
 	}
+
+	// Initialize webhooks client
+	whClient := webhooksclient.NewFromConfig(settings.Config.WebhookSettings)
 
 	// Initialize default logger
 	_logger, cleanUpHandlers := logger.NewLogger(settings.VerboseLogging, settings.Config.Reporting.Sentry, version)
@@ -82,6 +87,10 @@ func main() {
 	}
 
 	slog.Info("Starting...", slog.String("version", version))
+	whClient.SendEvent(ctx, webhooksutil.ReplicationStarted, map[string]any{
+		"version": version,
+		"mode":    settings.Config.Mode,
+	})
 
 	inMemDB := models.NewMemoryDB()
 	switch settings.Config.KafkaClient {
@@ -103,7 +112,7 @@ func main() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		pool.StartPool(ctx, inMemDB, dest, metricsClient, settings.Config.Kafka.Topics(), time.Duration(settings.Config.FlushIntervalSeconds)*time.Second)
+		pool.StartPool(ctx, inMemDB, dest, metricsClient, whClient, settings.Config.Kafka.Topics(), time.Duration(settings.Config.FlushIntervalSeconds)*time.Second)
 	}()
 
 	wg.Add(1)
@@ -111,7 +120,7 @@ func main() {
 		defer wg.Done()
 		switch settings.Config.Queue {
 		case constants.Kafka:
-			consumer.StartKafkaConsumer(ctx, settings.Config, inMemDB, dest, metricsClient)
+			consumer.StartKafkaConsumer(ctx, settings.Config, inMemDB, dest, metricsClient, whClient)
 		default:
 			logger.Fatal(fmt.Sprintf("Message queue: %q not supported", settings.Config.Queue))
 		}
