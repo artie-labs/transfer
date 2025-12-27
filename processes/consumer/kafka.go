@@ -42,11 +42,6 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 			for {
 				kafkaConsumer, err := kafkalib.GetConsumerFromContext(ctx, topic)
 				if err != nil {
-					whClient.SendEvent(ctx, webhooksutil.ReplicationFailed, map[string]any{
-						"error":   "Failed to get consumer from context",
-						"details": err.Error(),
-						"topic":   topic,
-					})
 					logger.Fatal("Failed to get consumer from context", slog.Any("err", err))
 				}
 
@@ -65,7 +60,7 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 
 					tableID, err := args.process(ctx, cfg, inMemDB, dest, metricsClient)
 					if err != nil {
-						whClient.SendEvent(ctx, webhooksutil.ReplicationFailed, map[string]any{
+						whClient.SendEvent(ctx, webhooksutil.UnableToReplicate, map[string]any{
 							"error":   "Failed to process message",
 							"details": err.Error(),
 							"topic":   msg.Topic(),
@@ -84,11 +79,6 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 						time.Sleep(500 * time.Millisecond)
 						continue
 					} else {
-						whClient.SendEvent(ctx, webhooksutil.ReplicationFailed, map[string]any{
-							"error":   "Failed to process message",
-							"details": err.Error(),
-							"topic":   topic,
-						})
 						logger.Fatal("Failed to process message", slog.Any("err", err), slog.String("topic", topic))
 					}
 				}

@@ -28,15 +28,18 @@ var version = "dev" // this will be set by the goreleaser configuration to appro
 
 func main() {
 	// Parse args into settings
+	ctx := context.Background()
 	settings, err := config.LoadSettings(os.Args, true)
+	whClient := webhooksclient.NewFromConfig(settings.Config.WebhookSettings)
+
 	if err != nil {
+		whClient.SendEvent(ctx, webhooksutil.ConfigInvalid, map[string]any{
+			"error":   "Failed to initialize config",
+			"details": err.Error(),
+		})
 		logger.Fatal("Failed to initialize config", slog.Any("err", err))
 	}
 
-	// Initialize webhooks client
-	whClient := webhooksclient.NewFromConfig(settings.Config.WebhookSettings)
-
-	// Initialize default logger
 	_logger, cleanUpHandlers := logger.NewLogger(settings.VerboseLogging, settings.Config.Reporting.Sentry, version)
 	slog.SetDefault(_logger)
 
@@ -65,24 +68,37 @@ func main() {
 		slog.Int("flushPoolSizeKb", settings.Config.FlushSizeKb),
 	)
 
-	ctx := context.Background()
 	metricsClient := metrics.LoadExporter(settings.Config)
 	var dest destination.Baseline
 	if utils.IsOutputBaseline(settings.Config) {
 		dest, err = utils.LoadBaseline(ctx, settings.Config)
 		if err != nil {
+			whClient.SendEvent(ctx, webhooksutil.ConnectionFailed, map[string]any{
+				"error":   "unable to connect to destination",
+				"details": err.Error(),
+			})
 			logger.Fatal("Unable to load baseline destination", slog.Any("err", err))
 		}
 	} else {
 		_dest, err := utils.LoadDestination(ctx, settings.Config, nil)
 		if err != nil {
+			whClient.SendEvent(ctx, webhooksutil.ConnectionFailed, map[string]any{
+				"error":   "Unable to load destination",
+				"details": err.Error(),
+			})
 			logger.Fatal("Unable to load destination", slog.Any("err", err))
 		}
 
 		if err = _dest.SweepTemporaryTables(ctx, whClient); err != nil {
+			whClient.SendEvent(ctx, webhooksutil.ConnectionFailed, map[string]any{
+				"error":   "Failed to clean up temporary tables",
+				"details": err.Error(),
+			})
 			logger.Fatal("Failed to clean up temporary tables", slog.Any("err", err))
 		}
-
+		whClient.SendEvent(ctx, webhooksutil.ConnectionEstablished, map[string]any{
+			"mode": settings.Config.Mode,
+		})
 		dest = _dest
 	}
 

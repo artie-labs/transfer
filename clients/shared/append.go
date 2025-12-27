@@ -11,7 +11,7 @@ import (
 	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
 )
 
-func Append(ctx context.Context, dest destination.Destination, tableData *optimization.TableData, whClient *webhooksclient.Client, opts types.AdditionalSettings) error {
+func Append(ctx context.Context, dest destination.Destination, tableData *optimization.TableData, _ *webhooksclient.Client, opts types.AdditionalSettings) error {
 	if tableData.ShouldSkipUpdate() {
 		return nil
 	}

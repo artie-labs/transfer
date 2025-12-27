@@ -16,7 +16,7 @@ import (
 	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
 )
 
-func MultiStepMerge(ctx context.Context, dest destination.Destination, tableData *optimization.TableData, opts types.MergeOpts, whClient *webhooksclient.Client) (bool, error) {
+func MultiStepMerge(ctx context.Context, dest destination.Destination, tableData *optimization.TableData, opts types.MergeOpts, _ *webhooksclient.Client) (bool, error) {
 	if _, ok := dest.Dialect().(dialect.SnowflakeDialect); !ok {
 		return false, fmt.Errorf("multi-step merge is only supported on Snowflake")
 	}
