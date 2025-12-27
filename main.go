@@ -30,7 +30,11 @@ func main() {
 	// Parse args into settings
 	ctx := context.Background()
 	settings, err := config.LoadSettings(os.Args, true)
-	whClient := webhooksclient.NewFromConfig(settings.Config.WebhookSettings)
+	var webhookSettings *config.WebhookSettings
+	if settings != nil {
+		webhookSettings = settings.Config.WebhookSettings
+	}
+	whClient := webhooksclient.NewFromConfig(webhookSettings)
 
 	if err != nil {
 		whClient.SendEvent(ctx, webhooksutil.ConfigInvalid, map[string]any{
