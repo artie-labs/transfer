@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/encoding/protojson"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/numbers"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -197,7 +198,7 @@ func TestRowToMessage(t *testing.T) {
 	desc, err := columnsToMessageDescriptor(columns)
 	assert.NoError(t, err)
 
-	message, err := rowToMessage(row, columns, *desc)
+	message, err := rowToMessage(row, columns, *desc, config.Config{})
 	assert.NoError(t, err)
 
 	bytes, err := protojson.Marshal(message)
