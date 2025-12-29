@@ -15,6 +15,7 @@ import (
 
 	"github.com/artie-labs/transfer/clients/bigquery/converters"
 	"github.com/artie-labs/transfer/lib/array"
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -127,7 +128,7 @@ func encodePacked64DatetimeMicros(dateTime time.Time) int64 {
 	return encodePacked64DatetimeSeconds(dateTime)<<microLength | int64(dateTime.Nanosecond()/1000)
 }
 
-func rowToMessage(row map[string]any, columns []columns.Column, messageDescriptor protoreflect.MessageDescriptor) (*dynamicpb.Message, error) {
+func rowToMessage(row map[string]any, columns []columns.Column, messageDescriptor protoreflect.MessageDescriptor, config config.Config) (*dynamicpb.Message, error) {
 	message := dynamicpb.NewMessage(messageDescriptor)
 	for _, column := range columns {
 		field := message.Descriptor().Fields().ByTextName(column.Name())
@@ -199,8 +200,12 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 		case typing.Date.Kind:
 			_time, err := typing.ParseDateFromAny(value)
 			if err != nil {
-				slog.Warn("failed to cast value to date for column", slog.String("column", column.Name()), slog.Any("value", value), slog.Any("error", err))
-				continue
+				if config.SharedDestinationSettings.SkipBadValues {
+					slog.Warn("failed to cast value to date for column", slog.String("column", column.Name()), slog.Any("value", value), slog.Any("error", err))
+					continue
+				} else {
+					return nil, fmt.Errorf("failed to cast value for column: %q, err: %w", column.Name(), err)
+				}
 			}
 
 			daysSinceEpoch := _time.Unix() / (60 * 60 * 24)
@@ -208,29 +213,45 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 		case typing.Time.Kind:
 			_time, err := typing.ParseTimeFromAny(value)
 			if err != nil {
-				slog.Warn("failed to cast value to time for column", slog.String("column", column.Name()), slog.Any("value", value), slog.Any("error", err))
-				continue
+				if config.SharedDestinationSettings.SkipBadTimestamps {
+					slog.Warn("failed to cast value to time for column", slog.String("column", column.Name()), slog.Any("value", value), slog.Any("error", err))
+					continue
+				} else {
+					return nil, fmt.Errorf("failed to cast value for column: %q, err: %w", column.Name(), err)
+				}
 			}
 
 			message.Set(field, protoreflect.ValueOfInt64(encodePacked64TimeMicros(_time)))
 		case typing.TimestampNTZ.Kind:
 			_time, err := typing.ParseTimestampNTZFromAny(value)
 			if err != nil {
-				slog.Warn("failed to cast value to timestampNTZ for column", slog.String("column", column.Name()), slog.Any("value", value), slog.Any("error", err))
-				continue
+				if config.SharedDestinationSettings.SkipBadTimestamps {
+					slog.Warn("failed to cast value to timestampNTZ for column", slog.String("column", column.Name()), slog.Any("value", value), slog.Any("error", err))
+					continue
+				} else {
+					return nil, fmt.Errorf("failed to cast value to timestampNTZ for column: %q, err: %w", column.Name(), err)
+				}
 			}
 
 			message.Set(field, protoreflect.ValueOfInt64(encodePacked64DatetimeMicros(_time)))
 		case typing.TimestampTZ.Kind:
 			_time, err := typing.ParseTimestampTZFromAny(value)
 			if err != nil {
-				slog.Warn("failed to cast value to timestampTZ for column", slog.String("column", column.Name()), slog.Any("value", value), slog.Any("error", err))
-				continue
+				if config.SharedDestinationSettings.SkipBadTimestamps {
+					slog.Warn("failed to cast value to timestampTZ for column", slog.String("column", column.Name()), slog.Any("value", value), slog.Any("error", err))
+					continue
+				} else {
+					return nil, fmt.Errorf("failed to cast value for column: %q, err: %w", column.Name(), err)
+				}
 			}
 
 			if err = timestamppb.New(_time).CheckValid(); err != nil {
-				slog.Warn("value is not a valid timestamp", slog.String("column", column.Name()), slog.Any("value", _time), slog.Any("error", err))
-				continue
+				if config.SharedDestinationSettings.SkipBadTimestamps {
+					slog.Warn("value is not a valid timestamp", slog.String("column", column.Name()), slog.Any("value", _time), slog.Any("error", err))
+					continue
+				} else {
+					return nil, fmt.Errorf("column: %q, value: %q is not a valid timestamp: %w", column.Name(), _time.String(), err)
+				}
 			}
 
 			message.Set(field, protoreflect.ValueOfInt64(_time.UnixMicro()))
