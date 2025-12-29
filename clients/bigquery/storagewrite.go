@@ -200,7 +200,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 		case typing.Date.Kind:
 			_time, err := typing.ParseDateFromAny(value)
 			if err != nil {
-				if config.SharedDestinationSettings.SkipBadValues {
+				if config.SharedDestinationSettings.SkipBadTimestamps {
 					slog.Warn("failed to cast value to date for column", slog.String("column", column.Name()), slog.Any("value", value), slog.Any("error", err))
 					continue
 				} else {
