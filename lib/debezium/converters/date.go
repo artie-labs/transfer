@@ -26,6 +26,16 @@ func (d Date) Convert(value any) (any, error) {
 		return nil, nil
 	}
 
+	if date.Month() > 12 {
+		slog.Warn("Date exceeds 12 months, setting this to null to avoid encoding errors", slog.Any("month", date.Month()))
+		return nil, nil
+	}
+
+	if date.Day() > 31 {
+		slog.Warn("Date exceeds 31 days, setting this to null to avoid encoding errors", slog.Int("day", date.Day()))
+		return nil, nil
+	}
+
 	// Represents the number of days since the epoch.
 	return date.Format(time.DateOnly), nil
 }
