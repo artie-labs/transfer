@@ -13,45 +13,47 @@ import (
 func TestNewFromConfig(t *testing.T) {
 	{
 		// nil config
-		client := NewFromConfig(nil)
+		client, err := NewFromConfig(nil)
+		assert.NoError(t, err)
 		assert.NotNil(t, client)
 		assert.False(t, client.enabled)
 		assert.Nil(t, client.client)
 	}
 	{
 		// disabled config
-		client := NewFromConfig(&config.WebhookSettings{
+		client, err := NewFromConfig(&config.WebhookSettings{
 			Enabled: false,
 			URL:     "https://example.com",
 			APIKey:  "test-key",
 		})
+		assert.NoError(t, err)
 		assert.NotNil(t, client)
 		assert.False(t, client.enabled)
 		assert.Nil(t, client.client)
 	}
 	{
 		// enabled config missing API key
-		assert.Panics(t, func() {
-			NewFromConfig(&config.WebhookSettings{
-				Enabled: true,
-				URL:     "https://example.com",
-				APIKey:  "",
-			})
+		client, err := NewFromConfig(&config.WebhookSettings{
+			Enabled: true,
+			URL:     "https://example.com",
+			APIKey:  "",
 		})
+		assert.Error(t, err)
+		assert.Nil(t, client)
 	}
 	{
 		// enabled config missing URL
-		assert.Panics(t, func() {
-			NewFromConfig(&config.WebhookSettings{
-				Enabled: true,
-				URL:     "",
-				APIKey:  "test-key",
-			})
+		client, err := NewFromConfig(&config.WebhookSettings{
+			Enabled: true,
+			URL:     "",
+			APIKey:  "test-key",
 		})
+		assert.Error(t, err)
+		assert.Nil(t, client)
 	}
 	{
 		// valid enabled config
-		client := NewFromConfig(&config.WebhookSettings{
+		client, err := NewFromConfig(&config.WebhookSettings{
 			Enabled: true,
 			URL:     "https://example.com/webhook",
 			APIKey:  "test-api-key",
@@ -60,17 +62,19 @@ func TestNewFromConfig(t *testing.T) {
 				"version":     "1.0.0",
 			},
 		})
+		assert.NoError(t, err)
 		assert.NotNil(t, client)
 		assert.True(t, client.enabled)
 		assert.NotNil(t, client.client)
 	}
 	{
 		// valid enabled config without properties
-		client := NewFromConfig(&config.WebhookSettings{
+		client, err := NewFromConfig(&config.WebhookSettings{
 			Enabled: true,
 			URL:     "https://example.com/webhook",
 			APIKey:  "test-api-key",
 		})
+		assert.NoError(t, err)
 		assert.NotNil(t, client)
 		assert.True(t, client.enabled)
 		assert.NotNil(t, client.client)
@@ -213,32 +217,34 @@ func TestClient_SendEvent_AllEventTypes(t *testing.T) {
 func TestNew(t *testing.T) {
 	{
 		// empty API key
-		assert.Panics(t, func() {
-			new("", "https://example.com", nil)
-		})
+		client, err := new("", "https://example.com", nil)
+		assert.Error(t, err)
+		assert.Nil(t, client)
 	}
 	{
 		// empty URL
-		assert.Panics(t, func() {
-			new("test-key", "", nil)
-		})
+		client, err := new("test-key", "", nil)
+		assert.Error(t, err)
+		assert.Nil(t, client)
 	}
 	{
 		// both empty
-		assert.Panics(t, func() {
-			new("", "", nil)
-		})
+		client, err := new("", "", nil)
+		assert.Error(t, err)
+		assert.Nil(t, client)
 	}
 	{
 		// valid inputs
-		client := new("test-api-key", "https://example.com/webhook", map[string]any{"env": "test"})
+		client, err := new("test-api-key", "https://example.com/webhook", map[string]any{"env": "test"})
+		assert.NoError(t, err)
 		assert.NotNil(t, client)
 		assert.True(t, client.enabled)
 		assert.NotNil(t, client.client)
 	}
 	{
 		// valid inputs with nil properties
-		client := new("test-api-key", "https://example.com/webhook", nil)
+		client, err := new("test-api-key", "https://example.com/webhook", nil)
+		assert.NoError(t, err)
 		assert.NotNil(t, client)
 		assert.True(t, client.enabled)
 		assert.NotNil(t, client.client)

@@ -2,10 +2,10 @@ package webhooksclient
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 
 	"github.com/artie-labs/transfer/lib/config"
-	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/webhooksutil"
 )
 
@@ -14,31 +14,29 @@ type Client struct {
 	enabled bool
 }
 
-func new(apiKey, url string, properties map[string]any) *Client {
+func new(apiKey, url string, properties map[string]any) (*Client, error) {
 	if apiKey == "" {
-		logger.Panic("webhook apiKey is required")
+		return nil, fmt.Errorf("webhook apiKey is required")
 	}
 
 	if url == "" {
-		logger.Panic("webhook url is required")
+		return nil, fmt.Errorf("webhook url is required")
 	}
 
 	client, err := webhooksutil.NewWebhooksClient(apiKey, url, webhooksutil.Transfer, properties)
 	if err != nil {
-		logger.Panic("failed to create webhooks client", "error", err)
+		return nil, fmt.Errorf("failed to create webhooks client: %w", err)
 	}
 
 	return &Client{
 		client:  &client,
 		enabled: true,
-	}
+	}, nil
 }
 
-func NewFromConfig(cfg *config.WebhookSettings) *Client {
+func NewFromConfig(cfg *config.WebhookSettings) (*Client, error) {
 	if cfg == nil || !cfg.Enabled {
-		return &Client{
-			enabled: false,
-		}
+		return &Client{}, nil
 	}
 
 	return new(cfg.APIKey, cfg.URL, cfg.Properties)
