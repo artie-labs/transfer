@@ -162,7 +162,7 @@ func (s *SnowpipeStreamingChannelManager) LoadData(ctx context.Context, db, sche
 		maxChunkSize,
 		true,
 		func(row optimization.Row) ([]byte, error) {
-			rowBytes, err := jsoniter.Marshal(row.GetData())
+			rowBytes, err := jsoniter.Marshal(_dialect.NormalizeColumnNames(row).GetData())
 			if err != nil {
 				return nil, err
 			}

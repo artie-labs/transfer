@@ -34,7 +34,7 @@ func (mt *MergeTest) generateInitialData(ctx context.Context, numRows int) error
 		mt.framework.GetTableData().InsertRow(pkValueString, rowData, false)
 	}
 
-	if _, err := mt.framework.GetDestination().Merge(ctx, mt.framework.GetTableData()); err != nil {
+	if _, err := mt.framework.GetDestination().Merge(ctx, mt.framework.GetTableData(), nil); err != nil {
 		return fmt.Errorf("failed to merge initial data: %w", err)
 	}
 
@@ -51,7 +51,7 @@ func (mt *MergeTest) updateExistingData(ctx context.Context, numRows int) error 
 		mt.framework.GetTableData().InsertRow(pkValueString, rowData, false)
 	}
 
-	if _, err := mt.framework.GetDestination().Merge(ctx, mt.framework.GetTableData()); err != nil {
+	if _, err := mt.framework.GetDestination().Merge(ctx, mt.framework.GetTableData(), nil); err != nil {
 		return fmt.Errorf("failed to merge updates: %w", err)
 	}
 
@@ -66,7 +66,7 @@ func (mt *MergeTest) deleteData(ctx context.Context, numRows int) error {
 		mt.framework.GetTableData().InsertRow(pkValueString, rowData, true)
 	}
 
-	if _, err := mt.framework.GetDestination().Merge(ctx, mt.framework.GetTableData()); err != nil {
+	if _, err := mt.framework.GetDestination().Merge(ctx, mt.framework.GetTableData(), nil); err != nil {
 		return fmt.Errorf("failed to merge deletes: %w", err)
 	}
 

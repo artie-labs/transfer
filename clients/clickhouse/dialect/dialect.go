@@ -84,16 +84,22 @@ func (ClickhouseDialect) BuildDropColumnQuery(tableID sql.TableIdentifier, colNa
 }
 
 func (ClickhouseDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, temporary bool, mode config.Mode, colSQLParts []string) string {
-	// We will create temporary tables in Clickhouse the exact same way as we do for permanent tables.
-	// This is because temporary tables are session scoped and this will not work for us as we leverage connection pooling.
 	if mode == config.Replication {
+		// Filter out any existing DeleteColumnMarker column and always add it with type UInt8.
+		var finalColSQLParts []string
+		for _, colSQLPart := range colSQLParts {
+			if !strings.Contains(colSQLPart, constants.DeleteColumnMarker) {
+				finalColSQLParts = append(finalColSQLParts, colSQLPart)
+			}
+		}
 		// We will add the __artie_delete column to the table so that we can use it in ReplacingMergeTree.
-		finalColSQLParts := append(colSQLParts, fmt.Sprintf("%s %s", _dialect.QuoteIdentifier(constants.DeleteColumnMarker), "UInt8"))
+		// https://clickhouse.com/docs/engines/table-engines/mergetree-family/replacingmergetree#is_deleted
+		finalColSQLParts = append(finalColSQLParts, fmt.Sprintf("%s %s", _dialect.QuoteIdentifier(constants.DeleteColumnMarker), "UInt8"))
 		// Adding the __artie_updated_at column in the column definition section of the CREATE TABLE statement will result in "code: 44, message: Cannot add column __artie_updated_at: column with this name already exists"
 		// So we only add it to the engine definition section instead.
 		return fmt.Sprintf("CREATE TABLE %s (%s) ENGINE = ReplacingMergeTree(%s, %s);", tableID.FullyQualifiedName(), strings.Join(finalColSQLParts, ","), _dialect.QuoteIdentifier(constants.UpdateColumnMarker), _dialect.QuoteIdentifier(constants.DeleteColumnMarker))
 	} else {
-		return fmt.Sprintf("CREATE TABLE %s (%s) ENGINE = MergeTree();", tableID.FullyQualifiedName(), strings.Join(colSQLParts, ","))
+		return fmt.Sprintf("CREATE TABLE %s (%s) ENGINE = MergeTree() ORDER BY %s;", tableID.FullyQualifiedName(), strings.Join(colSQLParts, ","), _dialect.QuoteIdentifier(constants.UpdateColumnMarker))
 	}
 }
 

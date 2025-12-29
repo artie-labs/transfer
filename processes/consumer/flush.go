@@ -14,6 +14,8 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/retry"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
+	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
+	"github.com/artie-labs/transfer/lib/webhooksutil"
 	"github.com/artie-labs/transfer/models"
 )
 
@@ -24,13 +26,13 @@ type Args struct {
 	Reason string
 }
 
-func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, topics []string, args Args) error {
+func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, whClient *webhooksclient.Client, topics []string, args Args) error {
 	if inMemDB == nil {
 		return nil
 	}
 
 	for _, topic := range topics {
-		if err := FlushSingleTopic(ctx, inMemDB, dest, metricsClient, args, topic, true); err != nil {
+		if err := FlushSingleTopic(ctx, inMemDB, dest, metricsClient, whClient, args, topic, true); err != nil {
 			slog.Error("Failed to flush topic", slog.String("topic", topic), slog.Any("err", err))
 		}
 	}
@@ -38,7 +40,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 	return nil
 }
 
-func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, args Args, topic string, shouldLock bool) error {
+func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, whClient *webhooksclient.Client, args Args, topic string, shouldLock bool) error {
 	if inMemDB == nil {
 		return nil
 	}
@@ -93,7 +95,7 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 
 				result, err := retry.WithRetriesAndResult(retryCfg, func(_ int, _ error) (flushResult, error) {
 					slog.Info("Flushing table", slog.String("tableID", table.GetTableID().String()), slog.String("reason", args.Reason))
-					return flush(ctx, dest, table)
+					return flush(ctx, dest, table, whClient)
 				})
 				if err != nil {
 					tags["what"] = result.What
@@ -111,6 +113,10 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 		}
 
 		if err = grp.Wait(); err != nil {
+			whClient.SendEvent(ctx, webhooksutil.TableFailed, map[string]any{
+				"topic": topic,
+				"error": err.Error(),
+			})
 			return fmt.Errorf("failed to flush table: %w", err)
 		}
 
@@ -136,7 +142,7 @@ type flushResult struct {
 	CommitOffset bool
 }
 
-func flush(ctx context.Context, dest destination.Baseline, _tableData *models.TableData) (flushResult, error) {
+func flush(ctx context.Context, dest destination.Baseline, _tableData *models.TableData, whClient *webhooksclient.Client) (flushResult, error) {
 	// This is added so that we have a new temporary table suffix for each merge / append.
 	_tableData.ResetTempTableSuffix()
 
@@ -146,14 +152,14 @@ func flush(ctx context.Context, dest destination.Baseline, _tableData *models.Ta
 	}
 
 	if mode == config.History || _tableData.TopicConfig().AppendOnly {
-		err := dest.Append(ctx, _tableData.TableData, false)
+		err := dest.Append(ctx, _tableData.TableData, whClient, false)
 		if err != nil {
 			return flushResult{What: "merge_fail"}, fmt.Errorf("failed to append: %w", err)
 		}
 
 		return flushResult{What: "success", CommitOffset: true}, nil
 	} else {
-		commitTransaction, err := dest.Merge(ctx, _tableData.TableData)
+		commitTransaction, err := dest.Merge(ctx, _tableData.TableData, whClient)
 		if err != nil {
 			return flushResult{What: "merge_fail"}, fmt.Errorf("failed to merge: %w", err)
 		}

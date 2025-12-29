@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -33,6 +34,14 @@ func (SnowflakeDialect) ReservedColumnNames() map[string]bool {
 
 func (SnowflakeDialect) QuoteIdentifier(identifier string) string {
 	return fmt.Sprintf(`"%s"`, strings.ToUpper(strings.ReplaceAll(identifier, `"`, ``)))
+}
+
+func (SnowflakeDialect) NormalizeColumnNames(row optimization.Row) optimization.Row {
+	normalizedRow := make(map[string]any)
+	for key, value := range row.GetData() {
+		normalizedRow[strings.ToUpper(key)] = value
+	}
+	return optimization.NewRow(normalizedRow)
 }
 
 func (SnowflakeDialect) EscapeStruct(value string) string {

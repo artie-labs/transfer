@@ -18,12 +18,15 @@ import (
 	"github.com/artie-labs/transfer/lib/environ"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/sql"
+	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
 )
 
 func init() {
 	// Snowflake's logger is noisy, disable it since we're going to use our own.
 	_ = gosnowflake.GetLogger().SetLogLevel("fatal")
 }
+
+var _dialect = dialect.SnowflakeDialect{}
 
 type Store struct {
 	db.Store
@@ -71,8 +74,8 @@ func (s *Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier,
 	}.GetTableConfig(ctx)
 }
 
-func (s *Store) SweepTemporaryTables(ctx context.Context) error {
-	return shared.Sweep(ctx, s, s.config.TopicConfigs(), s.dialect().BuildSweepQuery)
+func (s *Store) SweepTemporaryTables(ctx context.Context, whClient *webhooksclient.Client) error {
+	return shared.Sweep(ctx, s, s.config.TopicConfigs(), whClient, s.dialect().BuildSweepQuery)
 }
 
 func (s *Store) Dialect() sql.Dialect {
@@ -80,7 +83,7 @@ func (s *Store) Dialect() sql.Dialect {
 }
 
 func (s *Store) dialect() dialect.SnowflakeDialect {
-	return dialect.SnowflakeDialect{}
+	return _dialect
 }
 
 func (s *Store) GetConfigMap() *types.DestinationTableConfigMap {

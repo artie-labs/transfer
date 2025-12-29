@@ -16,10 +16,12 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
+	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
+	"github.com/artie-labs/transfer/lib/webhooksutil"
 	"github.com/artie-labs/transfer/models"
 )
 
-func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client) {
+func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, whClient *webhooksclient.Client) {
 	tcFmtMap := NewTcFmtMap()
 	var topics []string
 	for _, topicConfig := range cfg.Kafka.TopicConfigs {
@@ -53,10 +55,16 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 						Msg:                    msg,
 						GroupID:                kafkaConsumer.GetGroupID(),
 						TopicToConfigFormatMap: tcFmtMap,
+						WhClient:               whClient,
 					}
 
 					tableID, err := args.process(ctx, cfg, inMemDB, dest, metricsClient)
 					if err != nil {
+						whClient.SendEvent(ctx, webhooksutil.UnableToReplicate, map[string]any{
+							"error":   "Failed to process message",
+							"details": err.Error(),
+							"topic":   msg.Topic(),
+						})
 						logger.Fatal("Failed to process message", slog.Any("err", err), slog.String("topic", msg.Topic()))
 					}
 
