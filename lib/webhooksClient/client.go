@@ -43,6 +43,6 @@ func (c *Client) SendEvent(ctx context.Context, eventType webhooksutil.EventType
 		return
 	}
 	if err := c.client.SendEvent(ctx, eventType, properties); err != nil {
-		slog.Warn("Failed to send webhook event", slog.String("event", string(eventType)), slog.Any("err", err))
+		slog.Error("Failed to send webhook event", slog.String("event", string(eventType)), slog.Any("err", err))
 	}
 }
