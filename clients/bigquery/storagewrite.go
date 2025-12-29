@@ -229,7 +229,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 					slog.Warn("failed to cast value to timestampNTZ for column", slog.String("column", column.Name()), slog.Any("value", value), slog.Any("error", err))
 					continue
 				} else {
-					return nil, fmt.Errorf("failed to cast value to timestampNTZ for column: %q, err: %w", column.Name(), err)
+					return nil, fmt.Errorf("failed to cast value for column: %q, err: %w", column.Name(), err)
 				}
 			}
 
