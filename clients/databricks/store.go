@@ -21,6 +21,7 @@ import (
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/values"
+	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
 )
 
 type Store struct {
@@ -48,16 +49,16 @@ func (s Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error
 	return nil
 }
 
-func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
-	if err := shared.Merge(ctx, s, tableData, types.MergeOpts{}); err != nil {
+func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client) (bool, error) {
+	if err := shared.Merge(ctx, s, tableData, types.MergeOpts{}, whClient); err != nil {
 		return false, fmt.Errorf("failed to merge: %w", err)
 	}
 
 	return true, nil
 }
 
-func (s Store) Append(ctx context.Context, tableData *optimization.TableData, _ bool) error {
-	return shared.Append(ctx, s, tableData, types.AdditionalSettings{})
+func (s Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, _ bool) error {
+	return shared.Append(ctx, s, tableData, whClient, types.AdditionalSettings{})
 }
 
 func (s Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, table string) sql.TableIdentifier {
@@ -195,7 +196,7 @@ func (s Store) writeTemporaryTableFile(tableData *optimization.TableData, fileNa
 	return file.FilePath, nil
 }
 
-func (s Store) SweepTemporaryTables(ctx context.Context) error {
+func (s Store) SweepTemporaryTables(ctx context.Context, whClient *webhooksclient.Client) error {
 	tcs := s.cfg.TopicConfigs()
 	ctx = driverctx.NewContextWithStagingInfo(ctx, []string{"/var", "tmp"})
 	// Remove the temporary files from volumes
@@ -225,7 +226,7 @@ func (s Store) SweepTemporaryTables(ctx context.Context) error {
 	}
 
 	// Delete the temporary tables
-	return shared.Sweep(ctx, s, tcs, s.dialect().BuildSweepQuery)
+	return shared.Sweep(ctx, s, tcs, whClient, s.dialect().BuildSweepQuery)
 }
 
 func LoadStore(cfg config.Config) (Store, error) {

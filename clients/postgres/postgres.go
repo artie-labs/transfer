@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 
@@ -14,25 +15,37 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
+	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
 )
 
 type Store struct {
 	configMap *types.DestinationTableConfigMap
 	config    config.Config
+	version   int
 
 	db.Store
 }
 
-func LoadStore(cfg config.Config) (*Store, error) {
+func LoadStore(ctx context.Context, cfg config.Config) (*Store, error) {
 	store, err := db.Open("pgx", cfg.Postgres.DSN())
 	if err != nil {
 		return nil, err
+	}
+
+	version, err := db.RetrieveVersion(ctx, store.GetDatabase())
+	if err != nil {
+		if closeErr := store.Close(); closeErr != nil {
+			slog.Warn("Failed to close database after error", slog.Any("error", closeErr))
+		}
+
+		return nil, fmt.Errorf("failed to retrieve version: %w", err)
 	}
 
 	return &Store{
 		Store:     store,
 		configMap: &types.DestinationTableConfigMap{},
 		config:    cfg,
+		version:   version.Major,
 	}, nil
 }
 
@@ -62,16 +75,16 @@ func (s Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error
 	return nil
 }
 
-func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
-	if err := shared.Merge(ctx, s, tableData, types.MergeOpts{}); err != nil {
+func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client) (bool, error) {
+	if err := shared.Merge(ctx, s, tableData, types.MergeOpts{}, whClient); err != nil {
 		return false, fmt.Errorf("failed to merge: %w", err)
 	}
 
 	return true, nil
 }
 
-func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, _ bool) error {
-	return shared.Append(ctx, s, tableData, types.AdditionalSettings{})
+func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, _ bool) error {
+	return shared.Append(ctx, s, tableData, whClient, types.AdditionalSettings{})
 }
 
 // specificIdentifierFor returns a PostgreSQL [TableIdentifier] for a [TopicConfig] + table name.
@@ -84,8 +97,8 @@ func (s *Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, 
 	return s.specificIdentifierFor(databaseAndSchema, table)
 }
 
-func (s *Store) SweepTemporaryTables(ctx context.Context) error {
-	return shared.Sweep(ctx, s, s.config.TopicConfigs(), s.dialect().BuildSweepQuery)
+func (s *Store) SweepTemporaryTables(ctx context.Context, whClient *webhooksclient.Client) error {
+	return shared.Sweep(ctx, s, s.config.TopicConfigs(), whClient, s.dialect().BuildSweepQuery)
 }
 
 func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {

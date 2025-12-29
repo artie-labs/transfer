@@ -37,7 +37,7 @@ type Dialect interface {
 	// [IsColumnAlreadyExistsErr] - This is only needed if the SQL Dialect does not supporting adding column if not exists.
 	IsColumnAlreadyExistsErr(err error) bool
 	IsTableDoesNotExistErr(err error) bool
-	BuildCreateTableQuery(tableID TableIdentifier, temporary bool, colSQLParts []string) string
+	BuildCreateTableQuery(tableID TableIdentifier, temporary bool, mode config.Mode, colSQLParts []string) string
 	BuildDropTableQuery(tableID TableIdentifier) string
 	BuildTruncateTableQuery(tableID TableIdentifier) string
 	BuildDedupeQueries(tableID, stagingTableID TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string

@@ -10,6 +10,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
+	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
 	"github.com/artie-labs/transfer/models"
 	"github.com/artie-labs/transfer/models/event"
 )
@@ -18,6 +19,7 @@ type processArgs struct {
 	Msg                    artie.Message
 	GroupID                string
 	TopicToConfigFormatMap *TcFmtMap
+	WhClient               *webhooksclient.Client
 }
 
 func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client) (cdc.TableID, error) {
@@ -85,7 +87,7 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 	}
 
 	if shouldFlush {
-		err = FlushSingleTopic(ctx, inMemDB, dest, metricsClient, Args{Reason: flushReason}, topicConfig.tc.Topic, false)
+		err = FlushSingleTopic(ctx, inMemDB, dest, metricsClient, p.WhClient, Args{Reason: flushReason}, topicConfig.tc.Topic, false)
 		if err != nil {
 			tags["what"] = "flush_fail"
 		}

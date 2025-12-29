@@ -29,6 +29,7 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
+	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
 )
 
 const GooglePathToCredentialsEnvKey = "GOOGLE_APPLICATION_CREDENTIALS"
@@ -60,9 +61,9 @@ func (s *Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) erro
 	return nil
 }
 
-func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, useTempTable bool) error {
+func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, useTempTable bool) error {
 	if !useTempTable {
-		return shared.Append(ctx, s, tableData, types.AdditionalSettings{
+		return shared.Append(ctx, s, tableData, whClient, types.AdditionalSettings{
 			ColumnSettings: s.config.SharedDestinationSettings.ColumnSettings,
 		})
 	}
@@ -75,7 +76,7 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, u
 
 	defer func() { _ = ddl.DropTemporaryTable(ctx, s, temporaryTableID, false) }()
 
-	err := shared.Append(ctx, s, tableData, types.AdditionalSettings{
+	err := shared.Append(ctx, s, tableData, whClient, types.AdditionalSettings{
 		ColumnSettings: s.config.SharedDestinationSettings.ColumnSettings,
 		UseTempTable:   true,
 		TempTableID:    temporaryTableID,
@@ -269,7 +270,7 @@ func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primary
 	return nil
 }
 
-func (s *Store) SweepTemporaryTables(_ context.Context) error {
+func (s *Store) SweepTemporaryTables(_ context.Context, _ *webhooksclient.Client) error {
 	// BigQuery doesn't need to sweep temporary tables, since they support setting TTL on temporary tables.
 	return nil
 }

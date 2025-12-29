@@ -62,10 +62,25 @@ func ParseTimeFromAny(val any) (time.Time, error) {
 			return ts, nil
 		}
 
-		return time.Time{}, fmt.Errorf("unsupported value: %q", convertedVal)
+		return time.Time{}, NewParseError(fmt.Sprintf("unsupported value: %q", convertedVal), UnsupportedDateLayout)
 	default:
 		return time.Time{}, fmt.Errorf("unsupported type: %T", convertedVal)
 	}
+}
+
+// floatMillisToTime converts a float64 Unix timestamp in milliseconds to time.Time,
+// preserving fractional milliseconds as nanoseconds.
+func floatMillisToTime(ms float64) time.Time {
+	msInt := int64(ms)
+	fracMs := ms - float64(msInt)
+	// Convert fractional milliseconds to nanoseconds (1 ms = 1,000,000 ns)
+	additionalNanos := int64(fracMs * 1e6)
+	return time.UnixMilli(msInt).Add(time.Duration(additionalNanos) * time.Nanosecond)
+}
+
+// int64MillisToTime converts an int64 Unix timestamp in milliseconds to time.Time.
+func int64MillisToTime(ms int64) time.Time {
+	return time.UnixMilli(ms)
 }
 
 func ParseTimestampNTZFromAny(val any) (time.Time, error) {
@@ -77,10 +92,14 @@ func ParseTimestampNTZFromAny(val any) (time.Time, error) {
 	case string:
 		ts, err := ParseTimeExactMatch(RFC3339NoTZ, convertedVal)
 		if err != nil {
-			return time.Time{}, fmt.Errorf("unsupported value: %q: %w", convertedVal, err)
+			return time.Time{}, NewParseError(fmt.Sprintf("unsupported value: %q", convertedVal), UnsupportedDateLayout)
 		}
 
 		return ts, nil
+	case float64:
+		return floatMillisToTime(convertedVal), nil
+	case int64:
+		return int64MillisToTime(convertedVal), nil
 	default:
 		return time.Time{}, fmt.Errorf("unsupported type: %T", convertedVal)
 	}
@@ -94,6 +113,10 @@ func ParseTimestampTZFromAny(val any) (time.Time, error) {
 		return convertedVal, nil
 	case string:
 		return parseTimestampTZ(convertedVal)
+	case float64:
+		return floatMillisToTime(convertedVal), nil
+	case int64:
+		return int64MillisToTime(convertedVal), nil
 	default:
 		return time.Time{}, fmt.Errorf("unsupported type: %T", convertedVal)
 	}
@@ -106,5 +129,5 @@ func parseTimestampTZ(value string) (time.Time, error) {
 		}
 	}
 
-	return time.Time{}, fmt.Errorf("unsupported value: %q", value)
+	return time.Time{}, NewParseError(fmt.Sprintf("unsupported value: %q", value), UnsupportedDateLayout)
 }

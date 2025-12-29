@@ -22,6 +22,12 @@ func TestTimestamp_Converter(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "2024-08-30T22:59:59.089", converted.(time.Time).Format(typing.RFC3339NoTZ))
 	}
+	{
+		// Year exceeds 9999 - should return nil
+		converted, err := Timestamp{}.Convert(int64(253_402_300_800_000)) // Year 10000
+		assert.NoError(t, err)
+		assert.Nil(t, converted)
+	}
 }
 
 func TestMicroTimestamp_Converter(t *testing.T) {
@@ -36,6 +42,12 @@ func TestMicroTimestamp_Converter(t *testing.T) {
 		converted, err := MicroTimestamp{}.Convert(int64(1_712_609_795_827_923))
 		assert.NoError(t, err)
 		assert.Equal(t, "2024-04-08T20:56:35.827923", converted.(time.Time).Format(typing.RFC3339NoTZ))
+	}
+	{
+		// Year exceeds 9999 - should return nil
+		converted, err := MicroTimestamp{}.Convert(int64(253_402_300_800_000_000)) // Year 10000
+		assert.NoError(t, err)
+		assert.Nil(t, converted)
 	}
 }
 

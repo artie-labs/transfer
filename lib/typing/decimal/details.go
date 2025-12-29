@@ -121,3 +121,8 @@ func (d Details) DuckDBKind() string {
 
 	return fmt.Sprintf("DECIMAL(%d, %d)", d.precision, d.scale)
 }
+
+func (d Details) ClickHouseKind() string {
+	// https://clickhouse.com/docs/sql-reference/data-types/decimal#parameters
+	return d.toDecimalKind(76, "STRING")
+}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/artie-labs/transfer/clients/bigquery"
+	"github.com/artie-labs/transfer/clients/clickhouse"
 	"github.com/artie-labs/transfer/clients/databricks"
 	"github.com/artie-labs/transfer/clients/gcs"
 	"github.com/artie-labs/transfer/clients/iceberg"
@@ -69,11 +70,13 @@ func LoadDestination(ctx context.Context, cfg config.Config, store *db.Store) (d
 	case constants.MSSQL:
 		return mssql.LoadStore(cfg)
 	case constants.Postgres:
-		return postgres.LoadStore(cfg)
+		return postgres.LoadStore(ctx, cfg)
 	case constants.Redshift:
 		return redshift.LoadRedshift(ctx, cfg, store)
 	case constants.MotherDuck:
 		return motherduck.LoadStore(cfg)
+	case constants.Clickhouse:
+		return clickhouse.LoadClickhouse(ctx, cfg, store)
 	}
 
 	return nil, fmt.Errorf("invalid destination: %q", cfg.Output)
