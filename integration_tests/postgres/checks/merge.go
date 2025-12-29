@@ -53,7 +53,7 @@ func testSoftDeleteMerge(ctx context.Context, store *postgres.Store) error {
 		}, false)
 	}
 
-	if _, err := store.Merge(ctx, tableData); err != nil {
+	if _, err := store.Merge(ctx, tableData, nil); err != nil {
 		return fmt.Errorf("failed initial merge: %w", err)
 	}
 
@@ -71,7 +71,7 @@ func testSoftDeleteMerge(ctx context.Context, store *postgres.Store) error {
 		constants.OnlySetDeleteColumnMarker: true,
 	}, true)
 
-	if _, err := store.Merge(ctx, tableData); err != nil {
+	if _, err := store.Merge(ctx, tableData, nil); err != nil {
 		return fmt.Errorf("failed soft delete merge: %w", err)
 	}
 
@@ -129,7 +129,7 @@ func testRegularMerge(ctx context.Context, store *postgres.Store) error {
 		}, false)
 	}
 
-	if _, err := store.Merge(ctx, tableData); err != nil {
+	if _, err := store.Merge(ctx, tableData, nil); err != nil {
 		return fmt.Errorf("failed initial merge: %w", err)
 	}
 
@@ -160,7 +160,7 @@ func testRegularMerge(ctx context.Context, store *postgres.Store) error {
 		}, true)
 	}
 
-	if _, err := store.Merge(ctx, tableData); err != nil {
+	if _, err := store.Merge(ctx, tableData, nil); err != nil {
 		return fmt.Errorf("failed update/delete merge: %w", err)
 	}
 

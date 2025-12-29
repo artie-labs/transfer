@@ -35,7 +35,7 @@ func (at *AppendTest) generateTestData(ctx context.Context, numRows, appendEvery
 			at.framework.GetTableData().InsertRow(pkValueString, rowData, false)
 		}
 
-		if err := at.framework.GetBaseline().Append(ctx, at.framework.GetTableData(), false); err != nil {
+		if err := at.framework.GetBaseline().Append(ctx, at.framework.GetTableData(), nil, false); err != nil {
 			return fmt.Errorf("failed to append data: %w", err)
 		}
 

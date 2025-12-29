@@ -130,7 +130,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 	dropQueryRegex := regexp.QuoteMeta(`DROP TABLE IF EXISTS "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`"`)
 	s.mockDB.ExpectExec(dropQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
 
-	commitTx, err := s.stageStore.Merge(s.T().Context(), tableData)
+	commitTx, err := s.stageStore.Merge(s.T().Context(), tableData, nil)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
 	assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
@@ -196,7 +196,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 	dropQueryRegex := regexp.QuoteMeta(`DROP TABLE IF EXISTS "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`"`)
 	s.mockDB.ExpectExec(dropQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
 
-	commitTx, err := s.stageStore.Merge(s.T().Context(), tableData)
+	commitTx, err := s.stageStore.Merge(s.T().Context(), tableData, nil)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
 	assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
@@ -259,7 +259,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	dropQueryRegex := regexp.QuoteMeta(`DROP TABLE IF EXISTS "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`"`)
 	s.mockDB.ExpectExec(dropQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
 
-	commitTx, err := s.stageStore.Merge(s.T().Context(), tableData)
+	commitTx, err := s.stageStore.Merge(s.T().Context(), tableData, nil)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
 	assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
@@ -339,7 +339,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	dropQueryRegex := regexp.QuoteMeta(`DROP TABLE IF EXISTS "CUSTOMER"."PUBLIC"."`) + `.*` + regexp.QuoteMeta(`"`)
 	s.mockDB.ExpectExec(dropQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
 
-	commitTx, err := s.stageStore.Merge(s.T().Context(), tableData)
+	commitTx, err := s.stageStore.Merge(s.T().Context(), tableData, nil)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
 	assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
@@ -384,7 +384,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	// Set up expectations for DROP TABLE - use regex pattern to match the actual table name with suffix
 	s.mockDB.ExpectExec(dropQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
 
-	commitTx, err = s.stageStore.Merge(s.T().Context(), tableData)
+	commitTx, err = s.stageStore.Merge(s.T().Context(), tableData, nil)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
 	assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
@@ -395,7 +395,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 
 func (s *SnowflakeTestSuite) TestExecuteMergeExitEarly() {
 	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "foo")
-	commitTx, err := s.stageStore.Merge(s.T().Context(), tableData)
+	commitTx, err := s.stageStore.Merge(s.T().Context(), tableData, nil)
 	assert.NoError(s.T(), err)
 	assert.True(s.T(), commitTx)
 	// No SQL should be executed for empty table data

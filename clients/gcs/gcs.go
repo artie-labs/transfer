@@ -18,6 +18,7 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/stringutil"
+	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
 )
 
 const GooglePathToCredentialsEnvKey = "GOOGLE_APPLICATION_CREDENTIALS"
@@ -58,9 +59,9 @@ func (s *Store) ObjectPrefix(tableData *optimization.TableData) string {
 	return strings.Join([]string{fqTableName, yyyyMMDDFormat}, "/")
 }
 
-func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, _ bool) error {
+func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, _ bool) error {
 	// There's no difference in appending or merging for GCS.
-	if _, err := s.Merge(ctx, tableData); err != nil {
+	if _, err := s.Merge(ctx, tableData, whClient); err != nil {
 		return fmt.Errorf("failed to merge: %w", err)
 	}
 
@@ -76,7 +77,7 @@ func buildTemporaryFilePath(tableData *optimization.TableData) string {
 // 2. Load the temporary file, under this format: gs://bucket/folderName/fullyQualifiedTableName/YYYY-MM-DD/{{unix_timestamp}}.parquet
 // 3. It will then upload this to GCS
 // 4. Delete the temporary file
-func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
+func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client) (bool, error) {
 	if tableData.ShouldSkipUpdate() {
 		return false, nil
 	}

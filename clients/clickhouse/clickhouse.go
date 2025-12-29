@@ -15,6 +15,7 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
+	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
 )
 
 type Store struct {
@@ -87,16 +88,16 @@ func (s Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, t
 	return dialect.NewTableIdentifier(databaseAndSchema.Database, table)
 }
 
-func (s Store) Append(ctx context.Context, tableData *optimization.TableData, useTempTable bool) error {
-	return shared.Append(ctx, s, tableData, types.AdditionalSettings{})
+func (s Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, useTempTable bool) error {
+	return shared.Append(ctx, s, tableData, whClient, types.AdditionalSettings{})
 }
 
 func (s Store) IsRetryableError(err error) bool {
 	return false
 }
 
-func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
-	err := shared.Append(ctx, s, tableData, types.AdditionalSettings{})
+func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client) (bool, error) {
+	err := shared.Append(ctx, s, tableData, whClient, types.AdditionalSettings{})
 	if err != nil {
 		return false, fmt.Errorf("failed to merge: %w", err)
 	}
@@ -108,8 +109,8 @@ func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryK
 	return nil
 }
 
-func (s Store) SweepTemporaryTables(ctx context.Context) error {
-	return shared.Sweep(ctx, s, s.config.TopicConfigs(), dialect.ClickhouseDialect{}.BuildSweepQuery)
+func (s Store) SweepTemporaryTables(ctx context.Context, whClient *webhooksclient.Client) error {
+	return shared.Sweep(ctx, s, s.config.TopicConfigs(), whClient, dialect.ClickhouseDialect{}.BuildSweepQuery)
 }
 
 func (s Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error {
