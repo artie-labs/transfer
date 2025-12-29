@@ -15,14 +15,6 @@ type Client struct {
 }
 
 func new(apiKey, url string, properties map[string]any) (*Client, error) {
-	if apiKey == "" {
-		return nil, fmt.Errorf("webhook apiKey is required")
-	}
-
-	if url == "" {
-		return nil, fmt.Errorf("webhook url is required")
-	}
-
 	client, err := webhooksutil.NewWebhooksClient(apiKey, url, webhooksutil.Transfer, properties)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create webhooks client: %w", err)
