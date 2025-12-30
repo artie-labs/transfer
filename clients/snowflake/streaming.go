@@ -212,11 +212,9 @@ func PrepareJWTToken(config *gosnowflake.Config) (string, error) {
 	issueAtTime := time.Now().UTC()
 
 	var timeout time.Duration
-	//lint:ignore SA1019 JWTExpireTimeout is deprecated but still functional; no replacement available yet in gosnowflake v1.17.1
 	if config.JWTExpireTimeout == 0 {
 		timeout = 60 * time.Second
 	} else {
-		//lint:ignore SA1019 JWTExpireTimeout is deprecated but still functional; no replacement available yet in gosnowflake v1.17.1
 		timeout = config.JWTExpireTimeout
 	}
 
