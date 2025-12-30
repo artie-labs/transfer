@@ -193,7 +193,9 @@ func (s *SnowpipeStreamingChannelManager) LoadData(ctx context.Context, db, sche
 	return err
 }
 
-// copied from https://github.com/snowflakedb/gosnowflake/blob/v1.17.0/auth.go#L640
+// copied from https://github.com/snowflakedb/gosnowflake/blob/v1.17.1/auth.go#L646
+//
+//nolint:staticcheck // JWTExpireTimeout is deprecated but still functional; no replacement available yet in gosnowflake v1.17.1
 func PrepareJWTToken(config *gosnowflake.Config) (string, error) {
 	if config.PrivateKey == nil {
 		return "", fmt.Errorf("trying to use keypair authentication, but PrivateKey was not provided in the driver config")
@@ -210,9 +212,11 @@ func PrepareJWTToken(config *gosnowflake.Config) (string, error) {
 	issueAtTime := time.Now().UTC()
 
 	var timeout time.Duration
+	//lint:ignore SA1019 JWTExpireTimeout is deprecated but still functional; no replacement available yet in gosnowflake v1.17.1
 	if config.JWTExpireTimeout == 0 {
 		timeout = 60 * time.Second
 	} else {
+		//lint:ignore SA1019 JWTExpireTimeout is deprecated but still functional; no replacement available yet in gosnowflake v1.17.1
 		timeout = config.JWTExpireTimeout
 	}
 

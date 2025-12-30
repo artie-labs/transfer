@@ -38,7 +38,7 @@ require (
 	github.com/samber/slog-sentry/v2 v2.9.3
 	github.com/segmentio/kafka-go v0.4.49
 	github.com/segmentio/kafka-go/sasl/aws_msk_iam_v2 v0.1.0
-	github.com/snowflakedb/gosnowflake v1.17.0
+	github.com/snowflakedb/gosnowflake v1.17.1
 	github.com/stretchr/testify v1.11.1
 	github.com/twmb/franz-go v1.19.5
 	github.com/twmb/franz-go/pkg/kmsg v1.11.2
