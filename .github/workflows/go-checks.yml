@@ -34,9 +34,9 @@ jobs:
           # like Linux-go-$hash-YYYY-MM-DD as saved by CI
           key: nonexistent
           restore-keys: |
-            ${{ runner.os }}-go-${{ hashFiles('go/go.mod') }}-${{ env.GO_CACHE_DATE }}
+            ${{ runner.os }}-go-${{ hashFiles('go.mod') }}-${{ env.GO_CACHE_DATE }}
             ${{ runner.os }}-go-${{ env.GO_CACHE_DATE }}
-            ${{ runner.os }}-go-${{ hashFiles('go/go.mod') }}-
+            ${{ runner.os }}-go-${{ hashFiles('go.mod') }}-
 
       - name: Generate mocks
         run: make generate
@@ -60,7 +60,7 @@ jobs:
           path: |
             ~/.cache/go-build
           # Save to eg Linux-go-$hash-YYYY-MM-DD to keep the cache fresh
-          key: "${{ runner.os }}-go-${{ hashFiles('go/go.mod') }}-${{ env.GO_CACHE_DATE }}"
+          key: "${{ runner.os }}-go-${{ hashFiles('go.mod') }}-${{ env.GO_CACHE_DATE }}"
 
       - name: Save Go cache (today)
         # if: ${{ github.ref == 'refs/heads/master' }}
