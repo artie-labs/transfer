@@ -68,11 +68,6 @@ bufferRows: 10
 
 	tcs := config.TopicConfigs()
 	assert.Len(t, tcs, 2)
-	for _, tc := range tcs {
-		tc.Load()
-		assert.Equal(t, "customer", tc.Database)
-	}
-
 	assert.NoError(t, config.Validate())
 
 	// Now let's unset Kafka.
@@ -176,11 +171,6 @@ kafka:
 
 	assert.Equal(t, config.FlushIntervalSeconds, defaultFlushTimeSeconds)
 	assert.Equal(t, int(config.BufferRows), defaultBufferPoolSize)
-
-	tcs := config.TopicConfigs()
-	for _, tc := range tcs {
-		tc.Load()
-	}
 
 	assert.ErrorContains(t, config.Validate(), "kafka group or bootstrap server is empty")
 	for _, tc := range config.Kafka.TopicConfigs {
@@ -312,8 +302,6 @@ reporting:
 	orderIdx := -1
 	customerIdx := -1
 	for idx, topicConfig := range config.Kafka.TopicConfigs {
-		topicConfig.Load()
-
 		assert.Equal(t, topicConfig.Database, "customer")
 		assert.Equal(t, topicConfig.Schema, "public")
 
@@ -329,8 +317,8 @@ reporting:
 	assert.True(t, customerIdx >= 0)
 	assert.True(t, orderIdx >= 0)
 
-	assert.True(t, config.Kafka.TopicConfigs[orderIdx].ShouldSkip("d"))
-	assert.True(t, config.Kafka.TopicConfigs[customerIdx].ShouldSkip("c"))
+	assert.Equal(t, "d", config.Kafka.TopicConfigs[orderIdx].SkippedOperations)
+	assert.Equal(t, "c", config.Kafka.TopicConfigs[customerIdx].SkippedOperations)
 
 	// Verify Snowflake config
 	assert.Equal(t, snowflakeUser, config.Snowflake.Username)
@@ -413,7 +401,6 @@ func TestConfig_Validate(t *testing.T) {
 		CDCKeyFormat: "org.apache.kafka.connect.json.JsonConverter",
 	}
 
-	tc.Load()
 	kafka.TopicConfigs = append(kafka.TopicConfigs, &tc)
 	assert.NoError(t, cfg.Validate())
 
