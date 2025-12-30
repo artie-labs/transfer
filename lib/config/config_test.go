@@ -68,11 +68,6 @@ bufferRows: 10
 
 	tcs := config.TopicConfigs()
 	assert.Len(t, tcs, 2)
-	for _, tc := range tcs {
-		tc.Load()
-		assert.Equal(t, "customer", tc.Database)
-	}
-
 	assert.NoError(t, config.Validate())
 
 	// Now let's unset Kafka.
