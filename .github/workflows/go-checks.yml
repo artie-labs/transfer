@@ -53,7 +53,7 @@ jobs:
         run: test -z $(gofmt -l .)
 
       - name: Save Go cache
-        # if: ${{ github.ref == 'refs/heads/master' }}
+        if: ${{ github.ref == 'refs/heads/master' }}
         uses: actions/cache/save@v5
         with:
           # Caches the compiled build cache.
@@ -63,7 +63,7 @@ jobs:
           key: "${{ runner.os }}-go-${{ hashFiles('go.mod') }}-${{ env.GO_CACHE_DATE }}"
 
       - name: Save Go cache (today)
-        # if: ${{ github.ref == 'refs/heads/master' }}
+        if: ${{ github.ref == 'refs/heads/master' }}
         uses: actions/cache/save@v5
         with:
           # Caches the compiled build cache.
