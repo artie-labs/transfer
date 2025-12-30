@@ -100,9 +100,6 @@ func TestTopicConfig_Validate(t *testing.T) {
 		CDCKeyFormat: JSONKeyFmt,
 	}
 
-	assert.ErrorContains(t, tc.Validate(), "opsToSkipMap is nil, call Load() first")
-
-	tc.Load()
 	assert.NoError(t, tc.Validate(), tc.String())
 
 	tc.CDCKeyFormat = "non_existent"
