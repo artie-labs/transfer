@@ -11,6 +11,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set Go cache date
+        shell: bash
+        run: echo "GO_CACHE_DATE=$(TZ='America/Los_Angeles' date +%Y-%m-%d)" >> $GITHUB_ENV
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
@@ -20,6 +24,19 @@ jobs:
         run: |
           go mod download
           go mod tidy -diff
+
+      - name: Restore Go compilation cache
+        uses: actions/cache/restore@v5
+        with:
+          path: |
+            ~/.cache/go-build
+          # always grab from the restore-keys pattern below,
+          # like Linux-go-$hash-YYYY-MM-DD as saved by CI
+          key: nonexistent
+          restore-keys: |
+            ${{ runner.os }}-go-${{ hashFiles('go/go.mod') }}-${{ env.GO_CACHE_DATE }}
+            ${{ runner.os }}-go-${{ env.GO_CACHE_DATE }}
+            ${{ runner.os }}-go-${{ hashFiles('go/go.mod') }}-
 
       - name: Generate mocks
         run: make generate
@@ -34,3 +51,23 @@ jobs:
 
       - name: Check Go files are properly formatted
         run: test -z $(gofmt -l .)
+
+      - name: Save Go cache
+        # if: ${{ github.ref == 'refs/heads/master' }}
+        uses: actions/cache/save@v5
+        with:
+          # Caches the compiled build cache.
+          path: |
+            ~/.cache/go-build
+          # Save to eg Linux-go-$hash-YYYY-MM-DD to keep the cache fresh
+          key: "${{ runner.os }}-go-${{ hashFiles('go/go.mod') }}-${{ env.GO_CACHE_DATE }}"
+
+      - name: Save Go cache (today)
+        # if: ${{ github.ref == 'refs/heads/master' }}
+        uses: actions/cache/save@v5
+        with:
+          # Caches the compiled build cache.
+          path: |
+            ~/.cache/go-build
+          # Save to eg Linux-go-YYYY-MM-DD as fallback
+          key: "${{ runner.os }}-go-${{ env.GO_CACHE_DATE }}"
