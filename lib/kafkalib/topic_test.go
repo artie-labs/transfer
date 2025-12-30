@@ -121,27 +121,6 @@ func TestTopicConfig_Validate(t *testing.T) {
 	assert.NoError(t, tc.Validate(), tc.String())
 }
 
-func TestTopicConfig_Load_ShouldSkip(t *testing.T) {
-	{
-		tc := TopicConfig{SkippedOperations: "c, r, u"}
-		tc.Load()
-		for _, op := range []string{"c", "r", "u"} {
-			assert.True(t, tc.ShouldSkip(op), tc.String())
-		}
-		assert.False(t, tc.ShouldSkip("d"), tc.String())
-	}
-	{
-		tc := TopicConfig{SkippedOperations: "c"}
-		tc.Load()
-		assert.True(t, tc.ShouldSkip("c"), tc.String())
-	}
-	{
-		tc := TopicConfig{SkippedOperations: "d"}
-		tc.Load()
-		assert.True(t, tc.ShouldSkip("d"), tc.String())
-	}
-}
-
 func TestMultiStepMergeSettings_Validate(t *testing.T) {
 	{
 		// Not enabled

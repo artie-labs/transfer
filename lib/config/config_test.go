@@ -329,8 +329,8 @@ reporting:
 	assert.True(t, customerIdx >= 0)
 	assert.True(t, orderIdx >= 0)
 
-	assert.True(t, config.Kafka.TopicConfigs[orderIdx].ShouldSkip("d"))
-	assert.True(t, config.Kafka.TopicConfigs[customerIdx].ShouldSkip("c"))
+	assert.Equal(t, "d", config.Kafka.TopicConfigs[orderIdx].SkippedOperations)
+	assert.Equal(t, "c", config.Kafka.TopicConfigs[customerIdx].SkippedOperations)
 
 	// Verify Snowflake config
 	assert.Equal(t, snowflakeUser, config.Snowflake.Username)

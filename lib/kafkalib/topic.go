@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"maps"
 	"slices"
-	"strings"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/kafkalib/partition"
@@ -165,9 +164,6 @@ type TopicConfig struct {
 
 	// [AppendOnly] - if true, data will always be appended instead of merged.
 	AppendOnly bool `yaml:"appendOnly,omitempty"`
-
-	// Internal metadata
-	opsToSkipMap map[string]bool `yaml:"-"`
 }
 
 func (t TopicConfig) BuildDatabaseAndSchemaPair() DatabaseAndSchemaPair {
@@ -180,29 +176,6 @@ const (
 )
 
 var validKeyFormats = []string{StringKeyFmt, JSONKeyFmt}
-
-func (t *TopicConfig) Load() {
-	// Operations that we support today:
-	// 1. c - create
-	// 2. r - replication (backfill)
-	// 3. u - update
-	// 4. d - delete
-
-	t.opsToSkipMap = make(map[string]bool)
-	for _, op := range strings.Split(t.SkippedOperations, ",") {
-		// Lowercase and trim space.
-		t.opsToSkipMap[strings.ToLower(strings.TrimSpace(op))] = true
-	}
-}
-
-func (t TopicConfig) ShouldSkip(op string) bool {
-	if t.opsToSkipMap == nil {
-		panic("opsToSkipMap is nil, Load() was never called")
-	}
-
-	_, ok := t.opsToSkipMap[op]
-	return ok
-}
 
 func (t TopicConfig) String() string {
 	var msmEnabled bool
