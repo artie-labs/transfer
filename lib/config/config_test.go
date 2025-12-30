@@ -172,11 +172,6 @@ kafka:
 	assert.Equal(t, config.FlushIntervalSeconds, defaultFlushTimeSeconds)
 	assert.Equal(t, int(config.BufferRows), defaultBufferPoolSize)
 
-	tcs := config.TopicConfigs()
-	for _, tc := range tcs {
-		tc.Load()
-	}
-
 	assert.ErrorContains(t, config.Validate(), "kafka group or bootstrap server is empty")
 	for _, tc := range config.Kafka.TopicConfigs {
 		if tc.TableName == "orders" {
@@ -307,8 +302,6 @@ reporting:
 	orderIdx := -1
 	customerIdx := -1
 	for idx, topicConfig := range config.Kafka.TopicConfigs {
-		topicConfig.Load()
-
 		assert.Equal(t, topicConfig.Database, "customer")
 		assert.Equal(t, topicConfig.Schema, "public")
 
@@ -408,7 +401,6 @@ func TestConfig_Validate(t *testing.T) {
 		CDCKeyFormat: "org.apache.kafka.connect.json.JsonConverter",
 	}
 
-	tc.Load()
 	kafka.TopicConfigs = append(kafka.TopicConfigs, &tc)
 	assert.NoError(t, cfg.Validate())
 
