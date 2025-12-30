@@ -55,7 +55,7 @@ type SharedDestinationSettings struct {
 	// Currently only supported for Snowflake.
 	SkipBadValues bool `yaml:"skipBadValues"`
 	// [SkipBadTimestamps] - If enabled, we'll skip over bad timestamp (or alike) values instead of throwing an error.
-	// Currently only supported for Snowflake.
+	// Currently only supported for Snowflake and BigQuery.
 	SkipBadTimestamps bool `yaml:"skipBadTimestamps"`
 	// [SkipBadIntegers] - If enabled, we'll skip over bad integer values instead of throwing an error.
 	// Currently only supported for Snowflake and Redshift.

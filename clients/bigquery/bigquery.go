@@ -188,7 +188,7 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 	defer managedStream.Close()
 
 	encoder := func(row optimization.Row) ([]byte, error) {
-		message, err := rowToMessage(row.GetData(), columns, *messageDescriptor)
+		message, err := rowToMessage(row.GetData(), columns, *messageDescriptor, s.config)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert row to message: %w", err)
 		}

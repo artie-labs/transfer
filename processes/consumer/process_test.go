@@ -63,8 +63,8 @@ func TestProcessMessageFailures(t *testing.T) {
 
 	var mgo mongo.Debezium
 	tcFmtMap := NewTcFmtMap()
-	tcFmtMap.Add(msg.Topic(), TopicConfigFormatter{
-		tc: kafkalib.TopicConfig{
+	tcFmtMap.Add(msg.Topic(), NewTopicConfigFormatter(
+		kafkalib.TopicConfig{
 			Database:     db,
 			TableName:    table,
 			Schema:       schema,
@@ -72,8 +72,8 @@ func TestProcessMessageFailures(t *testing.T) {
 			CDCFormat:    "",
 			CDCKeyFormat: "",
 		},
-		Format: &mgo,
-	})
+		&mgo,
+	))
 
 	args = processArgs{
 		Msg:                    msg,
@@ -97,13 +97,9 @@ func TestProcessMessageFailures(t *testing.T) {
 		CDCFormat:    "",
 		CDCKeyFormat: "org.apache.kafka.connect.storage.StringConverter",
 	}
-	tc.Load()
 
 	// Add will just replace the prev setting.
-	tcFmtMap.Add(msg.Topic(), TopicConfigFormatter{
-		tc:     tc,
-		Format: &mgo,
-	})
+	tcFmtMap.Add(msg.Topic(), NewTopicConfigFormatter(tc, &mgo))
 
 	val := `{
 	"schema": {
@@ -245,8 +241,8 @@ func TestProcessMessageSkip(t *testing.T) {
 	)
 
 	tcFmtMap := NewTcFmtMap()
-	tcFmtMap.Add(msg.Topic(), TopicConfigFormatter{
-		tc: kafkalib.TopicConfig{
+	tcFmtMap.Add(msg.Topic(), NewTopicConfigFormatter(
+		kafkalib.TopicConfig{
 			Database:     db,
 			TableName:    table,
 			Schema:       schema,
@@ -254,8 +250,8 @@ func TestProcessMessageSkip(t *testing.T) {
 			CDCFormat:    "",
 			CDCKeyFormat: "",
 		},
-		Format: &mgo,
-	})
+		&mgo,
+	))
 
 	tc := kafkalib.TopicConfig{
 		Database:          db,
@@ -266,14 +262,9 @@ func TestProcessMessageSkip(t *testing.T) {
 		CDCKeyFormat:      "org.apache.kafka.connect.storage.StringConverter",
 		SkippedOperations: "d",
 	}
-	tc.Load()
 
 	// Add will just replace the prev setting.
-	tcFmtMap.Add(msg.Topic(), TopicConfigFormatter{
-		tc:     tc,
-		Format: &mgo,
-	})
-
+	tcFmtMap.Add(msg.Topic(), NewTopicConfigFormatter(tc, &mgo))
 	vals := []string{
 		`{
 	"schema": {
