@@ -31,8 +31,6 @@ func (f *FlushTestSuite) SetupTest() {
 		CDCKeyFormat: kafkalib.JSONKeyFmt,
 	}
 
-	tc.Load()
-
 	f.cfg = config.Config{
 		Mode: config.Replication,
 		Kafka: &kafkalib.Kafka{

@@ -97,7 +97,6 @@ func TestProcessMessageFailures(t *testing.T) {
 		CDCFormat:    "",
 		CDCKeyFormat: "org.apache.kafka.connect.storage.StringConverter",
 	}
-	tc.Load()
 
 	// Add will just replace the prev setting.
 	tcFmtMap.Add(msg.Topic(), TopicConfigFormatter{
@@ -266,7 +265,6 @@ func TestProcessMessageSkip(t *testing.T) {
 		CDCKeyFormat:      "org.apache.kafka.connect.storage.StringConverter",
 		SkippedOperations: "d",
 	}
-	tc.Load()
 
 	// Add will just replace the prev setting.
 	tcFmtMap.Add(msg.Topic(), TopicConfigFormatter{
