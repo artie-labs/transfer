@@ -4,14 +4,6 @@ all:
 	make generate
 	make test
 
-.PHONY: static
-static:
-	go tool staticcheck ./...
-
-.PHONY: vet
-vet:
-	go vet ./...
-
 .PHONY: test
 test:
 	go test ./...
