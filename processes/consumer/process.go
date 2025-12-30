@@ -69,7 +69,7 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 
 	// Table name is only available after event has been cast
 	tags["table"] = evt.GetTable()
-	if topicConfig.tc.ShouldSkip(string(_event.Operation())) {
+	if topicConfig.ShouldSkip(string(_event.Operation())) {
 		// Check to see if we should skip first
 		// This way, we can emit a specific tag to be more clear
 		tags["skipped"] = "yes"

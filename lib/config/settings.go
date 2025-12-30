@@ -18,8 +18,7 @@ func LoadSettings(args []string, loadConfig bool) (*Settings, error) {
 		Verbose        bool   `short:"v" long:"verbose" description:"debug logging" optional:"true"`
 	}
 
-	_, err := flags.ParseArgs(&opts, args)
-	if err != nil {
+	if _, err := flags.ParseArgs(&opts, args); err != nil {
 		return nil, fmt.Errorf("failed to parse args: %w", err)
 	}
 
@@ -31,10 +30,6 @@ func LoadSettings(args []string, loadConfig bool) (*Settings, error) {
 		config, err := readFileToConfig(opts.ConfigFilePath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse config file: %w", err)
-		}
-
-		for _, tc := range config.TopicConfigs() {
-			tc.Load()
 		}
 
 		if err = config.Validate(); err != nil {
