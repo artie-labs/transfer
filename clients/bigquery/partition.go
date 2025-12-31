@@ -18,7 +18,7 @@ func buildDistinctDates(colName string, rows []optimization.Row, reservedColumnN
 	for _, row := range rows {
 		val, ok := row.GetValue(colName)
 		if !ok || val == nil {
-			// If any row has a nil value, skip distinct dates filtering, this will end up in `__NULL__`
+			// Skip distinct date filtering if there are nil or missing values. They will all end up in the `__NULL__` partition.
 			return nil, nil
 		}
 
