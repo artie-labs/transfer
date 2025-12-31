@@ -59,10 +59,10 @@ func BuildCreateTableSQL(settings config.SharedDestinationColumnSettings, dialec
 // DropTemporaryTable - this will drop the temporary table from Snowflake w/ stages and BigQuery
 // It has a safety check to make sure the tableName contains the `constants.ArtiePrefix` key.
 // Temporary tables look like this: database.schema.tableName__artie__RANDOM_STRING(5)_expiryUnixTs
-func DropTemporaryTable(ctx context.Context, dest destination.Destination, tableIdentifier sql.TableIdentifier, shouldReturnError bool) error {
+func DropTemporaryTable(ctx context.Context, executor destination.SQLExecutor, tableIdentifier sql.TableIdentifier, shouldReturnError bool) error {
 	if strings.Contains(strings.ToLower(tableIdentifier.Table()), constants.ArtiePrefix) {
 		sqlCommand := fmt.Sprintf("DROP TABLE IF EXISTS %s", tableIdentifier.FullyQualifiedName())
-		if _, err := dest.ExecContext(ctx, sqlCommand); err != nil {
+		if _, err := executor.ExecContext(ctx, sqlCommand); err != nil {
 			slog.Warn("Failed to drop temporary table, it will get garbage collected by the TTL...",
 				slog.Any("err", err),
 				slog.String("sqlCommand", sqlCommand),

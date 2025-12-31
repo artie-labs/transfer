@@ -88,7 +88,7 @@ func main() {
 			logger.Fatal("Unable to load baseline destination", slog.Any("err", err))
 		}
 	} else {
-		_dest, err := utils.LoadDestination(ctx, settings.Config, nil)
+		dest, err = utils.LoadDestination(ctx, settings.Config, nil)
 		if err != nil {
 			whClient.SendEvent(ctx, webhooksutil.ConnectionFailed, map[string]any{
 				"error":   "Unable to load destination",
@@ -96,19 +96,22 @@ func main() {
 			})
 			logger.Fatal("Unable to load destination", slog.Any("err", err))
 		}
+	}
 
-		if err = _dest.SweepTemporaryTables(ctx, whClient); err != nil {
+	// Sweep temporary tables if the destination supports it
+	if tempTableManager, ok := dest.(destination.TemporaryTableManager); ok {
+		if err = tempTableManager.SweepTemporaryTables(ctx, whClient); err != nil {
 			whClient.SendEvent(ctx, webhooksutil.ConnectionFailed, map[string]any{
 				"error":   "Failed to clean up temporary tables",
 				"details": err.Error(),
 			})
 			logger.Fatal("Failed to clean up temporary tables", slog.Any("err", err))
 		}
-		whClient.SendEvent(ctx, webhooksutil.ConnectionEstablished, map[string]any{
-			"mode": settings.Config.Mode,
-		})
-		dest = _dest
 	}
+
+	whClient.SendEvent(ctx, webhooksutil.ConnectionEstablished, map[string]any{
+		"mode": settings.Config.Mode,
+	})
 
 	slog.Info("Starting...", slog.String("version", version))
 	whClient.SendEvent(ctx, webhooksutil.ReplicationStarted, map[string]any{
