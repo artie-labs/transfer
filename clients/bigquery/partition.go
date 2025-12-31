@@ -20,6 +20,11 @@ func buildDistinctDates(colName string, rows []optimization.Row, reservedColumnN
 			return nil, fmt.Errorf("column %q does not exist in row: %v", colName, row)
 		}
 
+		if val == nil {
+			// If any row has a nil value, skip distinct dates filtering
+			return nil, nil
+		}
+
 		_time, err := typing.ParseDateFromAny(val)
 		if err != nil {
 			return nil, fmt.Errorf("column %q is not a time column, value: %v, err: %w", colName, val, err)

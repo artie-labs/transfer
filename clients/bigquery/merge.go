@@ -24,12 +24,14 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData, wh
 			return false, fmt.Errorf("failed to generate distinct dates: %w", err)
 		}
 
-		mergeString, err := generateMergeString(tableData.TopicConfig().BigQueryPartitionSettings, s.Dialect(), distinctDates)
-		if err != nil {
-			return false, fmt.Errorf("failed to generate merge string: %w", err)
-		}
+		if len(distinctDates) > 0 {
+			mergeString, err := generateMergeString(tableData.TopicConfig().BigQueryPartitionSettings, s.Dialect(), distinctDates)
+			if err != nil {
+				return false, fmt.Errorf("failed to generate merge string: %w", err)
+			}
 
-		additionalEqualityStrings = []string{mergeString}
+			additionalEqualityStrings = []string{mergeString}
+		}
 	}
 
 	if len(tableData.TopicConfig().AdditionalMergePredicates) > 0 {
