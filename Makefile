@@ -10,7 +10,7 @@ test:
 
 .PHONY: race
 race:
-	go test -race ./...
+	go test -count 1 -race ./...
 
 .PHONY: clean
 clean:
