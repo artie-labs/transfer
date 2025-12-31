@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"strings"
 	"sync"
@@ -38,32 +39,24 @@ var channelReopenErrorCodes = map[string]bool{
 	"STALE_PIPE_CACHE":                                true,
 }
 
-// ChannelReopenableError represents an error that can be resolved by reopening the channel
-type ChannelReopenableError struct {
-	Code    string
-	Message string
+type ErrorResponse struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
 }
 
-func (e *ChannelReopenableError) Error() string {
+func NewErrorResponse(code, message string) *ErrorResponse {
+	return &ErrorResponse{Code: code, Message: message}
+}
+
+func (e ErrorResponse) Error() string {
 	if e.Message != "" {
 		return fmt.Sprintf("%s: %s", e.Code, e.Message)
 	}
 	return e.Code
 }
 
-// parseChannelError attempts to parse an error response and determine if channel reopening is needed
-func parseChannelError(body string) *ChannelReopenableError {
-	var errResp struct {
-		Code    string `json:"code"`
-		Message string `json:"message"`
-	}
-	if err := json.Unmarshal([]byte(body), &errResp); err != nil {
-		return nil
-	}
-	if channelReopenErrorCodes[errResp.Code] {
-		return &ChannelReopenableError{Code: errResp.Code, Message: errResp.Message}
-	}
-	return nil
+func (e *ErrorResponse) IsChannelReopenError() bool {
+	return channelReopenErrorCodes[e.Code]
 }
 
 type SnowpipeStreamingChannel struct {
@@ -249,36 +242,31 @@ func (s *SnowpipeStreamingChannelManager) LoadData(ctx context.Context, db, sche
 			}
 
 			// Check if this is a reopenable error
-			var appendErr *AppendRowsError
-			if !errors.As(err, &appendErr) {
-				return fmt.Errorf("failed to append rows for snowpipe streaming channel %q: %w", channelName, err)
+			var appendErr ErrorResponse
+			if errors.As(err, &appendErr) && appendErr.IsChannelReopenError() {
+				// Reopen the channel and retry once
+				channel, retryErr := s.openChannel(ctx, db, schema, pipe, channelName, true)
+				if retryErr != nil {
+					return fmt.Errorf("failed to reopen channel %q after error %q: %w", channelName, appendErr.Code, retryErr)
+				}
+
+				// Rebuild the reader since it was consumed
+				retryReaders := make([]io.Reader, len(encodedBytes))
+				for i, b := range encodedBytes {
+					retryReaders[i] = bytes.NewReader(b)
+				}
+				retryReader := io.MultiReader(retryReaders...)
+
+				appendResp, err = AppendRows(ctx, s.scopedToken, s.ingestHost, db, schema, pipe, channelName, channel.GetContinuationToken(), retryReader)
+				if err != nil {
+					return fmt.Errorf("failed to append rows for snowpipe streaming channel %q after reopen: %w", channelName, err)
+				}
+
+				channel.UpdateContinuationToken(appendResp.NextContinuationToken)
+				return nil
 			}
 
-			reopenableErr := parseChannelError(appendErr.Body)
-			if reopenableErr == nil {
-				return fmt.Errorf("failed to append rows for snowpipe streaming channel %q: %w", channelName, err)
-			}
-
-			// Reopen the channel and retry once
-			channel, retryErr := s.openChannel(ctx, db, schema, pipe, channelName, true)
-			if retryErr != nil {
-				return fmt.Errorf("failed to reopen channel %q after error %q: %w", channelName, reopenableErr.Code, retryErr)
-			}
-
-			// Rebuild the reader since it was consumed
-			retryReaders := make([]io.Reader, len(encodedBytes))
-			for i, b := range encodedBytes {
-				retryReaders[i] = bytes.NewReader(b)
-			}
-			retryReader := io.MultiReader(retryReaders...)
-
-			appendResp, err = AppendRows(ctx, s.scopedToken, s.ingestHost, db, schema, pipe, channelName, channel.GetContinuationToken(), retryReader)
-			if err != nil {
-				return fmt.Errorf("failed to append rows for snowpipe streaming channel %q after reopen: %w", channelName, err)
-			}
-
-			channel.UpdateContinuationToken(appendResp.NextContinuationToken)
-			return nil
+			return fmt.Errorf("failed to append rows for snowpipe streaming channel %q: %w", channelName, err)
 		},
 	)
 
@@ -528,16 +516,6 @@ type AppendRowsResponse struct {
 	NextContinuationToken string `json:"next_continuation_token"`
 }
 
-// AppendRowsError represents an error from the AppendRows API call
-type AppendRowsError struct {
-	StatusCode int
-	Body       string
-}
-
-func (e *AppendRowsError) Error() string {
-	return fmt.Sprintf("unexpected status code %d, body: %s", e.StatusCode, e.Body)
-}
-
 func AppendRows(
 	ctx context.Context,
 	scopedToken, ingestHost, db, schema, pipe, channelName, contToken string,
@@ -568,7 +546,12 @@ func AppendRows(
 	}
 
 	if resp.StatusCode != 200 && resp.StatusCode != 201 {
-		return AppendRowsResponse{}, &AppendRowsError{StatusCode: resp.StatusCode, Body: string(body)}
+		var errorResponse ErrorResponse
+		if err := json.Unmarshal(body, &errorResponse); err != nil {
+			return AppendRowsResponse{}, fmt.Errorf("failed to unmarshal error response: %w status: %d, body: %s", err, resp.StatusCode, string(body))
+		}
+		slog.Warn("failed to append rows, will try to reopen channel", slog.Int("status", resp.StatusCode), slog.String("body", string(body)))
+		return AppendRowsResponse{}, errorResponse
 	}
 
 	var appendRowsResponse AppendRowsResponse

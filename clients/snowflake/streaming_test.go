@@ -42,85 +42,61 @@ func TestSnowpipeStreamingChannel_InvalidateChannel(t *testing.T) {
 func TestParseChannelError(t *testing.T) {
 	{
 		// STALE_PIPE_CACHE error
-		result := parseChannelError(`{"code":"STALE_PIPE_CACHE","message":"A pipe with this name was recently dropped"}`)
-		require.NotNil(t, result)
+		result := NewErrorResponse("STALE_PIPE_CACHE", "A pipe with this name was recently dropped")
+		assert.True(t, result.IsChannelReopenError())
 		assert.Equal(t, "STALE_PIPE_CACHE", result.Code)
 		assert.Equal(t, "A pipe with this name was recently dropped", result.Message)
 	}
 	{
 		// ERR_CHANNEL_DOES_NOT_EXIST_OR_IS_NOT_AUTHORIZED error
-		result := parseChannelError(`{"code":"ERR_CHANNEL_DOES_NOT_EXIST_OR_IS_NOT_AUTHORIZED","message":""}`)
-		require.NotNil(t, result)
+		result := NewErrorResponse("ERR_CHANNEL_DOES_NOT_EXIST_OR_IS_NOT_AUTHORIZED", "")
+		assert.True(t, result.IsChannelReopenError())
 		assert.Equal(t, "ERR_CHANNEL_DOES_NOT_EXIST_OR_IS_NOT_AUTHORIZED", result.Code)
 		assert.Equal(t, "", result.Message)
 	}
 	{
 		// ERR_CHANNEL_MUST_BE_REOPENED error
-		result := parseChannelError(`{"code":"ERR_CHANNEL_MUST_BE_REOPENED","message":"Channel must be reopened"}`)
-		require.NotNil(t, result)
+		result := NewErrorResponse("ERR_CHANNEL_MUST_BE_REOPENED", "Channel must be reopened")
+		assert.True(t, result.IsChannelReopenError())
 		assert.Equal(t, "ERR_CHANNEL_MUST_BE_REOPENED", result.Code)
 		assert.Equal(t, "Channel must be reopened", result.Message)
 	}
 	{
 		// ERR_CHANNEL_HAS_INVALID_ROW_SEQUENCER error
-		result := parseChannelError(`{"code":"ERR_CHANNEL_HAS_INVALID_ROW_SEQUENCER","message":""}`)
-		require.NotNil(t, result)
+		result := NewErrorResponse("ERR_CHANNEL_HAS_INVALID_ROW_SEQUENCER", "")
+		assert.True(t, result.IsChannelReopenError())
 		assert.Equal(t, "ERR_CHANNEL_HAS_INVALID_ROW_SEQUENCER", result.Code)
 	}
 	{
 		// ERR_CHANNEL_HAS_INVALID_CLIENT_SEQUENCER error
-		result := parseChannelError(`{"code":"ERR_CHANNEL_HAS_INVALID_CLIENT_SEQUENCER","message":""}`)
-		require.NotNil(t, result)
+		result := NewErrorResponse("ERR_CHANNEL_HAS_INVALID_CLIENT_SEQUENCER", "")
+		assert.True(t, result.IsChannelReopenError())
 		assert.Equal(t, "ERR_CHANNEL_HAS_INVALID_CLIENT_SEQUENCER", result.Code)
 	}
 	{
 		// ERR_CHANNEL_MUST_BE_REOPENED_DUE_TO_ROW_SEQ_GAP error
-		result := parseChannelError(`{"code":"ERR_CHANNEL_MUST_BE_REOPENED_DUE_TO_ROW_SEQ_GAP","message":""}`)
-		require.NotNil(t, result)
+		result := NewErrorResponse("ERR_CHANNEL_MUST_BE_REOPENED_DUE_TO_ROW_SEQ_GAP", "")
+		assert.True(t, result.IsChannelReopenError())
 		assert.Equal(t, "ERR_CHANNEL_MUST_BE_REOPENED_DUE_TO_ROW_SEQ_GAP", result.Code)
 	}
 	{
 		// Non-reopenable error
-		result := parseChannelError(`{"code":"SOME_OTHER_ERROR","message":"Something else went wrong"}`)
-		assert.Nil(t, result)
-	}
-	{
-		// Invalid JSON
-		result := parseChannelError(`not valid json`)
-		assert.Nil(t, result)
-	}
-	{
-		// Empty body
-		result := parseChannelError(``)
-		assert.Nil(t, result)
-	}
-	{
-		// Empty code
-		result := parseChannelError(`{"code":"","message":"No code"}`)
-		assert.Nil(t, result)
+		result := NewErrorResponse("SOME_OTHER_ERROR", "Something else went wrong")
+		assert.False(t, result.IsChannelReopenError())
 	}
 }
 
 func TestChannelReopenableError_Error(t *testing.T) {
 	{
 		// With message
-		err := ChannelReopenableError{Code: "STALE_PIPE_CACHE", Message: "A pipe with this name was recently dropped. The server cache has been updated. Please reopen the channel and try again"}
+		err := NewErrorResponse("STALE_PIPE_CACHE", "A pipe with this name was recently dropped. The server cache has been updated. Please reopen the channel and try again")
 		assert.Equal(t, "STALE_PIPE_CACHE: A pipe with this name was recently dropped. The server cache has been updated. Please reopen the channel and try again", err.Error())
 	}
 	{
 		// Without message
-		err := ChannelReopenableError{Code: "ERR_CHANNEL_MUST_BE_REOPENED", Message: ""}
+		err := NewErrorResponse("ERR_CHANNEL_MUST_BE_REOPENED", "")
 		assert.Equal(t, "ERR_CHANNEL_MUST_BE_REOPENED", err.Error())
 	}
-}
-
-func TestAppendRowsError_Error(t *testing.T) {
-	err := &AppendRowsError{
-		StatusCode: 503,
-		Body:       `{"code":"STALE_PIPE_CACHE","message":"test"}`,
-	}
-	expected := `unexpected status code 503, body: {"code":"STALE_PIPE_CACHE","message":"test"}`
-	assert.Equal(t, expected, err.Error())
 }
 
 func TestSnowpipeStreamingChannel_UpdateToken(t *testing.T) {
