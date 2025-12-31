@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
 	"strings"
 	"sync"
@@ -40,12 +39,13 @@ var channelReopenErrorCodes = map[string]bool{
 }
 
 type ErrorResponse struct {
-	Code    string `json:"code"`
-	Message string `json:"message"`
+	Code          string `json:"code"`
+	Message       string `json:"message"`
+	ResultHandler string `json:"result_handler,omitempty"`
 }
 
-func NewErrorResponse(code, message string) *ErrorResponse {
-	return &ErrorResponse{Code: code, Message: message}
+func NewErrorResponse(code, message string) ErrorResponse {
+	return ErrorResponse{Code: code, Message: message}
 }
 
 func (e ErrorResponse) Error() string {
@@ -256,7 +256,6 @@ func (s *SnowpipeStreamingChannelManager) LoadData(ctx context.Context, db, sche
 					retryReaders[i] = bytes.NewReader(b)
 				}
 				retryReader := io.MultiReader(retryReaders...)
-
 				appendResp, err = AppendRows(ctx, s.scopedToken, s.ingestHost, db, schema, pipe, channelName, channel.GetContinuationToken(), retryReader)
 				if err != nil {
 					return fmt.Errorf("failed to append rows for snowpipe streaming channel %q after reopen: %w", channelName, err)
@@ -545,12 +544,11 @@ func AppendRows(
 		return AppendRowsResponse{}, fmt.Errorf("failed to read response body: %w body: %s", err, string(body))
 	}
 
-	if resp.StatusCode != 200 && resp.StatusCode != 201 {
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		var errorResponse ErrorResponse
 		if err := json.Unmarshal(body, &errorResponse); err != nil {
 			return AppendRowsResponse{}, fmt.Errorf("failed to unmarshal error response: %w status: %d, body: %s", err, resp.StatusCode, string(body))
 		}
-		slog.Warn("failed to append rows, will try to reopen channel", slog.Int("status", resp.StatusCode), slog.String("body", string(body)))
 		return AppendRowsResponse{}, errorResponse
 	}
 
