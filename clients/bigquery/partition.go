@@ -17,11 +17,12 @@ func buildDistinctDates(colName string, rows []optimization.Row, reservedColumnN
 	for _, row := range rows {
 		val, ok := row.GetValue(colName)
 		if !ok {
-			return nil, fmt.Errorf("column %q does not exist in row: %v", colName, row)
+			// If it doesn't exist, skip distinct dates filtering. This will end up in `__UNPARTITIONED__`
+			return nil, nil
 		}
 
 		if val == nil {
-			// If any row has a nil value, skip distinct dates filtering
+			// If any row has a nil value, skip distinct dates filtering, this will end up in `__NULL__`
 			return nil, nil
 		}
 
