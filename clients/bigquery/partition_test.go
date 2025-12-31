@@ -20,10 +20,18 @@ func buildRows(data []map[string]any) []optimization.Row {
 
 func TestDistinctDates(t *testing.T) {
 	{
-		// Invalid date
+		// Nil value - skip distinct dates
 		dates, err := buildDistinctDates("ts", buildRows([]map[string]any{
 			{"ts": time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Format(time.RFC3339Nano)},
 			{"ts": nil},
+		}), nil)
+		assert.NoError(t, err)
+		assert.Empty(t, dates)
+	}
+	{
+		// Invalid date
+		dates, err := buildDistinctDates("ts", buildRows([]map[string]any{
+			{"ts": "not-a-date"},
 		}), nil)
 		assert.ErrorContains(t, err, `column "ts" is not a time column`)
 		assert.Empty(t, dates)
