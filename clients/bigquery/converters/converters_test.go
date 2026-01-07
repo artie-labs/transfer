@@ -224,7 +224,7 @@ func TestFloat64Converter_Convert(t *testing.T) {
 			// Empty string
 			val, err := converter.Convert("")
 			assert.NoError(t, err)
-			assert.Equal(t, math.NaN(), val)
+			assert.True(t, math.IsNaN(val.(float64)))
 		}
 	}
 	{
