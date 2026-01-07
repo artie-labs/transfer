@@ -26,7 +26,7 @@ type Event interface {
 	GetData(tc kafkalib.TopicConfig) (map[string]any, error)
 	GetOptionalSchema() (map[string]typing.KindDetails, error)
 	// GetColumns will inspect the envelope's payload right now and return.
-	GetColumns(reservedColumns map[string]bool) (*columns.Columns, error)
+	GetColumns(reservedColumns map[string]bool) []columns.Column
 }
 
 type TableID struct {

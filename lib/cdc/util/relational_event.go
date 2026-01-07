@@ -52,33 +52,27 @@ func shouldParseValue(value any) bool {
 	return true
 }
 
-func (s *SchemaEventPayload) GetColumns(reservedColumns map[string]bool) (*columns.Columns, error) {
+func (s *SchemaEventPayload) GetColumns(reservedColumns map[string]bool) []columns.Column {
 	fieldsObject := s.Schema.GetSchemaFromLabel(debezium.After)
 	if fieldsObject == nil {
 		// AFTER schema does not exist.
-		return nil, nil
+		return nil
 	}
 
-	var cols columns.Columns
+	var cols []columns.Column
 	for _, field := range fieldsObject.Fields {
 		// We are purposefully doing this to ensure that the correct typing is set
 		// When we invoke event.Save()
 		col := columns.NewColumn(columns.EscapeName(field.FieldName, reservedColumns), typing.Invalid)
 		if shouldParseValue(field.Default) {
-			val, err := field.ParseValue(field.Default)
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse field %q for default value: %w", field.FieldName, err)
-			} else {
-				if field.ShouldSetDefaultValue(val) {
-					col.SetDefaultValue(val)
-				}
+			if val, err := field.ParseValue(field.Default); err == nil && field.ShouldSetDefaultValue(val) {
+				col.SetDefaultValue(val)
 			}
 		}
-
-		cols.AddColumn(col)
+		cols = append(cols, col)
 	}
 
-	return &cols, nil
+	return cols
 }
 
 func (s *SchemaEventPayload) Operation() constants.Operation {
