@@ -172,6 +172,10 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 				return nil, fmt.Errorf("failed to convert value for column: %q, err: %w", column.Name(), err)
 			}
 
+			if val == nil {
+				continue
+			}
+
 			castedVal, err := typing.AssertType[float64](val)
 			if err != nil {
 				return nil, fmt.Errorf("failed to cast value for column: %q, err: %w", column.Name(), err)
