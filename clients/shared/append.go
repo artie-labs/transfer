@@ -51,7 +51,7 @@ func Append(ctx context.Context, dest destination.Destination, tableData *optimi
 				tableData,
 				tableConfig,
 				dest.IdentifierFor(
-					tableData.TopicConfig().BuildDatabaseAndSchemaPair(),
+					tableData.TopicConfig().BuildStagingDatabaseAndSchemaPair(),
 					GenerateReusableStagingTableName(
 						tableID.Table(),
 						config.GetStagingTableSuffix(),

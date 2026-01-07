@@ -53,7 +53,7 @@ func (s Store) Append(ctx context.Context, tableData *optimization.TableData, wh
 	}
 
 	tableID := s.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name())
-	tempTableID := shared.TempTableIDWithSuffix(tableID, tableData.TempTableSuffix())
+	tempTableID := shared.TempTableIDWithSuffix(s.IdentifierFor(tableData.TopicConfig().BuildStagingDatabaseAndSchemaPair(), tableData.Name()), tableData.TempTableSuffix())
 	tableConfig, err := s.GetTableConfig(ctx, tableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
 		return fmt.Errorf("failed to get table config: %w", err)
@@ -139,7 +139,7 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whC
 	}
 
 	tableID := s.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name())
-	temporaryTableID := shared.TempTableIDWithSuffix(tableID, tableData.TempTableSuffix())
+	temporaryTableID := shared.TempTableIDWithSuffix(s.IdentifierFor(tableData.TopicConfig().BuildStagingDatabaseAndSchemaPair(), tableData.Name()), tableData.TempTableSuffix())
 	tableConfig, err := s.GetTableConfig(ctx, tableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
 		return false, fmt.Errorf("failed to get table config: %w", err)
@@ -276,16 +276,24 @@ func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {
 	}
 
 	namespaces := make(map[string]bool)
+	stagingNamespaces := make(map[string]bool)
 	for _, tc := range cfg.Kafka.TopicConfigs {
 		if err := store.EnsureNamespaceExists(ctx, store.Dialect().BuildIdentifier(tc.Schema)); err != nil {
 			return Store{}, fmt.Errorf("failed to ensure namespace exists: %w", err)
 		}
-
 		namespaces[tc.Schema] = true
+
+		stagingSchema := tc.GetStagingSchema()
+		if !namespaces[stagingSchema] {
+			if err := store.EnsureNamespaceExists(ctx, store.Dialect().BuildIdentifier(stagingSchema)); err != nil {
+				return Store{}, fmt.Errorf("failed to ensure staging namespace exists: %w", err)
+			}
+		}
+		stagingNamespaces[stagingSchema] = true
 	}
 
-	// Then sweep the temporary tables.
-	if err = SweepTemporaryTables(ctx, store.s3TablesAPI, store.Dialect(), slices.Collect(maps.Keys(namespaces))); err != nil {
+	// Then sweep the temporary tables from staging namespaces.
+	if err = SweepTemporaryTables(ctx, store.s3TablesAPI, store.Dialect(), slices.Collect(maps.Keys(stagingNamespaces))); err != nil {
 		return Store{}, fmt.Errorf("failed to sweep temporary tables: %w", err)
 	}
 

@@ -1,6 +1,7 @@
 package kafkalib
 
 import (
+	"cmp"
 	"fmt"
 	"maps"
 	"slices"
@@ -15,10 +16,10 @@ type DatabaseAndSchemaPair struct {
 	Schema   string
 }
 
-func GetUniqueDatabaseAndSchemaPairs(tcs []*TopicConfig) []DatabaseAndSchemaPair {
+func GetUniqueStagingDatabaseAndSchemaPairs(tcs []*TopicConfig) []DatabaseAndSchemaPair {
 	seenMap := make(map[DatabaseAndSchemaPair]bool)
 	for _, tc := range tcs {
-		seenMap[tc.BuildDatabaseAndSchemaPair()] = true
+		seenMap[tc.BuildStagingDatabaseAndSchemaPair()] = true
 	}
 
 	return slices.Collect(maps.Keys(seenMap))
@@ -125,7 +126,7 @@ type TopicConfig struct {
 	Database string `yaml:"db"`
 	Schema   string `yaml:"schema"`
 	// [StagingSchema] - Optional schema to use for staging tables. If not specified, Schema will be used.
-	StagingSchema string `yaml:"stagingSchema"`
+	StagingSchema string `yaml:"stagingSchema,omitempty"`
 	// [TableName] - if left empty, the table name will be deduced from each event.
 	TableName                  string `yaml:"tableName"`
 	Topic                      string `yaml:"topic"`
@@ -168,6 +169,14 @@ type TopicConfig struct {
 
 func (t TopicConfig) BuildDatabaseAndSchemaPair() DatabaseAndSchemaPair {
 	return DatabaseAndSchemaPair{Database: t.Database, Schema: t.Schema}
+}
+
+func (t TopicConfig) GetStagingSchema() string {
+	return cmp.Or(t.StagingSchema, t.Schema)
+}
+
+func (t TopicConfig) BuildStagingDatabaseAndSchemaPair() DatabaseAndSchemaPair {
+	return DatabaseAndSchemaPair{Database: t.Database, Schema: t.GetStagingSchema()}
 }
 
 const (

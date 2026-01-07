@@ -143,16 +143,15 @@ func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryK
 
 func (s Store) SweepTemporaryTables(ctx context.Context, _ *webhooksclient.Client) error {
 	for _, topicConfig := range s.config.TopicConfigs() {
-		dbAndSchema := topicConfig.BuildDatabaseAndSchemaPair()
+		dbAndSchema := topicConfig.BuildStagingDatabaseAndSchemaPair()
 		query, args := s.dialect().BuildSweepQuery(dbAndSchema.Database, dbAndSchema.Schema)
-
 		response, err := s.QueryContextHttp(ctx, query, args...)
 		if err != nil {
 			return fmt.Errorf("failed to query temporary tables: %w", err)
 		}
 
 		if response.Error != nil {
-			return fmt.Errorf("query failed: %s", *response.Error)
+			return fmt.Errorf("query failed: %q", *response.Error)
 		}
 
 		for _, row := range response.Rows {
