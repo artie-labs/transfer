@@ -80,6 +80,10 @@ func (Float64Converter) Convert(value any) (any, error) {
 
 		return floatValue, nil
 	case string:
+		if castedVal == "" {
+			return float64(0), nil
+		}
+
 		floatValue, err := strconv.ParseFloat(castedVal, 64)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse string %q to float64: %w", castedVal, err)

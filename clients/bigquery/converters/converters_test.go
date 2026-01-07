@@ -220,6 +220,12 @@ func TestFloat64Converter_Convert(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, float64(123.45), val)
 		}
+		{
+			// Empty string
+			val, err := converter.Convert("")
+			assert.NoError(t, err)
+			assert.Equal(t, float64(0), val)
+		}
 	}
 	{
 		// Not supported type
