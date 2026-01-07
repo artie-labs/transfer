@@ -27,10 +27,10 @@ func TestTableData_WipeData(t *testing.T) {
 
 func TestTableData_ReadOnlyInMemoryCols(t *testing.T) {
 	// Making sure the columns are actually read only.
-	var cols columns.Columns
+	cols := columns.NewColumns(nil)
 	cols.AddColumn(columns.NewColumn("name", typing.String))
 
-	td := NewTableData(&cols, config.Replication, nil, kafkalib.TopicConfig{}, "foo")
+	td := NewTableData(cols, config.Replication, nil, kafkalib.TopicConfig{}, "foo")
 	readOnlyCols := td.ReadOnlyInMemoryCols()
 	readOnlyCols.AddColumn(columns.NewColumn("last_name", typing.String))
 
@@ -43,7 +43,7 @@ func TestTableData_ReadOnlyInMemoryCols(t *testing.T) {
 }
 
 func TestTableData_UpdateInMemoryColumns(t *testing.T) {
-	var _cols columns.Columns
+	_cols := columns.NewColumns(nil)
 	for colName, colKind := range map[string]typing.KindDetails{
 		"FOO":       typing.String,
 		"bar":       typing.Invalid,
@@ -53,7 +53,7 @@ func TestTableData_UpdateInMemoryColumns(t *testing.T) {
 	}
 
 	tableData := &TableData{
-		inMemoryColumns: &_cols,
+		inMemoryColumns: _cols,
 	}
 
 	for name, colKindDetails := range map[string]typing.KindDetails{

@@ -13,7 +13,7 @@ import (
 func TestTableData_UpdateInMemoryColumnsFromDestination_Tz(t *testing.T) {
 	{
 		// In memory and destination columns are both timestamp_tz
-		tableData := &TableData{inMemoryColumns: &columns.Columns{}}
+		tableData := &TableData{inMemoryColumns: columns.NewColumns(nil)}
 		tableData.AddInMemoryCol(columns.NewColumn("foo", typing.TimestampTZ))
 
 		assert.NoError(t, tableData.MergeColumnsFromDestination(columns.NewColumn("foo", typing.TimestampTZ)))
@@ -23,7 +23,7 @@ func TestTableData_UpdateInMemoryColumnsFromDestination_Tz(t *testing.T) {
 	}
 	{
 		// In memory is timestamp_ntz and destination is timestamp_tz
-		tableData := &TableData{inMemoryColumns: &columns.Columns{}}
+		tableData := &TableData{inMemoryColumns: columns.NewColumns(nil)}
 		tableData.AddInMemoryCol(
 			columns.NewColumn(
 				"foo",
@@ -40,7 +40,7 @@ func TestTableData_UpdateInMemoryColumnsFromDestination_Tz(t *testing.T) {
 
 func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 	const strCol = "string"
-	tableDataCols := &columns.Columns{}
+	tableDataCols := columns.NewColumns(nil)
 	tableData := &TableData{inMemoryColumns: tableDataCols}
 	{
 		// Trying to merge an invalid destination column
@@ -117,7 +117,7 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 			// Testing converting from string to various time data types
 			{
 				// Date
-				cols := &columns.Columns{}
+				cols := columns.NewColumns(nil)
 				cols.AddColumn(columns.NewColumn("date_column", typing.String))
 				td := &TableData{inMemoryColumns: cols}
 
@@ -128,7 +128,7 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 			}
 			{
 				// Time
-				cols := &columns.Columns{}
+				cols := columns.NewColumns(nil)
 				cols.AddColumn(columns.NewColumn("time_column", typing.String))
 				td := &TableData{inMemoryColumns: cols}
 
@@ -139,7 +139,7 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 			}
 			{
 				// Timestamp TZ
-				cols := &columns.Columns{}
+				cols := columns.NewColumns(nil)
 				cols.AddColumn(columns.NewColumn("timestamp_tz_column", typing.String))
 				td := &TableData{inMemoryColumns: cols}
 

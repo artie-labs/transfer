@@ -19,7 +19,7 @@ import (
 func TestStagingTable(ctx context.Context, store *postgres.Store) error {
 	tableID := dialect.NewTableIdentifier("public", fmt.Sprintf("test_%s", strings.ToLower(stringutil.Random(5))))
 
-	var cols columns.Columns
+	cols := columns.NewColumns(nil)
 	cols.AddColumn(columns.NewColumn("id", typing.BuildIntegerKind(typing.IntegerKind)))
 	cols.AddColumn(columns.NewColumn("name", typing.String))
 
@@ -28,7 +28,7 @@ func TestStagingTable(ctx context.Context, store *postgres.Store) error {
 	}
 
 	expectedRows := 10_000
-	tableData := optimization.NewTableData(&cols, config.Replication, []string{"id"}, kafkalib.TopicConfig{}, tableID.Table())
+	tableData := optimization.NewTableData(cols, config.Replication, []string{"id"}, kafkalib.TopicConfig{}, tableID.Table())
 	for i := range expectedRows {
 		tableData.InsertRow(fmt.Sprintf("%d", i), map[string]any{"id": i + 1, "name": fmt.Sprintf("name_%d", i+1)}, false)
 	}

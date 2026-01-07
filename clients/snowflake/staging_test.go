@@ -261,7 +261,7 @@ func (s *SnowflakeTestSuite) TestBackfillColumn() {
 // generateTableData - returns tableName and tableData
 func generateTableData(rows int) (dialect.TableIdentifier, *optimization.TableData) {
 	randomTableName := fmt.Sprintf("temp_%s_%s", constants.ArtiePrefix, stringutil.Random(10))
-	cols := &columns.Columns{}
+	cols := columns.NewColumns(nil)
 	for _, col := range []string{"user_id", "first_name", "last_name", "dusty"} {
 		cols.AddColumn(columns.NewColumn(col, typing.String))
 	}

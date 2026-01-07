@@ -218,7 +218,7 @@ func getBasicColumnsForTest(compositeKey bool) result {
 	textToastCol := columns.NewColumn("toast_text", typing.String)
 	textToastCol.ToastColumn = true
 
-	var cols columns.Columns
+	cols := columns.NewColumns(nil)
 	cols.AddColumn(idCol)
 	cols.AddColumn(emailCol)
 	cols.AddColumn(columns.NewColumn("first_name", typing.String))
