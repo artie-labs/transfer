@@ -229,6 +229,25 @@ func TestRowToMessage(t *testing.T) {
 	}, result)
 }
 
+func TestRowToMessage_EmptyStringFloat(t *testing.T) {
+	cols := []columns.Column{
+		columns.NewColumn("c_float", typing.Float),
+	}
+
+	desc, err := columnsToMessageDescriptor(cols)
+	assert.NoError(t, err)
+
+	message, err := rowToMessage(map[string]any{"c_float": ""}, cols, *desc, config.Config{})
+	assert.NoError(t, err)
+
+	bytes, err := protojson.Marshal(message)
+	assert.NoError(t, err)
+
+	var result map[string]any
+	assert.NoError(t, json.Unmarshal(bytes, &result))
+	assert.Empty(t, result) // Field should not be set when value is empty string
+}
+
 func TestEncodeStructToJSONString(t *testing.T) {
 	{
 		// Empty string:
