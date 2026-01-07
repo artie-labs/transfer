@@ -3,6 +3,7 @@ package util
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -65,7 +66,13 @@ func (s *SchemaEventPayload) GetColumns(reservedColumns map[string]bool) []colum
 		// When we invoke event.Save()
 		col := columns.NewColumn(columns.EscapeName(field.FieldName, reservedColumns), typing.Invalid)
 		if shouldParseValue(field.Default) {
-			if val, err := field.ParseValue(field.Default); err == nil && field.ShouldSetDefaultValue(val) {
+			val, err := field.ParseValue(field.Default)
+			if err != nil {
+				slog.Warn("Failed to parse default value for field",
+					slog.String("field", field.FieldName),
+					slog.Any("err", err),
+				)
+			} else if field.ShouldSetDefaultValue(val) {
 				col.SetDefaultValue(val)
 			}
 		}
