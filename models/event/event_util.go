@@ -15,17 +15,13 @@ func buildColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns map[
 		return nil, err
 	}
 
-	if eventCols == nil {
-		return nil, nil
-	}
-
 	cols := columns.NewColumns(eventCols)
 	for _, col := range tc.ColumnsToExclude {
 		cols.DeleteColumn(col)
 	}
 
 	if len(tc.ColumnsToInclude) > 0 {
-		var filteredColumns columns.Columns
+		filteredColumns := columns.NewColumns(nil)
 		for _, col := range tc.ColumnsToInclude {
 			if existingColumn, ok := cols.GetColumn(col); ok {
 				filteredColumns.AddColumn(existingColumn)
@@ -51,12 +47,7 @@ func buildColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns map[
 		cols.AddColumn(columns.NewColumn(col.Name, typing.String))
 	}
 
-	// Ensure we return an empty slice (not nil) when there are no columns but GetColumns returned a non-nil slice
-	result := cols.GetColumns()
-	if result == nil {
-		return []columns.Column{}, nil
-	}
-	return result, nil
+	return cols.GetColumns(), nil
 }
 
 func buildPrimaryKeys(tc kafkalib.TopicConfig, pkMap map[string]any, reservedColumns map[string]bool) []string {
