@@ -217,7 +217,7 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 	// Does the table exist?
 	td := inMemDB.GetOrCreateTableData(e.tableID, tc.Topic)
 	if td.Empty() {
-		cols := &columns.Columns{}
+		cols := columns.NewColumns(nil)
 		if e.columns != nil {
 			cols = e.columns
 		}

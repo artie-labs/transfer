@@ -30,7 +30,7 @@ func (f *FlushTestSuite) TestFlushSingleTopic_Success() {
 
 	tableID := cdc.NewTableID("public", "users")
 	td := f.db.GetOrCreateTableData(tableID, topicName)
-	td.SetTableData(optimization.NewTableData(&columns.Columns{}, config.Replication, []string{"id"}, topicConfig, tableID.Table))
+	td.SetTableData(optimization.NewTableData(columns.NewColumns(nil), config.Replication, []string{"id"}, topicConfig, tableID.Table))
 	td.InsertRow("1", map[string]any{"id": 1, "name": "Alice"}, false)
 
 	f.fakeBaseline.MergeReturns(true, nil)
@@ -67,7 +67,7 @@ func (f *FlushTestSuite) TestFlushSingleTopic_MultipleTablesSuccess() {
 	var tableDatas []*models.TableData
 	for _, tableID := range tableIDs {
 		td := f.db.GetOrCreateTableData(tableID, topicName)
-		td.SetTableData(optimization.NewTableData(&columns.Columns{}, config.Replication, []string{"id"}, topicConfig, tableID.Table))
+		td.SetTableData(optimization.NewTableData(columns.NewColumns(nil), config.Replication, []string{"id"}, topicConfig, tableID.Table))
 		td.InsertRow("1", map[string]any{"id": 1, "data": "test"}, false)
 		tableDatas = append(tableDatas, td)
 	}
@@ -97,14 +97,14 @@ func (f *FlushTestSuite) TestFlushSingleTopic_MultipleTablesWithCooldown() {
 	var tableDatas []*models.TableData
 	for _, tableID := range tableIDs {
 		td := f.db.GetOrCreateTableData(tableID, topicName)
-		td.SetTableData(optimization.NewTableData(&columns.Columns{}, config.Replication, []string{"id"}, topicConfig, tableID.Table))
+		td.SetTableData(optimization.NewTableData(columns.NewColumns(nil), config.Replication, []string{"id"}, topicConfig, tableID.Table))
 		td.InsertRow("1", map[string]any{"id": 1, "data": "test"}, false)
 		tableDatas = append(tableDatas, td)
 	}
 
 	// Set cooldown on one table by simulating a recent flush
 	tableDatas[1].Wipe()
-	tableDatas[1].SetTableData(optimization.NewTableData(&columns.Columns{}, config.Replication, []string{"id"}, topicConfig, tableIDs[1].Table))
+	tableDatas[1].SetTableData(optimization.NewTableData(columns.NewColumns(nil), config.Replication, []string{"id"}, topicConfig, tableIDs[1].Table))
 	tableDatas[1].InsertRow("1", map[string]any{"id": 1, "data": "test"}, false)
 
 	cooldown := 10 * time.Second
@@ -127,7 +127,7 @@ func (f *FlushTestSuite) TestFlushSingleTopic_HistoryMode() {
 
 	tableID := cdc.NewTableID("public", "events")
 	td := f.db.GetOrCreateTableData(tableID, topicName)
-	td.SetTableData(optimization.NewTableData(&columns.Columns{}, config.History, []string{"id"}, topicConfig, tableID.Table))
+	td.SetTableData(optimization.NewTableData(columns.NewColumns(nil), config.History, []string{"id"}, topicConfig, tableID.Table))
 	td.InsertRow("1", map[string]any{"id": 1, "event": "login"}, false)
 
 	f.fakeBaseline.AppendReturns(nil)
@@ -145,7 +145,7 @@ func (f *FlushTestSuite) TestFlushSingleTopic_MergeNoCommit() {
 
 	tableID := cdc.NewTableID("public", "users")
 	td := f.db.GetOrCreateTableData(tableID, topicName)
-	td.SetTableData(optimization.NewTableData(&columns.Columns{}, config.Replication, []string{"id"}, topicConfig, tableID.Table))
+	td.SetTableData(optimization.NewTableData(columns.NewColumns(nil), config.Replication, []string{"id"}, topicConfig, tableID.Table))
 	td.InsertRow("1", map[string]any{"id": 1, "name": "Alice"}, false)
 
 	// Merge succeeds but returns false (don't commit offset)

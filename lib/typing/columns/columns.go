@@ -123,6 +123,7 @@ func (c *Column) DefaultValue() any {
 	return c.defaultValue
 }
 
+// [Columns] - This is a wrapper around [Column] slices. Initialize this with [NewColumns].
 type Columns struct {
 	columns []Column
 	// [index] - This is used for O(1) lookups.

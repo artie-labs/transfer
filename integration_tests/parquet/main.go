@@ -19,12 +19,12 @@ import (
 )
 
 func createBasicTestTable() *optimization.TableData {
-	var cols columns.Columns
+	cols := columns.NewColumns(nil)
 
 	cols.AddColumn(columns.NewColumn("id", typing.Integer))
 	cols.AddColumn(columns.NewColumn("name", typing.String))
 
-	return optimization.NewTableData(&cols, config.Replication, []string{"id"}, kafkalib.TopicConfig{}, "basic_test_table")
+	return optimization.NewTableData(cols, config.Replication, []string{"id"}, kafkalib.TopicConfig{}, "basic_test_table")
 }
 
 func addBasicTestData(tableData *optimization.TableData) {
@@ -34,7 +34,7 @@ func addBasicTestData(tableData *optimization.TableData) {
 }
 
 func createComprehensiveTestTable() *optimization.TableData {
-	var cols columns.Columns
+	cols := columns.NewColumns(nil)
 
 	// Basic types
 	cols.AddColumn(columns.NewColumn("id", typing.Integer))
@@ -65,7 +65,7 @@ func createComprehensiveTestTable() *optimization.TableData {
 	// They would be converted to JSON strings which is tested with complex_json_string
 	cols.AddColumn(columns.NewColumn("complex_json_string", typing.String))
 
-	return optimization.NewTableData(&cols, config.Replication, []string{"id"}, kafkalib.TopicConfig{}, "comprehensive_test_table")
+	return optimization.NewTableData(cols, config.Replication, []string{"id"}, kafkalib.TopicConfig{}, "comprehensive_test_table")
 }
 
 func addComprehensiveTestData(tableData *optimization.TableData) {

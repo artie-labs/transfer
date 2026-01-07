@@ -176,12 +176,12 @@ func buildColumns(colTypesMap map[string]typing.KindDetails) *columns.Columns {
 	// Sort the column names alphabetically to ensure deterministic order
 	slices.Sort(colNames)
 
-	var cols columns.Columns
+	cols := columns.NewColumns(nil)
 	for _, colName := range colNames {
 		cols.AddColumn(columns.NewColumn(colName, colTypesMap[colName]))
 	}
 
-	return &cols
+	return cols
 }
 
 func TestDatabricksDialect_BuildMergeQueries_SoftDelete(t *testing.T) {

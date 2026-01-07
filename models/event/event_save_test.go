@@ -167,7 +167,7 @@ func (e *EventsTestSuite) TestEventSaveOptionalSchema() {
 }
 
 func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
-	var cols columns.Columns
+	cols := columns.NewColumns(nil)
 	for i := range 50 {
 		cols.AddColumn(columns.NewColumn(fmt.Sprintf("col_%d", i), typing.Invalid))
 	}
@@ -223,7 +223,7 @@ func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 }
 
 func (e *EventsTestSuite) TestEventSaveColumns() {
-	var cols columns.Columns
+	cols := columns.NewColumns(nil)
 	cols.AddColumn(columns.NewColumn("randomCol", typing.Invalid))
 	cols.AddColumn(columns.NewColumn("anotherCOL", typing.Invalid))
 	cols.AddColumn(columns.NewColumn("created_at_date_string", typing.Invalid))
