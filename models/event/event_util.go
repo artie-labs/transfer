@@ -9,7 +9,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func buildColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns map[string]bool) *columns.Columns {
+func buildColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns map[string]bool) []columns.Column {
 	eventCols := event.GetColumns(reservedColumns)
 	cols := columns.NewColumns(eventCols)
 
@@ -36,7 +36,7 @@ func buildColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns map[
 			filteredColumns.AddColumn(columns.NewColumn(col.Name, typing.String))
 		}
 
-		return &filteredColumns
+		return filteredColumns.GetColumns()
 	}
 
 	// Include static columns
@@ -44,7 +44,7 @@ func buildColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns map[
 		cols.AddColumn(columns.NewColumn(col.Name, typing.String))
 	}
 
-	return cols
+	return cols.GetColumns()
 }
 
 func buildPrimaryKeys(tc kafkalib.TopicConfig, pkMap map[string]any, reservedColumns map[string]bool) []string {

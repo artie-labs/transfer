@@ -68,7 +68,7 @@ func (e *EventsTestSuite) TestEvent_Validate() {
 func testBuildFilteredColumns(t *testing.T, fakeEvent *mocks.FakeEvent, topicConfig kafkalib.TopicConfig, fakeColumns []columns.Column, expectedCols *columns.Columns) {
 	fakeEvent.GetColumnsReturns(fakeColumns)
 	cols := buildColumns(fakeEvent, topicConfig, nil)
-	assert.Equal(t, expectedCols.GetColumns(), cols.GetColumns())
+	assert.Equal(t, expectedCols.GetColumns(), cols)
 }
 
 func (e *EventsTestSuite) TestBuildFilteredColumns() {
