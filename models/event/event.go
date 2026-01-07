@@ -47,10 +47,10 @@ func (e Event) GetTable() string {
 
 func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfig, cfgMode config.Mode) (Event, error) {
 	reservedColumns := destination.BuildReservedColumnNames(dest)
-	cols := buildColumns(event, tc, reservedColumns)
+	cols := columns.NewColumns(buildColumns(event, tc, reservedColumns))
 
 	pks := buildPrimaryKeys(tc, pkMap, reservedColumns)
-	if cols != nil {
+	if len(cols.GetColumns()) > 0 {
 		// All keys in pks are already escaped, so don't escape again
 		for _, pk := range pks {
 			if err := cols.UpsertColumn(pk, columns.UpsertColumnArg{PrimaryKey: typing.ToPtr(true)}); err != nil {
