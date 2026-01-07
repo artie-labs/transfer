@@ -179,7 +179,7 @@ func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 		constants.DeleteColumnMarker:        true,
 		constants.OnlySetDeleteColumnMarker: true,
 	}, nil)
-	mockEvent.GetColumnsReturns(&cols, nil)
+	mockEvent.GetColumnsReturns(cols.GetColumns(), nil)
 
 	evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"col_1": "123"}, topicConfig, config.Replication)
 	assert.NoError(e.T(), err)
@@ -230,7 +230,7 @@ func (e *EventsTestSuite) TestEventSaveColumns() {
 
 	mockEvent := &mocks.FakeEvent{}
 	mockEvent.GetTableNameReturns(topicConfig.TableName)
-	mockEvent.GetColumnsReturns(&cols, nil)
+	mockEvent.GetColumnsReturns(cols.GetColumns(), nil)
 	mockEvent.GetDataReturns(map[string]any{
 		"id":                                "123",
 		constants.DeleteColumnMarker:        true,
