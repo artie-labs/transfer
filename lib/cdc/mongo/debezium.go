@@ -1,10 +1,10 @@
 package mongo
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
+	jsoniter "github.com/json-iterator/go"
 	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/artie-labs/transfer/lib/cdc"
@@ -14,6 +14,8 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 type Debezium struct{}
 

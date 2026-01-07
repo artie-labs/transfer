@@ -206,7 +206,7 @@ func TestProcessMessageFailures(t *testing.T) {
 		}
 
 		tableName, err = args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{})
-		assert.ErrorContains(t, err, "cannot unmarshal event: failed to unmarshal json: invalid character 'o' in literal")
+		assert.Error(t, err)
 		assert.Empty(t, tableName)
 		assert.True(t, td.NumberOfRows() > 0)
 	}
