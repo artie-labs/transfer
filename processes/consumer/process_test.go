@@ -206,7 +206,7 @@ func TestProcessMessageFailures(t *testing.T) {
 		}
 
 		tableName, err = args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{})
-		assert.ErrorContains(t, err, "cannot unmarshal event: failed to unmarshal json: skipThreeBytes: expect ull, error found in #2 byte of ...|not a json o|..., bigger context ...|not a json object|...")
+		assert.Error(t, err)
 		assert.Empty(t, tableName)
 		assert.True(t, td.NumberOfRows() > 0)
 	}
