@@ -47,24 +47,18 @@ func (e Event) GetTable() string {
 
 func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfig, cfgMode config.Mode) (Event, error) {
 	reservedColumns := destination.BuildReservedColumnNames(dest)
-	cols, err := buildColumns(event, tc, reservedColumns)
+	_cols, err := buildColumns(event, tc, reservedColumns)
 	if err != nil {
-		return Event{}, fmt.Errorf("failed to build filtered columns: %w", err)
+		return Event{}, fmt.Errorf("failed to build columns: %w", err)
 	}
 
+	cols := columns.NewColumns(_cols)
 	pks := buildPrimaryKeys(tc, pkMap, reservedColumns)
-	if cols != nil {
-		// All keys in pks are already escaped, so don't escape again
-		for _, pk := range pks {
-			err = cols.UpsertColumn(
-				pk,
-				columns.UpsertColumnArg{
-					PrimaryKey: typing.ToPtr(true),
-				},
-			)
-			if err != nil {
-				return Event{}, fmt.Errorf("failed to upsert column: %w", err)
-			}
+
+	// All keys in pks are already escaped, so don't escape again
+	for _, pk := range pks {
+		if err := cols.UpsertColumn(pk, columns.UpsertColumnArg{PrimaryKey: typing.ToPtr(true)}); err != nil {
+			return Event{}, fmt.Errorf("failed to upsert column: %w", err)
 		}
 	}
 
@@ -80,9 +74,7 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 		}
 
 		data[constants.SourceMetadataColumnMarker] = metadata
-		if cols != nil {
-			cols.AddColumn(columns.NewColumn(constants.SourceMetadataColumnMarker, typing.Struct))
-		}
+		cols.AddColumn(columns.NewColumn(constants.SourceMetadataColumnMarker, typing.Struct))
 	}
 
 	tblName := cmp.Or(tc.TableName, event.GetTableName())
