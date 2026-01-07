@@ -123,15 +123,31 @@ func (c *Column) DefaultValue() any {
 	return c.defaultValue
 }
 
+// [Columns] - This is a wrapper around [Column] slices. Initialize this with [NewColumns].
 type Columns struct {
 	columns []Column
+	// [index] - This is used for O(1) lookups.
+	index map[string]int
 	sync.RWMutex
 }
 
 func NewColumns(columns []Column) *Columns {
-	return &Columns{
+	c := &Columns{
 		columns: columns,
+		index:   make(map[string]int, len(columns)),
 	}
+
+	c.BuildIndex()
+	return c
+}
+
+func (c *Columns) BuildIndex() {
+	index := make(map[string]int)
+	for i, col := range c.columns {
+		index[col.name] = i
+	}
+
+	c.index = index
 }
 
 type UpsertColumnArg struct {
@@ -208,25 +224,23 @@ func (c *Columns) AddColumn(col Column) {
 		return
 	}
 
-	if _, ok := c.GetColumn(col.name); ok {
-		// Column exists.
-		return
-	}
-
 	c.Lock()
 	defer c.Unlock()
 
+	if _, ok := c.index[col.name]; ok {
+		return
+	}
+
 	c.columns = append(c.columns, col)
+	c.BuildIndex()
 }
 
 func (c *Columns) GetColumn(name string) (Column, bool) {
 	c.RLock()
 	defer c.RUnlock()
 
-	for _, column := range c.columns {
-		if column.name == name {
-			return column, true
-		}
+	if idx, ok := c.index[name]; ok {
+		return c.columns[idx], true
 	}
 
 	return Column{}, false
@@ -250,6 +264,7 @@ func (c *Columns) ValidColumns() []Column {
 
 		cols = append(cols, col)
 	}
+
 	return cols
 }
 
@@ -266,16 +281,14 @@ func (c *Columns) GetColumns() []Column {
 	return cols
 }
 
-// UpdateColumn will update the column and also preserve the `defaultValue` from the previous column if the new column does not have one.
+// [UpdateColumn] - will update the column and also preserve the `defaultValue` from the previous column if the new column does not have one.
 func (c *Columns) UpdateColumn(updateCol Column) {
 	c.Lock()
 	defer c.Unlock()
 
-	for index, col := range c.columns {
-		if col.name == updateCol.name {
-			c.columns[index] = updateCol
-			return
-		}
+	if idx, ok := c.index[updateCol.name]; ok {
+		c.columns[idx] = updateCol
+		return
 	}
 }
 
@@ -283,11 +296,9 @@ func (c *Columns) DeleteColumn(name string) {
 	c.Lock()
 	defer c.Unlock()
 
-	for idx, column := range c.columns {
-		if column.name == name {
-			c.columns = append(c.columns[:idx], c.columns[idx+1:]...)
-			return
-		}
+	if i, ok := c.index[name]; ok {
+		c.columns = append(c.columns[:i], c.columns[i+1:]...)
+		c.BuildIndex()
 	}
 }
 
