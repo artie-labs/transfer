@@ -108,6 +108,12 @@ func TestArray_Convert(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, constants.ToastUnavailableValuePlaceholder, value)
 		}
+		{
+			// As raw placeholder string
+			value, err := Array{}.Convert(constants.ToastUnavailableValuePlaceholder)
+			assert.NoError(t, err)
+			assert.Equal(t, constants.ToastUnavailableValuePlaceholder, value)
+		}
 	}
 	{
 		// Array of JSON objects
