@@ -2,6 +2,7 @@ package converters
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 
 	"github.com/artie-labs/transfer/lib/typing"
@@ -81,7 +82,7 @@ func (Float64Converter) Convert(value any) (any, error) {
 		return floatValue, nil
 	case string:
 		if castedVal == "" {
-			return float64(0), nil
+			return math.NaN(), nil
 		}
 
 		floatValue, err := strconv.ParseFloat(castedVal, 64)
