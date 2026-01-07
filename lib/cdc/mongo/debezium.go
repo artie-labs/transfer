@@ -127,11 +127,11 @@ func (s *SchemaEventPayload) GetOptionalSchema() (map[string]typing.KindDetails,
 	return nil, nil
 }
 
-func (s *SchemaEventPayload) GetColumns(reservedColumns map[string]bool) []columns.Column {
+func (s *SchemaEventPayload) GetColumns(reservedColumns map[string]bool) ([]columns.Column, error) {
 	fieldsObject := s.Schema.GetSchemaFromLabel(debezium.After)
 	if fieldsObject == nil {
 		// AFTER schema does not exist.
-		return nil
+		return nil, nil
 	}
 
 	var cols []columns.Column
@@ -141,7 +141,7 @@ func (s *SchemaEventPayload) GetColumns(reservedColumns map[string]bool) []colum
 		cols = append(cols, columns.NewColumn(columns.EscapeName(field.FieldName, reservedColumns), typing.Invalid))
 	}
 
-	return cols
+	return cols, nil
 }
 
 func (s *SchemaEventPayload) GetData(tc kafkalib.TopicConfig) (map[string]any, error) {

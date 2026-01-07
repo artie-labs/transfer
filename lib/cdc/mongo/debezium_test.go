@@ -509,6 +509,7 @@ func TestMongoDBEventWithSchema(t *testing.T) {
 	})
 	assert.False(t, evt.DeletePayload())
 	// MongoDB events don't have an "after" schema, so GetColumns returns nil
-	cols := schemaEvt.GetColumns(nil)
+	cols, err := schemaEvt.GetColumns(nil)
+	assert.NoError(t, err)
 	assert.Nil(t, cols)
 }

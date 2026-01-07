@@ -3,7 +3,6 @@ package util
 import (
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -53,11 +52,11 @@ func shouldParseValue(value any) bool {
 	return true
 }
 
-func (s *SchemaEventPayload) GetColumns(reservedColumns map[string]bool) []columns.Column {
+func (s *SchemaEventPayload) GetColumns(reservedColumns map[string]bool) ([]columns.Column, error) {
 	fieldsObject := s.Schema.GetSchemaFromLabel(debezium.After)
 	if fieldsObject == nil {
 		// AFTER schema does not exist.
-		return nil
+		return nil, nil
 	}
 
 	var cols []columns.Column
@@ -68,10 +67,7 @@ func (s *SchemaEventPayload) GetColumns(reservedColumns map[string]bool) []colum
 		if shouldParseValue(field.Default) {
 			val, err := field.ParseValue(field.Default)
 			if err != nil {
-				slog.Warn("Failed to parse default value for field",
-					slog.String("field", field.FieldName),
-					slog.Any("err", err),
-				)
+				return nil, fmt.Errorf("failed to parse field %q for default value: %w", field.FieldName, err)
 			} else if field.ShouldSetDefaultValue(val) {
 				col.SetDefaultValue(val)
 			}
@@ -79,7 +75,7 @@ func (s *SchemaEventPayload) GetColumns(reservedColumns map[string]bool) []colum
 		cols = append(cols, col)
 	}
 
-	return cols
+	return cols, nil
 }
 
 func (s *SchemaEventPayload) Operation() constants.Operation {

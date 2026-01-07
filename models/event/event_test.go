@@ -66,8 +66,9 @@ func (e *EventsTestSuite) TestEvent_Validate() {
 }
 
 func testBuildFilteredColumns(t *testing.T, fakeEvent *mocks.FakeEvent, topicConfig kafkalib.TopicConfig, fakeColumns []columns.Column, expectedCols *columns.Columns) {
-	fakeEvent.GetColumnsReturns(fakeColumns)
-	cols := buildColumns(fakeEvent, topicConfig, nil)
+	fakeEvent.GetColumnsReturns(fakeColumns, nil)
+	cols, err := buildColumns(fakeEvent, topicConfig, nil)
+	assert.NoError(t, err)
 	assert.Equal(t, expectedCols.GetColumns(), cols)
 }
 
@@ -147,6 +148,8 @@ func (e *EventsTestSuite) TestEvent_TableName() {
 
 func (e *EventsTestSuite) TestEvent_Columns() {
 	{
+		// When GetColumns returns an empty slice, primary keys should be added to columns
+		e.fakeEvent.GetColumnsReturns([]columns.Column{}, nil)
 		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, map[string]any{"id": 123}, kafkalib.TopicConfig{}, config.Replication)
 		assert.NoError(e.T(), err)
 
@@ -155,6 +158,7 @@ func (e *EventsTestSuite) TestEvent_Columns() {
 		assert.True(e.T(), ok)
 	}
 	{
+		e.fakeEvent.GetColumnsReturns([]columns.Column{}, nil)
 		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, map[string]any{"id": 123, "capital": "foo"}, kafkalib.TopicConfig{}, config.Replication)
 		assert.NoError(e.T(), err)
 

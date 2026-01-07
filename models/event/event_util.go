@@ -9,10 +9,17 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func buildColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns map[string]bool) []columns.Column {
-	eventCols := event.GetColumns(reservedColumns)
-	cols := columns.NewColumns(eventCols)
+func buildColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns map[string]bool) ([]columns.Column, error) {
+	eventCols, err := event.GetColumns(reservedColumns)
+	if err != nil {
+		return nil, err
+	}
 
+	if eventCols == nil {
+		return nil, nil
+	}
+
+	cols := columns.NewColumns(eventCols)
 	for _, col := range tc.ColumnsToExclude {
 		cols.DeleteColumn(col)
 	}
@@ -36,7 +43,7 @@ func buildColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns map[
 			filteredColumns.AddColumn(columns.NewColumn(col.Name, typing.String))
 		}
 
-		return filteredColumns.GetColumns()
+		return filteredColumns.GetColumns(), nil
 	}
 
 	// Include static columns
@@ -44,7 +51,12 @@ func buildColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns map[
 		cols.AddColumn(columns.NewColumn(col.Name, typing.String))
 	}
 
-	return cols.GetColumns()
+	// Ensure we return an empty slice (not nil) when there are no columns but GetColumns returned a non-nil slice
+	result := cols.GetColumns()
+	if result == nil {
+		return []columns.Column{}, nil
+	}
+	return result, nil
 }
 
 func buildPrimaryKeys(tc kafkalib.TopicConfig, pkMap map[string]any, reservedColumns map[string]bool) []string {

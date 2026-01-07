@@ -549,7 +549,8 @@ func (r *RelationTestSuite) TestGetEventFromBytes_MySQL() {
 	assert.Equal(r.T(), int64(1001), evtData["id"])
 	assert.Equal(r.T(), "Sally", evtData["first_name"])
 	assert.Equal(r.T(), false, evtData["bool_test"])
-	cols := evt.GetColumns(nil)
+	cols, err := evt.GetColumns(nil)
+	assert.NoError(r.T(), err)
 	assert.NotNil(r.T(), cols)
 
 	colsMap := make(map[string]columns.Column)

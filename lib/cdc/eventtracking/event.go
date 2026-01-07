@@ -73,7 +73,7 @@ func (e *EventPayload) GetOptionalSchema() (map[string]typing.KindDetails, error
 	return nil, nil
 }
 
-func (e *EventPayload) GetColumns(reservedColumns map[string]bool) []columns.Column {
+func (e *EventPayload) GetColumns(reservedColumns map[string]bool) ([]columns.Column, error) {
 	cols := columns.NewColumns(nil)
 	for k := range e.Properties {
 		colName := columns.EscapeName(k, reservedColumns)
@@ -88,7 +88,7 @@ func (e *EventPayload) GetColumns(reservedColumns map[string]bool) []columns.Col
 	cols.AddColumn(columns.NewColumn(columns.EscapeName("timestamp", reservedColumns), typing.TimestampTZ))
 	cols.AddColumn(columns.NewColumn(columns.EscapeName("event", reservedColumns), typing.String))
 
-	return cols.GetColumns()
+	return cols.GetColumns(), nil
 }
 
 // inferTypeFromColumnName is non-exhaustive and checks for some common patterns that
