@@ -10,7 +10,7 @@ import (
 
 type TcFmtMap struct {
 	tc map[string]TopicConfigFormatter
-	sync.Mutex
+	sync.RWMutex
 }
 
 func NewTcFmtMap() *TcFmtMap {
@@ -26,8 +26,8 @@ func (t *TcFmtMap) Add(topic string, fmt TopicConfigFormatter) {
 }
 
 func (t *TcFmtMap) GetTopicFmt(topic string) (TopicConfigFormatter, bool) {
-	t.Lock()
-	defer t.Unlock()
+	t.RLock()
+	defer t.RUnlock()
 	tcFmt, ok := t.tc[topic]
 	return tcFmt, ok
 }

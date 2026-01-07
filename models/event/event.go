@@ -240,8 +240,8 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 		}
 	}
 
-	// Table columns
-	inMemoryColumns := td.ReadOnlyInMemoryCols()
+	// Table columns - use direct reference since Columns has its own mutex
+	inMemoryColumns := td.InMemoryColumns()
 	// Update col if necessary
 	sanitizedData := make(map[string]any)
 	for _col, val := range e.data {
@@ -303,9 +303,6 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 
 		sanitizedData[newColName] = val
 	}
-
-	// Now we commit the table columns.
-	td.SetInMemoryColumns(inMemoryColumns)
 
 	// Swap out sanitizedData <> data.
 	e.data = sanitizedData
