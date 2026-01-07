@@ -74,21 +74,21 @@ func (e *EventPayload) GetOptionalSchema() (map[string]typing.KindDetails, error
 }
 
 func (e *EventPayload) GetColumns(reservedColumns map[string]bool) []columns.Column {
-	var cols []columns.Column
+	cols := columns.NewColumns(nil)
 	for k := range e.Properties {
 		colName := columns.EscapeName(k, reservedColumns)
-		cols = append(cols, columns.NewColumn(colName, inferTypeFromColumnName(colName)))
+		cols.AddColumn(columns.NewColumn(colName, inferTypeFromColumnName(colName)))
 	}
 	for k := range e.ExtraFields {
 		colName := columns.EscapeName(k, reservedColumns)
-		cols = append(cols, columns.NewColumn(colName, inferTypeFromColumnName(colName)))
+		cols.AddColumn(columns.NewColumn(colName, inferTypeFromColumnName(colName)))
 	}
 
-	cols = append(cols, columns.NewColumn(columns.EscapeName("id", reservedColumns), typing.String))
-	cols = append(cols, columns.NewColumn(columns.EscapeName("timestamp", reservedColumns), typing.TimestampTZ))
-	cols = append(cols, columns.NewColumn(columns.EscapeName("event", reservedColumns), typing.String))
+	cols.AddColumn(columns.NewColumn(columns.EscapeName("id", reservedColumns), typing.String))
+	cols.AddColumn(columns.NewColumn(columns.EscapeName("timestamp", reservedColumns), typing.TimestampTZ))
+	cols.AddColumn(columns.NewColumn(columns.EscapeName("event", reservedColumns), typing.String))
 
-	return cols
+	return cols.GetColumns()
 }
 
 // inferTypeFromColumnName is non-exhaustive and checks for some common patterns that
