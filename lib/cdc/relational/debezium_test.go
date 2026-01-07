@@ -5,13 +5,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/typing/converters"
-
 	"github.com/stretchr/testify/assert"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/artie-labs/transfer/lib/typing/converters"
 )
 
 var validTc = kafkalib.TopicConfig{
@@ -549,11 +549,15 @@ func (r *RelationTestSuite) TestGetEventFromBytes_MySQL() {
 	assert.Equal(r.T(), int64(1001), evtData["id"])
 	assert.Equal(r.T(), "Sally", evtData["first_name"])
 	assert.Equal(r.T(), false, evtData["bool_test"])
-	cols, err := evt.GetColumns(nil)
-	assert.NoError(r.T(), err)
+	cols := evt.GetColumns(nil)
 	assert.NotNil(r.T(), cols)
 
-	col, ok := cols.GetColumn("abcdef")
+	colsMap := make(map[string]columns.Column)
+	for _, c := range cols {
+		colsMap[c.Name()] = c
+	}
+
+	col, ok := colsMap["abcdef"]
 	assert.True(r.T(), ok)
 	assert.Equal(r.T(), "abcdef", col.Name())
 	for key := range evtData {
@@ -561,7 +565,7 @@ func (r *RelationTestSuite) TestGetEventFromBytes_MySQL() {
 			continue
 		}
 
-		col, ok = cols.GetColumn(strings.ToLower(key))
+		col, ok = colsMap[strings.ToLower(key)]
 		assert.Equal(r.T(), true, ok, key)
 		assert.Equal(r.T(), typing.Invalid, col.KindDetails, fmt.Sprintf("colName: %v, evtData key: %v", col.Name(), key))
 	}
