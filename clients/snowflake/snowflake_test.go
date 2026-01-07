@@ -89,7 +89,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 		Schema:    "public",
 	}
 
-	tableData := optimization.NewTableData(&cols, config.Replication, []string{"id"}, topicConfig, "foo")
+	tableData := optimization.NewTableData(cols, config.Replication, []string{"id"}, topicConfig, "foo")
 	assert.Equal(s.T(), "foo", tableData.Name())
 
 	for pk, row := range rowsData {
@@ -168,7 +168,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 		Schema:    "public",
 	}
 
-	tableData := optimization.NewTableData(&cols, config.Replication, []string{"id"}, topicConfig, "foo")
+	tableData := optimization.NewTableData(cols, config.Replication, []string{"id"}, topicConfig, "foo")
 	tableData.ResetTempTableSuffix()
 	for pk, row := range rowsData {
 		tableData.InsertRow(pk, row, false)
@@ -231,7 +231,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 		Schema:    "public",
 	}
 
-	tableData := optimization.NewTableData(&cols, config.Replication, []string{"id"}, topicConfig, tblName)
+	tableData := optimization.NewTableData(cols, config.Replication, []string{"id"}, topicConfig, tblName)
 	tableData.ResetTempTableSuffix()
 	for pk, row := range rowsData {
 		tableData.InsertRow(pk, row.GetData(), false)
@@ -360,7 +360,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 		rowData := row.GetData()
 		rowData["new"] = "123"
 		tableData.InsertRow(fmt.Sprintf("pk-%v", pk), rowData, false)
-		tableData.SetInMemoryColumns(&sflkCols)
+		tableData.SetInMemoryColumns(sflkCols)
 		inMemColumns := tableData.ReadOnlyInMemoryCols()
 		// Since sflkColumns overwrote the format, let's set it correctly again.
 		inMemColumns.UpdateColumn(columns.NewColumn("created_at", typing.TimestampTZ))
