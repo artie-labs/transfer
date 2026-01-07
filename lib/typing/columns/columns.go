@@ -125,13 +125,19 @@ func (c *Column) DefaultValue() any {
 
 type Columns struct {
 	columns []Column
+	index   map[string]int // name -> index in columns slice for O(1) lookups
 	sync.RWMutex
 }
 
 func NewColumns(columns []Column) *Columns {
-	return &Columns{
+	c := &Columns{
 		columns: columns,
+		index:   make(map[string]int, len(columns)),
 	}
+	for i, col := range columns {
+		c.index[col.name] = i
+	}
+	return c
 }
 
 type UpsertColumnArg struct {
@@ -208,14 +214,20 @@ func (c *Columns) AddColumn(col Column) {
 		return
 	}
 
-	if _, ok := c.GetColumn(col.name); ok {
-		// Column exists.
-		return
-	}
-
 	c.Lock()
 	defer c.Unlock()
 
+	// Initialize index if nil
+	if c.index == nil {
+		c.index = make(map[string]int)
+	}
+
+	// Check if column exists using index (under lock)
+	if _, ok := c.index[col.name]; ok {
+		return
+	}
+
+	c.index[col.name] = len(c.columns)
 	c.columns = append(c.columns, col)
 }
 
@@ -223,6 +235,14 @@ func (c *Columns) GetColumn(name string) (Column, bool) {
 	c.RLock()
 	defer c.RUnlock()
 
+	if c.index != nil {
+		if idx, ok := c.index[name]; ok {
+			return c.columns[idx], true
+		}
+		return Column{}, false
+	}
+
+	// Fallback to linear search if index not initialized
 	for _, column := range c.columns {
 		if column.name == name {
 			return column, true
@@ -271,6 +291,14 @@ func (c *Columns) UpdateColumn(updateCol Column) {
 	c.Lock()
 	defer c.Unlock()
 
+	if c.index != nil {
+		if idx, ok := c.index[updateCol.name]; ok {
+			c.columns[idx] = updateCol
+			return
+		}
+	}
+
+	// Fallback to linear search if index not initialized
 	for index, col := range c.columns {
 		if col.name == updateCol.name {
 			c.columns[index] = updateCol
@@ -283,10 +311,32 @@ func (c *Columns) DeleteColumn(name string) {
 	c.Lock()
 	defer c.Unlock()
 
-	for idx, column := range c.columns {
-		if column.name == name {
-			c.columns = append(c.columns[:idx], c.columns[idx+1:]...)
-			return
+	idx := -1
+	if c.index != nil {
+		if i, ok := c.index[name]; ok {
+			idx = i
+		}
+	} else {
+		for i, column := range c.columns {
+			if column.name == name {
+				idx = i
+				break
+			}
+		}
+	}
+
+	if idx < 0 {
+		return
+	}
+
+	c.columns = append(c.columns[:idx], c.columns[idx+1:]...)
+
+	// Rebuild index after deletion
+	if c.index != nil {
+		delete(c.index, name)
+		// Update indices for columns after the deleted one
+		for i := idx; i < len(c.columns); i++ {
+			c.index[c.columns[i].name] = i
 		}
 	}
 }
