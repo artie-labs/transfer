@@ -115,12 +115,12 @@ func buildColumns(colTypesMap map[string]typing.KindDetails) *columns.Columns {
 	// Sort the column names alphabetically to ensure deterministic order
 	slices.Sort(colNames)
 
-	var cols columns.Columns
+	cols := columns.NewColumns(nil)
 	for _, colName := range colNames {
 		cols.AddColumn(columns.NewColumn(colName, colTypesMap[colName]))
 	}
 
-	return &cols
+	return cols
 }
 
 func TestSnowflakeDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
@@ -334,14 +334,14 @@ func TestSnowflakeDialect_BuildRemoveAllFilesFromStage(t *testing.T) {
 func TestSnowflakeDialect_EscapeColumns(t *testing.T) {
 	{
 		// Test basic string columns
-		var cols columns.Columns
+		cols := columns.NewColumns(nil)
 		cols.AddColumn(columns.NewColumn("foo", typing.String))
 		cols.AddColumn(columns.NewColumn("bar", typing.String))
 		assert.Equal(t, "$1,$2", SnowflakeDialect{}.EscapeColumns(cols.GetColumns(), ","))
 	}
 	{
 		// Test string columns with struct
-		var cols columns.Columns
+		cols := columns.NewColumns(nil)
 		cols.AddColumn(columns.NewColumn("foo", typing.String))
 		cols.AddColumn(columns.NewColumn("bar", typing.String))
 		cols.AddColumn(columns.NewColumn("struct", typing.Struct))
@@ -349,7 +349,7 @@ func TestSnowflakeDialect_EscapeColumns(t *testing.T) {
 	}
 	{
 		// Test string columns with struct and array
-		var cols columns.Columns
+		cols := columns.NewColumns(nil)
 		cols.AddColumn(columns.NewColumn("foo", typing.String))
 		cols.AddColumn(columns.NewColumn("bar", typing.String))
 		cols.AddColumn(columns.NewColumn("struct", typing.Struct))
@@ -358,7 +358,7 @@ func TestSnowflakeDialect_EscapeColumns(t *testing.T) {
 	}
 	{
 		// Test with invalid columns mixed in
-		var cols columns.Columns
+		cols := columns.NewColumns(nil)
 		cols.AddColumn(columns.NewColumn("foo", typing.String))
 		cols.AddColumn(columns.NewColumn("bar", typing.String))
 		cols.AddColumn(columns.NewColumn("struct", typing.Struct))

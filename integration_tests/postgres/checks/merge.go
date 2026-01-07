@@ -31,7 +31,7 @@ func TestMergeOperations(ctx context.Context, store *postgres.Store) error {
 func testSoftDeleteMerge(ctx context.Context, store *postgres.Store) error {
 	tableID := dialect.NewTableIdentifier("public", fmt.Sprintf("test_merge_soft_%s", strings.ToLower(stringutil.Random(5))))
 
-	var cols columns.Columns
+	cols := columns.NewColumns(nil)
 	cols.AddColumn(columns.NewColumn("id", typing.BuildIntegerKind(typing.IntegerKind)))
 	cols.AddColumn(columns.NewColumn("name", typing.String))
 	cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
@@ -41,7 +41,7 @@ func testSoftDeleteMerge(ctx context.Context, store *postgres.Store) error {
 		return fmt.Errorf("failed to upsert column: %w", err)
 	}
 
-	tableData := optimization.NewTableData(&cols, config.Replication, []string{"id"}, kafkalib.TopicConfig{Schema: "public", SoftDelete: true}, tableID.Table())
+	tableData := optimization.NewTableData(cols, config.Replication, []string{"id"}, kafkalib.TopicConfig{Schema: "public", SoftDelete: true}, tableID.Table())
 
 	// Insert initial data
 	for i := 1; i <= 5; i++ {
@@ -107,7 +107,7 @@ func testSoftDeleteMerge(ctx context.Context, store *postgres.Store) error {
 func testRegularMerge(ctx context.Context, store *postgres.Store) error {
 	tableID := dialect.NewTableIdentifier("public", fmt.Sprintf("test_merge_reg_%s", strings.ToLower(stringutil.Random(5))))
 
-	var cols columns.Columns
+	cols := columns.NewColumns(nil)
 	cols.AddColumn(columns.NewColumn("id", typing.BuildIntegerKind(typing.IntegerKind)))
 	cols.AddColumn(columns.NewColumn("value", typing.String))
 	cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))
@@ -117,7 +117,7 @@ func testRegularMerge(ctx context.Context, store *postgres.Store) error {
 		return fmt.Errorf("failed to upsert column: %w", err)
 	}
 
-	tableData := optimization.NewTableData(&cols, config.Replication, []string{"id"}, kafkalib.TopicConfig{Schema: "public", SoftDelete: false}, tableID.Table())
+	tableData := optimization.NewTableData(cols, config.Replication, []string{"id"}, kafkalib.TopicConfig{Schema: "public", SoftDelete: false}, tableID.Table())
 
 	// Insert initial data
 	for i := 1; i <= 10; i++ {

@@ -72,7 +72,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 	colToKindDetailsMap.Add(constants.DeleteColumnMarker, typing.Boolean)
 	colToKindDetailsMap.Add(constants.OnlySetDeleteColumnMarker, typing.Boolean)
 
-	var cols columns.Columns
+	cols := columns.NewColumns(nil)
 	for colName, colKind := range colToKindDetailsMap.All() {
 		cols.AddColumn(columns.NewColumn(colName, colKind))
 	}
@@ -148,7 +148,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 	colToKindDetailsMap.Add(constants.OnlySetDeleteColumnMarker, typing.Boolean)
 	colToKindDetailsMap.Add("created_at", typing.MustParseValue("", nil, time.Now().Format(time.RFC3339Nano)))
 
-	var cols columns.Columns
+	cols := columns.NewColumns(nil)
 	for colName, colKind := range colToKindDetailsMap.All() {
 		cols.AddColumn(columns.NewColumn(colName, colKind))
 	}
@@ -209,7 +209,8 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	colToKindDetailsMap.Add(constants.DeleteColumnMarker, typing.Boolean)
 	colToKindDetailsMap.Add(constants.OnlySetDeleteColumnMarker, typing.Boolean)
 	colToKindDetailsMap.Add("created_at", typing.MustParseValue("", nil, time.Now().Format(time.RFC3339Nano)))
-	var cols columns.Columns
+
+	cols := columns.NewColumns(nil)
 	for colName, kindDetails := range colToKindDetailsMap.All() {
 		cols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
@@ -292,12 +293,12 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	colToKindDetailsMap.Add(constants.OnlySetDeleteColumnMarker, typing.Boolean)
 	colToKindDetailsMap.Add("created_at", typing.TimestampTZ)
 
-	var cols columns.Columns
+	cols := columns.NewColumns(nil)
 	for colName, colKind := range colToKindDetailsMap.All() {
 		cols.AddColumn(columns.NewColumn(colName, colKind))
 	}
 
-	tableData := optimization.NewTableData(&cols, config.Replication, []string{"id"}, topicConfig, "foo")
+	tableData := optimization.NewTableData(cols, config.Replication, []string{"id"}, topicConfig, "foo")
 	tableData.ResetTempTableSuffix()
 	for pk, row := range rowsData {
 		tableData.InsertRow(pk, row.GetData(), false)
@@ -310,7 +311,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	snowflakeColToKindDetailsMap.Add(constants.DeleteColumnMarker, typing.Boolean)
 	snowflakeColToKindDetailsMap.Add(constants.OnlySetDeleteColumnMarker, typing.Boolean)
 
-	var sflkCols columns.Columns
+	sflkCols := columns.NewColumns(nil)
 	for colName, colKind := range snowflakeColToKindDetailsMap.All() {
 		sflkCols.AddColumn(columns.NewColumn(colName, colKind))
 	}
