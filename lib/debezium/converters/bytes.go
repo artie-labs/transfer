@@ -25,7 +25,8 @@ func (Bytes) Convert(value any) (any, error) {
 
 		data, err := base64.StdEncoding.DecodeString(castedValue)
 		if err != nil {
-			return nil, fmt.Errorf("failed to base64 decode: %w", err)
+			// return nil, fmt.Errorf("failed to base64 decode: %w", err)
+			return castedValue, nil
 		}
 		return data, nil
 	default:
