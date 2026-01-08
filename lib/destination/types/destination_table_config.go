@@ -74,6 +74,9 @@ func (d *DestinationTableConfig) MutateInMemoryColumns(columnOp constants.Column
 		switch columnOp {
 		case constants.AddColumn:
 			d.columns.AddColumn(col)
+
+			// If we're adding columns, then the table should have either been created or already exists.
+			d.createTable = false
 		case constants.DropColumn:
 			d.columns.DeleteColumn(col.Name())
 		}
