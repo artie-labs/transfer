@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/segmentio/kafka-go"
+	"github.com/twmb/franz-go/pkg/kerr"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/kmsg"
 
@@ -16,7 +17,8 @@ import (
 )
 
 const (
-	FetchMessageTimeout = 5 * time.Minute
+	FetchMessageTimeout     = 5 * time.Minute
+	TopicExistsPollInterval = 2 * time.Minute
 )
 
 type ctxKey string
@@ -135,6 +137,51 @@ func (f *FranzGoConsumer) FetchMessage(ctx context.Context) (artie.Message, erro
 	record := f.currentIter.Next()
 
 	return artie.NewFranzGoMessage(*record, f.GetHighWatermark(*record)), nil
+}
+
+// TopicExists checks if a topic exists in the Kafka cluster using metadata request.
+func TopicExists(ctx context.Context, client *kgo.Client, topic string) (bool, error) {
+	req := kmsg.NewMetadataRequest()
+	req.Topics = []kmsg.MetadataRequestTopic{{Topic: kmsg.StringPtr(topic)}}
+
+	resp, err := req.RequestWith(ctx, client)
+	if err != nil {
+		return false, fmt.Errorf("failed to fetch metadata: %w", err)
+	}
+
+	for _, t := range resp.Topics {
+		if t.Topic != nil && *t.Topic == topic {
+			if err := kerr.ErrorForCode(t.ErrorCode); err != nil {
+				if errors.Is(err, kerr.UnknownTopicOrPartition) {
+					return false, nil
+				}
+				return false, fmt.Errorf("topic metadata error for %q: %w", topic, err)
+			}
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// WaitForTopicToExist polls until the topic exists or the context is cancelled.
+func WaitForTopicToExist(ctx context.Context, client *kgo.Client, topic string) error {
+	for {
+		exists, err := TopicExists(ctx, client, topic)
+		if err != nil {
+			return fmt.Errorf("failed to check topic existence: %w", err)
+		}
+		if exists {
+			slog.Info("Topic exists, proceeding with consumer setup", slog.String("topic", topic))
+			return nil
+		}
+
+		slog.Info("Topic does not exist yet, waiting...", slog.String("topic", topic), slog.Duration("pollInterval", TopicExistsPollInterval))
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(TopicExistsPollInterval):
+		}
+	}
 }
 
 func (f *FranzGoConsumer) CommitMessages(ctx context.Context, msgs ...artie.Message) error {
@@ -261,10 +308,18 @@ func InjectFranzGoConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) 
 	kafkaConn := NewConnection(cfg.EnableAWSMSKIAM, cfg.DisableTLS, cfg.Username, cfg.Password, DefaultTimeout)
 	brokers := cfg.BootstrapServers(true)
 
+	var createdClients []*kgo.Client
+	closeClients := func() {
+		for _, c := range createdClients {
+			c.Close()
+		}
+	}
+
 	// Create separate clients for each topic
 	for _, topicConfig := range cfg.TopicConfigs {
 		clientOpts, err := kafkaConn.ClientOptions(ctx, brokers)
 		if err != nil {
+			closeClients()
 			return nil, fmt.Errorf("failed to create Kafka client options for topic %s: %w", topicConfig.Topic, err)
 		}
 
@@ -311,7 +366,16 @@ func InjectFranzGoConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) 
 
 		client, err := kgo.NewClient(clientOpts...)
 		if err != nil {
+			closeClients()
 			return nil, fmt.Errorf("failed to create Kafka client for topic %s: %w", topicConfig.Topic, err)
+		}
+		createdClients = append(createdClients, client)
+
+		if cfg.WaitForTopics {
+			if err := WaitForTopicToExist(ctx, client, topicConfig.Topic); err != nil {
+				closeClients()
+				return nil, fmt.Errorf("failed waiting for topic %s: %w", topicConfig.Topic, err)
+			}
 		}
 
 		slog.Info("Created Kafka consumer for topic",
