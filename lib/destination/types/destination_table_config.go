@@ -66,7 +66,7 @@ func (d *DestinationTableConfig) UpsertColumn(colName string, arg columns.Upsert
 	return d.columns.UpsertColumn(colName, arg)
 }
 
-func (d *DestinationTableConfig) MutateInMemoryColumns(columnOp constants.ColumnOperation, cols ...columns.Column) {
+func (d *DestinationTableConfig) MutateInMemoryColumns(columnOp constants.ColumnOperation, cols []columns.Column) {
 	d.Lock()
 	defer d.Unlock()
 	switch columnOp {
