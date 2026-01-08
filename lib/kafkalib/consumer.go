@@ -259,6 +259,14 @@ type ConsumerProvider struct {
 	Consumer
 }
 
+// WaitForTopic waits for the topic to exist. Only supported for FranzGo consumers.
+func (c *ConsumerProvider) WaitForTopic(ctx context.Context) error {
+	if c.client == nil {
+		return nil // kafka-go doesn't support this, skip
+	}
+	return WaitForTopicToExist(ctx, c.client, c.topic)
+}
+
 func (c *ConsumerProvider) SetPartitionToAppliedOffsetTest(msg artie.Message) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -369,14 +377,7 @@ func InjectFranzGoConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) 
 			closeClients()
 			return nil, fmt.Errorf("failed to create Kafka client for topic %s: %w", topicConfig.Topic, err)
 		}
-
 		createdClients = append(createdClients, client)
-		if cfg.WaitForTopics {
-			if err := WaitForTopicToExist(ctx, client, topicConfig.Topic); err != nil {
-				closeClients()
-				return nil, fmt.Errorf("failed waiting for topic %s: %w", topicConfig.Topic, err)
-			}
-		}
 
 		slog.Info("Created Kafka consumer for topic",
 			slog.String("topic", topicConfig.Topic),

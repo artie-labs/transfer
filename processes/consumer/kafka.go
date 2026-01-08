@@ -36,12 +36,18 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 		wg.Add(1)
 		go func(topic string) {
 			defer wg.Done()
-			for {
-				kafkaConsumer, err := kafkalib.GetConsumerFromContext(ctx, topic)
-				if err != nil {
-					logger.Fatal("Failed to get consumer from context", slog.Any("err", err))
-				}
+			kafkaConsumer, err := kafkalib.GetConsumerFromContext(ctx, topic)
+			if err != nil {
+				logger.Fatal("Failed to get consumer from context", slog.Any("err", err))
+			}
 
+			if cfg.Kafka.WaitForTopics {
+				if err := kafkaConsumer.WaitForTopic(ctx); err != nil {
+					logger.Fatal("Failed waiting for topic to exist", slog.Any("err", err), slog.String("topic", topic))
+				}
+			}
+
+			for {
 				err = kafkaConsumer.FetchMessageAndProcess(ctx, func(msg artie.Message) error {
 					if len(msg.Value()) == 0 {
 						slog.Debug("Found a tombstone message, skipping...", artie.BuildLogFields(msg)...)
