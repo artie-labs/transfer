@@ -369,8 +369,8 @@ func InjectFranzGoConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) 
 			closeClients()
 			return nil, fmt.Errorf("failed to create Kafka client for topic %s: %w", topicConfig.Topic, err)
 		}
-		createdClients = append(createdClients, client)
 
+		createdClients = append(createdClients, client)
 		if cfg.WaitForTopics {
 			if err := WaitForTopicToExist(ctx, client, topicConfig.Topic); err != nil {
 				closeClients()
