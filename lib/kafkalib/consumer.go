@@ -18,7 +18,7 @@ import (
 
 const (
 	FetchMessageTimeout     = 5 * time.Minute
-	TopicExistsPollInterval = 2 * time.Minute
+	TopicExistsPollInterval = 5 * time.Minute
 )
 
 type ctxKey string
