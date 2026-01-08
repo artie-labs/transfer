@@ -29,6 +29,8 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 		topics = append(topics, topicConfig.Topic)
 	}
 
+	topicPartitionToTsMsMap := make(map[string]int64)
+
 	var wg sync.WaitGroup
 	for num, topic := range topics {
 		// It is recommended to not try to establish a connection all at the same time, which may overwhelm the Kafka cluster.
@@ -55,7 +57,7 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 						WhClient:               whClient,
 					}
 
-					tableID, err := args.process(ctx, cfg, inMemDB, dest, metricsClient)
+					tableID, err := args.process(ctx, cfg, inMemDB, dest, metricsClient, topicPartitionToTsMsMap)
 					if err != nil {
 						whClient.SendEvent(ctx, webhooksutil.UnableToReplicate, map[string]any{
 							"error":   "Failed to process message",
