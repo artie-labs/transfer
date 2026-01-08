@@ -29,10 +29,9 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 		topics = append(topics, topicConfig.Topic)
 	}
 
-	topicPartitionToTsMsMap := make(map[string]int64)
-
 	var wg sync.WaitGroup
 	for num, topic := range topics {
+		topicPartitionToTsMsMap := make(map[string]int64)
 		// It is recommended to not try to establish a connection all at the same time, which may overwhelm the Kafka cluster.
 		time.Sleep(jitter.Jitter(100, 3000, num))
 		wg.Add(1)
