@@ -27,6 +27,11 @@ func (Bytes) Convert(value any) (any, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to base64 decode: %w", err)
 		}
+
+		if string(data) == constants.ToastUnavailableValuePlaceholder {
+			return constants.ToastUnavailableValuePlaceholder, nil
+		}
+
 		return data, nil
 	default:
 		return nil, fmt.Errorf("expected []byte or string, got %T", value)
