@@ -66,25 +66,23 @@ func (d *DestinationTableConfig) UpsertColumn(colName string, arg columns.Upsert
 	return d.columns.UpsertColumn(colName, arg)
 }
 
-func (d *DestinationTableConfig) MutateInMemoryColumns(columnOp constants.ColumnOperation, cols ...columns.Column) {
+func (d *DestinationTableConfig) MutateInMemoryColumns(columnOp constants.ColumnOperation, cols []columns.Column) {
 	d.Lock()
 	defer d.Unlock()
-	switch columnOp {
-	case constants.AddColumn:
-		for _, col := range cols {
+
+	for _, col := range cols {
+		switch columnOp {
+		case constants.AddColumn:
 			d.columns.AddColumn(col)
-			// Delete from the permissions table, if exists.
-			delete(d.columnsToDelete, col.Name())
+
+			// If we're adding columns, then the table should have either been created or already exists.
+			d.createTable = false
+		case constants.DropColumn:
+			d.columns.DeleteColumn(col.Name())
 		}
 
-		// If we're adding columns, then the table should have either been created or already exists.
-		d.createTable = false
-	case constants.DropColumn:
-		for _, col := range cols {
-			// Delete from the permissions and in-memory table
-			d.columns.DeleteColumn(col.Name())
-			delete(d.columnsToDelete, col.Name())
-		}
+		// Delete from our [columnsToDelete] map either because the column was just added or dropped.
+		delete(d.columnsToDelete, col.Name())
 	}
 }
 

@@ -1,9 +1,10 @@
 package util
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
+
+	jsoniter "github.com/json-iterator/go"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/debezium"
@@ -11,6 +12,8 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 // SchemaEventPayload is our struct for an event with schema enabled. For reference, this is an example payload https://gist.github.com/Tang8330/3b9989ed8c659771958fe481f248397a
 type SchemaEventPayload struct {
@@ -52,14 +55,14 @@ func shouldParseValue(value any) bool {
 	return true
 }
 
-func (s *SchemaEventPayload) GetColumns(reservedColumns map[string]bool) (*columns.Columns, error) {
+func (s *SchemaEventPayload) GetColumns(reservedColumns map[string]bool) ([]columns.Column, error) {
 	fieldsObject := s.Schema.GetSchemaFromLabel(debezium.After)
 	if fieldsObject == nil {
 		// AFTER schema does not exist.
 		return nil, nil
 	}
 
-	var cols columns.Columns
+	var cols []columns.Column
 	for _, field := range fieldsObject.Fields {
 		// We are purposefully doing this to ensure that the correct typing is set
 		// When we invoke event.Save()
@@ -68,17 +71,14 @@ func (s *SchemaEventPayload) GetColumns(reservedColumns map[string]bool) (*colum
 			val, err := field.ParseValue(field.Default)
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse field %q for default value: %w", field.FieldName, err)
-			} else {
-				if field.ShouldSetDefaultValue(val) {
-					col.SetDefaultValue(val)
-				}
+			} else if field.ShouldSetDefaultValue(val) {
+				col.SetDefaultValue(val)
 			}
 		}
-
-		cols.AddColumn(col)
+		cols = append(cols, col)
 	}
 
-	return &cols, nil
+	return cols, nil
 }
 
 func (s *SchemaEventPayload) Operation() constants.Operation {

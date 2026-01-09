@@ -72,7 +72,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 	colToKindDetailsMap.Add(constants.DeleteColumnMarker, typing.Boolean)
 	colToKindDetailsMap.Add(constants.OnlySetDeleteColumnMarker, typing.Boolean)
 
-	var cols columns.Columns
+	cols := columns.NewColumns(nil)
 	for colName, colKind := range colToKindDetailsMap.All() {
 		cols.AddColumn(columns.NewColumn(colName, colKind))
 	}
@@ -89,7 +89,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeNilEdgeCase() {
 		Schema:    "public",
 	}
 
-	tableData := optimization.NewTableData(&cols, config.Replication, []string{"id"}, topicConfig, "foo")
+	tableData := optimization.NewTableData(cols, config.Replication, []string{"id"}, topicConfig, "foo")
 	assert.Equal(s.T(), "foo", tableData.Name())
 
 	for pk, row := range rowsData {
@@ -148,7 +148,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 	colToKindDetailsMap.Add(constants.OnlySetDeleteColumnMarker, typing.Boolean)
 	colToKindDetailsMap.Add("created_at", typing.MustParseValue("", nil, time.Now().Format(time.RFC3339Nano)))
 
-	var cols columns.Columns
+	cols := columns.NewColumns(nil)
 	for colName, colKind := range colToKindDetailsMap.All() {
 		cols.AddColumn(columns.NewColumn(colName, colKind))
 	}
@@ -168,7 +168,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeReestablishAuth() {
 		Schema:    "public",
 	}
 
-	tableData := optimization.NewTableData(&cols, config.Replication, []string{"id"}, topicConfig, "foo")
+	tableData := optimization.NewTableData(cols, config.Replication, []string{"id"}, topicConfig, "foo")
 	tableData.ResetTempTableSuffix()
 	for pk, row := range rowsData {
 		tableData.InsertRow(pk, row, false)
@@ -209,7 +209,8 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 	colToKindDetailsMap.Add(constants.DeleteColumnMarker, typing.Boolean)
 	colToKindDetailsMap.Add(constants.OnlySetDeleteColumnMarker, typing.Boolean)
 	colToKindDetailsMap.Add("created_at", typing.MustParseValue("", nil, time.Now().Format(time.RFC3339Nano)))
-	var cols columns.Columns
+
+	cols := columns.NewColumns(nil)
 	for colName, kindDetails := range colToKindDetailsMap.All() {
 		cols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
@@ -230,7 +231,7 @@ func (s *SnowflakeTestSuite) TestExecuteMerge() {
 		Schema:    "public",
 	}
 
-	tableData := optimization.NewTableData(&cols, config.Replication, []string{"id"}, topicConfig, tblName)
+	tableData := optimization.NewTableData(cols, config.Replication, []string{"id"}, topicConfig, tblName)
 	tableData.ResetTempTableSuffix()
 	for pk, row := range rowsData {
 		tableData.InsertRow(pk, row.GetData(), false)
@@ -292,12 +293,12 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	colToKindDetailsMap.Add(constants.OnlySetDeleteColumnMarker, typing.Boolean)
 	colToKindDetailsMap.Add("created_at", typing.TimestampTZ)
 
-	var cols columns.Columns
+	cols := columns.NewColumns(nil)
 	for colName, colKind := range colToKindDetailsMap.All() {
 		cols.AddColumn(columns.NewColumn(colName, colKind))
 	}
 
-	tableData := optimization.NewTableData(&cols, config.Replication, []string{"id"}, topicConfig, "foo")
+	tableData := optimization.NewTableData(cols, config.Replication, []string{"id"}, topicConfig, "foo")
 	tableData.ResetTempTableSuffix()
 	for pk, row := range rowsData {
 		tableData.InsertRow(pk, row.GetData(), false)
@@ -310,7 +311,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 	snowflakeColToKindDetailsMap.Add(constants.DeleteColumnMarker, typing.Boolean)
 	snowflakeColToKindDetailsMap.Add(constants.OnlySetDeleteColumnMarker, typing.Boolean)
 
-	var sflkCols columns.Columns
+	sflkCols := columns.NewColumns(nil)
 	for colName, colKind := range snowflakeColToKindDetailsMap.All() {
 		sflkCols.AddColumn(columns.NewColumn(colName, colKind))
 	}
@@ -359,7 +360,7 @@ func (s *SnowflakeTestSuite) TestExecuteMergeDeletionFlagRemoval() {
 		rowData := row.GetData()
 		rowData["new"] = "123"
 		tableData.InsertRow(fmt.Sprintf("pk-%v", pk), rowData, false)
-		tableData.SetInMemoryColumns(&sflkCols)
+		tableData.SetInMemoryColumns(sflkCols)
 		inMemColumns := tableData.ReadOnlyInMemoryCols()
 		// Since sflkColumns overwrote the format, let's set it correctly again.
 		inMemColumns.UpdateColumn(columns.NewColumn("created_at", typing.TimestampTZ))

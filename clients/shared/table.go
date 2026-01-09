@@ -51,7 +51,7 @@ func CreateTable(ctx context.Context, dest destination.Destination, mode config.
 	}
 
 	// Update cache with the new columns that we've added.
-	tc.MutateInMemoryColumns(constants.AddColumn, cols...)
+	tc.MutateInMemoryColumns(constants.AddColumn, cols)
 	return nil
 }
 
@@ -103,7 +103,7 @@ func AlterTableAddColumns(ctx context.Context, dest destination.Destination, tc 
 		}
 	}
 
-	tc.MutateInMemoryColumns(constants.AddColumn, cols...)
+	tc.MutateInMemoryColumns(constants.AddColumn, cols)
 	return nil
 }
 
@@ -135,6 +135,6 @@ func AlterTableDropColumns(ctx context.Context, dest destination.Destination, tc
 		}
 	}
 
-	tc.MutateInMemoryColumns(constants.DropColumn, colsToDrop...)
+	tc.MutateInMemoryColumns(constants.DropColumn, colsToDrop)
 	return nil
 }

@@ -1,10 +1,10 @@
 package mongo
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
+	jsoniter "github.com/json-iterator/go"
 	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/artie-labs/transfer/lib/cdc"
@@ -14,6 +14,8 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 type Debezium struct{}
 
@@ -127,21 +129,21 @@ func (s *SchemaEventPayload) GetOptionalSchema() (map[string]typing.KindDetails,
 	return nil, nil
 }
 
-func (s *SchemaEventPayload) GetColumns(reservedColumns map[string]bool) (*columns.Columns, error) {
+func (s *SchemaEventPayload) GetColumns(reservedColumns map[string]bool) ([]columns.Column, error) {
 	fieldsObject := s.Schema.GetSchemaFromLabel(debezium.After)
 	if fieldsObject == nil {
 		// AFTER schema does not exist.
 		return nil, nil
 	}
 
-	var cols columns.Columns
+	var cols []columns.Column
 	for _, field := range fieldsObject.Fields {
 		// We are purposefully doing this to ensure that the correct typing is set
 		// When we invoke event.Save()
-		cols.AddColumn(columns.NewColumn(columns.EscapeName(field.FieldName, reservedColumns), typing.Invalid))
+		cols = append(cols, columns.NewColumn(columns.EscapeName(field.FieldName, reservedColumns), typing.Invalid))
 	}
 
-	return &cols, nil
+	return cols, nil
 }
 
 func (s *SchemaEventPayload) GetData(tc kafkalib.TopicConfig) (map[string]any, error) {

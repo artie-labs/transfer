@@ -178,7 +178,8 @@ func TestBigQueryDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
 
 func TestBigQueryDialect_BuildMergeQueries_JSONKey(t *testing.T) {
 	orderOIDCol := columns.NewColumn("order_oid", typing.Struct)
-	var cols columns.Columns
+
+	cols := columns.NewColumns(nil)
 	cols.AddColumn(orderOIDCol)
 	cols.AddColumn(columns.NewColumn("name", typing.String))
 	cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))

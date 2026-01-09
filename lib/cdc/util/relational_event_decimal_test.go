@@ -1,15 +1,14 @@
 package util
 
 import (
-	"encoding/json"
 	"io"
 	"os"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestSchemaEventPayload_MiscNumbers_GetData(t *testing.T) {
