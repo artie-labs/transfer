@@ -54,6 +54,11 @@ type Column struct {
 	backfilled bool
 }
 
+func (c Column) WithNewName(name string) Column {
+	c.name = name
+	return c
+}
+
 func (c *Column) PrimaryKey() bool {
 	return c.primaryKey
 }
