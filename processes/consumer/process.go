@@ -3,10 +3,12 @@ package consumer
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/cdc"
+	"github.com/artie-labs/transfer/lib/cdc/util"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
@@ -22,7 +24,7 @@ type processArgs struct {
 	WhClient               *webhooksclient.Client
 }
 
-func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client) (cdc.TableID, error) {
+func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, topicPartitionToTsMsMap map[string]int64) (cdc.TableID, error) {
 	if p.TopicToConfigFormatMap == nil {
 		return cdc.TableID{}, fmt.Errorf("failed to process, topicConfig is nil")
 	}
@@ -58,6 +60,20 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 	if err != nil {
 		tags["what"] = "marshal_value_err"
 		return cdc.TableID{}, fmt.Errorf("cannot unmarshal event: %w", err)
+	}
+
+	if schemaEvent, ok := _event.(*util.SchemaEventPayload); ok {
+		mapKey := fmt.Sprintf("%s-%d", p.Msg.Topic(), p.Msg.Partition())
+		tsMs, exists := topicPartitionToTsMsMap[mapKey]
+		if !exists {
+			topicPartitionToTsMsMap[mapKey] = schemaEvent.Payload.Source.TsMs
+		} else if schemaEvent.Payload.Source.TsMs > tsMs {
+			topicPartitionToTsMsMap[mapKey] = schemaEvent.Payload.Source.TsMs
+		} else if schemaEvent.Payload.Source.TsMs < tsMs {
+			slog.Error("Timestamp is less than the previous timestamp", slog.String("topic", p.Msg.Topic()), slog.Int("partition", p.Msg.Partition()), slog.Int64("previous_ts_ms", tsMs), slog.Int64("new_ts_ms", schemaEvent.Payload.Source.TsMs))
+		}
+	} else {
+		slog.Warn("Event is not a relational schema event", slog.String("topic", p.Msg.Topic()), slog.Int("partition", p.Msg.Partition()))
 	}
 
 	tags["op"] = string(_event.Operation())
