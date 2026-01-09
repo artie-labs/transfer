@@ -26,7 +26,7 @@ func (DatabricksDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool,
 		return "BOOLEAN", nil
 	case typing.Date.Kind:
 		return "DATE", nil
-	case typing.Time.Kind:
+	case typing.TimeKindDetails.Kind:
 		return "STRING", nil
 	case typing.TimestampNTZ.Kind:
 		// This is currently in public preview, to use this, the customer will need to enable [timestampNtz] in their delta tables.

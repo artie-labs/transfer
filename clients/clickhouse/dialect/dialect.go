@@ -152,7 +152,7 @@ func (ClickhouseDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, setti
 		return "String", nil
 	case typing.Date.Kind:
 		return "Date", nil
-	case typing.Time.Kind:
+	case typing.TimeKindDetails.Kind:
 		// clickhouse-go v2.40.3 does not support the Time type.
 		// Using v2.41.0 requires us to upgrade our Go toolchain to 1.25.x
 		// See: https://github.com/ClickHouse/clickhouse-go/releases/tag/v2.41.0
@@ -199,7 +199,7 @@ func (ClickhouseDialect) KindForDataType(_type string) (typing.KindDetails, erro
 	case "date":
 		return typing.Date, nil
 	case "time":
-		return typing.Time, nil
+		return typing.TimeKindDetails, nil
 	case "datetime":
 		return typing.TimestampNTZ, nil
 	}

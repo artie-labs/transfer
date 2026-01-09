@@ -39,7 +39,7 @@ func GetStringConverter(kd typing.KindDetails, opts GetStringConverterOpts) (Con
 	// Time types
 	case typing.Date.Kind:
 		return DateConverter{}, nil
-	case typing.Time.Kind:
+	case typing.TimeKindDetails.Kind:
 		return TimeConverter{}, nil
 	case typing.TimestampNTZ.Kind:
 		return NewTimestampNTZConverter(opts.TimestampNTZLayoutOverride), nil

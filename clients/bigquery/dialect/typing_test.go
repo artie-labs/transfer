@@ -32,7 +32,7 @@ func TestBigQueryDialect_DataTypeForKind(t *testing.T) {
 func TestBigQueryDialect_KindForDataType_NoDataLoss(t *testing.T) {
 	kindDetails := []typing.KindDetails{
 		typing.TimestampTZ,
-		typing.Time,
+		typing.TimeKindDetails,
 		typing.Date,
 		typing.String,
 		typing.Boolean,
@@ -169,7 +169,7 @@ func TestBigQueryDialect_KindForDataType(t *testing.T) {
 		// Time
 		kd, err := dialect.KindForDataType("time")
 		assert.NoError(t, err)
-		assert.Equal(t, typing.Time, kd)
+		assert.Equal(t, typing.TimeKindDetails, kd)
 	}
 	{
 		// Timestamp (Timestamp TZ)

@@ -25,10 +25,10 @@ func TestDatabricksDialect_DataTypeForKind(t *testing.T) {
 		// Arrays:
 		typing.Array: "ARRAY<string>",
 		// Date and timestamp data types:
-		typing.Date:         "DATE",
-		typing.TimestampTZ:  "TIMESTAMP",
-		typing.TimestampNTZ: "TIMESTAMP_NTZ",
-		typing.Time:         "STRING",
+		typing.Date:            "DATE",
+		typing.TimestampTZ:     "TIMESTAMP",
+		typing.TimestampNTZ:    "TIMESTAMP_NTZ",
+		typing.TimeKindDetails: "STRING",
 	}
 
 	for kind, expected := range kindDetailsToExpectedMap {

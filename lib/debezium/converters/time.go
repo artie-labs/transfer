@@ -11,7 +11,7 @@ import (
 type Time struct{}
 
 func (t Time) ToKindDetails() typing.KindDetails {
-	return typing.Time
+	return typing.TimeKindDetails
 }
 
 func (t Time) Convert(val any) (any, error) {
@@ -27,7 +27,7 @@ func (t Time) Convert(val any) (any, error) {
 type NanoTime struct{}
 
 func (n NanoTime) ToKindDetails() typing.KindDetails {
-	return typing.Time
+	return typing.TimeKindDetails
 }
 
 func (n NanoTime) Convert(value any) (any, error) {
@@ -43,7 +43,7 @@ func (n NanoTime) Convert(value any) (any, error) {
 type MicroTime struct{}
 
 func (m MicroTime) ToKindDetails() typing.KindDetails {
-	return typing.Time
+	return typing.TimeKindDetails
 }
 
 func (m MicroTime) Convert(value any) (any, error) {
@@ -99,7 +99,7 @@ func (t TimeWithTimezone) layout() string {
 }
 
 func (t TimeWithTimezone) ToKindDetails() typing.KindDetails {
-	return typing.Time
+	return typing.TimeKindDetails
 }
 
 func (t TimeWithTimezone) Convert(value any) (any, error) {

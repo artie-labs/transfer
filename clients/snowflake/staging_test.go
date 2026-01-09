@@ -92,13 +92,13 @@ func (s *SnowflakeTestSuite) TestCastColValStaging() {
 		// Bad Time values
 		{
 			// SkipBadTimestamps is enabled, so we won't error, we'll just return null.
-			result, err := castColValStaging("not-a-time", typing.Time, config.SharedDestinationSettings{SkipBadTimestamps: true})
+			result, err := castColValStaging("not-a-time", typing.TimeKindDetails, config.SharedDestinationSettings{SkipBadTimestamps: true})
 			assert.NoError(s.T(), err)
 			assert.Equal(s.T(), constants.NullValuePlaceholder, result.Value)
 		}
 		{
 			// SkipBadTimestamps is disabled, so we'll error.
-			_, err := castColValStaging("not-a-time", typing.Time, config.SharedDestinationSettings{SkipBadTimestamps: false})
+			_, err := castColValStaging("not-a-time", typing.TimeKindDetails, config.SharedDestinationSettings{SkipBadTimestamps: false})
 			assert.Error(s.T(), err)
 		}
 	}
@@ -166,7 +166,7 @@ func (s *SnowflakeTestSuite) TestCastColValStaging() {
 		}
 		{
 			// SkipBadValues handles bad Time values
-			result, err := castColValStaging("not-a-time", typing.Time, config.SharedDestinationSettings{SkipBadValues: true})
+			result, err := castColValStaging("not-a-time", typing.TimeKindDetails, config.SharedDestinationSettings{SkipBadValues: true})
 			assert.NoError(s.T(), err)
 			assert.Equal(s.T(), constants.NullValuePlaceholder, result.Value)
 		}

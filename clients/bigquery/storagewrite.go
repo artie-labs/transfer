@@ -41,7 +41,7 @@ func columnToTableFieldSchema(column columns.Column) (*storagepb.TableFieldSchem
 		fieldType = storagepb.TableFieldSchema_STRING
 	case typing.Date.Kind:
 		fieldType = storagepb.TableFieldSchema_DATE
-	case typing.Time.Kind:
+	case typing.TimeKindDetails.Kind:
 		fieldType = storagepb.TableFieldSchema_TIME
 	case typing.TimestampNTZ.Kind:
 		fieldType = storagepb.TableFieldSchema_DATETIME
@@ -214,7 +214,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 
 			daysSinceEpoch := _time.Unix() / (60 * 60 * 24)
 			message.Set(field, protoreflect.ValueOfInt32(int32(daysSinceEpoch)))
-		case typing.Time.Kind:
+		case typing.TimeKindDetails.Kind:
 			_time, err := typing.ParseTimeFromAny(value)
 			if err != nil {
 				if config.SharedDestinationSettings.SkipBadTimestamps {

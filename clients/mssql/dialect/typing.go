@@ -41,7 +41,7 @@ func (MSSQLDialect) DataTypeForKind(kindDetails typing.KindDetails, isPk bool, _
 		return "BIT", nil
 	case typing.Date.Kind:
 		return "DATE", nil
-	case typing.Time.Kind:
+	case typing.TimeKindDetails.Kind:
 		return "TIME", nil
 	case typing.TimestampNTZ.Kind:
 		// Using datetime2 because it's the recommendation, and it provides more precision: https://stackoverflow.com/a/1884088
@@ -102,7 +102,7 @@ func (MSSQLDialect) KindForDataType(rawType string) (typing.KindDetails, error) 
 	case "datetimeoffset":
 		return typing.TimestampTZ, nil
 	case "time":
-		return typing.Time, nil
+		return typing.TimeKindDetails, nil
 	case "date":
 		return typing.Date, nil
 	case "bit":

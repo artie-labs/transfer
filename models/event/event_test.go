@@ -328,7 +328,7 @@ func (e *EventsTestSuite) TestToMemoryEventWithSoftPartitioning() {
 			"randomCol":                         "dusty",
 		}, nil)
 		mockEvent.GetOptionalSchemaReturns(map[string]typing.KindDetails{
-			"created_at": typing.Time,
+			"created_at": typing.TimeKindDetails,
 		}, nil)
 
 		event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, tc, config.Replication)

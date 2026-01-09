@@ -62,7 +62,7 @@ func (DuckDBDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, settings 
 		return "text", nil
 	case typing.Date.Kind:
 		return "date", nil
-	case typing.Time.Kind:
+	case typing.TimeKindDetails.Kind:
 		return "time", nil
 	case typing.TimestampNTZ.Kind:
 		return "timestamp", nil
@@ -112,7 +112,7 @@ func (DuckDBDialect) KindForDataType(_type string) (typing.KindDetails, error) {
 	case "date":
 		return typing.Date, nil
 	case "time":
-		return typing.Time, nil
+		return typing.TimeKindDetails, nil
 	case "timestamp", "datetime":
 		return typing.TimestampNTZ, nil
 	case "timestamp with time zone", "timestamptz":

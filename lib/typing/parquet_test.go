@@ -37,7 +37,7 @@ func TestKindDetails_ToArrowType(t *testing.T) {
 	}
 	{
 		// Time
-		arrowType, err := Time.ToArrowType()
+		arrowType, err := TimeKindDetails.ToArrowType()
 		assert.NoError(t, err)
 		assert.Equal(t, arrow.FixedWidthTypes.Time32ms, arrowType)
 	}
@@ -89,7 +89,7 @@ func TestKindDetails_ParseValueForArrow(t *testing.T) {
 	{
 		// Time
 		testTime := time.Date(2023, 12, 25, 15, 30, 45, 0, time.UTC)
-		value, err := Time.ParseValueForArrow(testTime)
+		value, err := TimeKindDetails.ParseValueForArrow(testTime)
 		assert.NoError(t, err)
 
 		// Should be milliseconds since midnight

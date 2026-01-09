@@ -122,7 +122,7 @@ func parseValue(value any, col columns.Column) (any, error) {
 		}
 		return parsedTime, nil
 
-	case typing.Time.Kind:
+	case typing.TimeKindDetails.Kind:
 		parsedTime, err := typing.ParseTimeFromAny(value)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse time: %w", err)

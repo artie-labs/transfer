@@ -19,9 +19,9 @@ func TestSnowflakeDialect_DataTypeForKind(t *testing.T) {
 		// Struct:
 		typing.Struct: "variant",
 		// Date and timestamp data types:
-		typing.Date:        "date",
-		typing.Time:        "time",
-		typing.TimestampTZ: "timestamp_tz",
+		typing.Date:            "date",
+		typing.TimeKindDetails: "time",
+		typing.TimestampTZ:     "timestamp_tz",
 	}
 
 	for kd, expected := range expectedKindDetailsToValueMap {
