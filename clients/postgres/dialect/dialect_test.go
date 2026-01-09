@@ -33,7 +33,7 @@ func TestKindForDataType(t *testing.T) {
 		"boolean": typing.Boolean,
 		// Date and timestamp data types:
 		"date":                           typing.Date,
-		"time":                           typing.Time,
+		"time":                           typing.TimeKindDetails,
 		"timestamp with time zone":       typing.TimestampTZ,
 		"timestamp(5) with time zone":    typing.TimestampTZ,
 		"timestamp without time zone":    typing.TimestampNTZ,
@@ -129,7 +129,7 @@ func TestDataTypeForKind(t *testing.T) {
 		},
 		{
 			name:     "time",
-			kd:       typing.Time,
+			kd:       typing.TimeKindDetails,
 			expected: "time",
 		},
 		{

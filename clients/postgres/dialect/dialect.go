@@ -202,15 +202,15 @@ WHEN NOT MATCHED AND COALESCE(%s, false) = false THEN INSERT (%s) VALUES (%s)`,
 }
 
 var kindDetailsMap = map[typing.KindDetails]string{
-	typing.Float:        "double precision",
-	typing.Boolean:      "boolean",
-	typing.Struct:       "jsonb",
-	typing.Array:        "jsonb",
-	typing.String:       "text",
-	typing.Date:         "date",
-	typing.Time:         "time",
-	typing.TimestampNTZ: "timestamp without time zone",
-	typing.TimestampTZ:  "timestamp with time zone",
+	typing.Float:           "double precision",
+	typing.Boolean:         "boolean",
+	typing.Struct:          "jsonb",
+	typing.Array:           "jsonb",
+	typing.String:          "text",
+	typing.Date:            "date",
+	typing.TimeKindDetails: "time",
+	typing.TimestampNTZ:    "timestamp without time zone",
+	typing.TimestampTZ:     "timestamp with time zone",
 }
 
 func (PostgresDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, settings config.SharedDestinationColumnSettings) (string, error) {
@@ -259,7 +259,7 @@ var dataTypeMap = map[string]typing.KindDetails{
 	"double precision": typing.Float,
 	// Date and timestamp data types:
 	"date":                        typing.Date,
-	"time":                        typing.Time,
+	"time":                        typing.TimeKindDetails,
 	"timestamp with time zone":    typing.TimestampTZ,
 	"timestamp without time zone": typing.TimestampNTZ,
 	// Other data types:

@@ -38,7 +38,7 @@ func DefaultValue(column columns.Column, dialect sql.Dialect) (any, error) {
 		}
 
 		return sql.QuoteLiteral(_time.Format(time.DateOnly)), nil
-	case typing.Time.Kind:
+	case typing.TimeKindDetails.Kind:
 		_time, err := typing.ParseTimeFromAny(column.DefaultValue())
 		if err != nil {
 			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", column.DefaultValue(), err)

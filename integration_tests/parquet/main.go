@@ -45,7 +45,7 @@ func createComprehensiveTestTable() *optimization.TableData {
 
 	// Date/Time types
 	cols.AddColumn(columns.NewColumn("birth_date", typing.Date))
-	cols.AddColumn(columns.NewColumn("lunch_time", typing.Time))
+	cols.AddColumn(columns.NewColumn("lunch_time", typing.TimeKindDetails))
 	cols.AddColumn(columns.NewColumn("created_at", typing.TimestampTZ))
 	cols.AddColumn(columns.NewColumn("updated_at", typing.TimestampNTZ))
 

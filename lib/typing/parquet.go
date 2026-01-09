@@ -27,8 +27,8 @@ var kindToArrowType = map[string]arrow.DataType{
 	Integer.Kind: arrow.PrimitiveTypes.Int64,
 	Float.Kind:   arrow.PrimitiveTypes.Float32,
 	// Date and time data types:
-	Time.Kind: arrow.FixedWidthTypes.Time32ms,
-	Date.Kind: arrow.FixedWidthTypes.Date32,
+	TimeKindDetails.Kind: arrow.FixedWidthTypes.Time32ms,
+	Date.Kind:            arrow.FixedWidthTypes.Date32,
 }
 
 // ToArrowType converts a KindDetails to the corresponding Arrow data type
@@ -128,7 +128,7 @@ func (kd KindDetails) ParseValueForArrow(value any) (any, error) {
 		}
 
 		return castedValue.String(), nil
-	case Time.Kind:
+	case TimeKindDetails.Kind:
 		_time, err := ParseTimeFromAny(value)
 		if err != nil {
 			return nil, fmt.Errorf("failed to cast value to time: %w", err)

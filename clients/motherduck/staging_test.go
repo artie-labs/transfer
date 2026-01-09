@@ -99,7 +99,7 @@ func TestConvertValue(t *testing.T) {
 
 	// Time type
 	{
-		result, err := convertValue("14:30:00", typing.Time)
+		result, err := convertValue("14:30:00", typing.TimeKindDetails)
 		assert.NoError(t, err)
 		assert.IsType(t, time.Time{}, result)
 	}

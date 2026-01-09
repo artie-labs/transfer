@@ -209,7 +209,7 @@ func MSSQLAssertColumns(ctx context.Context, dest destination.Destination, table
 				return err
 			}
 		case "c_time":
-			if err := assertEqual("c_time", col.KindDetails.Kind, typing.Time.Kind); err != nil {
+			if err := assertEqual("c_time", col.KindDetails.Kind, typing.TimeKindDetails.Kind); err != nil {
 				return err
 			}
 		case "c_date":

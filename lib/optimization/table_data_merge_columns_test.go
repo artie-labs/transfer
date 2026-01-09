@@ -132,10 +132,10 @@ func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
 				cols.AddColumn(columns.NewColumn("time_column", typing.String))
 				td := &TableData{inMemoryColumns: cols}
 
-				assert.NoError(t, td.MergeColumnsFromDestination(columns.NewColumn("time_column", typing.Time)))
+				assert.NoError(t, td.MergeColumnsFromDestination(columns.NewColumn("time_column", typing.TimeKindDetails)))
 				col, ok := td.inMemoryColumns.GetColumn("time_column")
 				assert.True(t, ok)
-				assert.Equal(t, typing.Time, col.KindDetails)
+				assert.Equal(t, typing.TimeKindDetails, col.KindDetails)
 			}
 			{
 				// Timestamp TZ

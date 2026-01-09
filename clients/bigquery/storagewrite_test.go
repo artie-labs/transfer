@@ -45,7 +45,7 @@ func TestColumnToTableFieldSchema(t *testing.T) {
 	}
 	{
 		// Time
-		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.Time))
+		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.TimeKindDetails))
 		assert.NoError(t, err)
 		assert.Equal(t, storagepb.TableFieldSchema_TIME, fieldSchema.Type)
 	}
@@ -166,7 +166,7 @@ func TestRowToMessage(t *testing.T) {
 		columns.NewColumn("c_numeric", typing.EDecimal),
 		columns.NewColumn("c_string", typing.String),
 		columns.NewColumn("c_string_decimal", typing.String),
-		columns.NewColumn("c_time", typing.Time),
+		columns.NewColumn("c_time", typing.TimeKindDetails),
 		columns.NewColumn("c_timestamp", typing.TimestampTZ),
 		columns.NewColumn("c_date", typing.Date),
 		columns.NewColumn("c_datetime", typing.TimestampNTZ),

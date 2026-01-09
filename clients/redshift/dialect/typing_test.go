@@ -140,7 +140,7 @@ func TestRedshiftDialect_KindForDataType(t *testing.T) {
 			// Time
 			kd, err := dialect.KindForDataType("time without time zone")
 			assert.NoError(t, err)
-			assert.Equal(t, typing.Time, kd)
+			assert.Equal(t, typing.TimeKindDetails, kd)
 		}
 		{
 			// Date

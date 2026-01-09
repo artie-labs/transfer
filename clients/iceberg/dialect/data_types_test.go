@@ -22,10 +22,10 @@ func TestIcebergDialect_DataTypeForKind(t *testing.T) {
 		// Boolean:
 		typing.Boolean: "BOOLEAN",
 		// String and related data types:
-		typing.String: "STRING",
-		typing.Time:   "STRING",
-		typing.Array:  "STRING",
-		typing.Struct: "STRING",
+		typing.String:          "STRING",
+		typing.TimeKindDetails: "STRING",
+		typing.Array:           "STRING",
+		typing.Struct:          "STRING",
 		// Float:
 		typing.Float: "DOUBLE",
 		// Decimals:

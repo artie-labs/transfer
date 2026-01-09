@@ -20,7 +20,7 @@ func (SnowflakeDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, 
 		return "boolean", nil
 	case typing.Date.Kind:
 		return "date", nil
-	case typing.Time.Kind:
+	case typing.TimeKindDetails.Kind:
 		return "time", nil
 	case typing.TimestampNTZ.Kind:
 		return "timestamp_ntz", nil
@@ -81,7 +81,7 @@ func (SnowflakeDialect) KindForDataType(snowflakeType string) (typing.KindDetail
 	case "timestamp", "datetime", "timestamp_ntz":
 		return typing.TimestampNTZ, nil
 	case "time":
-		return typing.Time, nil
+		return typing.TimeKindDetails, nil
 	case "date":
 		return typing.Date, nil
 	default:
