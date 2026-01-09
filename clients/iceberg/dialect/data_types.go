@@ -17,9 +17,10 @@ func (IcebergDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, _ 
 	case
 		typing.Array.Kind,
 		typing.Struct.Kind,
-		typing.String.Kind,
-		typing.Time.Kind:
+		typing.String.Kind:
 		return "STRING", nil
+	case typing.Time.Kind:
+		return "TIME", nil
 	case typing.Float.Kind:
 		return "DOUBLE", nil
 	case typing.EDecimal.Kind:
@@ -66,6 +67,8 @@ func (IcebergDialect) KindForDataType(rawType string) (typing.KindDetails, error
 		return typing.String, nil
 	case "date":
 		return typing.Date, nil
+	case "time":
+		return typing.Time, nil
 	case "timestamp":
 		return typing.TimestampTZ, nil
 	case "timestamp_ntz":
