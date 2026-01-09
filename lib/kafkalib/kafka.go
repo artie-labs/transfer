@@ -19,6 +19,11 @@ type Kafka struct {
 	Password        string `yaml:"password,omitempty"`
 	EnableAWSMSKIAM bool   `yaml:"enableAWSMKSIAM,omitempty"`
 	DisableTLS      bool   `yaml:"disableTLS,omitempty"`
+
+	// WaitForTopics - if true, polls until topics exist before consuming.
+	// This prevents relying on broker auto-creation and allows graceful startup
+	// when topics may not exist yet.
+	WaitForTopics bool `yaml:"waitForTopics,omitempty"`
 }
 
 func (k *Kafka) Topics() []string {
