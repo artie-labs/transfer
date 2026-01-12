@@ -3,6 +3,8 @@ package typing
 import (
 	"fmt"
 	"time"
+
+	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 // ParseTimeExactMatch will return an error if it was not an exact match.
@@ -48,6 +50,8 @@ func ParseTimeFromAny(val any) (time.Time, error) {
 	switch convertedVal := val.(type) {
 	case nil:
 		return time.Time{}, fmt.Errorf("val is nil")
+	case ext.Time:
+		return convertedVal.Value(), nil
 	case time.Time:
 		return convertedVal, nil
 	case string:

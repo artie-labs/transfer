@@ -15,6 +15,7 @@ import (
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 type Converter interface {
@@ -150,12 +151,17 @@ func (DateConverter) Convert(value any) (string, error) {
 type TimeConverter struct{}
 
 func (TimeConverter) Convert(value any) (string, error) {
-	_time, err := typing.ParseTimeFromAny(value)
-	if err != nil {
-		return "", fmt.Errorf("failed to cast colVal as time, colVal: '%v', err: %w", value, err)
-	}
+	switch castedValue := value.(type) {
+	case ext.Time:
+		return castedValue.String(), nil
+	default:
+		_time, err := typing.ParseTimeFromAny(value)
+		if err != nil {
+			return "", fmt.Errorf("failed to cast colVal as time, colVal: '%v', err: %w", value, err)
+		}
 
-	return _time.Format(typing.PostgresTimeFormatNoTZ), nil
+		return _time.Format(ext.PostgresTimeFormatNoTZ), nil
+	}
 }
 
 func NewTimestampNTZConverter(layoutOverride string) TimestampNTZConverter {
