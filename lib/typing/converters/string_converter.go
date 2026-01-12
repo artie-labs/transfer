@@ -109,6 +109,8 @@ func (StringConverter) ConvertNew(value any) (string, error) {
 		return StructConverter{}.Convert(castedValue)
 	case time.Time:
 		return TimestampTZConverter{}.Convert(castedValue)
+	case ext.Time:
+		return castedValue.String(), nil
 	case *decimal.Decimal:
 		return DecimalConverter{}.Convert(castedValue)
 	default:
