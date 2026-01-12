@@ -15,38 +15,16 @@ func TestNewTime(t *testing.T) {
 }
 
 func TestTime_String(t *testing.T) {
-	tests := []struct {
-		name     string
-		time     time.Time
-		expected string
-	}{
-		{
-			name:     "basic time",
-			time:     time.Date(2025, 1, 12, 14, 30, 45, 0, time.UTC),
-			expected: "14:30:45",
-		},
-		{
-			name:     "time with microseconds",
-			time:     time.Date(2025, 1, 12, 14, 30, 45, 123456000, time.UTC),
-			expected: "14:30:45.123456",
-		},
-		{
-			name:     "midnight",
-			time:     time.Date(2025, 1, 12, 0, 0, 0, 0, time.UTC),
-			expected: "00:00:00",
-		},
-		{
-			name:     "end of day",
-			time:     time.Date(2025, 1, 12, 23, 59, 59, 999999000, time.UTC),
-			expected: "23:59:59.999999",
-		},
+	expected := map[time.Time]string{
+		time.Date(2025, 1, 12, 14, 30, 45, 0, time.UTC):         "14:30:45",
+		time.Date(2025, 1, 12, 14, 30, 45, 123456000, time.UTC): "14:30:45.123456",
+		time.Date(2025, 1, 12, 0, 0, 0, 0, time.UTC):            "00:00:00",
+		time.Date(2025, 1, 12, 23, 59, 59, 999999000, time.UTC): "23:59:59.999999",
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			extTime := NewTime(tc.time)
-			assert.Equal(t, tc.expected, extTime.String())
-		})
+	for expectedTime, expectedString := range expected {
+		extTime := NewTime(expectedTime)
+		assert.Equal(t, expectedString, extTime.String(), expectedTime)
 	}
 }
 
