@@ -55,6 +55,14 @@ func TestField_ShouldSetDefaultValue(t *testing.T) {
 		assert.False(t, field.ShouldSetDefaultValue(time.Unix(0, 0)))
 	}
 	{
+		// ext.Time
+		field := Field{}
+		assert.True(t, field.ShouldSetDefaultValue(ext.NewTime(time.Now())))
+
+		assert.False(t, field.ShouldSetDefaultValue(ext.NewTime(time.Time{})))
+		assert.False(t, field.ShouldSetDefaultValue(ext.NewTime(time.Unix(0, 0))))
+	}
+	{
 		// Empty map
 		field := Field{}
 		assert.True(t, field.ShouldSetDefaultValue(map[string]any{}))
