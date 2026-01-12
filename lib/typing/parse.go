@@ -49,8 +49,10 @@ func ParseValue(key string, optionalSchema map[string]KindDetails, val any) (Kin
 			Kind:                   EDecimal.Kind,
 			ExtendedDecimalDetails: &extendedDetails,
 		}, nil
-	case time.Time, ext.Time:
+	case time.Time:
 		return TimestampTZ, nil
+	case ext.Time:
+		return TimeKindDetails, nil
 	default:
 		// Check if the val is one of our custom-types
 		if reflect.TypeOf(val).Kind() == reflect.Slice {
