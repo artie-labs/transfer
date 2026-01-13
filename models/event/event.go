@@ -155,8 +155,9 @@ func (e *Event) EmitExecutionTimeLag(metricsClient base.Client) {
 		"row.execution_time_lag",
 		float64(time.Since(e.executionTime).Milliseconds()),
 		map[string]string{
-			"mode":  e.mode.String(),
-			"table": e.table,
+			"mode":   e.mode.String(),
+			"table":  e.table,
+			"schema": e.tableID.Schema,
 		}, 0.5)
 }
 

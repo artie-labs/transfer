@@ -71,8 +71,8 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 						logger.Fatal("Failed to process message", slog.Any("err", err), slog.String("topic", msg.Topic()))
 					}
 
-					metrics.EmitIngestionLag(msg, metricsClient, cfg.Mode, kafkaConsumer.GetGroupID(), tableID.Table)
-					metrics.EmitRowLag(msg, metricsClient, cfg.Mode, kafkaConsumer.GetGroupID(), tableID.Table)
+					metrics.EmitIngestionLag(msg, metricsClient, cfg.Mode, kafkaConsumer.GetGroupID(), tableID.Schema, tableID.Table)
+					metrics.EmitRowLag(msg, metricsClient, cfg.Mode, kafkaConsumer.GetGroupID(), tableID.Schema, tableID.Table)
 
 					return nil
 				})
