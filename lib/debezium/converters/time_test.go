@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 func TestZonedTimestamp_Convert(t *testing.T) {
@@ -120,12 +121,12 @@ func TestTime_Convert(t *testing.T) {
 	{
 		val, err := Time{}.Convert(int64(54_720_321))
 		assert.NoError(t, err)
-		assert.Equal(t, "15:12:00.321", val.(time.Time).Format(typing.PostgresTimeFormatNoTZ))
+		assert.Equal(t, "15:12:00.321", val.(ext.Time).String())
 	}
 	{
 		val, err := Time{}.Convert(int64(54_720_123))
 		assert.NoError(t, err)
-		assert.Equal(t, "15:12:00.123", val.(time.Time).Format(typing.PostgresTimeFormatNoTZ))
+		assert.Equal(t, "15:12:00.123", val.(ext.Time).String())
 	}
 }
 
@@ -140,7 +141,7 @@ func TestNanoTime_Converter(t *testing.T) {
 		// Valid
 		val, err := NanoTime{}.Convert(int64(54_720_000_009_000))
 		assert.NoError(t, err)
-		assert.Equal(t, "15:12:00.000009", val.(time.Time).Format(typing.PostgresTimeFormatNoTZ))
+		assert.Equal(t, "15:12:00.000009", val.(ext.Time).String())
 	}
 }
 
@@ -155,7 +156,7 @@ func TestMicroTime_Converter(t *testing.T) {
 		// Valid
 		val, err := MicroTime{}.Convert(int64(54_720_000_123))
 		assert.NoError(t, err)
-		assert.Equal(t, "15:12:00.000123", val.(time.Time).Format(typing.PostgresTimeFormatNoTZ))
+		assert.Equal(t, "15:12:00.000123", val.(ext.Time).String())
 	}
 }
 
@@ -182,22 +183,22 @@ func TestConvertTimeWithTimezone(t *testing.T) {
 		// What Debezium + Reader would produce (microsecond precision)
 		val, err := TimeWithTimezone{}.Convert("23:02:06.745116Z")
 		assert.NoError(t, err)
-		assert.Equal(t, time.Date(0, 1, 1, 23, 2, 6, 745_116_000, time.UTC), val.(time.Time))
-		assert.Equal(t, "23:02:06.745116Z", val.(time.Time).Format(typing.PostgresTimeFormat))
+		assert.Equal(t, time.Date(0, 1, 1, 23, 2, 6, 745_116_000, time.UTC), val.(ext.Time).Value())
+		assert.Equal(t, "23:02:06.745116Z", val.(ext.Time).Value().Format(typing.PostgresTimeFormat))
 	}
 	{
 		// ms precision
 		val, err := TimeWithTimezone{}.Convert("23:02:06.745Z")
 		assert.NoError(t, err)
-		assert.Equal(t, time.Date(0, 1, 1, 23, 2, 6, 745_000_000, time.UTC), val.(time.Time))
-		assert.Equal(t, "23:02:06.745Z", val.(time.Time).Format(TimeWithTimezone{}.layout()))
+		assert.Equal(t, time.Date(0, 1, 1, 23, 2, 6, 745_000_000, time.UTC), val.(ext.Time).Value())
+		assert.Equal(t, "23:02:06.745Z", val.(ext.Time).Value().Format(TimeWithTimezone{}.layout()))
 	}
 	{
 		// no fractional seconds
 		val, err := TimeWithTimezone{}.Convert("23:02:06Z")
 		assert.NoError(t, err)
 
-		assert.Equal(t, time.Date(0, 1, 1, 23, 2, 6, 0, time.UTC), val.(time.Time))
-		assert.Equal(t, "23:02:06Z", val.(time.Time).Format(TimeWithTimezone{}.layout()))
+		assert.Equal(t, time.Date(0, 1, 1, 23, 2, 6, 0, time.UTC), val.(ext.Time).Value())
+		assert.Equal(t, "23:02:06Z", val.(ext.Time).Value().Format(TimeWithTimezone{}.layout()))
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 type Time struct{}
@@ -21,7 +22,7 @@ func (t Time) Convert(val any) (any, error) {
 	}
 
 	// Represents the number of milliseconds past midnight, and does not include timezone information.
-	return time.UnixMilli(valInt64).In(time.UTC), nil
+	return ext.NewTime(time.UnixMilli(valInt64).In(time.UTC)), nil
 }
 
 type NanoTime struct{}
@@ -37,7 +38,7 @@ func (n NanoTime) Convert(value any) (any, error) {
 	}
 
 	// Represents the number of nanoseconds past midnight, and does not include timezone information.
-	return time.UnixMicro(castedVal / 1_000).In(time.UTC), nil
+	return ext.NewTime(time.UnixMicro(castedVal / 1_000).In(time.UTC)), nil
 }
 
 type MicroTime struct{}
@@ -53,7 +54,7 @@ func (m MicroTime) Convert(value any) (any, error) {
 	}
 
 	// Represents the number of microseconds past midnight, and does not include timezone information.
-	return time.UnixMicro(castedVal).In(time.UTC), nil
+	return ext.NewTime(time.UnixMicro(castedVal).In(time.UTC)), nil
 }
 
 type ZonedTimestamp struct{}
@@ -113,5 +114,5 @@ func (t TimeWithTimezone) Convert(value any) (any, error) {
 		return nil, fmt.Errorf("failed to parse %q: %w", val, err)
 	}
 
-	return ts, nil
+	return ext.NewTime(ts), nil
 }
