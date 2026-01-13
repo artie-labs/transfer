@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"math"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/artie-labs/transfer/lib/typing/ext"
 )
 
 func Test_ParseValue(t *testing.T) {
@@ -78,6 +81,14 @@ func Test_ParseValue(t *testing.T) {
 		// Time in string w/ no schema
 		kindDetails := MustParseValue("", nil, "00:18:11.13116+00")
 		assert.Equal(t, String, kindDetails)
+	}
+	{
+		// time.Time returns TimestampTZ
+		assert.Equal(t, TimestampTZ, MustParseValue("", nil, time.Now()))
+	}
+	{
+		// ext.Time returns TimeKindDetails
+		assert.Equal(t, TimeKindDetails, MustParseValue("", nil, ext.NewTime(time.Now())))
 	}
 	{
 		// Maps

@@ -83,7 +83,7 @@ func TestStringConverter_Convert(t *testing.T) {
 		}
 		{
 			// Time
-			val, err := NewStringConverter(typing.Time).Convert(time.Date(2021, 1, 1, 9, 10, 11, 123_456_789, time.UTC))
+			val, err := NewStringConverter(typing.TimeKindDetails).Convert(time.Date(2021, 1, 1, 9, 10, 11, 123_456_789, time.UTC))
 			assert.NoError(t, err)
 			assert.Equal(t, "09:10:11.123456", val)
 		}
@@ -219,6 +219,12 @@ func TestFloat64Converter_Convert(t *testing.T) {
 			val, err := converter.Convert("123.45")
 			assert.NoError(t, err)
 			assert.Equal(t, float64(123.45), val)
+		}
+		{
+			// Empty string
+			val, err := converter.Convert("")
+			assert.NoError(t, err)
+			assert.Nil(t, val)
 		}
 	}
 	{

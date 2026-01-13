@@ -103,7 +103,8 @@ func (Array) ToKindDetails() typing.KindDetails {
 }
 
 func (a Array) Convert(value any) (any, error) {
-	if fmt.Sprint(value) == fmt.Sprintf("[%s]", constants.ToastUnavailableValuePlaceholder) {
+	if fmt.Sprint(value) == fmt.Sprintf("[%s]", constants.ToastUnavailableValuePlaceholder) ||
+		fmt.Sprint(value) == constants.ToastUnavailableValuePlaceholder {
 		return constants.ToastUnavailableValuePlaceholder, nil
 	}
 

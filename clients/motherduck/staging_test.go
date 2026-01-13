@@ -99,7 +99,7 @@ func TestConvertValue(t *testing.T) {
 
 	// Time type
 	{
-		result, err := convertValue("14:30:00", typing.Time)
+		result, err := convertValue("14:30:00", typing.TimeKindDetails)
 		assert.NoError(t, err)
 		assert.IsType(t, time.Time{}, result)
 	}
@@ -261,7 +261,7 @@ func TestCreateTempTable_ColumnOrder(t *testing.T) {
 	// This is critical because the DuckDB append API is positional.
 
 	// Create in-memory columns in a specific order that might differ from destination
-	inMemoryCols := &columns.Columns{}
+	inMemoryCols := columns.NewColumns(nil)
 	inMemoryCols.AddColumn(columns.NewColumn("id", typing.Integer))
 	inMemoryCols.AddColumn(columns.NewColumn("name", typing.String))
 	inMemoryCols.AddColumn(columns.NewColumn("created_at", typing.TimestampTZ))
@@ -315,7 +315,7 @@ func TestCreateTempTable_ColumnOrderDiffersFromDestination(t *testing.T) {
 	// match the order used during append.
 
 	// Simulate a scenario where destination table has a different column order
-	inMemoryCols := &columns.Columns{}
+	inMemoryCols := columns.NewColumns(nil)
 	inMemoryCols.AddColumn(columns.NewColumn("col_a", typing.String))
 	inMemoryCols.AddColumn(columns.NewColumn("col_b", typing.Integer))
 	inMemoryCols.AddColumn(columns.NewColumn("__artie_updated_at", typing.TimestampTZ))

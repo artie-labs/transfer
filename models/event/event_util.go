@@ -9,18 +9,19 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func buildColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns map[string]bool) (*columns.Columns, error) {
-	cols, err := event.GetColumns(reservedColumns)
+func buildColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns map[string]bool) ([]columns.Column, error) {
+	eventCols, err := event.GetColumns(reservedColumns)
 	if err != nil {
 		return nil, err
 	}
 
+	cols := columns.NewColumns(eventCols)
 	for _, col := range tc.ColumnsToExclude {
 		cols.DeleteColumn(col)
 	}
 
 	if len(tc.ColumnsToInclude) > 0 {
-		var filteredColumns columns.Columns
+		filteredColumns := columns.NewColumns(nil)
 		for _, col := range tc.ColumnsToInclude {
 			if existingColumn, ok := cols.GetColumn(col); ok {
 				filteredColumns.AddColumn(existingColumn)
@@ -38,7 +39,7 @@ func buildColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns map[
 			filteredColumns.AddColumn(columns.NewColumn(col.Name, typing.String))
 		}
 
-		return &filteredColumns, nil
+		return filteredColumns.GetColumns(), nil
 	}
 
 	// Include static columns
@@ -46,7 +47,7 @@ func buildColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns map[
 		cols.AddColumn(columns.NewColumn(col.Name, typing.String))
 	}
 
-	return cols, nil
+	return cols.GetColumns(), nil
 }
 
 func buildPrimaryKeys(tc kafkalib.TopicConfig, pkMap map[string]any, reservedColumns map[string]bool) []string {

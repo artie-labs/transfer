@@ -35,7 +35,7 @@ func TestGetStringConverter(t *testing.T) {
 	}
 	{
 		// Time
-		converter, err := GetStringConverter(typing.Time, GetStringConverterOpts{})
+		converter, err := GetStringConverter(typing.TimeKindDetails, GetStringConverterOpts{})
 		assert.NoError(t, err)
 		assert.IsType(t, TimeConverter{}, converter)
 	}

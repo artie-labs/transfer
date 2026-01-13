@@ -26,7 +26,7 @@ func (BigQueryDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, s
 		return "json", nil
 	case typing.Date.Kind:
 		return "date", nil
-	case typing.Time.Kind:
+	case typing.TimeKindDetails.Kind:
 		return "time", nil
 	case typing.TimestampNTZ.Kind:
 		return "datetime", nil
@@ -95,7 +95,7 @@ func (BigQueryDialect) KindForDataType(rawBqType string) (typing.KindDetails, er
 	case "datetime":
 		return typing.TimestampNTZ, nil
 	case "time":
-		return typing.Time, nil
+		return typing.TimeKindDetails, nil
 	case "date":
 		return typing.Date, nil
 	default:

@@ -73,7 +73,7 @@ var (
 		Kind: "date",
 	}
 
-	Time = KindDetails{
+	TimeKindDetails = KindDetails{
 		Kind: "time",
 	}
 

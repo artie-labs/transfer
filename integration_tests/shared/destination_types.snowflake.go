@@ -193,7 +193,7 @@ func SnowflakeAssertColumns(ctx context.Context, dest destination.Destination, t
 				return err
 			}
 		case "c_time":
-			if err := assertEqual(col.Name(), col.KindDetails.Kind, typing.Time.Kind); err != nil {
+			if err := assertEqual(col.Name(), col.KindDetails.Kind, typing.TimeKindDetails.Kind); err != nil {
 				return err
 			}
 		case "c_variant":

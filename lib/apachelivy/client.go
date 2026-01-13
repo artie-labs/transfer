@@ -20,7 +20,7 @@ const (
 	sleepBaseMs                     = 1_000
 	sleepMaxMs                      = 3_000
 	defaultHeartbeatTimeoutInSecond = 300
-	maxSessionRetries               = 5
+	maxSessionRetries               = 500
 )
 
 type Client struct {

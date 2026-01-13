@@ -63,7 +63,7 @@ func NewTestFramework(dest destination.Destination, _iceberg *iceberg.Store, top
 }
 
 func (tf *TestFramework) SetupColumns(additionalColumns map[string]typing.KindDetails) {
-	cols := &columns.Columns{}
+	cols := columns.NewColumns(nil)
 	colTypes := map[string]typing.KindDetails{
 		"id":         typing.Integer,
 		"name":       typing.String,

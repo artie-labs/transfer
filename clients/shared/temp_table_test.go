@@ -20,7 +20,7 @@ import (
 
 func TestWriteTemporaryTableFile(t *testing.T) {
 	// Create test data
-	cols := &columns.Columns{}
+	cols := columns.NewColumns(nil)
 	for _, col := range []string{"user_id", "first_name", "last_name", "description"} {
 		cols.AddColumn(columns.NewColumn(col, typing.String))
 	}

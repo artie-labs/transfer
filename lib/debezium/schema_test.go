@@ -254,7 +254,7 @@ func TestField_ToKindDetails(t *testing.T) {
 		for _, dbzType := range []SupportedDebeziumType{Time, TimeKafkaConnect, TimeWithTimezone, MicroTime, NanoTime} {
 			kd, err := Field{DebeziumType: dbzType}.ToKindDetails()
 			assert.NoError(t, err)
-			assert.Equal(t, typing.Time, kd)
+			assert.Equal(t, typing.TimeKindDetails, kd)
 		}
 	}
 	{
