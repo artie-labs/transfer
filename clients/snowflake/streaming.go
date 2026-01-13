@@ -235,14 +235,14 @@ func (s *SnowpipeStreamingChannelManager) LoadData(ctx context.Context, db, sche
 
 		channelRows := rows[start:end]
 
-		// Get or create channel and open it if needed
-		channel, err := s.openChannel(ctx, db, schema, pipe, channelName, false)
-		if err != nil {
-			return err
-		}
-
 		group.Go(func() error {
-			_, err := batch.BySize(
+			// Get or create channel and open it if needed
+			channel, err := s.openChannel(ctx, db, schema, pipe, channelName, false)
+			if err != nil {
+				return err
+			}
+
+			_, err = batch.BySize(
 				channelRows,
 				maxChunkSize,
 				true,
