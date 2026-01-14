@@ -13,14 +13,14 @@ import (
 
 func GenerateReusableStagingTableName(optionalPrefix, baseTableName, suffix string) string {
 	if optionalPrefix != "" {
-		return fmt.Sprintf("%s_%s_%s_%s", optionalPrefix, baseTableName, constants.ArtiePrefix, suffix)
+		return fmt.Sprintf("%s__%s_%s_%s", optionalPrefix, baseTableName, constants.ArtiePrefix, suffix)
 	}
 	return fmt.Sprintf("%s_%s_%s", baseTableName, constants.ArtiePrefix, suffix)
 }
 
 func GenerateMSMTableName(optionalPrefix, baseTableName string) string {
 	if optionalPrefix != "" {
-		return fmt.Sprintf("%s_%s_%s_msm", optionalPrefix, constants.ArtiePrefix, baseTableName)
+		return fmt.Sprintf("%s__%s_%s_msm", optionalPrefix, constants.ArtiePrefix, baseTableName)
 	}
 	return fmt.Sprintf("%s_%s_msm", constants.ArtiePrefix, baseTableName)
 }
