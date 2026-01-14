@@ -48,8 +48,16 @@ func (s Store) Dialect() dialect.IcebergDialect {
 }
 
 func (s Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, useTempTable bool) error {
+	return s.append(ctx, tableData, whClient, useTempTable, 0)
+}
+
+func (s Store) append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, useTempTable bool, retryCount int) error {
 	if tableData.ShouldSkipUpdate() {
 		return nil
+	}
+
+	if retryCount > 3 {
+		return fmt.Errorf("failed to append, reached max retries count: %d", retryCount)
 	}
 
 	tableID := s.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name())
@@ -94,6 +102,10 @@ func (s Store) Append(ctx context.Context, tableData *optimization.TableData, wh
 	// Then append the view into the target table
 	query := s.Dialect().BuildAppendToTable(tableID, tempTableID.EscapedTable(), validColumnNames)
 	if err = s.apacheLivyClient.ExecContext(ctx, query); err != nil {
+		if s.Dialect().IsTableDoesNotExistErr(err) {
+			return s.append(ctx, tableData, whClient, useTempTable, retryCount+1)
+		}
+
 		return fmt.Errorf("failed to append to table: %w, query: %s", err, query)
 	}
 
