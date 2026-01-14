@@ -78,6 +78,7 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 			stagingTableID := dest.IdentifierFor(
 				tableData.TopicConfig().BuildStagingDatabaseAndSchemaPair(),
 				GenerateReusableStagingTableName(
+					tableData.TopicConfig().ReusableStagingTableNamePrefix(),
 					tableID.Table(),
 					config.GetStagingTableSuffix(),
 				),

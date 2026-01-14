@@ -11,7 +11,10 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func GenerateReusableStagingTableName(baseTableName, suffix string) string {
+func GenerateReusableStagingTableName(optionalPrefix, baseTableName, suffix string) string {
+	if optionalPrefix != "" {
+		return fmt.Sprintf("%s_%s_%s_%s", optionalPrefix, baseTableName, constants.ArtiePrefix, suffix)
+	}
 	return fmt.Sprintf("%s_%s_%s", baseTableName, constants.ArtiePrefix, suffix)
 }
 

@@ -180,6 +180,16 @@ func (t TopicConfig) BuildStagingDatabaseAndSchemaPair() DatabaseAndSchemaPair {
 	return DatabaseAndSchemaPair{Database: t.Database, Schema: t.GetStagingSchema()}
 }
 
+// ReusableStagingTableNamePrefix returns the target schema as a prefix when StagingSchema is explicitly
+// set to a different value than Schema. This is necessary to prevent name collisions for reusable staging tables
+// when multiple topic configs share the same StagingSchema but have different target schemas.
+func (t TopicConfig) ReusableStagingTableNamePrefix() string {
+	if t.StagingSchema != "" && t.StagingSchema != t.Schema {
+		return t.Schema
+	}
+	return ""
+}
+
 const (
 	StringKeyFmt = "org.apache.kafka.connect.storage.StringConverter"
 	JSONKeyFmt   = "org.apache.kafka.connect.json.JsonConverter"
