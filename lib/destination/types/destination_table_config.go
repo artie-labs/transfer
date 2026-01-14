@@ -37,6 +37,13 @@ func (d *DestinationTableConfig) SetColumnsToDeleteForTest(cols map[string]time.
 	d.columnsToDelete = cols
 }
 
+func (d *DestinationTableConfig) SetCreateTable(createTable bool) {
+	d.Lock()
+	defer d.Unlock()
+
+	d.createTable = createTable
+}
+
 func (d *DestinationTableConfig) CreateTable() bool {
 	d.RLock()
 	defer d.RUnlock()

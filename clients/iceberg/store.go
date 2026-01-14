@@ -103,6 +103,8 @@ func (s Store) append(ctx context.Context, tableData *optimization.TableData, wh
 	query := s.Dialect().BuildAppendToTable(tableID, tempTableID.EscapedTable(), validColumnNames)
 	if err = s.apacheLivyClient.ExecContext(ctx, query); err != nil {
 		if s.Dialect().IsTableDoesNotExistErr(err) {
+			s.cm.RemoveTable(tableID)
+			tableConfig.SetCreateTable(true)
 			return s.append(ctx, tableData, whClient, useTempTable, retryCount+1)
 		}
 
