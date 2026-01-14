@@ -18,6 +18,13 @@ func GenerateReusableStagingTableName(optionalPrefix, baseTableName, suffix stri
 	return fmt.Sprintf("%s_%s_%s", baseTableName, constants.ArtiePrefix, suffix)
 }
 
+func GenerateMSMTableName(optionalPrefix, baseTableName string) string {
+	if optionalPrefix != "" {
+		return fmt.Sprintf("%s_%s_%s_msm", optionalPrefix, constants.ArtiePrefix, baseTableName)
+	}
+	return fmt.Sprintf("%s_%s_msm", constants.ArtiePrefix, baseTableName)
+}
+
 type ReusableStagingTableManager interface {
 	PrepareReusableStagingTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, stagingTableID, parentTableID sql.TableIdentifier, opts types.AdditionalSettings) error
 
