@@ -301,3 +301,67 @@ func (e *EventsTestSuite) TestEventSaveTestDeleteFlag() {
 	assert.NoError(e.T(), err)
 	assert.True(e.T(), e.db.GetOrCreateTableData(event.GetTableID(), topicConfig.Topic).ContainOtherOperations())
 }
+
+func (e *EventsTestSuite) TestEventSaveAppendOnlyMode() {
+	{
+		// Append-only mode without soft delete: both deletion-related markers should be removed
+		appendOnlyTC := kafkalib.TopicConfig{
+			Database:   "customer",
+			TableName:  "users",
+			Schema:     "public",
+			AppendOnly: true,
+			SoftDelete: false,
+		}
+
+		mockEvent := &mocks.FakeEvent{}
+		mockEvent.GetTableNameReturns(appendOnlyTC.TableName)
+		mockEvent.GetDataReturns(map[string]any{
+			"id":                                "123",
+			"name":                              "test",
+			constants.DeleteColumnMarker:        false,
+			constants.OnlySetDeleteColumnMarker: false,
+		}, nil)
+
+		event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, appendOnlyTC, config.Replication)
+		assert.NoError(e.T(), err)
+
+		// Verify OnlySetDeleteColumnMarker is removed
+		_, hasOnlySetDelete := event.GetData()[constants.OnlySetDeleteColumnMarker]
+		assert.False(e.T(), hasOnlySetDelete, "OnlySetDeleteColumnMarker should be removed in append-only mode")
+
+		// Verify DeleteColumnMarker is removed when SoftDelete is false
+		_, hasDelete := event.GetData()[constants.DeleteColumnMarker]
+		assert.False(e.T(), hasDelete, "DeleteColumnMarker should be removed in append-only mode without soft delete")
+	}
+	{
+		// Append-only mode with soft delete: DeleteColumnMarker should be kept, OnlySetDeleteColumnMarker should be removed
+		appendOnlyWithSoftDeleteTC := kafkalib.TopicConfig{
+			Database:   "customer",
+			TableName:  "users",
+			Schema:     "public",
+			AppendOnly: true,
+			SoftDelete: true,
+		}
+
+		mockEvent := &mocks.FakeEvent{}
+		mockEvent.GetTableNameReturns(appendOnlyWithSoftDeleteTC.TableName)
+		mockEvent.GetDataReturns(map[string]any{
+			"id":                                "456",
+			"name":                              "test",
+			constants.DeleteColumnMarker:        true,
+			constants.OnlySetDeleteColumnMarker: true,
+		}, nil)
+
+		event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "456"}, appendOnlyWithSoftDeleteTC, config.Replication)
+		assert.NoError(e.T(), err)
+
+		// Verify OnlySetDeleteColumnMarker is removed
+		_, hasOnlySetDelete := event.GetData()[constants.OnlySetDeleteColumnMarker]
+		assert.False(e.T(), hasOnlySetDelete, "OnlySetDeleteColumnMarker should be removed in append-only mode")
+
+		// Verify DeleteColumnMarker is kept when SoftDelete is true
+		deleteVal, hasDelete := event.GetData()[constants.DeleteColumnMarker]
+		assert.True(e.T(), hasDelete, "DeleteColumnMarker should be kept in append-only mode with soft delete")
+		assert.Equal(e.T(), true, deleteVal)
+	}
+}

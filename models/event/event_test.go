@@ -63,6 +63,19 @@ func (e *EventsTestSuite) TestEvent_Validate() {
 		}
 		assert.NoError(e.T(), _evt.Validate())
 	}
+	{
+		// Append-only mode does not require the delete column marker
+		_evt := Event{
+			table:       "foo",
+			primaryKeys: []string{"id"},
+			data: map[string]any{
+				"id":  123,
+				"foo": "bar",
+			},
+			appendOnly: true,
+		}
+		assert.NoError(e.T(), _evt.Validate())
+	}
 }
 
 func testBuildFilteredColumns(t *testing.T, fakeEvent *mocks.FakeEvent, topicConfig kafkalib.TopicConfig, fakeColumns []columns.Column, expectedCols *columns.Columns) {
