@@ -91,22 +91,33 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 		// We don't need the deletion markers either.
 		delete(data, constants.DeleteColumnMarker)
 		delete(data, constants.OnlySetDeleteColumnMarker)
-	} else if tc.SoftPartitioning.Enabled {
-		// TODO: cache exact match or fix upstream to pass the column name from source table
-		maybeDatetime, ok := maputil.GetCaseInsensitiveValue(data, tc.SoftPartitioning.PartitionColumn)
-		if !ok {
-			return Event{}, fmt.Errorf("partition column %q not found in data", tc.SoftPartitioning.PartitionColumn)
+	} else {
+		if tc.AppendOnly {
+			// In append-only mode, we don't need the merge-specific column.
+			delete(data, constants.OnlySetDeleteColumnMarker)
+			// Only keep DeleteColumnMarker if soft delete is enabled.
+			if !tc.SoftDelete {
+				delete(data, constants.DeleteColumnMarker)
+			}
 		}
-		actuallyDateTime, err := typing.ParseTimestampTZFromAny(maybeDatetime)
-		if err != nil {
-			return Event{}, fmt.Errorf("failed to assert datetime: %w for table %q schema %q", err, tc.TableName, tc.Schema)
+
+		if tc.SoftPartitioning.Enabled {
+			// TODO: cache exact match or fix upstream to pass the column name from source table
+			maybeDatetime, ok := maputil.GetCaseInsensitiveValue(data, tc.SoftPartitioning.PartitionColumn)
+			if !ok {
+				return Event{}, fmt.Errorf("partition column %q not found in data", tc.SoftPartitioning.PartitionColumn)
+			}
+			actuallyDateTime, err := typing.ParseTimestampTZFromAny(maybeDatetime)
+			if err != nil {
+				return Event{}, fmt.Errorf("failed to assert datetime: %w for table %q schema %q", err, tc.TableName, tc.Schema)
+			}
+			// TODO: clean up parameters, i.e. ctx, dest, etc
+			suffix, err := BuildSoftPartitionSuffix(ctx, tc, actuallyDateTime, event.GetExecutionTime(), tblName, dest)
+			if err != nil {
+				return Event{}, fmt.Errorf("failed to calculate soft partition suffix: %w", err)
+			}
+			tblName = tblName + suffix
 		}
-		// TODO: clean up parameters, i.e. ctx, dest, etc
-		suffix, err := BuildSoftPartitionSuffix(ctx, tc, actuallyDateTime, event.GetExecutionTime(), tblName, dest)
-		if err != nil {
-			return Event{}, fmt.Errorf("failed to calculate soft partition suffix: %w", err)
-		}
-		tblName = tblName + suffix
 	}
 
 	optionalSchema, err := event.GetOptionalSchema()
