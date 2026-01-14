@@ -35,6 +35,7 @@ type Event struct {
 	// [executionTime] - The database timestamp for when the event was created.
 	executionTime time.Time
 	mode          config.Mode
+	appendOnly    bool
 }
 
 func (e Event) GetTableID() cdc.TableID {
@@ -91,22 +92,33 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 		// We don't need the deletion markers either.
 		delete(data, constants.DeleteColumnMarker)
 		delete(data, constants.OnlySetDeleteColumnMarker)
-	} else if tc.SoftPartitioning.Enabled {
-		// TODO: cache exact match or fix upstream to pass the column name from source table
-		maybeDatetime, ok := maputil.GetCaseInsensitiveValue(data, tc.SoftPartitioning.PartitionColumn)
-		if !ok {
-			return Event{}, fmt.Errorf("partition column %q not found in data", tc.SoftPartitioning.PartitionColumn)
+	} else {
+		if tc.AppendOnly {
+			// In append-only mode, we don't need the merge-specific column.
+			delete(data, constants.OnlySetDeleteColumnMarker)
+			// Only keep DeleteColumnMarker if soft delete is enabled.
+			if !tc.SoftDelete {
+				delete(data, constants.DeleteColumnMarker)
+			}
 		}
-		actuallyDateTime, err := typing.ParseTimestampTZFromAny(maybeDatetime)
-		if err != nil {
-			return Event{}, fmt.Errorf("failed to assert datetime: %w for table %q schema %q", err, tc.TableName, tc.Schema)
+
+		if tc.SoftPartitioning.Enabled {
+			// TODO: cache exact match or fix upstream to pass the column name from source table
+			maybeDatetime, ok := maputil.GetCaseInsensitiveValue(data, tc.SoftPartitioning.PartitionColumn)
+			if !ok {
+				return Event{}, fmt.Errorf("partition column %q not found in data", tc.SoftPartitioning.PartitionColumn)
+			}
+			actuallyDateTime, err := typing.ParseTimestampTZFromAny(maybeDatetime)
+			if err != nil {
+				return Event{}, fmt.Errorf("failed to assert datetime: %w for table %q schema %q", err, tc.TableName, tc.Schema)
+			}
+			// TODO: clean up parameters, i.e. ctx, dest, etc
+			suffix, err := BuildSoftPartitionSuffix(ctx, tc, actuallyDateTime, event.GetExecutionTime(), tblName, dest)
+			if err != nil {
+				return Event{}, fmt.Errorf("failed to calculate soft partition suffix: %w", err)
+			}
+			tblName = tblName + suffix
 		}
-		// TODO: clean up parameters, i.e. ctx, dest, etc
-		suffix, err := BuildSoftPartitionSuffix(ctx, tc, actuallyDateTime, event.GetExecutionTime(), tblName, dest)
-		if err != nil {
-			return Event{}, fmt.Errorf("failed to calculate soft partition suffix: %w", err)
-		}
-		tblName = tblName + suffix
 	}
 
 	optionalSchema, err := event.GetOptionalSchema()
@@ -128,6 +140,7 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 	return Event{
 		executionTime: event.GetExecutionTime(),
 		mode:          cfgMode,
+		appendOnly:    tc.AppendOnly,
 		// [primaryKeys] needs to be sorted so that we have a deterministic way to identify a row in our in-memory db.
 		primaryKeys:    pks,
 		table:          tblName,
@@ -175,7 +188,7 @@ func (e *Event) Validate() error {
 		return fmt.Errorf("event has no data")
 	}
 
-	if e.mode == config.History {
+	if e.mode == config.History || e.appendOnly {
 		// History mode does not have the delete column marker.
 		return nil
 	}

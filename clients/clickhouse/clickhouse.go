@@ -50,6 +50,17 @@ func LoadClickhouse(ctx context.Context, cfg config.Config, _store *db.Store) (*
 			Password: cfg.Clickhouse.Password,
 		},
 		TLS: tlsConfig,
+		ClientInfo: clickhouse.ClientInfo{
+			Products: []struct {
+				Name    string
+				Version string
+			}{
+				{
+					Name:    "artie-transfer",
+					Version: "1.0.0",
+				},
+			},
+		},
 	}))
 
 	if err := store.GetDatabase().Ping(); err != nil {
