@@ -35,6 +35,7 @@ type Event struct {
 	// [executionTime] - The database timestamp for when the event was created.
 	executionTime time.Time
 	mode          config.Mode
+	appendOnly    bool
 }
 
 func (e Event) GetTableID() cdc.TableID {
@@ -139,6 +140,7 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 	return Event{
 		executionTime: event.GetExecutionTime(),
 		mode:          cfgMode,
+		appendOnly:    tc.AppendOnly,
 		// [primaryKeys] needs to be sorted so that we have a deterministic way to identify a row in our in-memory db.
 		primaryKeys:    pks,
 		table:          tblName,
@@ -186,7 +188,7 @@ func (e *Event) Validate() error {
 		return fmt.Errorf("event has no data")
 	}
 
-	if e.mode == config.History {
+	if e.mode == config.History || e.appendOnly {
 		// History mode does not have the delete column marker.
 		return nil
 	}
