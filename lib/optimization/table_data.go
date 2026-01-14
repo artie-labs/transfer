@@ -193,7 +193,10 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 			}
 
 			// Setting this to the previous row for idempotency.
-			rowData[constants.OnlySetDeleteColumnMarker] = prevRowData[constants.OnlySetDeleteColumnMarker]
+			// Only set if it exists in prevRowData to avoid re-adding it when it was intentionally removed (e.g., append-only mode).
+			if _, ok := prevRowData[constants.OnlySetDeleteColumnMarker]; ok {
+				rowData[constants.OnlySetDeleteColumnMarker] = prevRowData[constants.OnlySetDeleteColumnMarker]
+			}
 		} else {
 			for key, val := range rowData {
 				if val == constants.ToastUnavailableValuePlaceholder {
