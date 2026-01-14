@@ -126,6 +126,7 @@ type TopicConfig struct {
 	Database string `yaml:"db"`
 	Schema   string `yaml:"schema"`
 	// [StagingSchema] - Optional schema to use for staging tables. If not specified, Schema will be used.
+	// Currently only supported for Snowflake.
 	StagingSchema string `yaml:"stagingSchema,omitempty"`
 	// [TableName] - if left empty, the table name will be deduced from each event.
 	TableName                  string `yaml:"tableName"`
