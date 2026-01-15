@@ -20,7 +20,7 @@ func GenerateReusableStagingTableName(optionalPrefix, baseTableName, suffix stri
 
 func GenerateMSMTableName(optionalPrefix, baseTableName string) string {
 	if optionalPrefix != "" {
-		return fmt.Sprintf("%s__%s_%s_msm", optionalPrefix, constants.ArtiePrefix, baseTableName)
+		return fmt.Sprintf("%s_%s__%s_msm", constants.ArtiePrefix, optionalPrefix, baseTableName)
 	}
 	return fmt.Sprintf("%s_%s_msm", constants.ArtiePrefix, baseTableName)
 }
