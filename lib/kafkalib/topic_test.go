@@ -67,6 +67,59 @@ func TestGetUniqueStagingDatabaseAndSchemaPairs(t *testing.T) {
 			tcs[2].BuildStagingDatabaseAndSchemaPair(),
 		}, actual)
 	}
+	{
+		// Topic configs with StagingSchema specified
+		tcs := []*TopicConfig{
+			{
+				Database:      "db",
+				Schema:        "public",
+				StagingSchema: "staging",
+			},
+			{
+				Database:      "db",
+				Schema:        "other",
+				StagingSchema: "staging",
+			},
+			{
+				Database: "db",
+				Schema:   "staging", // Same as staging schema above, no explicit StagingSchema
+			},
+		}
+
+		actual := GetUniqueStagingDatabaseAndSchemaPairs(tcs)
+		// All three should resolve to the same staging schema
+		assert.Len(t, actual, 1)
+		assert.Equal(t, DatabaseAndSchemaPair{Database: "db", Schema: "staging"}, actual[0])
+	}
+}
+
+func TestTopicConfig_ReusableStagingTableNamePrefix(t *testing.T) {
+	{
+		// No StagingSchema specified - returns empty string
+		tc := TopicConfig{
+			Database: "db",
+			Schema:   "public",
+		}
+		assert.Equal(t, "", tc.ReusableStagingTableNamePrefix())
+	}
+	{
+		// StagingSchema equals Schema - returns empty string
+		tc := TopicConfig{
+			Database:      "db",
+			Schema:        "public",
+			StagingSchema: "public",
+		}
+		assert.Equal(t, "", tc.ReusableStagingTableNamePrefix())
+	}
+	{
+		// StagingSchema differs from Schema - returns Schema as prefix
+		tc := TopicConfig{
+			Database:      "db",
+			Schema:        "public",
+			StagingSchema: "staging",
+		}
+		assert.Equal(t, "public", tc.ReusableStagingTableNamePrefix())
+	}
 }
 
 func TestTopicConfig_String(t *testing.T) {
