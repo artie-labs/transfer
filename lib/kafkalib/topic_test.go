@@ -8,10 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetUniqueDatabaseAndSchemaPairs(t *testing.T) {
+func TestGetUniqueStagingDatabaseAndSchemaPairs(t *testing.T) {
 	{
 		// No topic configs
-		assert.Empty(t, GetUniqueDatabaseAndSchemaPairs(nil))
+		assert.Empty(t, GetUniqueStagingDatabaseAndSchemaPairs(nil))
 	}
 	{
 		// 1 topic config
@@ -22,9 +22,9 @@ func TestGetUniqueDatabaseAndSchemaPairs(t *testing.T) {
 			},
 		}
 
-		actual := GetUniqueDatabaseAndSchemaPairs(tcs)
+		actual := GetUniqueStagingDatabaseAndSchemaPairs(tcs)
 		assert.Len(t, actual, 1)
-		assert.Equal(t, tcs[0].BuildDatabaseAndSchemaPair(), actual[0])
+		assert.Equal(t, tcs[0].BuildStagingDatabaseAndSchemaPair(), actual[0])
 	}
 	{
 		// 2 topic configs (both the same)
@@ -39,9 +39,9 @@ func TestGetUniqueDatabaseAndSchemaPairs(t *testing.T) {
 			},
 		}
 
-		actual := GetUniqueDatabaseAndSchemaPairs(tcs)
+		actual := GetUniqueStagingDatabaseAndSchemaPairs(tcs)
 		assert.Len(t, actual, 1)
-		assert.Equal(t, tcs[0].BuildDatabaseAndSchemaPair(), actual[0])
+		assert.Equal(t, tcs[0].BuildStagingDatabaseAndSchemaPair(), actual[0])
 	}
 	{
 		// 3 topic configs (2 the same)
@@ -60,12 +60,65 @@ func TestGetUniqueDatabaseAndSchemaPairs(t *testing.T) {
 			},
 		}
 
-		actual := GetUniqueDatabaseAndSchemaPairs(tcs)
+		actual := GetUniqueStagingDatabaseAndSchemaPairs(tcs)
 		assert.Len(t, actual, 2)
 		assert.ElementsMatch(t, []DatabaseAndSchemaPair{
-			tcs[0].BuildDatabaseAndSchemaPair(),
-			tcs[2].BuildDatabaseAndSchemaPair(),
+			tcs[0].BuildStagingDatabaseAndSchemaPair(),
+			tcs[2].BuildStagingDatabaseAndSchemaPair(),
 		}, actual)
+	}
+	{
+		// Topic configs with StagingSchema specified
+		tcs := []*TopicConfig{
+			{
+				Database:      "db",
+				Schema:        "public",
+				StagingSchema: "staging",
+			},
+			{
+				Database:      "db",
+				Schema:        "other",
+				StagingSchema: "staging",
+			},
+			{
+				Database: "db",
+				Schema:   "staging", // Same as staging schema above, no explicit StagingSchema
+			},
+		}
+
+		actual := GetUniqueStagingDatabaseAndSchemaPairs(tcs)
+		// All three should resolve to the same staging schema
+		assert.Len(t, actual, 1)
+		assert.Equal(t, DatabaseAndSchemaPair{Database: "db", Schema: "staging"}, actual[0])
+	}
+}
+
+func TestTopicConfig_ReusableStagingTableNamePrefix(t *testing.T) {
+	{
+		// No StagingSchema specified - returns empty string
+		tc := TopicConfig{
+			Database: "db",
+			Schema:   "public",
+		}
+		assert.Equal(t, "", tc.ReusableStagingTableNamePrefix())
+	}
+	{
+		// StagingSchema equals Schema - returns empty string
+		tc := TopicConfig{
+			Database:      "db",
+			Schema:        "public",
+			StagingSchema: "public",
+		}
+		assert.Equal(t, "", tc.ReusableStagingTableNamePrefix())
+	}
+	{
+		// StagingSchema differs from Schema - returns Schema as prefix
+		tc := TopicConfig{
+			Database:      "db",
+			Schema:        "public",
+			StagingSchema: "staging",
+		}
+		assert.Equal(t, "public", tc.ReusableStagingTableNamePrefix())
 	}
 }
 

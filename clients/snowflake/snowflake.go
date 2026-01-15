@@ -182,7 +182,7 @@ func (s *Store) ensureExternalStageExists(ctx context.Context) error {
 		return err
 	}
 
-	for _, dbAndSchemaPair := range kafkalib.GetUniqueDatabaseAndSchemaPairs(s.config.TopicConfigs()) {
+	for _, dbAndSchemaPair := range kafkalib.GetUniqueStagingDatabaseAndSchemaPairs(s.config.TopicConfigs()) {
 		describeQuery := s.dialect().BuildDescribeStageQuery(dbAndSchemaPair.Database, dbAndSchemaPair.Schema, s.config.Snowflake.ExternalStage.Name)
 		if _, err := s.QueryContext(ctx, describeQuery); err != nil {
 			if strings.Contains(err.Error(), "does not exist") {
