@@ -3,7 +3,6 @@ package parquetutil
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 
 	"github.com/apache/arrow/go/v17/arrow"
 	"github.com/apache/arrow/go/v17/arrow/array"
@@ -56,26 +55,11 @@ func ConvertValueForArrowBuilder(builder array.Builder, value any) error {
 		}
 		castedBuilder.Append(castedValue)
 	case *array.BooleanBuilder:
-		switch castedValue := value.(type) {
-		case bool:
-			castedBuilder.Append(castedValue)
-		case string:
-			parsedValue, err := strconv.ParseBool(castedValue)
-			if err != nil {
-				return fmt.Errorf("failed to parse string to boolean: %w", err)
-			}
-			castedBuilder.Append(parsedValue)
-		case map[string]any:
-			// If it's a nested object.
-			if val, ok := castedValue["value"]; ok {
-				return ConvertValueForArrowBuilder(castedBuilder, val)
-			}
-
-			return fmt.Errorf("failed to cast value to boolean: %T, value: %v", value, value)
-		default:
-			return fmt.Errorf("failed to cast value to boolean: %T, value: %v", value, value)
+		castedValue, err := typing.AssertType[bool](value)
+		if err != nil {
+			return fmt.Errorf("failed to cast value to boolean: %w", err)
 		}
-
+		castedBuilder.Append(castedValue)
 	case *array.Float32Builder:
 		castedValue, err := typing.AssertType[float32](value)
 		if err != nil {
