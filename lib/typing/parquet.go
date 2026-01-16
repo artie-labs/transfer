@@ -102,7 +102,17 @@ func (kd KindDetails) ParseValueForArrow(value any) (any, error) {
 	case Integer.Kind:
 		return primitives.Int64Converter{}.Convert(value)
 	case Boolean.Kind:
-		return primitives.BooleanConverter{}.Convert(value)
+		switch castedValue := value.(type) {
+		case map[string]any:
+			if val, ok := castedValue["value"]; ok {
+				return primitives.BooleanConverter{}.Convert(val)
+			}
+
+			return nil, fmt.Errorf("failed to cast value to boolean: %T, value: %v", value, value)
+		default:
+			return primitives.BooleanConverter{}.Convert(castedValue)
+		}
+
 	case Float.Kind:
 		return primitives.Float32Converter{}.Convert(value)
 	case EDecimal.Kind:
