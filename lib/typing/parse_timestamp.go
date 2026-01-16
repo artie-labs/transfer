@@ -96,6 +96,11 @@ func ParseTimestampNTZFromAny(val any) (time.Time, error) {
 	case string:
 		ts, err := ParseTimeExactMatch(RFC3339NoTZ, convertedVal)
 		if err != nil {
+			// Try parsing as a date first.
+			if ts, dateErr := ParseDateFromAny(convertedVal); dateErr == nil {
+				return ts, nil
+			}
+
 			return time.Time{}, NewParseError(fmt.Sprintf("unsupported value: %q", convertedVal), UnsupportedDateLayout)
 		}
 
