@@ -43,6 +43,16 @@ func ConvertValueForArrowBuilder(builder array.Builder, value any) error {
 				}
 				castedBuilder.Append(string(jsonBytes))
 			}
+		case []any:
+			if castedValue == nil {
+				castedBuilder.AppendNull()
+			} else {
+				jsonBytes, err := json.Marshal(castedValue)
+				if err != nil {
+					return fmt.Errorf("failed to marshal slice to JSON: %w", err)
+				}
+				castedBuilder.Append(string(jsonBytes))
+			}
 		case string:
 			castedBuilder.Append(castedValue)
 		default:

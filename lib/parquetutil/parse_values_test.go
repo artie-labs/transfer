@@ -145,23 +145,39 @@ func TestConvertValueForArrowBuilder_TypedNils(t *testing.T) {
 		assert.True(t, arr.IsNull(0), "typed nil map should result in null")
 	}
 	{
+		// Typed nil []any should append null
+		builder := array.NewStringBuilder(pool)
+		defer builder.Release()
+
+		var nilSlice []any = nil
+		assert.NoError(t, ConvertValueForArrowBuilder(builder, nilSlice))
+		arr := builder.NewStringArray()
+		defer arr.Release()
+
+		assert.Equal(t, 1, arr.Len())
+		assert.True(t, arr.IsNull(0), "typed nil []any should result in null")
+	}
+	{
 		// Non-nil values should still work
 		builder := array.NewStringBuilder(pool)
 		defer builder.Release()
 
 		assert.NoError(t, ConvertValueForArrowBuilder(builder, []byte("hello")))
 		assert.NoError(t, ConvertValueForArrowBuilder(builder, map[string]any{"key": "value"}))
+		assert.NoError(t, ConvertValueForArrowBuilder(builder, []any{1, 2, 3}))
 		assert.NoError(t, ConvertValueForArrowBuilder(builder, "test"))
 		arr := builder.NewStringArray()
 		defer arr.Release()
 
-		assert.Equal(t, 3, arr.Len())
+		assert.Equal(t, 4, arr.Len())
 		assert.False(t, arr.IsNull(0))
 		assert.Equal(t, "hello", arr.Value(0))
 		assert.False(t, arr.IsNull(1))
 		assert.Equal(t, `{"key":"value"}`, arr.Value(1))
 		assert.False(t, arr.IsNull(2))
-		assert.Equal(t, "test", arr.Value(2))
+		assert.Equal(t, `[1,2,3]`, arr.Value(2))
+		assert.False(t, arr.IsNull(3))
+		assert.Equal(t, "test", arr.Value(3))
 	}
 }
 
