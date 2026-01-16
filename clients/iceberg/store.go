@@ -289,17 +289,27 @@ func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {
 		s3Client:         awslib.NewS3Client(awsCfg),
 	}
 
-	namespaces := make(map[string]bool)
+	// Ensure destination namespaces exist
 	for _, tc := range cfg.Kafka.TopicConfigs {
 		if err := store.EnsureNamespaceExists(ctx, store.Dialect().BuildIdentifier(tc.Schema)); err != nil {
 			return Store{}, fmt.Errorf("failed to ensure namespace exists: %w", err)
 		}
-
-		namespaces[tc.Schema] = true
 	}
 
-	// Then sweep the temporary tables.
-	if err = SweepTemporaryTables(ctx, store.s3TablesAPI, store.Dialect(), slices.Collect(maps.Keys(namespaces))); err != nil {
+	// Collect unique staging namespaces and ensure they exist
+	stagingNamespaces := make(map[string]bool)
+	for _, tc := range cfg.Kafka.TopicConfigs {
+		stagingSchema := tc.GetStagingSchema()
+		if !stagingNamespaces[stagingSchema] {
+			if err := store.EnsureNamespaceExists(ctx, store.Dialect().BuildIdentifier(stagingSchema)); err != nil {
+				return Store{}, fmt.Errorf("failed to ensure staging namespace exists: %w", err)
+			}
+			stagingNamespaces[stagingSchema] = true
+		}
+	}
+
+	// Then sweep the temporary tables from staging namespaces.
+	if err = SweepTemporaryTables(ctx, store.s3TablesAPI, store.Dialect(), slices.Collect(maps.Keys(stagingNamespaces))); err != nil {
 		return Store{}, fmt.Errorf("failed to sweep temporary tables: %w", err)
 	}
 
