@@ -110,11 +110,6 @@ func ParseTimestampNTZFromAny(val any) (time.Time, error) {
 	case int64:
 		return int64MillisToTime(convertedVal), nil
 	default:
-		// If this fails, let's see if we can parse into a date.
-		if ts, err := ParseDateFromAny(convertedVal); err == nil {
-			return ts, nil
-		}
-
 		return time.Time{}, fmt.Errorf("unsupported type: %T", convertedVal)
 	}
 }
