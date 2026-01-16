@@ -1,6 +1,7 @@
 package parquetutil
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/apache/arrow/go/v17/arrow"
@@ -25,11 +26,20 @@ func ConvertValueForArrowBuilder(builder array.Builder, value any) error {
 
 	switch castedBuilder := builder.(type) {
 	case *array.StringBuilder:
-		castedValue, err := typing.AssertType[string](value)
-		if err != nil {
-			return fmt.Errorf("failed to cast value to string: %w", err)
+		switch castedValue := value.(type) {
+		case []byte:
+			castedBuilder.Append(string(castedValue))
+		case map[string]any:
+			jsonBytes, err := json.Marshal(castedValue)
+			if err != nil {
+				return fmt.Errorf("failed to marshal map to JSON: %w", err)
+			}
+			castedBuilder.Append(string(jsonBytes))
+		case string:
+			castedBuilder.Append(castedValue)
+		default:
+			return fmt.Errorf("failed to cast value to string: %T, value: %v", value, value)
 		}
-		castedBuilder.Append(castedValue)
 	case *array.Int64Builder:
 		castedValue, err := typing.AssertType[int64](value)
 		if err != nil {

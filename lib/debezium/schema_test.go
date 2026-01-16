@@ -1,6 +1,7 @@
 package debezium
 
 import (
+	"encoding/base64"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -216,6 +217,32 @@ func TestField_ToKindDetails(t *testing.T) {
 		kd, err := Field{Type: Array}.ToKindDetails()
 		assert.NoError(t, err)
 		assert.Equal(t, typing.Array, kd)
+	}
+	{
+		// Array of bytes
+		field := Field{
+			Type:     Array,
+			Optional: false,
+			ItemsMetadata: &Field{
+				Type:     Bytes,
+				Optional: false,
+			},
+		}
+
+		kd, err := field.ToKindDetails()
+		assert.NoError(t, err)
+		assert.Equal(t, typing.Array, kd)
+
+		converter, err := field.ToValueConverter()
+		assert.NoError(t, err)
+		assert.NotNil(t, converter)
+
+		// Test converting base64-encoded byte arrays
+		// ParseValue decodes bytes then re-encodes to base64 string for downstream compatibility
+		encodedBytes := base64.StdEncoding.EncodeToString([]byte("hello"))
+		value, err := converter.Convert([]any{encodedBytes})
+		assert.NoError(t, err)
+		assert.Equal(t, []any{"hello"}, value)
 	}
 	{
 		// Invalid
