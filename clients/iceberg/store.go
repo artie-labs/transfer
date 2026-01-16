@@ -3,8 +3,6 @@ package iceberg
 import (
 	"context"
 	"fmt"
-	"maps"
-	"slices"
 
 	"github.com/aws/aws-sdk-go-v2/credentials"
 
@@ -289,27 +287,15 @@ func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {
 		s3Client:         awslib.NewS3Client(awsCfg),
 	}
 
-	// Ensure destination namespaces exist
-	for _, tc := range cfg.Kafka.TopicConfigs {
-		if err := store.EnsureNamespaceExists(ctx, store.Dialect().BuildIdentifier(tc.Schema)); err != nil {
+	// Ensure all namespaces exist (including staging namespaces)
+	for _, schema := range kafkalib.GetAllUniqueSchemas(cfg.Kafka.TopicConfigs) {
+		if err := store.EnsureNamespaceExists(ctx, store.Dialect().BuildIdentifier(schema)); err != nil {
 			return Store{}, fmt.Errorf("failed to ensure namespace exists: %w", err)
 		}
 	}
 
-	// Collect unique staging namespaces and ensure they exist
-	stagingNamespaces := make(map[string]bool)
-	for _, tc := range cfg.Kafka.TopicConfigs {
-		stagingSchema := tc.GetStagingSchema()
-		if !stagingNamespaces[stagingSchema] {
-			if err := store.EnsureNamespaceExists(ctx, store.Dialect().BuildIdentifier(stagingSchema)); err != nil {
-				return Store{}, fmt.Errorf("failed to ensure staging namespace exists: %w", err)
-			}
-			stagingNamespaces[stagingSchema] = true
-		}
-	}
-
-	// Then sweep the temporary tables from staging namespaces.
-	if err = SweepTemporaryTables(ctx, store.s3TablesAPI, store.Dialect(), slices.Collect(maps.Keys(stagingNamespaces))); err != nil {
+	// Sweep the temporary tables from staging namespaces only.
+	if err = SweepTemporaryTables(ctx, store.s3TablesAPI, store.Dialect(), kafkalib.GetUniqueStagingSchemas(cfg.Kafka.TopicConfigs)); err != nil {
 		return Store{}, fmt.Errorf("failed to sweep temporary tables: %w", err)
 	}
 
