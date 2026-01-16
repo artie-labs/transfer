@@ -138,5 +138,9 @@ func parseTimestampTZ(value string) (time.Time, error) {
 		}
 	}
 
+	if ts, dateErr := ParseDateFromAny(value); dateErr == nil {
+		return ts, nil
+	}
+
 	return time.Time{}, NewParseError(fmt.Sprintf("unsupported value: %q", value), UnsupportedDateLayout)
 }
