@@ -61,7 +61,7 @@ func (BooleanConverter) Convert(value any) (bool, error) {
 		return castValue, nil
 	}
 
-	return false, fmt.Errorf("failed to parse boolean, unsupported type: %T", value)
+	return false, fmt.Errorf("failed to parse boolean, unsupported type: %T, value: %v", value, value)
 }
 
 type Float32Converter struct{}
