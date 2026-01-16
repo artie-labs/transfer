@@ -372,6 +372,20 @@ func InjectFranzGoConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) 
 			}),
 		)
 
+		// Apply optional fetch tuning settings if configured
+		if cfg.FetchMaxBytes > 0 {
+			clientOpts = append(clientOpts, kgo.FetchMaxBytes(cfg.FetchMaxBytes))
+		}
+		if cfg.FetchMaxPartitionBytes > 0 {
+			clientOpts = append(clientOpts, kgo.FetchMaxPartitionBytes(cfg.FetchMaxPartitionBytes))
+		}
+		if cfg.FetchMinBytes > 0 {
+			clientOpts = append(clientOpts, kgo.FetchMinBytes(cfg.FetchMinBytes))
+		}
+		if cfg.FetchMaxWaitMs > 0 {
+			clientOpts = append(clientOpts, kgo.FetchMaxWait(time.Duration(cfg.FetchMaxWaitMs)*time.Millisecond))
+		}
+
 		client, err := kgo.NewClient(clientOpts...)
 		if err != nil {
 			closeClients()
