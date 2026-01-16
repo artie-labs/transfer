@@ -70,9 +70,12 @@ func ConvertValueForArrowBuilder(builder array.Builder, value any) error {
 			if val, ok := castedValue["value"]; ok {
 				return ConvertValueForArrowBuilder(castedBuilder, val)
 			}
+
+			return fmt.Errorf("failed to cast value to boolean: %T, value: %v", value, value)
+		default:
+			return fmt.Errorf("failed to cast value to boolean: %T, value: %v", value, value)
 		}
 
-		return fmt.Errorf("failed to cast value to boolean: %T, value: %v", value, value)
 	case *array.Float32Builder:
 		castedValue, err := typing.AssertType[float32](value)
 		if err != nil {
