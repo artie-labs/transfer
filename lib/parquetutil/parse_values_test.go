@@ -4,7 +4,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/apache/arrow/go/v17/arrow/array"
 	"github.com/apache/arrow/go/v17/arrow/decimal128"
+	"github.com/apache/arrow/go/v17/arrow/memory"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/lib/numbers"
@@ -112,4 +114,66 @@ func TestParseValueForArrow(t *testing.T) {
 		expectedMillis := expectedTime.UnixMilli()
 		assert.Equal(t, expectedMillis, value)
 	}
+}
+
+func TestConvertValueForArrowBuilder_TypedNils(t *testing.T) {
+	pool := memory.NewGoAllocator()
+	{
+		// Typed nil []byte should append null, not empty string
+		builder := array.NewStringBuilder(pool)
+		defer builder.Release()
+
+		var nilBytes []byte = nil
+		assert.NoError(t, ConvertValueForArrowBuilder(builder, nilBytes))
+		arr := builder.NewStringArray()
+		defer arr.Release()
+
+		assert.Equal(t, 1, arr.Len())
+		assert.True(t, arr.IsNull(0), "typed nil []byte should result in null")
+	}
+	{
+		// Typed nil map[string]any should append null, not "null" string
+		builder := array.NewStringBuilder(pool)
+		defer builder.Release()
+
+		var nilMap map[string]any = nil
+		assert.NoError(t, ConvertValueForArrowBuilder(builder, nilMap))
+		arr := builder.NewStringArray()
+		defer arr.Release()
+
+		assert.Equal(t, 1, arr.Len())
+		assert.True(t, arr.IsNull(0), "typed nil map should result in null")
+	}
+	{
+		// Non-nil values should still work
+		builder := array.NewStringBuilder(pool)
+		defer builder.Release()
+
+		assert.NoError(t, ConvertValueForArrowBuilder(builder, []byte("hello")))
+		assert.NoError(t, ConvertValueForArrowBuilder(builder, map[string]any{"key": "value"}))
+		assert.NoError(t, ConvertValueForArrowBuilder(builder, "test"))
+		arr := builder.NewStringArray()
+		defer arr.Release()
+
+		assert.Equal(t, 3, arr.Len())
+		assert.False(t, arr.IsNull(0))
+		assert.Equal(t, "hello", arr.Value(0))
+		assert.False(t, arr.IsNull(1))
+		assert.Equal(t, `{"key":"value"}`, arr.Value(1))
+		assert.False(t, arr.IsNull(2))
+		assert.Equal(t, "test", arr.Value(2))
+	}
+}
+
+func TestConvertValueForArrowBuilder_UntypedNil(t *testing.T) {
+	pool := memory.NewGoAllocator()
+	builder := array.NewInt64Builder(pool)
+	defer builder.Release()
+
+	assert.NoError(t, ConvertValueForArrowBuilder(builder, nil))
+	arr := builder.NewArray().(*array.Int64)
+	defer arr.Release()
+
+	assert.Equal(t, 1, arr.Len())
+	assert.True(t, arr.IsNull(0))
 }

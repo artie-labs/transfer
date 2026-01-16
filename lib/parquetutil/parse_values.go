@@ -3,6 +3,7 @@ package parquetutil
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"github.com/apache/arrow/go/v17/arrow"
 	"github.com/apache/arrow/go/v17/arrow/array"
@@ -28,13 +29,21 @@ func ConvertValueForArrowBuilder(builder array.Builder, value any) error {
 	case *array.StringBuilder:
 		switch castedValue := value.(type) {
 		case []byte:
-			castedBuilder.Append(string(castedValue))
-		case map[string]any:
-			jsonBytes, err := json.Marshal(castedValue)
-			if err != nil {
-				return fmt.Errorf("failed to marshal map to JSON: %w", err)
+			if castedValue == nil {
+				castedBuilder.AppendNull()
+			} else {
+				castedBuilder.Append(string(castedValue))
 			}
-			castedBuilder.Append(string(jsonBytes))
+		case map[string]any:
+			if castedValue == nil {
+				castedBuilder.AppendNull()
+			} else {
+				jsonBytes, err := json.Marshal(castedValue)
+				if err != nil {
+					return fmt.Errorf("failed to marshal map to JSON: %w", err)
+				}
+				castedBuilder.Append(string(jsonBytes))
+			}
 		case string:
 			castedBuilder.Append(castedValue)
 		default:
@@ -47,11 +56,23 @@ func ConvertValueForArrowBuilder(builder array.Builder, value any) error {
 		}
 		castedBuilder.Append(castedValue)
 	case *array.BooleanBuilder:
-		castedValue, err := typing.AssertType[bool](value)
-		if err != nil {
-			return fmt.Errorf("failed to cast value to boolean: %w", err)
+		switch castedValue := value.(type) {
+		case bool:
+			castedBuilder.Append(castedValue)
+		case string:
+			parsedValue, err := strconv.ParseBool(castedValue)
+			if err != nil {
+				return fmt.Errorf("failed to parse string to boolean: %w", err)
+			}
+			castedBuilder.Append(parsedValue)
+		case map[string]any:
+			// If it's a nested object.
+			if val, ok := castedValue["value"]; ok {
+				return ConvertValueForArrowBuilder(castedBuilder, val)
+			}
 		}
-		castedBuilder.Append(castedValue)
+
+		return fmt.Errorf("failed to cast value to boolean: %T, value: %v", value, value)
 	case *array.Float32Builder:
 		castedValue, err := typing.AssertType[float32](value)
 		if err != nil {
