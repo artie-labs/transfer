@@ -25,6 +25,28 @@ func GetUniqueStagingDatabaseAndSchemaPairs(tcs []*TopicConfig) []DatabaseAndSch
 	return slices.Collect(maps.Keys(seenMap))
 }
 
+// GetUniqueStagingSchemas returns a deduplicated list of staging schemas from the topic configs.
+// This uses GetStagingSchema() which falls back to Schema if StagingSchema is not set.
+func GetUniqueStagingSchemas(tcs []*TopicConfig) []string {
+	seenMap := make(map[string]bool)
+	for _, tc := range tcs {
+		seenMap[tc.GetStagingSchema()] = true
+	}
+
+	return slices.Collect(maps.Keys(seenMap))
+}
+
+// GetAllUniqueSchemas returns a deduplicated list of all schemas (both destination and staging) from the topic configs.
+func GetAllUniqueSchemas(tcs []*TopicConfig) []string {
+	seenMap := make(map[string]bool)
+	for _, tc := range tcs {
+		seenMap[tc.Schema] = true
+		seenMap[tc.GetStagingSchema()] = true
+	}
+
+	return slices.Collect(maps.Keys(seenMap))
+}
+
 type MultiStepMergeSettings struct {
 	Enabled bool `yaml:"enabled"`
 	// FlushCount is the number of times we will flush to the multi-step merge table before merging into the destination table.
@@ -126,7 +148,6 @@ type TopicConfig struct {
 	Database string `yaml:"db"`
 	Schema   string `yaml:"schema"`
 	// [StagingSchema] - Optional schema to use for staging tables. If not specified, Schema will be used.
-	// Currently only supported for Snowflake.
 	StagingSchema string `yaml:"stagingSchema,omitempty"`
 	// [TableName] - if left empty, the table name will be deduced from each event.
 	TableName                  string `yaml:"tableName"`
