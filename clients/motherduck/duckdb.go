@@ -142,8 +142,7 @@ func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryK
 }
 
 func (s Store) SweepTemporaryTables(ctx context.Context, _ *webhooksclient.Client) error {
-	for _, topicConfig := range s.config.TopicConfigs() {
-		dbAndSchema := topicConfig.BuildDatabaseAndSchemaPair()
+	for _, dbAndSchema := range kafkalib.GetUniqueStagingDatabaseAndSchemaPairs(s.config.TopicConfigs()) {
 		query, args := s.dialect().BuildSweepQuery(dbAndSchema.Database, dbAndSchema.Schema)
 
 		response, err := s.QueryContextHttp(ctx, query, args...)

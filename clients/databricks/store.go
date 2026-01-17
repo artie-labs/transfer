@@ -197,11 +197,10 @@ func (s Store) writeTemporaryTableFile(tableData *optimization.TableData, fileNa
 }
 
 func (s Store) SweepTemporaryTables(ctx context.Context, whClient *webhooksclient.Client) error {
-	tcs := s.cfg.TopicConfigs()
 	ctx = driverctx.NewContextWithStagingInfo(ctx, []string{"/var", "tmp"})
 	// Remove the temporary files from volumes
-	for _, tc := range tcs {
-		rows, err := s.QueryContext(ctx, s.dialect().BuildSweepFilesFromVolumesQuery(tc.Database, tc.Schema, s.volume))
+	for _, dbAndSchema := range kafkalib.GetUniqueStagingDatabaseAndSchemaPairs(s.cfg.TopicConfigs()) {
+		rows, err := s.QueryContext(ctx, s.dialect().BuildSweepFilesFromVolumesQuery(dbAndSchema.Database, dbAndSchema.Schema, s.volume))
 		if err != nil {
 			return fmt.Errorf("failed to sweep files from volumes: %w", err)
 		}
@@ -226,7 +225,7 @@ func (s Store) SweepTemporaryTables(ctx context.Context, whClient *webhooksclien
 	}
 
 	// Delete the temporary tables
-	return shared.Sweep(ctx, s, tcs, whClient, s.dialect().BuildSweepQuery)
+	return shared.Sweep(ctx, s, s.cfg.TopicConfigs(), whClient, s.dialect().BuildSweepQuery)
 }
 
 func LoadStore(cfg config.Config) (Store, error) {
