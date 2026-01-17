@@ -22,6 +22,16 @@ func ParseTimeExactMatch(layout, value string) (time.Time, error) {
 	return ts, nil
 }
 
+func parseDateFromString(value string) (time.Time, error) {
+	for _, supportedDateFormat := range supportedDateFormats {
+		if ts, err := ParseTimeExactMatch(supportedDateFormat, value); err == nil {
+			return ts, nil
+		}
+	}
+
+	return time.Time{}, NewParseError(fmt.Sprintf("unsupported value: %q", value), UnsupportedDateLayout)
+}
+
 func ParseDateFromAny(val any) (time.Time, error) {
 	switch convertedVal := val.(type) {
 	case nil:
@@ -29,10 +39,8 @@ func ParseDateFromAny(val any) (time.Time, error) {
 	case time.Time:
 		return convertedVal, nil
 	case string:
-		for _, supportedDateFormat := range supportedDateFormats {
-			if ts, err := ParseTimeExactMatch(supportedDateFormat, convertedVal); err == nil {
-				return ts, nil
-			}
+		if ts, err := parseDateFromString(convertedVal); err == nil {
+			return ts, nil
 		}
 
 		// If that doesn't work, try timestamp
@@ -133,7 +141,7 @@ func parseTimestampTZ(value string) (time.Time, error) {
 		}
 	}
 
-	if ts, dateErr := ParseDateFromAny(value); dateErr == nil {
+	if ts, err := parseDateFromString(value); err == nil {
 		return ts, nil
 	}
 
