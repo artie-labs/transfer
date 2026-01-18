@@ -116,6 +116,86 @@ func TestGCSSettings_Validate(t *testing.T) {
 	}
 }
 
+func TestSQSSettings_Validate(t *testing.T) {
+	{
+		// nil
+		var sqs *SQSSettings
+		err := sqs.Validate()
+		assert.ErrorContains(t, err, "sqs settings are nil")
+	}
+	{
+		// missing region
+		sqs := &SQSSettings{}
+		err := sqs.Validate()
+		assert.ErrorContains(t, err, "sqs awsRegion is required")
+	}
+	{
+		// FIFO without message group ID
+		sqs := &SQSSettings{
+			AwsRegion: "us-east-1",
+			UseFIFO:   true,
+		}
+		err := sqs.Validate()
+		assert.ErrorContains(t, err, "messageGroupID is required for FIFO queues")
+	}
+	{
+		// valid with static credentials
+		sqs := &SQSSettings{
+			AwsRegion:          "us-east-1",
+			AwsAccessKeyID:     "key",
+			AwsSecretAccessKey: "secret",
+		}
+		err := sqs.Validate()
+		assert.NoError(t, err)
+	}
+	{
+		// valid with role ARN
+		sqs := &SQSSettings{
+			AwsRegion: "us-east-1",
+			RoleARN:   "arn:aws:iam::123456789:role/my-role",
+		}
+		err := sqs.Validate()
+		assert.NoError(t, err)
+	}
+	{
+		// valid with default credentials (no explicit auth)
+		sqs := &SQSSettings{
+			AwsRegion: "us-west-2",
+		}
+		err := sqs.Validate()
+		assert.NoError(t, err)
+	}
+	{
+		// valid FIFO with message group ID
+		sqs := &SQSSettings{
+			AwsRegion:      "us-east-1",
+			UseFIFO:        true,
+			MessageGroupID: "my-group",
+		}
+		err := sqs.Validate()
+		assert.NoError(t, err)
+	}
+	{
+		// valid single queue mode
+		sqs := &SQSSettings{
+			AwsRegion: "us-east-1",
+			QueueURL:  "https://sqs.us-east-1.amazonaws.com/123456789/my-queue",
+		}
+		err := sqs.Validate()
+		assert.NoError(t, err)
+		assert.True(t, sqs.IsSingleQueueMode())
+	}
+	{
+		// per-table mode (empty queueURL)
+		sqs := &SQSSettings{
+			AwsRegion: "us-east-1",
+		}
+		err := sqs.Validate()
+		assert.NoError(t, err)
+		assert.False(t, sqs.IsSingleQueueMode())
+	}
+}
+
 func TestCfg_ValidateRedshift(t *testing.T) {
 	{
 		// nil

@@ -183,6 +183,14 @@ func (c Config) ValidateClickhouse() error {
 	return nil
 }
 
+func (c Config) ValidateSQS() error {
+	if c.Output != constants.SQS {
+		return fmt.Errorf("output is not SQS, output: %q", c.Output)
+	}
+
+	return c.SQS.Validate()
+}
+
 // Validate will check the output source validity
 // It will also check if a topic exists + iterate over each topic to make sure it's valid.
 // The actual output source (like Snowflake) and CDC parser will be loaded and checked by other funcs.
@@ -231,6 +239,10 @@ func (c Config) Validate() error {
 		}
 	case constants.Clickhouse:
 		if err := c.ValidateClickhouse(); err != nil {
+			return err
+		}
+	case constants.SQS:
+		if err := c.ValidateSQS(); err != nil {
 			return err
 		}
 	}

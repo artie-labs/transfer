@@ -207,3 +207,52 @@ type Clickhouse struct {
 	Password   string   `json:"password" yaml:"password"`
 	IsInsecure bool     `json:"isInsecure,omitempty" yaml:"isInsecure,omitempty"`
 }
+
+type SQSSettings struct {
+	// AWS configuration
+	AwsAccessKeyID     string `yaml:"awsAccessKeyID,omitempty"`
+	AwsSecretAccessKey string `yaml:"awsSecretAccessKey,omitempty"`
+	AwsRegion          string `yaml:"awsRegion"`
+	RoleARN            string `yaml:"roleARN,omitempty"` // For IAM role authentication
+
+	// Queue routing
+	// QueueURL - If specified, all tables write to this single queue (single queue mode)
+	// If empty, each table writes to its own queue named: dbName_schemaName_tableName (per-table mode)
+	QueueURL string `yaml:"queueURL,omitempty"`
+
+	// FIFO queue settings
+	UseFIFO            bool   `yaml:"useFIFO,omitempty"`
+	MessageGroupID     string `yaml:"messageGroupID,omitempty"`     // Required for FIFO queues
+	UseDeduplicationID bool   `yaml:"useDeduplicationID,omitempty"` // Enable content-based deduplication
+}
+
+func (s *SQSSettings) Validate() error {
+	if s == nil {
+		return fmt.Errorf("sqs settings are nil")
+	}
+
+	if s.AwsRegion == "" {
+		return fmt.Errorf("sqs awsRegion is required")
+	}
+
+	// Either static credentials or IAM role must be configured
+	hasStaticCreds := s.AwsAccessKeyID != "" && s.AwsSecretAccessKey != ""
+	hasRoleARN := s.RoleARN != ""
+
+	if !hasStaticCreds && !hasRoleARN {
+		// Allow default credential chain (e.g., EC2 instance profile, ECS task role)
+		// This is valid - AWS SDK will use default credential provider chain
+	}
+
+	// FIFO validation
+	if s.UseFIFO && s.MessageGroupID == "" {
+		return fmt.Errorf("messageGroupID is required for FIFO queues")
+	}
+
+	return nil
+}
+
+// IsSingleQueueMode returns true if all tables should write to a single queue
+func (s *SQSSettings) IsSingleQueueMode() bool {
+	return s.QueueURL != ""
+}
