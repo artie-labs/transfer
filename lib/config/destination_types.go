@@ -219,11 +219,6 @@ type SQSSettings struct {
 	// QueueURL - If specified, all tables write to this single queue (single queue mode)
 	// If empty, each table writes to its own queue named: dbName_schemaName_tableName (per-table mode)
 	QueueURL string `yaml:"queueURL,omitempty"`
-
-	// FIFO queue settings
-	UseFIFO            bool   `yaml:"useFIFO,omitempty"`
-	MessageGroupID     string `yaml:"messageGroupID,omitempty"`     // Required for FIFO queues
-	UseDeduplicationID bool   `yaml:"useDeduplicationID,omitempty"` // Enable content-based deduplication
 }
 
 func (s *SQSSettings) Validate() error {
@@ -238,15 +233,8 @@ func (s *SQSSettings) Validate() error {
 	// Either static credentials or IAM role must be configured
 	hasStaticCreds := s.AwsAccessKeyID != "" && s.AwsSecretAccessKey != ""
 	hasRoleARN := s.RoleARN != ""
-
 	if !hasStaticCreds && !hasRoleARN {
-		// Allow default credential chain (e.g., EC2 instance profile, ECS task role)
-		// This is valid - AWS SDK will use default credential provider chain
-	}
-
-	// FIFO validation
-	if s.UseFIFO && s.MessageGroupID == "" {
-		return fmt.Errorf("messageGroupID is required for FIFO queues")
+		return fmt.Errorf("either awsAccessKeyID and awsSecretAccessKey or roleARN is required")
 	}
 
 	return nil

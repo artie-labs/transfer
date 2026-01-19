@@ -24,7 +24,12 @@ import (
 )
 
 func IsOutputBaseline(cfg config.Config) bool {
-	return cfg.Output == constants.S3 || cfg.Output == constants.GCS || cfg.Output == constants.Iceberg || cfg.Output == constants.Redis || cfg.Output == constants.SQS
+	switch cfg.Output {
+	case constants.S3, constants.GCS, constants.Iceberg, constants.Redis, constants.SQS:
+		return true
+	default:
+		return false
+	}
 }
 
 func LoadBaseline(ctx context.Context, cfg config.Config) (destination.Baseline, error) {

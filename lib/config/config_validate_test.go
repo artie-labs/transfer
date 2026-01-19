@@ -120,23 +120,12 @@ func TestSQSSettings_Validate(t *testing.T) {
 	{
 		// nil
 		var sqs *SQSSettings
-		err := sqs.Validate()
-		assert.ErrorContains(t, err, "sqs settings are nil")
+		assert.ErrorContains(t, sqs.Validate(), "sqs settings are nil")
 	}
 	{
 		// missing region
 		sqs := &SQSSettings{}
-		err := sqs.Validate()
-		assert.ErrorContains(t, err, "sqs awsRegion is required")
-	}
-	{
-		// FIFO without message group ID
-		sqs := &SQSSettings{
-			AwsRegion: "us-east-1",
-			UseFIFO:   true,
-		}
-		err := sqs.Validate()
-		assert.ErrorContains(t, err, "messageGroupID is required for FIFO queues")
+		assert.ErrorContains(t, sqs.Validate(), "sqs awsRegion is required")
 	}
 	{
 		// valid with static credentials
@@ -145,8 +134,7 @@ func TestSQSSettings_Validate(t *testing.T) {
 			AwsAccessKeyID:     "key",
 			AwsSecretAccessKey: "secret",
 		}
-		err := sqs.Validate()
-		assert.NoError(t, err)
+		assert.NoError(t, sqs.Validate())
 	}
 	{
 		// valid with role ARN
@@ -154,44 +142,27 @@ func TestSQSSettings_Validate(t *testing.T) {
 			AwsRegion: "us-east-1",
 			RoleARN:   "arn:aws:iam::123456789:role/my-role",
 		}
-		err := sqs.Validate()
-		assert.NoError(t, err)
-	}
-	{
-		// valid with default credentials (no explicit auth)
-		sqs := &SQSSettings{
-			AwsRegion: "us-west-2",
-		}
-		err := sqs.Validate()
-		assert.NoError(t, err)
-	}
-	{
-		// valid FIFO with message group ID
-		sqs := &SQSSettings{
-			AwsRegion:      "us-east-1",
-			UseFIFO:        true,
-			MessageGroupID: "my-group",
-		}
-		err := sqs.Validate()
-		assert.NoError(t, err)
+		assert.NoError(t, sqs.Validate())
 	}
 	{
 		// valid single queue mode
 		sqs := &SQSSettings{
-			AwsRegion: "us-east-1",
-			QueueURL:  "https://sqs.us-east-1.amazonaws.com/123456789/my-queue",
+			AwsRegion:          "us-east-1",
+			AwsSecretAccessKey: "foo",
+			AwsAccessKeyID:     "bar",
+			QueueURL:           "https://sqs.us-east-1.amazonaws.com/123456789/my-queue",
 		}
-		err := sqs.Validate()
-		assert.NoError(t, err)
+		assert.NoError(t, sqs.Validate())
 		assert.True(t, sqs.IsSingleQueueMode())
 	}
 	{
 		// per-table mode (empty queueURL)
 		sqs := &SQSSettings{
-			AwsRegion: "us-east-1",
+			AwsRegion:          "us-east-1",
+			AwsSecretAccessKey: "foo",
+			AwsAccessKeyID:     "bar",
 		}
-		err := sqs.Validate()
-		assert.NoError(t, err)
+		assert.NoError(t, sqs.Validate())
 		assert.False(t, sqs.IsSingleQueueMode())
 	}
 }
