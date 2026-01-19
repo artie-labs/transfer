@@ -1,6 +1,7 @@
 package redis
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"testing"
@@ -117,7 +118,7 @@ func TestStore_Dialect(t *testing.T) {
 
 func TestStore_Dedupe(t *testing.T) {
 	store := &Store{}
-	err := store.Dedupe(nil, nil, nil, false)
+	err := store.Dedupe(context.TODO(), nil, nil, false)
 	assert.Error(t, err)
 	assert.ErrorContains(t, err, "dedupe is not supported for Redis")
 }
@@ -125,13 +126,13 @@ func TestStore_Dedupe(t *testing.T) {
 func TestStore_SweepTemporaryTables(t *testing.T) {
 	store := &Store{}
 	// Should return nil as Redis doesn't have temp tables to sweep
-	err := store.SweepTemporaryTables(nil, nil)
+	err := store.SweepTemporaryTables(context.TODO(), nil)
 	assert.NoError(t, err)
 }
 
 func TestStore_ExecContext(t *testing.T) {
 	store := &Store{}
-	result, err := store.ExecContext(nil, "SELECT 1")
+	result, err := store.ExecContext(context.TODO(), "SELECT 1")
 	assert.Nil(t, result)
 	assert.Error(t, err)
 	assert.ErrorContains(t, err, "ExecContext is not supported for Redis")
@@ -139,7 +140,7 @@ func TestStore_ExecContext(t *testing.T) {
 
 func TestStore_QueryContext(t *testing.T) {
 	store := &Store{}
-	rows, err := store.QueryContext(nil, "SELECT 1")
+	rows, err := store.QueryContext(context.TODO(), "SELECT 1")
 	assert.Nil(t, rows)
 	assert.Error(t, err)
 	assert.ErrorContains(t, err, "QueryContext is not supported for Redis")
@@ -155,7 +156,7 @@ func TestStore_Begin(t *testing.T) {
 
 func TestStore_LoadDataIntoTable(t *testing.T) {
 	store := &Store{}
-	err := store.LoadDataIntoTable(nil, nil, nil, nil, nil, types.AdditionalSettings{}, false)
+	err := store.LoadDataIntoTable(context.TODO(), nil, nil, nil, nil, types.AdditionalSettings{}, false)
 	assert.Error(t, err)
 	assert.ErrorContains(t, err, "LoadDataIntoTable is not supported for Redis")
 }
@@ -168,12 +169,12 @@ func TestStore_GetTableConfig(t *testing.T) {
 	tableID := NewTableIdentifier("mydb", "myschema", "mytable")
 
 	// First call should create a new table config
-	tableConfig, err := store.GetTableConfig(nil, tableID, false)
+	tableConfig, err := store.GetTableConfig(context.TODO(), tableID, false)
 	assert.NoError(t, err)
 	assert.NotNil(t, tableConfig)
 
 	// Second call should return the same config
-	tableConfig2, err := store.GetTableConfig(nil, tableID, false)
+	tableConfig2, err := store.GetTableConfig(context.TODO(), tableID, false)
 	assert.NoError(t, err)
 	assert.Equal(t, tableConfig, tableConfig2)
 }
