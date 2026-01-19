@@ -117,16 +117,13 @@ func TestStore_Dialect(t *testing.T) {
 
 func TestStore_Dedupe(t *testing.T) {
 	store := &Store{}
-	err := store.Dedupe(t.Context(), nil, nil, false)
-	assert.Error(t, err)
-	assert.ErrorContains(t, err, "dedupe is not supported for Redis")
+	assert.ErrorContains(t, store.Dedupe(t.Context(), nil, nil, false), "dedupe is not supported for Redis")
 }
 
 func TestStore_SweepTemporaryTables(t *testing.T) {
 	store := &Store{}
 	// Should return nil as Redis doesn't have temp tables to sweep
-	err := store.SweepTemporaryTables(t.Context(), nil)
-	assert.NoError(t, err)
+	assert.NoError(t, store.SweepTemporaryTables(t.Context(), nil))
 }
 
 func TestStore_ExecContext(t *testing.T) {
@@ -155,9 +152,7 @@ func TestStore_Begin(t *testing.T) {
 
 func TestStore_LoadDataIntoTable(t *testing.T) {
 	store := &Store{}
-	err := store.LoadDataIntoTable(t.Context(), nil, nil, nil, nil, types.AdditionalSettings{}, false)
-	assert.Error(t, err)
-	assert.ErrorContains(t, err, "LoadDataIntoTable is not supported for Redis")
+	assert.ErrorContains(t, store.LoadDataIntoTable(t.Context(), nil, nil, nil, nil, types.AdditionalSettings{}, false), "LoadDataIntoTable is not supported for Redis")
 }
 
 func TestStore_GetTableConfig(t *testing.T) {
