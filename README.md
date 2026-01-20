@@ -68,6 +68,7 @@ Transfer is aiming to provide coverage across all OLTPs and OLAPs databases. Cur
     - Redshift
     - S3
     - Snowflake
+    - Amazon SQS
 
 - [Sources](https://artie.com/docs/sources):
     - DocumentDB

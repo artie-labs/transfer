@@ -95,6 +95,7 @@ const (
 	S3         DestinationKind = "s3"
 	Snowflake  DestinationKind = "snowflake"
 	Redis      DestinationKind = "redis"
+	SQS        DestinationKind = "sqs"
 )
 
 var ValidDestinations = []DestinationKind{
@@ -110,6 +111,7 @@ var ValidDestinations = []DestinationKind{
 	S3,
 	Snowflake,
 	Redis,
+	SQS,
 }
 
 func IsValidDestination(destination DestinationKind) bool {
