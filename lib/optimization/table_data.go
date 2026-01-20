@@ -184,10 +184,11 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 		prevRowSize = prevRow.GetApproxSize()
 		if delete {
 			prevRowData := prevRow.GetData()
-			// If the current row was deleted, we should preserve the previous values that we have in memory
-			// However, if the current row has a value for the column, then we should use that value instead.
+			// For delete events, we should use the previous row's data for regular columns because
+			// Debezium may send zero/default values (not null) when REPLICA IDENTITY is not FULL.
+			// We preserve artie-specific columns from the delete event (like timestamps, operation markers).
 			for key, value := range prevRowData {
-				if rowData[key] == nil {
+				if !strings.HasPrefix(key, constants.ArtiePrefix) {
 					rowData[key] = value
 				}
 			}

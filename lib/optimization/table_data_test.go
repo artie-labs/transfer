@@ -263,6 +263,45 @@ func TestTableData_InsertRowSoftDelete(t *testing.T) {
 			assert.False(t, data[constants.OnlySetDeleteColumnMarker].(bool))
 		}
 	}
+	{
+		// Debezium delete event with zero values in `before` payload (REPLICA IDENTITY DEFAULT)
+		// When REPLICA IDENTITY is not FULL, Debezium sends zero/default values for columns it doesn't have access to.
+		// We should still preserve the previous row's actual data, not the Debezium zero values.
+		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{SoftDelete: true}, "foo")
+		assert.Equal(t, 0, int(td.NumberOfRows()))
+
+		// First, insert a row with actual data
+		td.InsertRow("123", map[string]any{
+			"id":                                "123",
+			"name":                              "dana",
+			"balance":                           100,
+			"active":                            true,
+			constants.DeleteColumnMarker:        false,
+			constants.OnlySetDeleteColumnMarker: false,
+		}, false)
+		assert.Equal(t, 1, int(td.NumberOfRows()))
+
+		// Now simulate a Debezium delete event with zero values (not nil) from REPLICA IDENTITY DEFAULT
+		// This mimics the `before` payload: {"id": 123, "name": "", "balance": 0, "active": false, ...}
+		td.InsertRow("123", map[string]any{
+			"id":                                "123",
+			"name":                              "",    // Debezium zero value, not the actual data
+			"balance":                           0,     // Debezium zero value
+			"active":                            false, // Debezium zero value
+			constants.DeleteColumnMarker:        true,
+			constants.OnlySetDeleteColumnMarker: true,
+		}, true)
+		assert.Equal(t, 1, int(td.NumberOfRows()))
+
+		data := td.Rows()[0].GetData()
+		// The previous row's actual values should be preserved, NOT the Debezium zero values
+		assert.Equal(t, "dana", data["name"], "name should be preserved from previous row, not Debezium zero value")
+		assert.Equal(t, 100, data["balance"], "balance should be preserved from previous row, not Debezium zero value")
+		assert.Equal(t, true, data["active"], "active should be preserved from previous row, not Debezium zero value")
+		// Delete markers should still be correct
+		assert.True(t, data[constants.DeleteColumnMarker].(bool))
+		assert.False(t, data[constants.OnlySetDeleteColumnMarker].(bool))
+	}
 }
 
 func TestMergeColumn(t *testing.T) {
