@@ -55,7 +55,7 @@ func NewJitterRetryConfig(baseMs, maxMs, maxAttempts int, isRetryableErr func(er
 func sleepIfNecessary(cfg RetryConfig, attempt int, err error) {
 	if attempt > 0 {
 		sleepDuration := cfg.SleepDuration(attempt)
-		slog.Info("An error occurred, retrying...",
+		slog.Warn("An error occurred, retrying...",
 			slog.Duration("delay", sleepDuration),
 			slog.Int("attemptsLeft", cfg.MaxAttempts()-attempt),
 			slog.Any("err", err),
