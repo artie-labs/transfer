@@ -129,7 +129,7 @@ func (s *Store) batchInsertRows(ctx context.Context, tableID sql.TableIdentifier
 		placeholders := make([]string, len(cols))
 		for i, col := range cols {
 			placeholders[i] = "?"
-			value, _ := row[col.Name()]
+			value := row[col.Name()]
 			args = append(args, value)
 		}
 		valueStrings = append(valueStrings, "("+strings.Join(placeholders, ", ")+")")
