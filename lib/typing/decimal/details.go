@@ -126,3 +126,19 @@ func (d Details) ClickHouseKind() string {
 	// https://clickhouse.com/docs/sql-reference/data-types/decimal#parameters
 	return d.toDecimalKind(76, "STRING")
 }
+
+// MySQLKind - MySQL supports DECIMAL/NUMERIC with precision up to 65 and scale up to 30
+// Spec: https://dev.mysql.com/doc/refman/8.0/en/precision-math-decimal-characteristics.html
+func (d Details) MySQLKind() string {
+	const maxPrecision int32 = 65
+
+	if d.precision == PrecisionNotSpecified {
+		return "DECIMAL(65, 5)"
+	}
+
+	if d.precision > maxPrecision {
+		return "TEXT"
+	}
+
+	return fmt.Sprintf("DECIMAL(%d, %d)", d.precision, d.scale)
+}
