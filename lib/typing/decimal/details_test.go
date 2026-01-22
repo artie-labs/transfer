@@ -158,7 +158,7 @@ func TestDetails_MySQLKind(t *testing.T) {
 		NewDetails(10, 2):  "DECIMAL(10, 2)",
 		NewDetails(65, 30): "DECIMAL(65, 30)",
 		NewDetails(66, 5):  "TEXT",
-		NewDetails(40, 30): "TEXT",
+		NewDetails(40, 31): "TEXT",
 		NewDetails(15, 0):  "DECIMAL(15, 0)",
 	}
 
