@@ -19,6 +19,8 @@ SELECT
             CONCAT(DATA_TYPE, '(', CHARACTER_MAXIMUM_LENGTH, ')')
         WHEN DATA_TYPE IN ('datetime', 'timestamp', 'time') AND DATETIME_PRECISION > 0 THEN
             CONCAT(DATA_TYPE, '(', DATETIME_PRECISION, ')')
+        WHEN DATA_TYPE = 'tinyint' AND COLUMN_TYPE = 'tinyint(1)' THEN
+            'boolean'
         ELSE
             DATA_TYPE
     END AS DATA_TYPE,
