@@ -11,6 +11,7 @@ import (
 	"github.com/artie-labs/transfer/clients/iceberg"
 	"github.com/artie-labs/transfer/clients/motherduck"
 	"github.com/artie-labs/transfer/clients/mssql"
+	"github.com/artie-labs/transfer/clients/mysql"
 	"github.com/artie-labs/transfer/clients/postgres"
 	"github.com/artie-labs/transfer/clients/redis"
 	"github.com/artie-labs/transfer/clients/redshift"
@@ -81,6 +82,8 @@ func LoadDestination(ctx context.Context, cfg config.Config, store *db.Store) (d
 		return databricks.LoadStore(cfg)
 	case constants.MSSQL:
 		return mssql.LoadStore(cfg)
+	case constants.MySQL:
+		return mysql.LoadStore(cfg)
 	case constants.Postgres:
 		return postgres.LoadStore(ctx, cfg)
 	case constants.Redshift:

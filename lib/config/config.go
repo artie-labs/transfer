@@ -133,6 +133,26 @@ func (c Config) ValidateMSSQL() error {
 	return nil
 }
 
+func (c Config) ValidateMySQL() error {
+	if c.Output != constants.MySQL {
+		return fmt.Errorf("output is not mysql, output: %v", c.Output)
+	}
+
+	if c.MySQL == nil {
+		return fmt.Errorf("mysql config is nil")
+	}
+
+	if empty := stringutil.Empty(c.MySQL.Host, c.MySQL.Username, c.MySQL.Password, c.MySQL.Database); empty {
+		return fmt.Errorf("one of mysql settings is empty (host, username, password, database)")
+	}
+
+	if c.MySQL.Port <= 0 {
+		return fmt.Errorf("invalid mysql port: %d", c.MySQL.Port)
+	}
+
+	return nil
+}
+
 func (c Config) ValidateMotherDuck() error {
 	if c.Output != constants.MotherDuck {
 		return fmt.Errorf("output is not motherduck, output: %q", c.Output)
@@ -215,6 +235,10 @@ func (c Config) Validate() error {
 	switch c.Output {
 	case constants.MSSQL:
 		if err := c.ValidateMSSQL(); err != nil {
+			return err
+		}
+	case constants.MySQL:
+		if err := c.ValidateMySQL(); err != nil {
 			return err
 		}
 	case constants.Redshift:

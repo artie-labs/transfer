@@ -90,6 +90,7 @@ const (
 	Iceberg    DestinationKind = "iceberg"
 	MSSQL      DestinationKind = "mssql"
 	MotherDuck DestinationKind = "motherduck"
+	MySQL      DestinationKind = "mysql"
 	Postgres   DestinationKind = "postgres"
 	Redshift   DestinationKind = "redshift"
 	S3         DestinationKind = "s3"
@@ -106,6 +107,7 @@ var ValidDestinations = []DestinationKind{
 	Iceberg,
 	MSSQL,
 	MotherDuck,
+	MySQL,
 	Postgres,
 	Redshift,
 	S3,
