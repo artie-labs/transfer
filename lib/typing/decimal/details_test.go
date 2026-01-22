@@ -151,3 +151,58 @@ func TestDetails_DuckDBKind(t *testing.T) {
 		})
 	}
 }
+
+func TestDetails_MySQLKind(t *testing.T) {
+	testCases := []struct {
+		name     string
+		details  Details
+		expected string
+	}{
+		{
+			name:     "variable precision",
+			details:  NewDetails(PrecisionNotSpecified, DefaultScale),
+			expected: "DECIMAL(65, 5)",
+		},
+		{
+			name:     "precision and scale within limits",
+			details:  NewDetails(10, 2),
+			expected: "DECIMAL(10, 2)",
+		},
+		{
+			name:     "precision at max limit (65), scale within limit",
+			details:  NewDetails(65, 30),
+			expected: "DECIMAL(65, 30)",
+		},
+		{
+			name:     "precision exceeds limit (66)",
+			details:  NewDetails(66, 5),
+			expected: "TEXT",
+		},
+		{
+			name:     "scale exceeds limit (31)",
+			details:  NewDetails(40, 31),
+			expected: "TEXT",
+		},
+		{
+			name:     "scale at max limit (30)",
+			details:  NewDetails(40, 30),
+			expected: "DECIMAL(40, 30)",
+		},
+		{
+			name:     "both precision and scale exceed limits",
+			details:  NewDetails(66, 35),
+			expected: "TEXT",
+		},
+		{
+			name:     "zero scale",
+			details:  NewDetails(15, 0),
+			expected: "DECIMAL(15, 0)",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.expected, tc.details.MySQLKind())
+		})
+	}
+}
