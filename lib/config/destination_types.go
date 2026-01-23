@@ -14,6 +14,8 @@ type BigQuery struct {
 	DefaultDataset    string `yaml:"defaultDataset"`
 	ProjectID         string `yaml:"projectID"`
 	Location          string `yaml:"location"`
+	// [Priority] - This is used to specify the priority of the BigQuery job. By default, it'll be set to "INTERACTIVE".
+	Priority string `yaml:"priority,omitempty"`
 }
 
 type Databricks struct {
