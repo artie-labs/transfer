@@ -23,6 +23,10 @@ func (b *BigQuery) DSN() string {
 		dsn = fmt.Sprintf("bigquery://%s/%s/%s", b.ProjectID, b.Location, b.DefaultDataset)
 	}
 
+	if b.Priority != "" {
+		dsn = fmt.Sprintf("%s?priority=%s", dsn, b.Priority)
+	}
+
 	return dsn
 }
 

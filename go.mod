@@ -45,7 +45,7 @@ require (
 	github.com/twmb/franz-go v1.19.5
 	github.com/twmb/franz-go/pkg/kmsg v1.11.2
 	github.com/twpayne/go-geom v1.6.0
-	github.com/viant/bigquery v0.5.1
+	github.com/viant/bigquery v0.5.2-0.20260123172731-124e144d0244
 	go.mongodb.org/mongo-driver v1.17.3
 	golang.org/x/sync v0.18.0
 	golang.org/x/time v0.13.0

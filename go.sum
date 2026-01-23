@@ -1299,8 +1299,8 @@ github.com/viant/assertly v0.4.8/go.mod h1:aGifi++jvCrUaklKEKT0BU95igDNaqkvz+49u
 github.com/viant/assertly v0.9.0/go.mod h1:aGifi++jvCrUaklKEKT0BU95igDNaqkvz+49uaYMPRU=
 github.com/viant/assertly v0.9.1-0.20220620174148-bab013f93a60 h1:VFJvCOHKXv4IqX8rJwn1otpHWQGgMDv2bXtAPgEzndM=
 github.com/viant/assertly v0.9.1-0.20220620174148-bab013f93a60/go.mod h1:aGifi++jvCrUaklKEKT0BU95igDNaqkvz+49uaYMPRU=
-github.com/viant/bigquery v0.5.1 h1:fCP2iUJYyx2DzS2sfx15ru4zmFkAiQbhGJc1cM4j6bg=
-github.com/viant/bigquery v0.5.1/go.mod h1:6gHVcc2lmLvvVyWgbP1mUuoN9p5HcejYx2Xu+hSDoJc=
+github.com/viant/bigquery v0.5.2-0.20260123172731-124e144d0244 h1:Gz3IRb6Gj/igRIkly+WAFzqVb6g+8FM11DBTTlowluU=
+github.com/viant/bigquery v0.5.2-0.20260123172731-124e144d0244/go.mod h1:6gHVcc2lmLvvVyWgbP1mUuoN9p5HcejYx2Xu+hSDoJc=
 github.com/viant/parsly v0.3.3-0.20240717150634-e1afaedb691b h1:3q166tV28yFdbFV+tXXjH7ViKAmgAgGdoWzMtvhQv28=
 github.com/viant/parsly v0.3.3-0.20240717150634-e1afaedb691b/go.mod h1:85fneXJbErKMGhSQto3A5ElTQCwl3t74U9cSV0waBHw=
 github.com/viant/scy v0.25.0 h1:OYuA3bu9HKq6kcGaCxVhFmG8xHV6LQDS57zruKs2B9g=
