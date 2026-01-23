@@ -24,6 +24,9 @@ import (
 	"github.com/artie-labs/transfer/lib/destination"
 )
 
+// IsOutputBaseline returns true if the output destination only implements the Baseline interface
+// (e.g., blob/object storage like S3, GCS, or specialized destinations like Iceberg, Redis).
+// These destinations implement Merge and Append directly without using shared SQL-based logic.
 func IsOutputBaseline(cfg config.Config) bool {
 	switch cfg.Output {
 	case constants.S3, constants.GCS, constants.Iceberg, constants.Redis, constants.SQS:
@@ -33,6 +36,9 @@ func IsOutputBaseline(cfg config.Config) bool {
 	}
 }
 
+// LoadBaseline loads destinations that only implement the Baseline interface.
+// These are typically blob/object storage destinations (S3, GCS) or specialized
+// destinations like Iceberg and Redis that implement Merge and Append directly.
 func LoadBaseline(ctx context.Context, cfg config.Config) (destination.Baseline, error) {
 	switch cfg.Output {
 	case constants.S3:
@@ -72,6 +78,9 @@ func LoadBaseline(ctx context.Context, cfg config.Config) (destination.Baseline,
 	return nil, fmt.Errorf("invalid baseline output source specified: %q", cfg.Output)
 }
 
+// LoadDestination loads SQL-based destinations that implement the full Destination interface.
+// These destinations use SQL for data operations and implement additional interfaces like
+// SQLExecutor, DialectAware, TemporaryTableManager, Deduplicator, and DataLoader.
 func LoadDestination(ctx context.Context, cfg config.Config, store *db.Store) (destination.Destination, error) {
 	switch cfg.Output {
 	case constants.Snowflake:
