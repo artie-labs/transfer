@@ -9,6 +9,21 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// mockExecutionError simulates Databricks executionError which has a generic Error() message
+// but the underlying cause contains the actual error details.
+type mockExecutionError struct {
+	msg   string
+	cause error
+}
+
+func (e *mockExecutionError) Error() string {
+	return e.msg // Does NOT include cause - mimics Databricks behavior
+}
+
+func (e *mockExecutionError) Cause() error {
+	return e.cause
+}
+
 func TestIsRetryable_Errors(t *testing.T) {
 	{
 		// Test nil error case
@@ -53,5 +68,25 @@ func TestIsRetryable_Errors(t *testing.T) {
 		// Test string-based matching for connection reset by peer
 		connResetErr := fmt.Errorf("some driver error: connection reset by peer")
 		assert.True(t, isRetryableError(connResetErr), "string-matched connection reset error should be retryable")
+	}
+	{
+		// Test Databricks-style error where Error() doesn't include cause but Cause() does
+		// This is the actual pattern seen in production
+		innerErr := fmt.Errorf("databricks: driver error: error sending http request: Put \"https://...\": write tcp ...: use of closed network connection")
+		databricksErr := &mockExecutionError{
+			msg:   "databricks: execution error: failed to execute query",
+			cause: innerErr,
+		}
+		assert.True(t, isRetryableError(databricksErr), "Databricks error with cause containing network error should be retryable")
+	}
+	{
+		// Test nested Databricks error pattern (wrapped in fmt.Errorf)
+		innerErr := fmt.Errorf("databricks: driver error: error sending http request: Put \"https://...\": write tcp ...: use of closed network connection")
+		databricksErr := &mockExecutionError{
+			msg:   "databricks: execution error: failed to execute query",
+			cause: innerErr,
+		}
+		wrappedErr := fmt.Errorf("failed to run PUT INTO for temporary table: %w", databricksErr)
+		assert.True(t, isRetryableError(wrappedErr), "wrapped Databricks error should be retryable")
 	}
 }
