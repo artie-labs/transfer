@@ -43,4 +43,15 @@ func TestIsRetryable_Errors(t *testing.T) {
 		// Test wrapped closed network connection error (simulates "use of closed network connection" from HTTP client)
 		assert.True(t, isRetryableError(fmt.Errorf("databricks: driver error: error sending http request: %w", net.ErrClosed)), "wrapped closed network connection error should be retryable")
 	}
+	{
+		// Test string-based matching for errors that break the error chain (using %v instead of %w)
+		// This simulates how the Databricks driver wraps errors
+		brokenChainErr := fmt.Errorf("databricks: driver error: error sending http request: Put \"https://...\": write tcp ...: use of closed network connection")
+		assert.True(t, isRetryableError(brokenChainErr), "string-matched closed network connection error should be retryable")
+	}
+	{
+		// Test string-based matching for connection reset by peer
+		connResetErr := fmt.Errorf("some driver error: connection reset by peer")
+		assert.True(t, isRetryableError(connResetErr), "string-matched connection reset error should be retryable")
+	}
 }

@@ -5,6 +5,7 @@ import (
 	"io"
 	"log/slog"
 	"net"
+	"strings"
 	"syscall"
 )
 
@@ -14,6 +15,14 @@ var retryableErrs = []error{
 	io.EOF,
 	syscall.ETIMEDOUT,
 	net.ErrClosed, // "use of closed network connection" - connection closed during idle period
+}
+
+// retryableErrStrings contains error substrings that indicate retryable errors.
+// This is needed because some drivers (like Databricks) wrap errors with fmt.Errorf("%v", err)
+// instead of fmt.Errorf("%w", err), breaking the error chain for errors.Is().
+var retryableErrStrings = []string{
+	"use of closed network connection", // Connection closed during idle period
+	"connection reset by peer",         // Remote end closed connection
 }
 
 // IsRetryableError checks for common retryable errors. (example: network errors)
@@ -31,6 +40,16 @@ func IsRetryableError(err error) bool {
 	if netErr, ok := err.(net.Error); ok {
 		if netErr.Timeout() {
 			slog.Warn("caught a net.Error in isRetryableError", slog.Any("err", err))
+			return true
+		}
+	}
+
+	// Fallback to string matching for errors that don't properly wrap the underlying error.
+	// This handles cases where third-party drivers use %v instead of %w in fmt.Errorf.
+	errMsg := strings.ToLower(err.Error())
+	for _, retryableStr := range retryableErrStrings {
+		if strings.Contains(errMsg, retryableStr) {
+			slog.Warn("caught retryable error via string match", slog.Any("err", err), slog.String("matched", retryableStr))
 			return true
 		}
 	}
