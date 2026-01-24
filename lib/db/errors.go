@@ -2,6 +2,7 @@ package db
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net"
@@ -31,8 +32,13 @@ func IsRetryableError(err error) bool {
 		return false
 	}
 
+	// Temporarily log at INFO level to debug retry issues
+	errMsg := err.Error()
+	slog.Info("IsRetryableError checking error", slog.String("errMsg", errMsg), slog.String("errType", fmt.Sprintf("%T", err)))
+
 	for _, retryableErr := range retryableErrs {
 		if errors.Is(err, retryableErr) {
+			slog.Info("IsRetryableError matched via errors.Is", slog.Any("matched", retryableErr))
 			return true
 		}
 	}
@@ -46,14 +52,15 @@ func IsRetryableError(err error) bool {
 
 	// Fallback to string matching for errors that don't properly wrap the underlying error.
 	// This handles cases where third-party drivers use %v instead of %w in fmt.Errorf.
-	errMsg := strings.ToLower(err.Error())
+	errMsgLower := strings.ToLower(errMsg)
 	for _, retryableStr := range retryableErrStrings {
-		if strings.Contains(errMsg, retryableStr) {
+		if strings.Contains(errMsgLower, retryableStr) {
 			slog.Warn("caught retryable error via string match", slog.Any("err", err), slog.String("matched", retryableStr))
 			return true
 		}
 	}
 
+	slog.Info("IsRetryableError: no match found", slog.String("errMsg", errMsg))
 	return false
 }
 

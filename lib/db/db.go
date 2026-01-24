@@ -50,7 +50,7 @@ func (s *storeWrapper) ExecContext(ctx context.Context, query string, args ...an
 	for attempts := 0; attempts < maxAttempts; attempts++ {
 		if attempts > 0 {
 			sleepDuration := jitter.Jitter(sleepBaseMs, jitter.DefaultMaxMs, attempts-1)
-			slog.Warn("Failed to execute the query, retrying...",
+			slog.Warn("storeWrapper.ExecContext: retrying after error",
 				slog.Any("err", err),
 				slog.Duration("sleep", sleepDuration),
 				slog.Int("attempts", attempts),
@@ -59,7 +59,17 @@ func (s *storeWrapper) ExecContext(ctx context.Context, query string, args ...an
 		}
 
 		result, err = s.DB.ExecContext(ctx, query, args...)
-		if err == nil || !s.IsRetryableError(err) {
+		if err != nil {
+			isRetryable := s.IsRetryableError(err)
+			slog.Info("storeWrapper.ExecContext: got error",
+				slog.String("errMsg", err.Error()),
+				slog.Bool("isRetryable", isRetryable),
+				slog.Int("attempt", attempts),
+			)
+			if !isRetryable {
+				break
+			}
+		} else {
 			break
 		}
 	}
