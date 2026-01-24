@@ -7,8 +7,6 @@ import (
 	"net"
 	"strings"
 	"syscall"
-
-	pkgerrors "github.com/pkg/errors"
 )
 
 var retryableErrs = []error{
@@ -20,22 +18,10 @@ var retryableErrs = []error{
 }
 
 // retryableErrStrings contains error substrings that indicate retryable errors.
-// This is needed because some drivers (like Databricks) wrap errors with fmt.Errorf("%v", err)
-// instead of fmt.Errorf("%w", err), breaking the error chain for errors.Is().
 var retryableErrStrings = []string{
-	"use of closed network connection", // Connection closed during idle period
-	"connection reset by peer",         // Remote end closed connection
-}
-
-// containsRetryableMessage checks if the error message contains any retryable string.
-func containsRetryableMessage(errMsg string) (bool, string) {
-	errMsgLower := strings.ToLower(errMsg)
-	for _, retryableStr := range retryableErrStrings {
-		if strings.Contains(errMsgLower, retryableStr) {
-			return true, retryableStr
-		}
-	}
-	return false, ""
+	"use of closed network connection",                // Connection closed during idle period
+	"connection reset by peer",                        // Remote end closed connection
+	"databricks: execution error: failed to execute query", // Databricks staging operation failed (likely network issue)
 }
 
 // IsRetryableError checks for common retryable errors. (example: network errors)
@@ -46,7 +32,6 @@ func IsRetryableError(err error) bool {
 
 	for _, retryableErr := range retryableErrs {
 		if errors.Is(err, retryableErr) {
-			slog.Info("IsRetryableError matched via errors.Is", slog.Any("matched", retryableErr))
 			return true
 		}
 	}
@@ -58,36 +43,12 @@ func IsRetryableError(err error) bool {
 		}
 	}
 
-	// Traverse the error chain checking each message for retryable patterns.
-	// This handles cases where error types (like Databricks executionError) don't
-	// include the cause message in their Error() output.
-	for e := err; e != nil; {
-		if matched, pattern := containsRetryableMessage(e.Error()); matched {
-			slog.Warn("caught retryable error via string match", slog.String("matched", pattern), slog.Any("err", err))
+	errMsgLower := strings.ToLower(err.Error())
+	for _, retryableStr := range retryableErrStrings {
+		if strings.Contains(errMsgLower, retryableStr) {
+			slog.Warn("caught retryable error via string match", slog.String("matched", retryableStr), slog.Any("err", err))
 			return true
 		}
-
-		// Try standard unwrapping (Go 1.13+)
-		if unwrapped := errors.Unwrap(e); unwrapped != nil {
-			e = unwrapped
-			continue
-		}
-
-		// Try github.com/pkg/errors
-		if unwrapped := pkgerrors.Unwrap(e); unwrapped != nil {
-			e = unwrapped
-			continue
-		}
-
-		// Fallback: Cause() method (used by Databricks driver's custom error types)
-		if c, ok := e.(interface{ Cause() error }); ok {
-			if cause := c.Cause(); cause != nil {
-				e = cause
-				continue
-			}
-		}
-
-		break
 	}
 
 	return false
