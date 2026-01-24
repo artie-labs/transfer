@@ -130,6 +130,12 @@ func (s Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.Ta
 
 	ctx = driverctx.NewContextWithStagingInfo(ctx, []string{"/var", "tmp"})
 	putCommand := fmt.Sprintf("PUT '%s' INTO '%s' OVERWRITE", fp, file.DBFSFilePath())
+
+	// Log file size for debugging upload issues
+	if fileInfo, statErr := os.Stat(fp); statErr == nil {
+		slog.Info("Databricks PUT command", slog.String("file", fp), slog.Int64("sizeBytes", fileInfo.Size()))
+	}
+
 	if _, err = s.ExecContext(ctx, putCommand); err != nil {
 		return fmt.Errorf("failed to run PUT INTO for temporary table: %w", err)
 	}
