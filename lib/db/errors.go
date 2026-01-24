@@ -13,6 +13,7 @@ var retryableErrs = []error{
 	syscall.ECONNREFUSED,
 	io.EOF,
 	syscall.ETIMEDOUT,
+	net.ErrClosed, // "use of closed network connection" - connection closed during idle period
 }
 
 // IsRetryableError checks for common retryable errors. (example: network errors)

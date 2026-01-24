@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"net"
 	"syscall"
 	"testing"
 
@@ -33,5 +34,13 @@ func TestIsRetryable_Errors(t *testing.T) {
 	{
 		// Test wrapped connection reset error
 		assert.True(t, isRetryableError(fmt.Errorf("foo: %w", syscall.ECONNRESET)), "wrapped connection reset error should be retryable")
+	}
+	{
+		// Test direct closed network connection error
+		assert.True(t, isRetryableError(net.ErrClosed), "direct closed network connection error should be retryable")
+	}
+	{
+		// Test wrapped closed network connection error (simulates "use of closed network connection" from HTTP client)
+		assert.True(t, isRetryableError(fmt.Errorf("databricks: driver error: error sending http request: %w", net.ErrClosed)), "wrapped closed network connection error should be retryable")
 	}
 }

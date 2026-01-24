@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"time"
 
 	_ "github.com/databricks/databricks-sql-go"
 	"github.com/databricks/databricks-sql-go/driverctx"
@@ -233,6 +234,13 @@ func LoadStore(cfg config.Config) (Store, error) {
 	if err != nil {
 		return Store{}, err
 	}
+
+	// Configure connection pool settings to prevent stale connections.
+	// Databricks uses HTTP-based connections that can be closed by the server
+	// or intermediary proxies during idle periods.
+	sqlDB := store.GetDatabase()
+	sqlDB.SetConnMaxLifetime(5 * time.Minute)  // Max time a connection can be reused
+	sqlDB.SetConnMaxIdleTime(30 * time.Second) // Close idle connections after this duration
 
 	return Store{
 		Store:     store,
