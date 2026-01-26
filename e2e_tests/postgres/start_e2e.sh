@@ -62,11 +62,9 @@ DATE="$(date +%Y_%m_%d_%H_%M_%S)"
 if sed --version >/dev/null 2>&1; then
     # GNU sed
     sed -i "s/^  groupID: .*/  groupID: group_e2e_${DATE}/" config/e2e.yaml
-    sed -i "s/^  groupID: .*/  groupID: group_fgo_${DATE}/" config/e2e_fgo.yaml
 else
     # BSD/macOS sed
     sed -i '' "s/^  groupID: .*/  groupID: group_e2e_${DATE}/" config/e2e.yaml
-    sed -i '' "s/^  groupID: .*/  groupID: group_fgo_${DATE}/" config/e2e_fgo.yaml
 fi
 
 echo -e "${GREEN}✅ E2E infrastructure is ready!${NC}"
