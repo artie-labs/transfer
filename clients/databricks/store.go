@@ -240,13 +240,7 @@ func LoadStore(cfg config.Config) (Store, error) {
 		return Store{}, err
 	}
 
-	retryCfg, err := retry.NewJitterRetryConfig(1_000, 10_000, 5, func(err error) bool {
-		if err == nil {
-			return false
-		} else {
-			return true
-		}
-	})
+	retryCfg, err := retry.NewJitterRetryConfig(1_000, 10_000, 5, retry.AlwaysRetry)
 	if err != nil {
 		return Store{}, fmt.Errorf("failed to create retry config: %w", err)
 	}
