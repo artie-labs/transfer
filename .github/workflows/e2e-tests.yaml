@@ -10,6 +10,9 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - name: Set Go cache date
+        shell: bash
+        run: echo "GO_CACHE_DATE=$(TZ='America/Los_Angeles' date +%Y-%m-%d)" >> $GITHUB_ENV
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
@@ -22,6 +25,18 @@ jobs:
         working-directory: e2e_tests/postgres
         run: |
           ./start_e2e.sh
+      - name: Restore Go compilation cache
+        uses: actions/cache/restore@v5
+        with:
+          path: |
+            ~/.cache/go-build
+          # always grab from the restore-keys pattern below,
+          # like Linux-go-$hash-YYYY-MM-DD as saved by CI
+          key: nonexistent
+          restore-keys: |
+            ${{ runner.os }}-go-${{ hashFiles('go.mod') }}-${{ env.GO_CACHE_DATE }}
+            ${{ runner.os }}-go-${{ env.GO_CACHE_DATE }}
+            ${{ runner.os }}-go-${{ hashFiles('go.mod') }}-
       - name: Compile
         run: |
           go build
