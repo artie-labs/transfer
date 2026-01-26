@@ -18,6 +18,7 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/retry"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/values"
@@ -26,9 +27,10 @@ import (
 
 type Store struct {
 	db.Store
-	volume    string
-	cfg       config.Config
-	configMap *types.DestinationTableConfigMap
+	volume      string
+	cfg         config.Config
+	configMap   *types.DestinationTableConfigMap
+	retryConfig retry.RetryConfig
 }
 
 func (s Store) GetConfig() config.Config {
@@ -129,7 +131,11 @@ func (s Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.Ta
 
 	ctx = driverctx.NewContextWithStagingInfo(ctx, []string{"/var", "tmp"})
 	putCommand := fmt.Sprintf("PUT '%s' INTO '%s' OVERWRITE", fp, file.DBFSFilePath())
-	if _, err = s.ExecContext(ctx, putCommand); err != nil {
+
+	if err = retry.WithRetries(s.retryConfig, func(_ int, _ error) error {
+		_, err := s.ExecContext(ctx, putCommand)
+		return err
+	}); err != nil {
 		return fmt.Errorf("failed to run PUT INTO for temporary table: %w", err)
 	}
 
@@ -234,10 +240,22 @@ func LoadStore(cfg config.Config) (Store, error) {
 		return Store{}, err
 	}
 
+	retryCfg, err := retry.NewJitterRetryConfig(1_000, 10_000, 5, func(err error) bool {
+		if err == nil {
+			return false
+		} else {
+			return true
+		}
+	})
+	if err != nil {
+		return Store{}, fmt.Errorf("failed to create retry config: %w", err)
+	}
+
 	return Store{
-		Store:     store,
-		cfg:       cfg,
-		volume:    cfg.Databricks.Volume,
-		configMap: &types.DestinationTableConfigMap{},
+		Store:       store,
+		cfg:         cfg,
+		volume:      cfg.Databricks.Volume,
+		configMap:   &types.DestinationTableConfigMap{},
+		retryConfig: retryCfg,
 	}, nil
 }
