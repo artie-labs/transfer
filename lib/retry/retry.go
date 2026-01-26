@@ -1,6 +1,8 @@
 package retry
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -9,6 +11,16 @@ import (
 )
 
 func AlwaysRetry(_ error) bool { return true }
+
+func AlwaysRetryNonCancelled(err error) bool {
+	if errors.Is(err, context.Canceled) {
+		return false
+	} else if errors.Is(err, context.DeadlineExceeded) {
+		return false
+	} else {
+		return true
+	}
+}
 
 type RetryConfig interface {
 	MaxAttempts() int
