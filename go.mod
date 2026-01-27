@@ -1,6 +1,6 @@
 module github.com/artie-labs/transfer
 
-go 1.24.0
+go 1.25.0
 
 tool (
 	github.com/maxbrunsfeld/counterfeiter/v6
