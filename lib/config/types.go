@@ -60,6 +60,7 @@ type SharedDestinationSettings struct {
 	// [SkipBadIntegers] - If enabled, we'll skip over bad integer values instead of throwing an error.
 	// Currently only supported for Snowflake and Redshift.
 	SkipBadIntegers bool `yaml:"skipBadIntegers"`
+	ForceUTCTimezone bool `yaml:"forceUTCTimezone"`
 }
 
 type StagingTableReuseConfig struct {
