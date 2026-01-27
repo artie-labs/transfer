@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/debezium"
 	"github.com/artie-labs/transfer/lib/kafkalib"
@@ -58,7 +59,7 @@ func TestSource_GetOptionalSchema(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	optionalSchema, err := schemaEventPayload.GetOptionalSchema()
+	optionalSchema, err := schemaEventPayload.GetOptionalSchema(config.SharedDestinationSettings{})
 	assert.NoError(t, err)
 
 	value, ok := optionalSchema["last_modified"]
