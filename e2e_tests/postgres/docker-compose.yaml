@@ -11,6 +11,7 @@ services:
       - ./sql/create_db.sql:/docker-entrypoint-initdb.d/create_db.sql
   kafka:
     image: apache/kafka:3.9.1
+    container_name: kafka
     ports:
       - 9092:9092
       - 29092:29092
