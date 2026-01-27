@@ -50,6 +50,10 @@ func (g GetTableCfgArgs) query(ctx context.Context) ([]columns.Column, error) {
 		return nil, fmt.Errorf("failed to convert rows to map slice: %w", err)
 	}
 
+	for _, row := range rows {
+		fmt.Println("row", row)
+	}
+
 	var cols []columns.Column
 	for _, row := range rows {
 		col, err := g.buildColumnFromRow(row)
@@ -79,7 +83,7 @@ func (g GetTableCfgArgs) GetTableConfig(ctx context.Context) (*types.Destination
 }
 
 func (g GetTableCfgArgs) buildColumnFromRow(row map[string]any) (columns.Column, error) {
-	kindColName, err := typing.AssertType[string](row[g.ColumnNameForDataType])
+	kindColName, err := asString(row[g.ColumnNameForDataType])
 	if err != nil {
 		return columns.Column{}, fmt.Errorf("failed to get kind column name: %w", err)
 	}
@@ -93,7 +97,7 @@ func (g GetTableCfgArgs) buildColumnFromRow(row map[string]any) (columns.Column,
 		return columns.Column{}, fmt.Errorf("failed to get kind details: unable to map type: %q to dwh type", row[g.ColumnNameForDataType])
 	}
 
-	colName, err := typing.AssertType[string](row[g.ColumnNameForName])
+	colName, err := asString(row[g.ColumnNameForName])
 	if err != nil {
 		return columns.Column{}, fmt.Errorf("failed to get column name: %w", err)
 	}
@@ -104,9 +108,12 @@ func (g GetTableCfgArgs) buildColumnFromRow(row map[string]any) (columns.Column,
 	switch strategy {
 	case sql.Backfill:
 		// We need to check to make sure the comment is not an empty string
-		comment, err := typing.AssertTypeOptional[string](row[g.ColumnNameForComment])
-		if err != nil {
-			return columns.Column{}, fmt.Errorf("failed to get comment: %w", err)
+		var comment string
+		if val, ok := row[g.ColumnNameForComment]; ok {
+			comment, err = asString(val)
+			if err != nil {
+				return columns.Column{}, fmt.Errorf("failed to get comment: %w", err)
+			}
 		}
 
 		if comment != "" {
@@ -135,4 +142,15 @@ func (g GetTableCfgArgs) buildColumnFromRow(row map[string]any) (columns.Column,
 	}
 
 	return col, nil
+}
+
+func asString(value any) (string, error) {
+	switch value := value.(type) {
+	case string:
+		return value, nil
+	case []byte:
+		return string(value), nil
+	default:
+		return "", fmt.Errorf("expected string or []byte, got %T, value: %v", value, value)
+	}
 }
