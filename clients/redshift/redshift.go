@@ -125,8 +125,8 @@ func (s *Store) SweepTemporaryTables(ctx context.Context, whClient *webhooksclie
 	return shared.Sweep(ctx, s, s.config.TopicConfigs(), whClient, s.dialect().BuildSweepQuery)
 }
 
-func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
-	stagingTableID := shared.TempTableID(tableID)
+func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kafkalib.DatabaseAndSchemaPair, primaryKeys []string, includeArtieUpdatedAt bool) error {
+	stagingTableID := shared.GetStagingTableID(s, pair, tableID)
 	dedupeQueries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt)
 
 	if _, err := destination.ExecContextStatements(ctx, s, dedupeQueries); err != nil {

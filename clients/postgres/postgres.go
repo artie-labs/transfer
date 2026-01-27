@@ -101,7 +101,7 @@ func (s *Store) SweepTemporaryTables(ctx context.Context, whClient *webhooksclie
 	return shared.Sweep(ctx, s, s.config.TopicConfigs(), whClient, s.dialect().BuildSweepQuery)
 }
 
-func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
+func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kafkalib.DatabaseAndSchemaPair, primaryKeys []string, includeArtieUpdatedAt bool) error {
 	return fmt.Errorf("dedupe not implemented for PostgreSQL")
 }
 
