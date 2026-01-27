@@ -10,9 +10,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/segmentio/kafka-go"
-
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/twmb/franz-go/pkg/kerr"
+	"github.com/twmb/franz-go/pkg/kgo"
+	"github.com/twmb/franz-go/pkg/kmsg"
 )
 
 // DebeziumMessage represents the structure of messages in the test data files
@@ -141,21 +142,23 @@ func publishFile(ctx context.Context, bootstrapServers []string, mapping TopicMa
 	}
 	defer iterator.Close()
 
-	// Create Kafka writer
-	writer := kafka.NewWriter(kafka.WriterConfig{
-		Brokers: bootstrapServers,
-		Topic:   mapping.Topic,
-	})
-	defer writer.Close()
+	// Create Kafka client
+	client, err := kgo.NewClient(
+		kgo.SeedBrokers(bootstrapServers...),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create kafka client: %w", err)
+	}
+	defer client.Close()
 
 	// Create topic (Debezium image may have auto-creation disabled)
-	if err := createTopic(ctx, bootstrapServers, mapping.Topic); err != nil {
+	if err := createTopic(ctx, client, mapping.Topic); err != nil {
 		log.Printf("⚠️  Topic creation failed (might already exist): %v", err)
 	}
 
 	// Process messages in batches to avoid memory issues
 	const batchSize = 1000
-	var kafkaMessages []kafka.Message
+	var kafkaRecords []*kgo.Record
 	var messageCount int
 
 	for {
@@ -179,28 +182,29 @@ func publishFile(ctx context.Context, bootstrapServers []string, mapping TopicMa
 			return fmt.Errorf("failed to extract primary key from message %d: %w", messageCount, err)
 		}
 
-		kafkaMessages = append(kafkaMessages, kafka.Message{
-			Key:   key,
-			Value: msgBytes,
-			Time:  time.Now(),
+		kafkaRecords = append(kafkaRecords, &kgo.Record{
+			Key:       key,
+			Value:     msgBytes,
+			Topic:     mapping.Topic,
+			Timestamp: time.Now(),
 		})
 
 		messageCount++
 
 		// Process batch when it reaches batchSize or at end of file
-		if len(kafkaMessages) >= batchSize {
-			slog.Info("📤 Publishing messages", slog.Int("count", len(kafkaMessages)), slog.String("topic", mapping.Topic), slog.Int("messageCount", messageCount))
-			if err := publishBatch(ctx, writer, kafkaMessages); err != nil {
+		if len(kafkaRecords) >= batchSize {
+			slog.Info("📤 Publishing messages", slog.Int("count", len(kafkaRecords)), slog.String("topic", mapping.Topic), slog.Int("messageCount", messageCount))
+			if err := publishBatch(ctx, client, kafkaRecords); err != nil {
 				return err
 			}
-			kafkaMessages = kafkaMessages[:0] // Reset slice but keep capacity
+			kafkaRecords = kafkaRecords[:0] // Reset slice but keep capacity
 		}
 	}
 
 	// Publish remaining messages
-	if len(kafkaMessages) > 0 {
-		slog.Info("📤 Publishing messages", slog.Int("count", len(kafkaMessages)), slog.String("topic", mapping.Topic), slog.Int("messageCount", messageCount))
-		if err := publishBatch(ctx, writer, kafkaMessages); err != nil {
+	if len(kafkaRecords) > 0 {
+		slog.Info("📤 Publishing messages", slog.Int("count", len(kafkaRecords)), slog.String("topic", mapping.Topic), slog.Int("messageCount", messageCount))
+		if err := publishBatch(ctx, client, kafkaRecords); err != nil {
 			return err
 		}
 	}
@@ -209,11 +213,12 @@ func publishFile(ctx context.Context, bootstrapServers []string, mapping TopicMa
 	return nil
 }
 
-func publishBatch(ctx context.Context, writer *kafka.Writer, messages []kafka.Message) error {
+func publishBatch(ctx context.Context, client *kgo.Client, records []*kgo.Record) error {
 	// Retry logic for auto-created topics
 	var writeErr error
 	for attempt := 1; attempt <= 3; attempt++ {
-		writeErr = writer.WriteMessages(ctx, messages...)
+		results := client.ProduceSync(ctx, records...)
+		writeErr = results.FirstErr()
 		if writeErr == nil {
 			break
 		}
@@ -260,17 +265,33 @@ func extractPrimaryKey(msg DebeziumMessage) ([]byte, error) {
 	return json.Marshal(keyMap)
 }
 
-func createTopic(ctx context.Context, bootstrapServers []string, topicName string) error {
-	conn, err := kafka.DialContext(ctx, "tcp", bootstrapServers[0])
-	if err != nil {
-		return fmt.Errorf("failed to connect to kafka: %w", err)
-	}
-	defer conn.Close()
-
+func createTopic(ctx context.Context, client *kgo.Client, topicName string) error {
 	log.Printf("🆕 Creating topic: %s", topicName)
-	return conn.CreateTopics(kafka.TopicConfig{
-		Topic:             topicName,
-		NumPartitions:     1,
-		ReplicationFactor: 1,
-	})
+
+	req := kmsg.NewPtrCreateTopicsRequest()
+	reqTopic := kmsg.NewCreateTopicsRequestTopic()
+	reqTopic.Topic = topicName
+	reqTopic.NumPartitions = 1
+	reqTopic.ReplicationFactor = 1
+	req.Topics = append(req.Topics, reqTopic)
+
+	resp, err := req.RequestWith(ctx, client)
+	if err != nil {
+		return fmt.Errorf("failed to send create topics request: %w", err)
+	}
+
+	if len(resp.Topics) == 0 {
+		return fmt.Errorf("no topics in create topics response")
+	}
+
+	topicResp := resp.Topics[0]
+	if err := kerr.ErrorForCode(topicResp.ErrorCode); err != nil {
+		// Topic might already exist, which is okay
+		if err == kerr.TopicAlreadyExists {
+			return nil
+		}
+		return fmt.Errorf("failed to create topic: %w", err)
+	}
+
+	return nil
 }
