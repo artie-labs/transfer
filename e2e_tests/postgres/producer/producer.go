@@ -10,10 +10,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/config"
 	"github.com/twmb/franz-go/pkg/kerr"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/kmsg"
+
+	"github.com/artie-labs/transfer/lib/config"
 )
 
 // DebeziumMessage represents the structure of messages in the test data files
