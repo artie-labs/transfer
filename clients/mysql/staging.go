@@ -82,10 +82,14 @@ func (s *Store) executeBatchInsert(ctx context.Context, tx *sql.Tx, tableID libs
 		return 0, nil
 	}
 
+	if len(cols) == 0 {
+		return 0, fmt.Errorf("no columns to insert")
+	}
+
 	// Build column names
-	colNames := make([]string, len(cols))
+	var colNames []string
 	for i, col := range cols {
-		colNames[i] = s.dialect().QuoteIdentifier(col.Name())
+		colNames = append(colNames, s.dialect().QuoteIdentifier(col.Name()))
 	}
 
 	// Build placeholders for one row: (?, ?, ?)
@@ -106,7 +110,7 @@ func (s *Store) executeBatchInsert(ctx context.Context, tx *sql.Tx, tableID libs
 	)
 
 	// Collect all values for the batch
-	values := make([]any, 0, len(rows)*len(cols))
+	var values []any
 	for _, row := range rows {
 		for _, col := range cols {
 			value, _ := row.GetValue(col.Name())
@@ -114,6 +118,7 @@ func (s *Store) executeBatchInsert(ctx context.Context, tx *sql.Tx, tableID libs
 			if err != nil {
 				return 0, fmt.Errorf("failed to parse value for column %q: %w", col.Name(), err)
 			}
+
 			values = append(values, parsedValue)
 		}
 	}
