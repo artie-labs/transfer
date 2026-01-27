@@ -61,7 +61,7 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 	}
 
 	tags["op"] = string(_event.Operation())
-	evt, err := event.ToMemoryEvent(ctx, dest, _event, pkMap, topicConfig.tc, cfg.Mode)
+	evt, err := event.ToMemoryEvent(ctx, dest, _event, pkMap, topicConfig.tc, cfg.Mode, cfg.SharedDestinationSettings)
 	if err != nil {
 		tags["what"] = "to_mem_event_err"
 		return cdc.TableID{}, fmt.Errorf("cannot convert to memory event: %w", err)

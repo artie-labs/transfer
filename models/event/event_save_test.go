@@ -39,7 +39,7 @@ func (e *EventsTestSuite) TestSaveEvent() {
 		anotherCol:                          13.37,
 	}, nil)
 
-	event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication)
+	event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication, config.SharedDestinationSettings{})
 	assert.NoError(e.T(), err)
 
 	_, _, err = event.Save(e.cfg, e.db, topicConfig, nil)
@@ -93,7 +93,7 @@ func (e *EventsTestSuite) TestEvent_SaveCasing() {
 		"anotherCOL":                        13.37,
 	}, nil)
 
-	event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication)
+	event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication, config.SharedDestinationSettings{})
 	assert.NoError(e.T(), err)
 
 	_, _, err = event.Save(e.cfg, e.db, topicConfig, nil)
@@ -134,7 +134,7 @@ func (e *EventsTestSuite) TestEventSaveOptionalSchema() {
 		"json_object_string":     typing.String,
 	}, nil)
 
-	event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication)
+	event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication, config.SharedDestinationSettings{})
 	assert.NoError(e.T(), err)
 
 	_, _, err = event.Save(e.cfg, e.db, topicConfig, nil)
@@ -181,7 +181,7 @@ func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 	}, nil)
 	mockEvent.GetColumnsReturns(cols.GetColumns(), nil)
 
-	evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"col_1": "123"}, topicConfig, config.Replication)
+	evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"col_1": "123"}, topicConfig, config.Replication, config.SharedDestinationSettings{})
 	assert.NoError(e.T(), err)
 
 	_, _, err = evt.Save(e.cfg, e.db, topicConfig, nil)
@@ -240,7 +240,7 @@ func (e *EventsTestSuite) TestEventSaveColumns() {
 		"created_at_date_string":            "2023-01-01",
 	}, nil)
 
-	event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication)
+	event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication, config.SharedDestinationSettings{})
 	assert.NoError(e.T(), err)
 
 	_, _, err = event.Save(e.cfg, e.db, topicConfig, nil)
@@ -289,7 +289,7 @@ func (e *EventsTestSuite) TestEventSaveTestDeleteFlag() {
 		constants.OnlySetDeleteColumnMarker: true,
 	}, nil)
 
-	event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication)
+	event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication, config.SharedDestinationSettings{})
 	assert.NoError(e.T(), err)
 	_, _, err = event.Save(e.cfg, e.db, topicConfig, nil)
 	assert.NoError(e.T(), err)
@@ -322,7 +322,7 @@ func (e *EventsTestSuite) TestEventSaveAppendOnlyMode() {
 			constants.OnlySetDeleteColumnMarker: false,
 		}, nil)
 
-		event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, appendOnlyTC, config.Replication)
+		event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, appendOnlyTC, config.Replication, config.SharedDestinationSettings{})
 		assert.NoError(e.T(), err)
 
 		// Verify OnlySetDeleteColumnMarker is removed
@@ -352,7 +352,7 @@ func (e *EventsTestSuite) TestEventSaveAppendOnlyMode() {
 			constants.OnlySetDeleteColumnMarker: true,
 		}, nil)
 
-		event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "456"}, appendOnlyWithSoftDeleteTC, config.Replication)
+		event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "456"}, appendOnlyWithSoftDeleteTC, config.Replication, config.SharedDestinationSettings{})
 		assert.NoError(e.T(), err)
 
 		// Verify OnlySetDeleteColumnMarker is removed
