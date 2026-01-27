@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/debezium/converters"
 	"github.com/artie-labs/transfer/lib/maputil"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -154,7 +155,15 @@ func (f Field) ToValueConverter() (converters.ValueConverter, error) {
 	}
 }
 
-func (f Field) ToKindDetails() (typing.KindDetails, error) {
+func (f Field) ToKindDetails(cfg config.SharedDestinationSettings) (typing.KindDetails, error) {
+
+	if cfg.ForceUTCTimezone {
+		switch f.DebeziumType {
+		case Timestamp, TimestampKafkaConnect, MicroTimestamp, NanoTimestamp:
+			return typing.TimestampTZ, nil
+		}
+	}
+
 	// Prioritize converters
 	converter, err := f.ToValueConverter()
 	if err != nil {
