@@ -321,10 +321,10 @@ func TestProcessMessageSkip(t *testing.T) {
 		idx += 1
 
 		kafkaMessage := kgo.Record{
-			Topic:         "foo",
-			Partition:     0,
-			Offset:        0,
-			Key:           nil,
+			Topic:     "foo",
+			Partition: 0,
+			Offset:    0,
+			Key:       nil,
 			Value:     nil,
 			Timestamp: time.Time{},
 		}
