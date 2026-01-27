@@ -214,7 +214,7 @@ func (s Store) IsRetryableError(_ error) bool {
 }
 
 func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kafkalib.DatabaseAndSchemaPair, primaryKeys []string, includeArtieUpdatedAt bool) error {
-	stagingTableID := shared.GetStagingTableID(s, pair, tableID)
+	stagingTableID := shared.BuildStagingTableID(s, pair, tableID)
 	castedStagingTableID, ok := stagingTableID.(dialect.TableIdentifier)
 	if !ok {
 		return fmt.Errorf("failed to cast staging table id to dialect table identifier")

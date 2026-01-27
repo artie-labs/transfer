@@ -258,7 +258,7 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 }
 
 func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kafkalib.DatabaseAndSchemaPair, primaryKeys []string, includeArtieUpdatedAt bool) error {
-	stagingTableID := shared.GetStagingTableID(s, pair, tableID)
+	stagingTableID := shared.BuildStagingTableID(s, pair, tableID)
 	dedupeQueries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt)
 
 	defer func() { _ = ddl.DropTemporaryTable(ctx, s, stagingTableID, false) }()

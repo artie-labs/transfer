@@ -97,7 +97,7 @@ func (s *Store) GetConfigMap() *types.DestinationTableConfigMap {
 // Dedupe takes a table and will remove duplicates based on the primary key(s).
 // These queries are inspired and modified from: https://stackoverflow.com/a/71515946
 func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kafkalib.DatabaseAndSchemaPair, primaryKeys []string, includeArtieUpdatedAt bool) error {
-	stagingTableID := shared.GetStagingTableID(s, pair, tableID)
+	stagingTableID := shared.BuildStagingTableID(s, pair, tableID)
 	dedupeQueries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt)
 	if _, err := destination.ExecContextStatements(ctx, s, dedupeQueries); err != nil {
 		return fmt.Errorf("failed to dedupe: %w", err)
