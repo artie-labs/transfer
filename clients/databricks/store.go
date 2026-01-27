@@ -75,8 +75,8 @@ func (s Store) dialect() dialect.DatabricksDialect {
 	return dialect.DatabricksDialect{}
 }
 
-func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
-	stagingTableID := shared.TempTableID(tableID)
+func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kafkalib.DatabaseAndSchemaPair, primaryKeys []string, includeArtieUpdatedAt bool) error {
+	stagingTableID := shared.BuildStagingTableID(s, pair, tableID)
 	defer func() {
 		// Drop the staging table once we're done with the dedupe.
 		_ = ddl.DropTemporaryTable(ctx, s, stagingTableID, false)
