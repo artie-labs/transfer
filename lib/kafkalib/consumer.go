@@ -256,36 +256,6 @@ func NewConsumerProviderForTest(consumer Consumer, topic, groupID string) *Consu
 	}
 }
 
-func InjectConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) (context.Context, error) {
-	kafkaConn := NewConnection(cfg.EnableAWSMSKIAM, cfg.DisableTLS, cfg.Username, cfg.Password, DefaultTimeout)
-	dialer, err := kafkaConn.Dialer(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Kafka dialer: %w", err)
-	}
-
-	for _, topicConfig := range cfg.TopicConfigs {
-		kafkaCfg := kafka.ReaderConfig{
-			GroupID: cfg.GroupID,
-			Dialer:  dialer,
-			Topic:   topicConfig.Topic,
-			Brokers: cfg.BootstrapServers(true),
-
-			// This will ensure that we're watching metadata updates from Kafka.
-			// When there's a partition change, we'll rediscover and refresh our assignment and connections automatically without a restart.
-			WatchPartitionChanges: true,
-		}
-
-		ctx = context.WithValue(ctx, BuildContextKey(topicConfig.Topic), &ConsumerProvider{
-			Consumer:                 &KafkaGoConsumer{kafka.NewReader(kafkaCfg)},
-			topic:                    topicConfig.Topic,
-			groupID:                  cfg.GroupID,
-			partitionToAppliedOffset: make(map[int]artie.Message),
-		})
-	}
-
-	return ctx, nil
-}
-
 func InjectFranzGoConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) (context.Context, error) {
 	kafkaConn := NewConnection(cfg.EnableAWSMSKIAM, cfg.DisableTLS, cfg.Username, cfg.Password, DefaultTimeout)
 	brokers := cfg.BootstrapServers(true)
