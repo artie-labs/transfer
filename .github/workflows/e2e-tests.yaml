@@ -53,6 +53,6 @@ jobs:
         working-directory: e2e_tests/postgres
         run: |
           ./stop_e2e.sh
-      - name: Show transferlogs
+      - name: Show transfer logs
         run: |
           cat transfer_e2e.log
