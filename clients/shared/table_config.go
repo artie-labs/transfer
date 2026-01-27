@@ -50,10 +50,6 @@ func (g GetTableCfgArgs) query(ctx context.Context) ([]columns.Column, error) {
 		return nil, fmt.Errorf("failed to convert rows to map slice: %w", err)
 	}
 
-	for _, row := range rows {
-		fmt.Println("row", row)
-	}
-
 	var cols []columns.Column
 	for _, row := range rows {
 		col, err := g.buildColumnFromRow(row)
@@ -109,7 +105,7 @@ func (g GetTableCfgArgs) buildColumnFromRow(row map[string]any) (columns.Column,
 	case sql.Backfill:
 		// We need to check to make sure the comment is not an empty string
 		var comment string
-		if val, ok := row[g.ColumnNameForComment]; ok {
+		if val, ok := row[g.ColumnNameForComment]; ok && val != nil {
 			comment, err = asString(val)
 			if err != nil {
 				return columns.Column{}, fmt.Errorf("failed to get comment: %w", err)
