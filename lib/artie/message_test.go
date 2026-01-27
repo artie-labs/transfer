@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
 	"github.com/twmb/franz-go/pkg/kgo"
 )
@@ -12,24 +11,6 @@ import (
 const keyString = "Struct{id=12}"
 
 var now = time.Now()
-
-func TestNewMessage(t *testing.T) {
-	kafkaMsg := kafka.Message{
-		Topic:     "test_topic",
-		Partition: 5,
-		Offset:    100,
-		Key:       []byte(keyString),
-		Value:     []byte("kafka_value"),
-		Time:      now,
-	}
-
-	msg := NewKafkaGoMessage(kafkaMsg)
-	assert.Equal(t, "test_topic", msg.Topic())
-	assert.Equal(t, 5, msg.Partition())
-	assert.Equal(t, int64(100), msg.Offset())
-	assert.Equal(t, keyString, string(msg.Key()))
-	assert.Equal(t, "kafka_value", string(msg.Value()))
-}
 
 func TestNewFranzGoMessage(t *testing.T) {
 	kafkaMsg := kgo.Record{
