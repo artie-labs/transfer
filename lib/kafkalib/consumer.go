@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/segmentio/kafka-go"
 	"github.com/twmb/franz-go/pkg/kerr"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/kmsg"
@@ -31,31 +30,6 @@ type Consumer interface {
 	Close() (err error)
 	FetchMessage(ctx context.Context) (artie.Message, error)
 	CommitMessages(ctx context.Context, msgs ...artie.Message) error
-}
-
-type KafkaGoConsumer struct {
-	*kafka.Reader
-}
-
-func (k KafkaGoConsumer) CommitMessages(ctx context.Context, msgs ...artie.Message) error {
-	// TODO: Find a better way to get an array of kafka.Message without allocating a new slice.
-	kafkaMsgs := make([]kafka.Message, len(msgs))
-	for i, msg := range msgs {
-		if kMsg, ok := msg.(artie.KafkaGoMessage); ok {
-			kafkaMsgs[i] = kMsg.GetMessage()
-		} else {
-			return fmt.Errorf("message is not of type artie.KafkaGoMessage: %T", msg)
-		}
-	}
-	return k.Reader.CommitMessages(ctx, kafkaMsgs...)
-}
-
-func (k KafkaGoConsumer) FetchMessage(ctx context.Context) (artie.Message, error) {
-	msg, err := k.Reader.FetchMessage(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return artie.NewKafkaGoMessage(msg), nil
 }
 
 type FranzGoConsumer struct {

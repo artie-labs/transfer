@@ -20,7 +20,6 @@ func (m Mode) IsValid() bool {
 type KafkaClient string
 
 const (
-	KafkaGoClient KafkaClient = "kafka-go"
 	FranzGoClient KafkaClient = "franz-go"
 )
 
