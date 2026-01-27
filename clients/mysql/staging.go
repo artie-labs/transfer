@@ -88,7 +88,7 @@ func (s *Store) executeBatchInsert(ctx context.Context, tx *sql.Tx, tableID libs
 
 	// Build column names
 	var colNames []string
-	for i, col := range cols {
+	for _, col := range cols {
 		colNames = append(colNames, s.dialect().QuoteIdentifier(col.Name()))
 	}
 
