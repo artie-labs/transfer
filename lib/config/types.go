@@ -59,7 +59,7 @@ type SharedDestinationSettings struct {
 	SkipBadTimestamps bool `yaml:"skipBadTimestamps"`
 	// [SkipBadIntegers] - If enabled, we'll skip over bad integer values instead of throwing an error.
 	// Currently only supported for Snowflake and Redshift.
-	SkipBadIntegers bool `yaml:"skipBadIntegers"`
+	SkipBadIntegers  bool `yaml:"skipBadIntegers"`
 	ForceUTCTimezone bool `yaml:"forceUTCTimezone"`
 }
 
