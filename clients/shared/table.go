@@ -142,7 +142,7 @@ func AlterTableDropColumns(ctx context.Context, dest destination.Destination, tc
 
 func BuildStagingTableID(dest destination.Baseline, pair kafkalib.DatabaseAndSchemaPair, tableID sql.TableIdentifier) sql.TableIdentifier {
 	if pair.IsValid() {
-		return dest.IdentifierFor(pair, tableID.Table())
+		return TempTableID(dest.IdentifierFor(pair, tableID.Table()))
 	}
 
 	return TempTableID(tableID)
