@@ -35,7 +35,7 @@ done
 # Check Kafka
 echo -e "${YELLOW}🔍 Checking Kafka...${NC}"
 for i in {1..30}; do
-    if docker exec kafka /kafka/bin/kafka-topics.sh --bootstrap-server localhost:29092 --list >/dev/null 2>&1; then
+    if docker exec kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:29092 --list >/dev/null 2>&1; then
         echo -e "${GREEN}✅ Kafka is ready${NC}"
         break
     fi
