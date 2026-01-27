@@ -13,16 +13,16 @@ import (
 )
 
 func TestBuildStagingTableID(t *testing.T) {
+	fakeBaseline := &mocks.FakeBaseline{}
 	{
 		// When pair is invalid (empty database and schema), should use the original tableID
-		fakeBaseline := &mocks.FakeBaseline{}
 		originalTableID := dialect.NewTableIdentifier("original_db", "original_schema", "my_table")
 		pair := kafkalib.DatabaseAndSchemaPair{Database: "", Schema: ""}
 
 		result := BuildStagingTableID(fakeBaseline, pair, originalTableID)
 
 		// IdentifierFor should not be called when pair is invalid
-		assert.Equal(t, 0, fakeBaseline.IdentifierForCallCount())
+		assert.Zero(t, fakeBaseline.IdentifierForCallCount())
 		// Should be a temp table
 		assert.True(t, result.TemporaryTable())
 		// Should contain the original table name with artie prefix
@@ -32,14 +32,13 @@ func TestBuildStagingTableID(t *testing.T) {
 	}
 	{
 		// When pair is invalid (empty database only), should use the original tableID
-		fakeBaseline := &mocks.FakeBaseline{}
 		originalTableID := dialect.NewTableIdentifier("original_db", "original_schema", "my_table")
 		pair := kafkalib.DatabaseAndSchemaPair{Database: "", Schema: "staging_schema"}
 
 		result := BuildStagingTableID(fakeBaseline, pair, originalTableID)
 
 		// IdentifierFor should not be called when pair is invalid
-		assert.Equal(t, 0, fakeBaseline.IdentifierForCallCount())
+		assert.Zero(t, fakeBaseline.IdentifierForCallCount())
 		// Should be a temp table
 		assert.True(t, result.TemporaryTable())
 		// Should contain the original table name with artie prefix
@@ -49,14 +48,13 @@ func TestBuildStagingTableID(t *testing.T) {
 	}
 	{
 		// When pair is invalid (empty schema only), should use the original tableID
-		fakeBaseline := &mocks.FakeBaseline{}
 		originalTableID := dialect.NewTableIdentifier("original_db", "original_schema", "my_table")
 		pair := kafkalib.DatabaseAndSchemaPair{Database: "staging_db", Schema: ""}
 
 		result := BuildStagingTableID(fakeBaseline, pair, originalTableID)
 
 		// IdentifierFor should not be called when pair is invalid
-		assert.Equal(t, 0, fakeBaseline.IdentifierForCallCount())
+		assert.Zero(t, fakeBaseline.IdentifierForCallCount())
 		// Should be a temp table
 		assert.True(t, result.TemporaryTable())
 		// Should contain the original table name with artie prefix
@@ -66,7 +64,6 @@ func TestBuildStagingTableID(t *testing.T) {
 	}
 	{
 		// When pair is valid, should use IdentifierFor to create a new tableID with the staging schema
-		fakeBaseline := &mocks.FakeBaseline{}
 		fakeBaseline.IdentifierForStub = func(pair kafkalib.DatabaseAndSchemaPair, table string) sql.TableIdentifier {
 			return dialect.NewTableIdentifier(pair.Database, pair.Schema, table)
 		}
