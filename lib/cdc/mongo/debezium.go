@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/artie-labs/transfer/lib/cdc"
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/debezium"
 	"github.com/artie-labs/transfer/lib/kafkalib"
@@ -124,7 +125,7 @@ func (s *SchemaEventPayload) GetSourceMetadata() (string, error) {
 	return string(json), nil
 }
 
-func (s *SchemaEventPayload) GetOptionalSchema() (map[string]typing.KindDetails, error) {
+func (s *SchemaEventPayload) GetOptionalSchema(cfg config.SharedDestinationSettings) (map[string]typing.KindDetails, error) {
 	// MongoDB does not have a schema at the database level.
 	return nil, nil
 }
