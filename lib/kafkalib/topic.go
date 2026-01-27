@@ -16,6 +16,10 @@ type DatabaseAndSchemaPair struct {
 	Schema   string
 }
 
+func (d DatabaseAndSchemaPair) IsValid() bool {
+	return d.Database != "" && d.Schema != ""
+}
+
 func GetUniqueStagingDatabaseAndSchemaPairs(tcs []*TopicConfig) []DatabaseAndSchemaPair {
 	seenMap := make(map[DatabaseAndSchemaPair]bool)
 	for _, tc := range tcs {

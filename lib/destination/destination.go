@@ -19,7 +19,7 @@ type Destination interface {
 
 	// SQL specific commands
 	Dialect() sqllib.Dialect
-	Dedupe(ctx context.Context, tableID sqllib.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error
+	Dedupe(ctx context.Context, tableID sqllib.TableIdentifier, pair kafkalib.DatabaseAndSchemaPair, primaryKeys []string, includeArtieUpdatedAt bool) error
 	SweepTemporaryTables(ctx context.Context, whClient *webhooksclient.Client) error
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
 	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)

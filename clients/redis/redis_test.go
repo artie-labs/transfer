@@ -117,7 +117,7 @@ func TestStore_Dialect(t *testing.T) {
 
 func TestStore_Dedupe(t *testing.T) {
 	store := &Store{}
-	assert.ErrorContains(t, store.Dedupe(t.Context(), nil, nil, false), "dedupe is not supported for Redis")
+	assert.ErrorContains(t, store.Dedupe(t.Context(), nil, kafkalib.DatabaseAndSchemaPair{}, nil, false), "dedupe is not supported for Redis")
 }
 
 func TestStore_SweepTemporaryTables(t *testing.T) {
