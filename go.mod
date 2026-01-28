@@ -38,8 +38,6 @@ require (
 	github.com/redis/go-redis/v9 v9.17.2
 	github.com/samber/slog-multi v1.4.0
 	github.com/samber/slog-sentry/v2 v2.9.3
-	github.com/segmentio/kafka-go v0.4.49
-	github.com/segmentio/kafka-go/sasl/aws_msk_iam_v2 v0.1.0
 	github.com/snowflakedb/gosnowflake v1.17.1
 	github.com/stretchr/testify v1.11.1
 	github.com/twmb/franz-go v1.19.5
@@ -172,9 +170,6 @@ require (
 	github.com/viant/toolbox v0.37.0 // indirect
 	github.com/viant/xreflect v0.7.2 // indirect
 	github.com/viant/xunsafe v0.9.4 // indirect
-	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
-	github.com/xdg-go/scram v1.1.2 // indirect
-	github.com/xdg-go/stringprep v1.0.4 // indirect
 	github.com/zeebo/errs v1.4.0 // indirect
 	github.com/zeebo/xxh3 v1.0.2 // indirect
 	go.opencensus.io v0.24.0 // indirect

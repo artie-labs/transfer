@@ -118,11 +118,6 @@ func main() {
 
 	inMemDB := models.NewMemoryDB()
 	switch settings.Config.KafkaClient {
-	case config.KafkaGoClient:
-		ctx, err = kafkalib.InjectConsumerProvidersIntoContext(ctx, settings.Config.Kafka)
-		if err != nil {
-			logger.Fatal("Failed to inject kafka-go consumer providers into context", slog.Any("err", err))
-		}
 	case config.FranzGoClient:
 		ctx, err = kafkalib.InjectFranzGoConsumerProvidersIntoContext(ctx, settings.Config.Kafka)
 		if err != nil {
