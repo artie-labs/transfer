@@ -236,7 +236,7 @@ type ConsumerProvider struct {
 // WaitForTopic waits for the topic to exist. Only supported for FranzGo consumers.
 func (c *ConsumerProvider) WaitForTopic(ctx context.Context) error {
 	if c.client == nil {
-		return nil // kafka-go doesn't support this, skip
+		return nil // skip if no franz-go client is set
 	}
 	return WaitForTopicToExist(ctx, c.client, c.topic)
 }
