@@ -69,7 +69,7 @@ func (e *EventPayload) GetData(tc kafkalib.TopicConfig) (map[string]any, error) 
 	return retMap, nil
 }
 
-func (e *EventPayload) GetOptionalSchema(cfg config.SharedDestinationSettings) (map[string]typing.KindDetails, error) {
+func (e *EventPayload) GetOptionalSchema(cfg *config.SharedDestinationSettings) (map[string]typing.KindDetails, error) {
 	// Event tracking format doesn't have a schema
 	return nil, nil
 }

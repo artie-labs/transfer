@@ -125,7 +125,7 @@ func (s *SchemaEventPayload) GetSourceMetadata() (string, error) {
 	return string(json), nil
 }
 
-func (s *SchemaEventPayload) GetOptionalSchema(cfg config.SharedDestinationSettings) (map[string]typing.KindDetails, error) {
+func (s *SchemaEventPayload) GetOptionalSchema(cfg *config.SharedDestinationSettings) (map[string]typing.KindDetails, error) {
 	// MongoDB does not have a schema at the database level.
 	return nil, nil
 }

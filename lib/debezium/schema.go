@@ -155,8 +155,8 @@ func (f Field) ToValueConverter() (converters.ValueConverter, error) {
 	}
 }
 
-func (f Field) ToKindDetails(cfg config.SharedDestinationSettings) (typing.KindDetails, error) {
-	if cfg.ForceUTCTimezone {
+func (f Field) ToKindDetails(cfg *config.SharedDestinationSettings) (typing.KindDetails, error) {
+	if cfg != nil && cfg.ForceUTCTimezone {
 		switch f.DebeziumType {
 		case Timestamp, TimestampKafkaConnect, MicroTimestamp, NanoTimestamp:
 			return typing.TimestampTZ, nil

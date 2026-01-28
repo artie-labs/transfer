@@ -6,7 +6,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func (s *SchemaEventPayload) GetOptionalSchema(cfg config.SharedDestinationSettings) (map[string]typing.KindDetails, error) {
+func (s *SchemaEventPayload) GetOptionalSchema(cfg *config.SharedDestinationSettings) (map[string]typing.KindDetails, error) {
 	fieldsObject := s.Schema.GetSchemaFromLabel(debezium.After)
 	if fieldsObject == nil {
 		return nil, nil

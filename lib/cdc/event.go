@@ -25,7 +25,7 @@ type Event interface {
 	GetFullTableName() string
 	GetSourceMetadata() (string, error)
 	GetData(tc kafkalib.TopicConfig) (map[string]any, error)
-	GetOptionalSchema(cfg config.SharedDestinationSettings) (map[string]typing.KindDetails, error)
+	GetOptionalSchema(cfg *config.SharedDestinationSettings) (map[string]typing.KindDetails, error)
 	// GetColumns will inspect the envelope's payload right now and return.
 	GetColumns(reservedColumns map[string]bool) ([]columns.Column, error)
 }
