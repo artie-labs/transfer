@@ -6,7 +6,6 @@ import (
 	"log/slog"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"google.golang.org/protobuf/internal/version"
 
 	"github.com/artie-labs/transfer/clients/postgres/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
@@ -47,7 +46,7 @@ func LoadStore(ctx context.Context, cfg config.Config) (*Store, error) {
 		Store:     store,
 		configMap: &types.DestinationTableConfigMap{},
 		config:    cfg,
-		version:   version.Major,
+		version:   out.Major,
 	}, nil
 }
 
