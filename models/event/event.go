@@ -46,7 +46,7 @@ func (e Event) GetTable() string {
 	return e.table
 }
 
-func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfig, cfgMode config.Mode) (Event, error) {
+func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfig, cfgMode config.Mode, sharedDestinationSettings config.SharedDestinationSettings) (Event, error) {
 	reservedColumns := destination.BuildReservedColumnNames(dest)
 	_cols, err := buildColumns(event, tc, reservedColumns)
 	if err != nil {
@@ -121,7 +121,7 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 		}
 	}
 
-	optionalSchema, err := event.GetOptionalSchema()
+	optionalSchema, err := event.GetOptionalSchema(sharedDestinationSettings)
 	if err != nil {
 		return Event{}, fmt.Errorf("failed to get optional schema: %w", err)
 	}

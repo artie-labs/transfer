@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/segmentio/kafka-go"
 	"github.com/twmb/franz-go/pkg/kerr"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/kmsg"
@@ -31,31 +30,6 @@ type Consumer interface {
 	Close() (err error)
 	FetchMessage(ctx context.Context) (artie.Message, error)
 	CommitMessages(ctx context.Context, msgs ...artie.Message) error
-}
-
-type KafkaGoConsumer struct {
-	*kafka.Reader
-}
-
-func (k KafkaGoConsumer) CommitMessages(ctx context.Context, msgs ...artie.Message) error {
-	// TODO: Find a better way to get an array of kafka.Message without allocating a new slice.
-	kafkaMsgs := make([]kafka.Message, len(msgs))
-	for i, msg := range msgs {
-		if kMsg, ok := msg.(artie.KafkaGoMessage); ok {
-			kafkaMsgs[i] = kMsg.GetMessage()
-		} else {
-			return fmt.Errorf("message is not of type artie.KafkaGoMessage: %T", msg)
-		}
-	}
-	return k.Reader.CommitMessages(ctx, kafkaMsgs...)
-}
-
-func (k KafkaGoConsumer) FetchMessage(ctx context.Context) (artie.Message, error) {
-	msg, err := k.Reader.FetchMessage(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return artie.NewKafkaGoMessage(msg), nil
 }
 
 type FranzGoConsumer struct {
@@ -262,7 +236,7 @@ type ConsumerProvider struct {
 // WaitForTopic waits for the topic to exist. Only supported for FranzGo consumers.
 func (c *ConsumerProvider) WaitForTopic(ctx context.Context) error {
 	if c.client == nil {
-		return nil // kafka-go doesn't support this, skip
+		return nil // skip if no franz-go client is set
 	}
 	return WaitForTopicToExist(ctx, c.client, c.topic)
 }
@@ -280,36 +254,6 @@ func NewConsumerProviderForTest(consumer Consumer, topic, groupID string) *Consu
 		groupID:                  groupID,
 		partitionToAppliedOffset: make(map[int]artie.Message),
 	}
-}
-
-func InjectConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) (context.Context, error) {
-	kafkaConn := NewConnection(cfg.EnableAWSMSKIAM, cfg.DisableTLS, cfg.Username, cfg.Password, DefaultTimeout)
-	dialer, err := kafkaConn.Dialer(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Kafka dialer: %w", err)
-	}
-
-	for _, topicConfig := range cfg.TopicConfigs {
-		kafkaCfg := kafka.ReaderConfig{
-			GroupID: cfg.GroupID,
-			Dialer:  dialer,
-			Topic:   topicConfig.Topic,
-			Brokers: cfg.BootstrapServers(true),
-
-			// This will ensure that we're watching metadata updates from Kafka.
-			// When there's a partition change, we'll rediscover and refresh our assignment and connections automatically without a restart.
-			WatchPartitionChanges: true,
-		}
-
-		ctx = context.WithValue(ctx, BuildContextKey(topicConfig.Topic), &ConsumerProvider{
-			Consumer:                 &KafkaGoConsumer{kafka.NewReader(kafkaCfg)},
-			topic:                    topicConfig.Topic,
-			groupID:                  cfg.GroupID,
-			partitionToAppliedOffset: make(map[int]artie.Message),
-		})
-	}
-
-	return ctx, nil
 }
 
 func InjectFranzGoConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) (context.Context, error) {

@@ -4,7 +4,6 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/segmentio/kafka-go"
 	"github.com/twmb/franz-go/pkg/kgo"
 )
 
@@ -25,46 +24,6 @@ func BuildLogFields(msg Message) []any {
 		slog.String("key", string(msg.Key())),
 		slog.String("value", string(msg.Value())),
 	}
-}
-
-type KafkaGoMessage struct {
-	message kafka.Message
-}
-
-func NewKafkaGoMessage(msg kafka.Message) Message {
-	return KafkaGoMessage{message: msg}
-}
-
-func (m KafkaGoMessage) GetMessage() kafka.Message {
-	return m.message
-}
-
-func (m KafkaGoMessage) PublishTime() time.Time {
-	return m.message.Time
-}
-
-func (m KafkaGoMessage) Topic() string {
-	return m.message.Topic
-}
-
-func (m KafkaGoMessage) Partition() int {
-	return m.message.Partition
-}
-
-func (m KafkaGoMessage) Offset() int64 {
-	return m.message.Offset
-}
-
-func (m KafkaGoMessage) Key() []byte {
-	return m.message.Key
-}
-
-func (m KafkaGoMessage) Value() []byte {
-	return m.message.Value
-}
-
-func (m KafkaGoMessage) HighWaterMark() int64 {
-	return m.message.HighWaterMark
 }
 
 type FranzGoMessage struct {

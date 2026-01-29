@@ -115,7 +115,7 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whC
 	return true, nil
 }
 
-func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
+func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, _ kafkalib.DatabaseAndSchemaPair, primaryKeys []string, includeArtieUpdatedAt bool) error {
 	return nil
 }
 

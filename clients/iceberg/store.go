@@ -213,14 +213,14 @@ func (s Store) IsRetryableError(_ error) bool {
 	return false
 }
 
-func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
-	tempTableID := shared.TempTableID(tableID)
-	castedTempTableID, ok := tempTableID.(dialect.TableIdentifier)
+func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kafkalib.DatabaseAndSchemaPair, primaryKeys []string, includeArtieUpdatedAt bool) error {
+	stagingTableID := shared.BuildStagingTableID(s, pair, tableID)
+	castedStagingTableID, ok := stagingTableID.(dialect.TableIdentifier)
 	if !ok {
-		return fmt.Errorf("failed to cast temp table id to dialect table identifier")
+		return fmt.Errorf("failed to cast staging table id to dialect table identifier")
 	}
 
-	queries := s.Dialect().BuildDedupeQueries(tableID, tempTableID, primaryKeys, includeArtieUpdatedAt)
+	queries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt)
 	for _, query := range queries {
 		if err := s.apacheLivyClient.ExecContext(ctx, query); err != nil {
 			return fmt.Errorf("failed to execute dedupe query: %w", err)
@@ -228,8 +228,8 @@ func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryK
 	}
 
 	// Drop table has to be outside of the function because we need to drop tables with S3Tables API.
-	if err := s.s3TablesAPI.DeleteTable(ctx, castedTempTableID.Namespace(), castedTempTableID.Table()); err != nil {
-		return fmt.Errorf("failed to delete temp table: %w", err)
+	if err := s.s3TablesAPI.DeleteTable(ctx, castedStagingTableID.Namespace(), castedStagingTableID.Table()); err != nil {
+		return fmt.Errorf("failed to delete staging table: %w", err)
 	}
 
 	return nil

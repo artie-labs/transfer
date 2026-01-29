@@ -76,7 +76,7 @@ func (s *Store) SweepTemporaryTables(ctx context.Context, whClient *webhooksclie
 	return shared.Sweep(ctx, s, s.config.TopicConfigs(), whClient, s.dialect().BuildSweepQuery)
 }
 
-func (s *Store) Dedupe(_ context.Context, _ sql.TableIdentifier, _ []string, _ bool) error {
+func (s *Store) Dedupe(_ context.Context, _ sql.TableIdentifier, _ kafkalib.DatabaseAndSchemaPair, _ []string, _ bool) error {
 	return nil // dedupe is not necessary for MySQL
 }
 
