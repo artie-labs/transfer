@@ -19,6 +19,21 @@ type Kafka struct {
 	Password        string `yaml:"password,omitempty"`
 	EnableAWSMSKIAM bool   `yaml:"enableAWSMKSIAM,omitempty"`
 	DisableTLS      bool   `yaml:"disableTLS,omitempty"`
+
+	// WaitForTopics - if true, polls until topics exist before consuming.
+	// This prevents relying on broker auto-creation and allows graceful startup
+	// when topics may not exist yet.
+	WaitForTopics bool `yaml:"waitForTopics,omitempty"`
+
+	// Franz-go fetch tuning options (optional, uses library defaults if not set)
+	// FetchMaxBytes is the maximum bytes per broker per fetch call (default: 50 MiB)
+	FetchMaxBytes int32 `yaml:"fetchMaxBytes,omitempty"`
+	// FetchMaxPartitionBytes is the maximum bytes per partition per fetch (default: 1 MiB)
+	FetchMaxPartitionBytes int32 `yaml:"fetchMaxPartitionBytes,omitempty"`
+	// FetchMinBytes is the minimum bytes the broker waits to accumulate before responding (default: 1 byte)
+	FetchMinBytes int32 `yaml:"fetchMinBytes,omitempty"`
+	// FetchMaxWaitMs is how long the broker waits to accumulate FetchMinBytes in milliseconds (default: 5000ms)
+	FetchMaxWaitMs int32 `yaml:"fetchMaxWaitMs,omitempty"`
 }
 
 func (k *Kafka) Topics() []string {

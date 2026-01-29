@@ -84,7 +84,7 @@ func TestParseValueForArrow(t *testing.T) {
 	}
 	{
 		// Time from string
-		value, err := ParseValueForArrow("12:30:45", typing.Time)
+		value, err := ParseValueForArrow("12:30:45", typing.TimeKindDetails)
 		assert.NoError(t, err)
 
 		// Should be milliseconds since midnight: (12*3600 + 30*60 + 45) * 1000

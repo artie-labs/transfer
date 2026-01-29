@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/encoding/protojson"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/numbers"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -44,7 +45,7 @@ func TestColumnToTableFieldSchema(t *testing.T) {
 	}
 	{
 		// Time
-		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.Time))
+		fieldSchema, err := columnToTableFieldSchema(columns.NewColumn("foo", typing.TimeKindDetails))
 		assert.NoError(t, err)
 		assert.Equal(t, storagepb.TableFieldSchema_TIME, fieldSchema.Type)
 	}
@@ -165,7 +166,7 @@ func TestRowToMessage(t *testing.T) {
 		columns.NewColumn("c_numeric", typing.EDecimal),
 		columns.NewColumn("c_string", typing.String),
 		columns.NewColumn("c_string_decimal", typing.String),
-		columns.NewColumn("c_time", typing.Time),
+		columns.NewColumn("c_time", typing.TimeKindDetails),
 		columns.NewColumn("c_timestamp", typing.TimestampTZ),
 		columns.NewColumn("c_date", typing.Date),
 		columns.NewColumn("c_datetime", typing.TimestampNTZ),
@@ -197,7 +198,7 @@ func TestRowToMessage(t *testing.T) {
 	desc, err := columnsToMessageDescriptor(columns)
 	assert.NoError(t, err)
 
-	message, err := rowToMessage(row, columns, *desc)
+	message, err := rowToMessage(row, columns, *desc, config.Config{})
 	assert.NoError(t, err)
 
 	bytes, err := protojson.Marshal(message)
@@ -226,6 +227,25 @@ func TestRowToMessage(t *testing.T) {
 		"cStruct":        `{"baz":["foo","bar"]}`,
 		"cArray":         []any{"foo", "bar"},
 	}, result)
+}
+
+func TestRowToMessage_EmptyStringFloat(t *testing.T) {
+	cols := []columns.Column{
+		columns.NewColumn("c_float", typing.Float),
+	}
+
+	desc, err := columnsToMessageDescriptor(cols)
+	assert.NoError(t, err)
+
+	message, err := rowToMessage(map[string]any{"c_float": ""}, cols, *desc, config.Config{})
+	assert.NoError(t, err)
+
+	bytes, err := protojson.Marshal(message)
+	assert.NoError(t, err)
+
+	var result map[string]any
+	assert.NoError(t, json.Unmarshal(bytes, &result))
+	assert.Empty(t, result) // Field should not be set when value is empty string
 }
 
 func TestEncodeStructToJSONString(t *testing.T) {

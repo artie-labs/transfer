@@ -16,6 +16,8 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
+	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
+	"github.com/artie-labs/transfer/lib/webhooksutil"
 )
 
 const (
@@ -24,7 +26,7 @@ const (
 	heartbeatsInterval     = 2 * time.Minute
 )
 
-func Merge(ctx context.Context, dest destination.Destination, tableData *optimization.TableData, opts types.MergeOpts) error {
+func Merge(ctx context.Context, dest destination.Destination, tableData *optimization.TableData, opts types.MergeOpts, whClient *webhooksclient.Client) error {
 	if tableData.ShouldSkipUpdate() {
 		return nil
 	}
@@ -67,15 +69,16 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 		return fmt.Errorf("failed to merge columns from destination: %w for table %q", err, tableData.Name())
 	}
 
-	temporaryTableID := TempTableIDWithSuffix(dest.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name()), tableData.TempTableSuffix())
+	temporaryTableID := TempTableIDWithSuffix(dest.IdentifierFor(tableData.TopicConfig().BuildStagingDatabaseAndSchemaPair(), tableData.Name()), tableData.TempTableSuffix())
 
 	config := dest.GetConfig()
 	var subQuery string
 	if config.IsStagingTableReuseEnabled() {
 		if stagingManager, ok := dest.(ReusableStagingTableManager); ok {
 			stagingTableID := dest.IdentifierFor(
-				tableData.TopicConfig().BuildDatabaseAndSchemaPair(),
+				tableData.TopicConfig().BuildStagingDatabaseAndSchemaPair(),
 				GenerateReusableStagingTableName(
+					tableData.TopicConfig().ReusableStagingTableNamePrefix(),
 					tableID.Table(),
 					config.GetStagingTableSuffix(),
 				),
@@ -102,6 +105,24 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 		subQuery = temporaryTableID.FullyQualifiedName()
 	}
 
+	var colsToBackfill []string
+	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
+		if col.ShouldSkip() || slices.Contains(constants.ArtieColumns, col.Name()) {
+			continue
+		}
+		if col.ShouldBackfill() {
+			colsToBackfill = append(colsToBackfill, col.Name())
+		}
+	}
+
+	if len(colsToBackfill) > 0 {
+		whClient.SendEvent(ctx, webhooksutil.EventBackFillStarted, map[string]any{
+			"table":   tableData.Name(),
+			"columns": colsToBackfill,
+			"count":   len(colsToBackfill),
+		})
+	}
+
 	// Now iterate over all the in-memory cols and see which ones require a backfill.
 	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
 		if col.ShouldSkip() {
@@ -116,13 +137,11 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 		for attempts := 0; attempts < backfillMaxRetries; attempts++ {
 			backfillErr = BackfillColumn(ctx, dest, col, tableID)
 			if backfillErr == nil {
-				err = tableConfig.UpsertColumn(col.Name(), columns.UpsertColumnArg{
+				if err := tableConfig.UpsertColumn(col.Name(), columns.UpsertColumnArg{
 					Backfilled: typing.ToPtr(true),
-				})
-				if err != nil {
-					return fmt.Errorf("failed to update column backfilled status: %w", err)
+				}); err != nil {
+					backfillErr = fmt.Errorf("failed to update column backfilled status: %w", err)
 				}
-
 				break
 			}
 
@@ -137,8 +156,22 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 		}
 
 		if backfillErr != nil {
+			whClient.SendEvent(ctx, webhooksutil.EventBackFillFailed, map[string]any{
+				"table":         tableData.Name(),
+				"column":        col.Name(),
+				"default_value": col.DefaultValue(),
+				"error":         backfillErr.Error(),
+			})
 			return fmt.Errorf("failed to backfill col: %s, default value: %v, err: %w", col.Name(), col.DefaultValue(), backfillErr)
 		}
+	}
+
+	if len(colsToBackfill) > 0 {
+		whClient.SendEvent(ctx, webhooksutil.EventBackFillCompleted, map[string]any{
+			"table":   tableData.Name(),
+			"columns": colsToBackfill,
+			"count":   len(colsToBackfill),
+		})
 	}
 
 	if subQuery == "" {

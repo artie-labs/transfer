@@ -11,8 +11,18 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func GenerateReusableStagingTableName(baseTableName, suffix string) string {
+func GenerateReusableStagingTableName(optionalPrefix, baseTableName, suffix string) string {
+	if optionalPrefix != "" {
+		return fmt.Sprintf("%s__%s_%s_%s", optionalPrefix, baseTableName, constants.ArtiePrefix, suffix)
+	}
 	return fmt.Sprintf("%s_%s_%s", baseTableName, constants.ArtiePrefix, suffix)
+}
+
+func GenerateMSMTableName(optionalPrefix, baseTableName string) string {
+	if optionalPrefix != "" {
+		return fmt.Sprintf("%s_%s__%s_msm", constants.ArtiePrefix, optionalPrefix, baseTableName)
+	}
+	return fmt.Sprintf("%s_%s_msm", constants.ArtiePrefix, baseTableName)
 }
 
 type ReusableStagingTableManager interface {

@@ -1,17 +1,17 @@
 package util
 
 import (
-	"encoding/json"
 	"testing"
 	"time"
 
-	"github.com/artie-labs/transfer/lib/debezium"
-
 	"github.com/stretchr/testify/assert"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/debezium"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
 func TestSource_GetOptionalSchema(t *testing.T) {
@@ -59,7 +59,7 @@ func TestSource_GetOptionalSchema(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	optionalSchema, err := schemaEventPayload.GetOptionalSchema()
+	optionalSchema, err := schemaEventPayload.GetOptionalSchema(config.SharedDestinationSettings{})
 	assert.NoError(t, err)
 
 	value, ok := optionalSchema["last_modified"]
@@ -68,13 +68,19 @@ func TestSource_GetOptionalSchema(t *testing.T) {
 
 	cols, err := schemaEventPayload.GetColumns(nil)
 	assert.NoError(t, err)
-	assert.Equal(t, 6, len(cols.GetColumns()))
+	assert.Equal(t, 6, len(cols))
 
-	col, ok := cols.GetColumn("boolean_column")
-	assert.True(t, ok)
-	assert.Equal(t, false, col.DefaultValue())
+	var booleanCol *columns.Column
+	for i := range cols {
+		if cols[i].Name() == "boolean_column" {
+			booleanCol = &cols[i]
+			break
+		}
+	}
+	assert.NotNil(t, booleanCol)
+	assert.Equal(t, false, booleanCol.DefaultValue())
 
-	for _, _col := range cols.GetColumns() {
+	for _, _col := range cols {
 		// All the other columns do not have a default value.
 		if _col.Name() != "boolean_column" {
 			assert.Nil(t, _col.DefaultValue(), _col.Name())

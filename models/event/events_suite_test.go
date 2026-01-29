@@ -6,7 +6,6 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/mocks"
-	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/models"
 
 	"github.com/stretchr/testify/suite"
@@ -31,7 +30,7 @@ func (e *EventsTestSuite) SetupTest() {
 
 	fakeEvent := &mocks.FakeEvent{}
 	fakeEvent.GetDataReturns(map[string]any{constants.DeleteColumnMarker: false, constants.OnlySetDeleteColumnMarker: false}, nil)
-	fakeEvent.GetColumnsReturns(&columns.Columns{}, nil)
+	fakeEvent.GetColumnsReturns(nil, nil)
 	fakeEvent.GetTableNameReturns("foo")
 	e.fakeEvent = fakeEvent
 }

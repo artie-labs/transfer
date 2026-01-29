@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/maputil"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -12,7 +13,7 @@ import (
 )
 
 func MSSQLCreateTable(ctx context.Context, dest destination.Destination, tableID sql.TableIdentifier) error {
-	query := dest.Dialect().BuildCreateTableQuery(tableID, false, []string{
+	query := dest.Dialect().BuildCreateTableQuery(tableID, false, config.Replication, []string{
 		"c_char CHAR",
 		"c_char_5 CHAR(5)",
 		"c_varchar VARCHAR",
@@ -208,7 +209,7 @@ func MSSQLAssertColumns(ctx context.Context, dest destination.Destination, table
 				return err
 			}
 		case "c_time":
-			if err := assertEqual("c_time", col.KindDetails.Kind, typing.Time.Kind); err != nil {
+			if err := assertEqual("c_time", col.KindDetails.Kind, typing.TimeKindDetails.Kind); err != nil {
 				return err
 			}
 		case "c_date":

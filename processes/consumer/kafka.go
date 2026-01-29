@@ -16,17 +16,16 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
+	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
+	"github.com/artie-labs/transfer/lib/webhooksutil"
 	"github.com/artie-labs/transfer/models"
 )
 
-func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client) {
+func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, whClient *webhooksclient.Client) {
 	tcFmtMap := NewTcFmtMap()
 	var topics []string
 	for _, topicConfig := range cfg.Kafka.TopicConfigs {
-		tcFmtMap.Add(topicConfig.Topic, TopicConfigFormatter{
-			tc:     *topicConfig,
-			Format: format.GetFormatParser(topicConfig.CDCFormat, topicConfig.Topic),
-		})
+		tcFmtMap.Add(topicConfig.Topic, NewTopicConfigFormatter(*topicConfig, format.GetFormatParser(topicConfig.CDCFormat, topicConfig.Topic)))
 		topics = append(topics, topicConfig.Topic)
 	}
 
@@ -37,12 +36,18 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 		wg.Add(1)
 		go func(topic string) {
 			defer wg.Done()
-			for {
-				kafkaConsumer, err := kafkalib.GetConsumerFromContext(ctx, topic)
-				if err != nil {
-					logger.Fatal("Failed to get consumer from context", slog.Any("err", err))
-				}
+			kafkaConsumer, err := kafkalib.GetConsumerFromContext(ctx, topic)
+			if err != nil {
+				logger.Fatal("Failed to get consumer from context", slog.Any("err", err))
+			}
 
+			if cfg.Kafka.WaitForTopics {
+				if err := kafkaConsumer.WaitForTopic(ctx); err != nil {
+					logger.Fatal("Failed waiting for topic to exist", slog.Any("err", err), slog.String("topic", topic))
+				}
+			}
+
+			for {
 				err = kafkaConsumer.FetchMessageAndProcess(ctx, func(msg artie.Message) error {
 					if len(msg.Value()) == 0 {
 						slog.Debug("Found a tombstone message, skipping...", artie.BuildLogFields(msg)...)
@@ -53,15 +58,21 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 						Msg:                    msg,
 						GroupID:                kafkaConsumer.GetGroupID(),
 						TopicToConfigFormatMap: tcFmtMap,
+						WhClient:               whClient,
 					}
 
 					tableID, err := args.process(ctx, cfg, inMemDB, dest, metricsClient)
 					if err != nil {
+						whClient.SendEvent(ctx, webhooksutil.UnableToReplicate, map[string]any{
+							"error":   "Failed to process message",
+							"details": err.Error(),
+							"topic":   msg.Topic(),
+						})
 						logger.Fatal("Failed to process message", slog.Any("err", err), slog.String("topic", msg.Topic()))
 					}
 
-					metrics.EmitIngestionLag(msg, metricsClient, cfg.Mode, kafkaConsumer.GetGroupID(), tableID.Table)
-					metrics.EmitRowLag(msg, metricsClient, cfg.Mode, kafkaConsumer.GetGroupID(), tableID.Table)
+					metrics.EmitIngestionLag(msg, metricsClient, cfg.Mode, kafkaConsumer.GetGroupID(), tableID.Schema, tableID.Table)
+					metrics.EmitRowLag(msg, metricsClient, cfg.Mode, kafkaConsumer.GetGroupID(), tableID.Schema, tableID.Table)
 
 					return nil
 				})

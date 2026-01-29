@@ -35,7 +35,7 @@ func TestGetStringConverter(t *testing.T) {
 	}
 	{
 		// Time
-		converter, err := GetStringConverter(typing.Time, GetStringConverterOpts{})
+		converter, err := GetStringConverter(typing.TimeKindDetails, GetStringConverterOpts{})
 		assert.NoError(t, err)
 		assert.IsType(t, TimeConverter{}, converter)
 	}
@@ -93,7 +93,12 @@ func TestBooleanConverter_Convert(t *testing.T) {
 	{
 		// Not boolean
 		_, err := BooleanConverter{}.Convert("foo")
-		assert.ErrorContains(t, err, `failed to cast colVal as boolean, colVal: 'foo', type: string`)
+		assert.ErrorContains(t, err, `unexpected value: 'foo', type: string`)
+
+		// Should be a ParseError with UnexpectedBooleanValue kind
+		parseError, ok := typing.BuildParseError(err)
+		assert.True(t, ok)
+		assert.Equal(t, typing.InvalidBooleanValue, parseError.GetKind())
 	}
 	{
 		// True
@@ -134,12 +139,39 @@ func TestFloatConverter_Convert(t *testing.T) {
 		// Unexpected type
 		_, err := FloatConverter{}.Convert(true)
 		assert.ErrorContains(t, err, `unexpected value: 'true', type: bool`)
+
+		// Should be a ParseError with UnexpectedValue kind
+		parseError, ok := typing.BuildParseError(err)
+		assert.True(t, ok)
+		assert.Equal(t, typing.UnexpectedValue, parseError.GetKind())
+	}
+	{
+		// Invalid string that can't be parsed as a float
+		_, err := FloatConverter{}.Convert("tNLc2OHz")
+		assert.ErrorContains(t, err, `unexpected value: 'tNLc2OHz', type: string`)
+
+		// Should be a ParseError with UnexpectedValue kind
+		parseError, ok := typing.BuildParseError(err)
+		assert.True(t, ok)
+		assert.Equal(t, typing.UnexpectedValue, parseError.GetKind())
 	}
 	{
 		// String
 		val, err := FloatConverter{}.Convert("123.45")
 		assert.NoError(t, err)
 		assert.Equal(t, "123.45", val)
+	}
+	{
+		// String with scientific notation
+		val, err := FloatConverter{}.Convert("1.23e10")
+		assert.NoError(t, err)
+		assert.Equal(t, "1.23e10", val)
+	}
+	{
+		// Negative string
+		val, err := FloatConverter{}.Convert("-123.45")
+		assert.NoError(t, err)
+		assert.Equal(t, "-123.45", val)
 	}
 	{
 		// Float32
@@ -223,6 +255,46 @@ func TestDecimalConverter_Convert(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, "42", val)
 		}
+	}
+	{
+		// Valid numeric strings
+		for _, input := range []string{"123.45", "-123.45", "1.23e10", "42"} {
+			val, err := DecimalConverter{}.Convert(input)
+			assert.NoError(t, err)
+			assert.Equal(t, input, val)
+		}
+	}
+	{
+		// Large decimal strings that exceed float64 range but are valid for NUMERIC
+		// These would fail with strconv.ParseFloat (ErrRange) but should work with apd.NewFromString
+		for _, input := range []string{
+			"99999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999", // 309 nines
+			"123456789012345678901234567890.123456789012345678901234567890", // high precision
+		} {
+			val, err := DecimalConverter{}.Convert(input)
+			assert.NoError(t, err, "input: %s", input)
+			assert.Equal(t, input, val)
+		}
+	}
+	{
+		// Invalid string that can't be parsed as a number
+		_, err := DecimalConverter{}.Convert("tNLc2OHz")
+		assert.ErrorContains(t, err, `unexpected value: 'tNLc2OHz', type: string`)
+
+		// Should be a ParseError with UnexpectedValue kind
+		parseError, ok := typing.BuildParseError(err)
+		assert.True(t, ok)
+		assert.Equal(t, typing.UnexpectedValue, parseError.GetKind())
+	}
+	{
+		// Unexpected type
+		_, err := DecimalConverter{}.Convert(true)
+		assert.ErrorContains(t, err, `unexpected value: 'true', type: bool`)
+
+		// Should be a ParseError with UnexpectedValue kind
+		parseError, ok := typing.BuildParseError(err)
+		assert.True(t, ok)
+		assert.Equal(t, typing.UnexpectedValue, parseError.GetKind())
 	}
 }
 

@@ -13,9 +13,10 @@ import (
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
+	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
 )
 
-func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
+func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client) (bool, error) {
 	var additionalEqualityStrings []string
 	if tableData.TopicConfig().BigQueryPartitionSettings != nil {
 		distinctDates, err := buildDistinctDates(tableData.TopicConfig().BigQueryPartitionSettings.PartitionField, tableData.Rows(), s.Dialect().ReservedColumnNames())
@@ -23,12 +24,14 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (b
 			return false, fmt.Errorf("failed to generate distinct dates: %w", err)
 		}
 
-		mergeString, err := generateMergeString(tableData.TopicConfig().BigQueryPartitionSettings, s.Dialect(), distinctDates)
-		if err != nil {
-			return false, fmt.Errorf("failed to generate merge string: %w", err)
-		}
+		if len(distinctDates) > 0 {
+			mergeString, err := generateMergeString(tableData.TopicConfig().BigQueryPartitionSettings, s.Dialect(), distinctDates)
+			if err != nil {
+				return false, fmt.Errorf("failed to generate merge string: %w", err)
+			}
 
-		additionalEqualityStrings = []string{mergeString}
+			additionalEqualityStrings = []string{mergeString}
+		}
 	}
 
 	if len(tableData.TopicConfig().AdditionalMergePredicates) > 0 {
@@ -45,7 +48,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (b
 		ColumnSettings:            s.config.SharedDestinationSettings.ColumnSettings,
 		// BigQuery has DDL quotas.
 		RetryColBackfill: true,
-	})
+	}, whClient)
 	if err != nil {
 		return false, fmt.Errorf("failed to merge: %w", err)
 	}

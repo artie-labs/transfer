@@ -18,12 +18,15 @@ import (
 	"github.com/artie-labs/transfer/lib/environ"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/sql"
+	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
 )
 
 func init() {
 	// Snowflake's logger is noisy, disable it since we're going to use our own.
 	_ = gosnowflake.GetLogger().SetLogLevel("fatal")
 }
+
+var _dialect = dialect.SnowflakeDialect{}
 
 type Store struct {
 	db.Store
@@ -71,8 +74,8 @@ func (s *Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier,
 	}.GetTableConfig(ctx)
 }
 
-func (s *Store) SweepTemporaryTables(ctx context.Context) error {
-	return shared.Sweep(ctx, s, s.config.TopicConfigs(), s.dialect().BuildSweepQuery)
+func (s *Store) SweepTemporaryTables(ctx context.Context, whClient *webhooksclient.Client) error {
+	return shared.Sweep(ctx, s, s.config.TopicConfigs(), whClient, s.dialect().BuildSweepQuery)
 }
 
 func (s *Store) Dialect() sql.Dialect {
@@ -80,7 +83,7 @@ func (s *Store) Dialect() sql.Dialect {
 }
 
 func (s *Store) dialect() dialect.SnowflakeDialect {
-	return dialect.SnowflakeDialect{}
+	return _dialect
 }
 
 func (s *Store) GetConfigMap() *types.DestinationTableConfigMap {
@@ -93,10 +96,9 @@ func (s *Store) GetConfigMap() *types.DestinationTableConfigMap {
 
 // Dedupe takes a table and will remove duplicates based on the primary key(s).
 // These queries are inspired and modified from: https://stackoverflow.com/a/71515946
-func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
-	stagingTableID := shared.TempTableID(tableID)
+func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kafkalib.DatabaseAndSchemaPair, primaryKeys []string, includeArtieUpdatedAt bool) error {
+	stagingTableID := shared.BuildStagingTableID(s, pair, tableID)
 	dedupeQueries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt)
-
 	if _, err := destination.ExecContextStatements(ctx, s, dedupeQueries); err != nil {
 		return fmt.Errorf("failed to dedupe: %w", err)
 	}
@@ -179,7 +181,7 @@ func (s *Store) ensureExternalStageExists(ctx context.Context) error {
 		return err
 	}
 
-	for _, dbAndSchemaPair := range kafkalib.GetUniqueDatabaseAndSchemaPairs(s.config.TopicConfigs()) {
+	for _, dbAndSchemaPair := range kafkalib.GetUniqueStagingDatabaseAndSchemaPairs(s.config.TopicConfigs()) {
 		describeQuery := s.dialect().BuildDescribeStageQuery(dbAndSchemaPair.Database, dbAndSchemaPair.Schema, s.config.Snowflake.ExternalStage.Name)
 		if _, err := s.QueryContext(ctx, describeQuery); err != nil {
 			if strings.Contains(err.Error(), "does not exist") {

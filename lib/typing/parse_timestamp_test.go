@@ -66,6 +66,17 @@ func TestParseTimestampTZFromAny(t *testing.T) {
 		}
 	}
 	{
+		// String - date only (fallback to parseDateFromString)
+		value, err := ParseTimestampTZFromAny("2024-09-19")
+		assert.NoError(t, err)
+		assert.Equal(t, "2024-09-19T00:00:00Z", value.Format(time.RFC3339Nano))
+	}
+	{
+		// String - invalid date format
+		_, err := ParseTimestampTZFromAny("not-a-date")
+		assert.ErrorContains(t, err, "unsupported value")
+	}
+	{
 		// time.Time
 		value, err := ParseTimestampTZFromAny(time.Date(2024, 9, 19, 16, 5, 18, 123_456_789, time.UTC))
 		assert.NoError(t, err)
@@ -94,6 +105,32 @@ func TestParseTimestampTZFromAny(t *testing.T) {
 		value, err := ParseTimestampTZFromAny("2023-07-20T11:01:33.159+00:00")
 		assert.NoError(t, err)
 		assert.Equal(t, "2023-07-20T11:01:33.159Z", value.Format(time.RFC3339Nano))
+	}
+	{
+		// int64 - milliseconds
+		value, err := ParseTimestampTZFromAny(int64(1703123456789))
+		assert.NoError(t, err)
+		assert.Equal(t, "2023-12-21T01:50:56.789Z", value.UTC().Format(time.RFC3339Nano))
+	}
+	{
+		// float64 - whole milliseconds (no fractional part)
+		value, err := ParseTimestampTZFromAny(float64(1703123456789))
+		assert.NoError(t, err)
+		assert.Equal(t, "2023-12-21T01:50:56.789Z", value.UTC().Format(time.RFC3339Nano))
+	}
+	{
+		// float64 - milliseconds with fractional microseconds
+		value, err := ParseTimestampTZFromAny(float64(1703123456789.123))
+		assert.NoError(t, err)
+		// Truncate to microseconds since float64 may have small nanosecond inaccuracies
+		assert.Equal(t, "2023-12-21T01:50:56.789123Z", value.UTC().Truncate(time.Microsecond).Format("2006-01-02T15:04:05.000000Z"))
+	}
+	{
+		// float64 - milliseconds with half-millisecond precision (exact in float64)
+		value, err := ParseTimestampTZFromAny(float64(1703123456789.5))
+		assert.NoError(t, err)
+		// 0.5 ms = 500 microseconds = 500,000 nanoseconds
+		assert.Equal(t, "2023-12-21T01:50:56.7895Z", value.UTC().Format(time.RFC3339Nano))
 	}
 }
 
@@ -125,5 +162,31 @@ func TestParseTimestampNTZFromAny(t *testing.T) {
 		ts, err := ParseTimestampNTZFromAny(tsString)
 		assert.NoError(t, err)
 		assert.Equal(t, tsString, ts.Format(RFC3339NoTZ))
+	}
+	{
+		// int64 - milliseconds
+		value, err := ParseTimestampNTZFromAny(int64(1703123456789))
+		assert.NoError(t, err)
+		assert.Equal(t, "2023-12-21T01:50:56.789", value.UTC().Format(RFC3339NoTZ))
+	}
+	{
+		// float64 - whole milliseconds (no fractional part)
+		value, err := ParseTimestampNTZFromAny(float64(1703123456789))
+		assert.NoError(t, err)
+		assert.Equal(t, "2023-12-21T01:50:56.789", value.UTC().Format(RFC3339NoTZ))
+	}
+	{
+		// float64 - milliseconds with fractional microseconds
+		value, err := ParseTimestampNTZFromAny(float64(1703123456789.123))
+		assert.NoError(t, err)
+		// Truncate to microseconds since float64 may have small nanosecond inaccuracies
+		assert.Equal(t, "2023-12-21T01:50:56.789123", value.UTC().Truncate(time.Microsecond).Format(RFC3339NoTZ))
+	}
+	{
+		// float64 - milliseconds with half-millisecond precision (exact in float64)
+		value, err := ParseTimestampNTZFromAny(float64(1703123456789.5))
+		assert.NoError(t, err)
+		// 0.5 ms = 500 microseconds = 500,000 nanoseconds
+		assert.Equal(t, "2023-12-21T01:50:56.7895", value.UTC().Format(RFC3339NoTZ))
 	}
 }

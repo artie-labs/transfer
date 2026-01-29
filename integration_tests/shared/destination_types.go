@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/maputil"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -12,7 +13,7 @@ import (
 )
 
 func RedshiftCreateTable(ctx context.Context, dest destination.Destination, tableID sql.TableIdentifier) error {
-	query := dest.Dialect().BuildCreateTableQuery(tableID, false, []string{
+	query := dest.Dialect().BuildCreateTableQuery(tableID, false, config.Replication, []string{
 		"c_int2 INT2",
 		"c_int4 INT4",
 		"c_int8 INT8",
@@ -121,7 +122,7 @@ func RedshiftAssertColumns(ctx context.Context, dest destination.Destination, ta
 				return err
 			}
 		case "c_time":
-			if err := assertEqual("c_time", col.KindDetails.Kind, typing.Time.Kind); err != nil {
+			if err := assertEqual("c_time", col.KindDetails.Kind, typing.TimeKindDetails.Kind); err != nil {
 				return err
 			}
 		case "c_timestamp_ntz":

@@ -47,7 +47,7 @@ func (RedshiftDialect) DataTypeForKind(kd typing.KindDetails, _ bool, _ config.S
 		return "BOOLEAN NULL", nil
 	case typing.Date.Kind:
 		return "DATE", nil
-	case typing.Time.Kind:
+	case typing.TimeKindDetails.Kind:
 		return "TIME", nil
 	case typing.TimestampNTZ.Kind:
 		return "TIMESTAMP WITHOUT TIME ZONE", nil
@@ -109,7 +109,7 @@ func (RedshiftDialect) KindForDataType(rawType string) (typing.KindDetails, erro
 	case "timestamp with time zone":
 		return typing.TimestampTZ, nil
 	case "time without time zone":
-		return typing.Time, nil
+		return typing.TimeKindDetails, nil
 	case "date":
 		return typing.Date, nil
 	case "boolean":

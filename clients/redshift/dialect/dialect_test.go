@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -37,12 +38,12 @@ func TestRedshiftDialect_BuildCreateTableQuery(t *testing.T) {
 	// Temporary:
 	assert.Equal(t,
 		`CREATE TABLE IF NOT EXISTS {TABLE} ({PART_1},{PART_2});`,
-		RedshiftDialect{}.BuildCreateTableQuery(fakeTableID, true, []string{"{PART_1}", "{PART_2}"}),
+		RedshiftDialect{}.BuildCreateTableQuery(fakeTableID, true, config.Replication, []string{"{PART_1}", "{PART_2}"}),
 	)
 	// Not temporary:
 	assert.Equal(t,
 		`CREATE TABLE IF NOT EXISTS {TABLE} ({PART_1},{PART_2});`,
-		RedshiftDialect{}.BuildCreateTableQuery(fakeTableID, false, []string{"{PART_1}", "{PART_2}"}),
+		RedshiftDialect{}.BuildCreateTableQuery(fakeTableID, false, config.Replication, []string{"{PART_1}", "{PART_2}"}),
 	)
 }
 
@@ -217,7 +218,7 @@ func getBasicColumnsForTest(compositeKey bool) result {
 	textToastCol := columns.NewColumn("toast_text", typing.String)
 	textToastCol.ToastColumn = true
 
-	var cols columns.Columns
+	cols := columns.NewColumns(nil)
 	cols.AddColumn(idCol)
 	cols.AddColumn(emailCol)
 	cols.AddColumn(columns.NewColumn("first_name", typing.String))

@@ -18,16 +18,19 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/retry"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/values"
+	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
 )
 
 type Store struct {
 	db.Store
-	volume    string
-	cfg       config.Config
-	configMap *types.DestinationTableConfigMap
+	volume      string
+	cfg         config.Config
+	configMap   *types.DestinationTableConfigMap
+	retryConfig retry.RetryConfig
 }
 
 func (s Store) GetConfig() config.Config {
@@ -48,16 +51,16 @@ func (s Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error
 	return nil
 }
 
-func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
-	if err := shared.Merge(ctx, s, tableData, types.MergeOpts{}); err != nil {
+func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client) (bool, error) {
+	if err := shared.Merge(ctx, s, tableData, types.MergeOpts{}, whClient); err != nil {
 		return false, fmt.Errorf("failed to merge: %w", err)
 	}
 
 	return true, nil
 }
 
-func (s Store) Append(ctx context.Context, tableData *optimization.TableData, _ bool) error {
-	return shared.Append(ctx, s, tableData, types.AdditionalSettings{})
+func (s Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, _ bool) error {
+	return shared.Append(ctx, s, tableData, whClient, types.AdditionalSettings{})
 }
 
 func (s Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, table string) sql.TableIdentifier {
@@ -72,8 +75,8 @@ func (s Store) dialect() dialect.DatabricksDialect {
 	return dialect.DatabricksDialect{}
 }
 
-func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
-	stagingTableID := shared.TempTableID(tableID)
+func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kafkalib.DatabaseAndSchemaPair, primaryKeys []string, includeArtieUpdatedAt bool) error {
+	stagingTableID := shared.BuildStagingTableID(s, pair, tableID)
 	defer func() {
 		// Drop the staging table once we're done with the dedupe.
 		_ = ddl.DropTemporaryTable(ctx, s, stagingTableID, false)
@@ -128,7 +131,11 @@ func (s Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.Ta
 
 	ctx = driverctx.NewContextWithStagingInfo(ctx, []string{"/var", "tmp"})
 	putCommand := fmt.Sprintf("PUT '%s' INTO '%s' OVERWRITE", fp, file.DBFSFilePath())
-	if _, err = s.ExecContext(ctx, putCommand); err != nil {
+
+	if err = retry.WithRetries(s.retryConfig, func(_ int, _ error) error {
+		_, err := s.ExecContext(ctx, putCommand)
+		return err
+	}); err != nil {
 		return fmt.Errorf("failed to run PUT INTO for temporary table: %w", err)
 	}
 
@@ -195,12 +202,11 @@ func (s Store) writeTemporaryTableFile(tableData *optimization.TableData, fileNa
 	return file.FilePath, nil
 }
 
-func (s Store) SweepTemporaryTables(ctx context.Context) error {
-	tcs := s.cfg.TopicConfigs()
+func (s Store) SweepTemporaryTables(ctx context.Context, whClient *webhooksclient.Client) error {
 	ctx = driverctx.NewContextWithStagingInfo(ctx, []string{"/var", "tmp"})
 	// Remove the temporary files from volumes
-	for _, tc := range tcs {
-		rows, err := s.QueryContext(ctx, s.dialect().BuildSweepFilesFromVolumesQuery(tc.Database, tc.Schema, s.volume))
+	for _, dbAndSchema := range kafkalib.GetUniqueStagingDatabaseAndSchemaPairs(s.cfg.TopicConfigs()) {
+		rows, err := s.QueryContext(ctx, s.dialect().BuildSweepFilesFromVolumesQuery(dbAndSchema.Database, dbAndSchema.Schema, s.volume))
 		if err != nil {
 			return fmt.Errorf("failed to sweep files from volumes: %w", err)
 		}
@@ -225,7 +231,7 @@ func (s Store) SweepTemporaryTables(ctx context.Context) error {
 	}
 
 	// Delete the temporary tables
-	return shared.Sweep(ctx, s, tcs, s.dialect().BuildSweepQuery)
+	return shared.Sweep(ctx, s, s.cfg.TopicConfigs(), whClient, s.dialect().BuildSweepQuery)
 }
 
 func LoadStore(cfg config.Config) (Store, error) {
@@ -234,10 +240,16 @@ func LoadStore(cfg config.Config) (Store, error) {
 		return Store{}, err
 	}
 
+	retryCfg, err := retry.NewJitterRetryConfig(1_000, 10_000, 5, retry.AlwaysRetryNonCancelled)
+	if err != nil {
+		return Store{}, fmt.Errorf("failed to create retry config: %w", err)
+	}
+
 	return Store{
-		Store:     store,
-		cfg:       cfg,
-		volume:    cfg.Databricks.Volume,
-		configMap: &types.DestinationTableConfigMap{},
+		Store:       store,
+		cfg:         cfg,
+		volume:      cfg.Databricks.Volume,
+		configMap:   &types.DestinationTableConfigMap{},
+		retryConfig: retryCfg,
 	}, nil
 }

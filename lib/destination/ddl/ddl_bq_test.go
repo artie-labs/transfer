@@ -36,7 +36,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuery() {
 		"start":  typing.String,
 	}
 
-	var cols columns.Columns
+	cols := columns.NewColumns(nil)
 	for colName, kindDetails := range colNameToKindDetailsMap {
 		cols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
@@ -92,7 +92,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumns() {
 
 	newColsLen := len(newCols)
 	existingColsLen := len(existingColNameToKindDetailsMap)
-	var existingCols columns.Columns
+	existingCols := columns.NewColumns(nil)
 	for colName, kindDetails := range existingColNameToKindDetailsMap {
 		existingCols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
@@ -141,7 +141,7 @@ func (d *DDLTestSuite) TestAlterTableAddColumnsSomeAlreadyExist() {
 	}
 
 	existingColsLen := len(existingColNameToKindDetailsMap)
-	var existingCols columns.Columns
+	existingCols := columns.NewColumns(nil)
 	for colName, kindDetails := range existingColNameToKindDetailsMap {
 		existingCols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}
@@ -190,7 +190,7 @@ func (d *DDLTestSuite) TestAlterTableDropColumnsBigQuerySafety() {
 		"bar": typing.String,
 	}
 
-	var cols columns.Columns
+	cols := columns.NewColumns(nil)
 	for colName, kindDetails := range columnNameToKindDetailsMap {
 		cols.AddColumn(columns.NewColumn(colName, kindDetails))
 	}

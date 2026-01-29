@@ -8,10 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetUniqueDatabaseAndSchemaPairs(t *testing.T) {
+func TestGetUniqueStagingDatabaseAndSchemaPairs(t *testing.T) {
 	{
 		// No topic configs
-		assert.Empty(t, GetUniqueDatabaseAndSchemaPairs(nil))
+		assert.Empty(t, GetUniqueStagingDatabaseAndSchemaPairs(nil))
 	}
 	{
 		// 1 topic config
@@ -22,9 +22,9 @@ func TestGetUniqueDatabaseAndSchemaPairs(t *testing.T) {
 			},
 		}
 
-		actual := GetUniqueDatabaseAndSchemaPairs(tcs)
+		actual := GetUniqueStagingDatabaseAndSchemaPairs(tcs)
 		assert.Len(t, actual, 1)
-		assert.Equal(t, tcs[0].BuildDatabaseAndSchemaPair(), actual[0])
+		assert.Equal(t, tcs[0].BuildStagingDatabaseAndSchemaPair(), actual[0])
 	}
 	{
 		// 2 topic configs (both the same)
@@ -39,9 +39,9 @@ func TestGetUniqueDatabaseAndSchemaPairs(t *testing.T) {
 			},
 		}
 
-		actual := GetUniqueDatabaseAndSchemaPairs(tcs)
+		actual := GetUniqueStagingDatabaseAndSchemaPairs(tcs)
 		assert.Len(t, actual, 1)
-		assert.Equal(t, tcs[0].BuildDatabaseAndSchemaPair(), actual[0])
+		assert.Equal(t, tcs[0].BuildStagingDatabaseAndSchemaPair(), actual[0])
 	}
 	{
 		// 3 topic configs (2 the same)
@@ -60,12 +60,158 @@ func TestGetUniqueDatabaseAndSchemaPairs(t *testing.T) {
 			},
 		}
 
-		actual := GetUniqueDatabaseAndSchemaPairs(tcs)
+		actual := GetUniqueStagingDatabaseAndSchemaPairs(tcs)
 		assert.Len(t, actual, 2)
 		assert.ElementsMatch(t, []DatabaseAndSchemaPair{
-			tcs[0].BuildDatabaseAndSchemaPair(),
-			tcs[2].BuildDatabaseAndSchemaPair(),
+			tcs[0].BuildStagingDatabaseAndSchemaPair(),
+			tcs[2].BuildStagingDatabaseAndSchemaPair(),
 		}, actual)
+	}
+	{
+		// Topic configs with StagingSchema specified
+		tcs := []*TopicConfig{
+			{
+				Database:      "db",
+				Schema:        "public",
+				StagingSchema: "staging",
+			},
+			{
+				Database:      "db",
+				Schema:        "other",
+				StagingSchema: "staging",
+			},
+			{
+				Database: "db",
+				Schema:   "staging", // Same as staging schema above, no explicit StagingSchema
+			},
+		}
+
+		actual := GetUniqueStagingDatabaseAndSchemaPairs(tcs)
+		// All three should resolve to the same staging schema
+		assert.Len(t, actual, 1)
+		assert.Equal(t, DatabaseAndSchemaPair{Database: "db", Schema: "staging"}, actual[0])
+	}
+}
+
+func TestGetAllUniqueSchemas(t *testing.T) {
+	{
+		// No topic configs
+		assert.Empty(t, GetAllUniqueSchemas(nil))
+	}
+	{
+		// Single schema, no staging schema - returns just the destination schema
+		tcs := []*TopicConfig{
+			{Database: "db", Schema: "public"},
+		}
+		assert.Equal(t, []string{"public"}, GetAllUniqueSchemas(tcs))
+	}
+	{
+		// Schema and different StagingSchema - returns both
+		tcs := []*TopicConfig{
+			{Database: "db", Schema: "public", StagingSchema: "staging"},
+		}
+		actual := GetAllUniqueSchemas(tcs)
+		assert.Len(t, actual, 2)
+		assert.ElementsMatch(t, []string{"public", "staging"}, actual)
+	}
+	{
+		// Multiple topic configs with overlapping schemas
+		tcs := []*TopicConfig{
+			{Database: "db", Schema: "public", StagingSchema: "staging"},
+			{Database: "db", Schema: "private", StagingSchema: "staging"}, // staging is duplicate
+		}
+		actual := GetAllUniqueSchemas(tcs)
+		assert.Len(t, actual, 3)
+		assert.ElementsMatch(t, []string{"public", "private", "staging"}, actual)
+	}
+	{
+		// Staging schema equals destination schema for some configs
+		tcs := []*TopicConfig{
+			{Database: "db", Schema: "public"},                            // staging falls back to "public"
+			{Database: "db", Schema: "private", StagingSchema: "staging"}, // different staging
+		}
+		actual := GetAllUniqueSchemas(tcs)
+		assert.Len(t, actual, 3)
+		assert.ElementsMatch(t, []string{"public", "private", "staging"}, actual)
+	}
+}
+
+func TestGetUniqueStagingSchemas(t *testing.T) {
+	{
+		// No topic configs
+		assert.Empty(t, GetUniqueStagingSchemas(nil))
+	}
+	{
+		// No StagingSchema set - falls back to Schema
+		tcs := []*TopicConfig{
+			{Database: "db", Schema: "public"},
+		}
+		assert.Equal(t, []string{"public"}, GetUniqueStagingSchemas(tcs))
+	}
+	{
+		// StagingSchema set explicitly
+		tcs := []*TopicConfig{
+			{Database: "db", Schema: "public", StagingSchema: "staging"},
+		}
+		assert.Equal(t, []string{"staging"}, GetUniqueStagingSchemas(tcs))
+	}
+	{
+		// Multiple topic configs with same staging schema
+		tcs := []*TopicConfig{
+			{Database: "db", Schema: "public", StagingSchema: "staging"},
+			{Database: "db", Schema: "private", StagingSchema: "staging"},
+		}
+		assert.Equal(t, []string{"staging"}, GetUniqueStagingSchemas(tcs))
+	}
+	{
+		// Mix of explicit and fallback staging schemas
+		tcs := []*TopicConfig{
+			{Database: "db", Schema: "public", StagingSchema: "staging"},
+			{Database: "db", Schema: "other"},   // Falls back to "other"
+			{Database: "db", Schema: "staging"}, // Falls back to "staging" - same as first
+		}
+		actual := GetUniqueStagingSchemas(tcs)
+		assert.Len(t, actual, 2)
+		assert.ElementsMatch(t, []string{"staging", "other"}, actual)
+	}
+	{
+		// Different staging schemas
+		tcs := []*TopicConfig{
+			{Database: "db", Schema: "s1", StagingSchema: "staging1"},
+			{Database: "db", Schema: "s2", StagingSchema: "staging2"},
+		}
+		actual := GetUniqueStagingSchemas(tcs)
+		assert.Len(t, actual, 2)
+		assert.ElementsMatch(t, []string{"staging1", "staging2"}, actual)
+	}
+}
+
+func TestTopicConfig_ReusableStagingTableNamePrefix(t *testing.T) {
+	{
+		// No StagingSchema specified - returns empty string
+		tc := TopicConfig{
+			Database: "db",
+			Schema:   "public",
+		}
+		assert.Equal(t, "", tc.ReusableStagingTableNamePrefix())
+	}
+	{
+		// StagingSchema equals Schema - returns empty string
+		tc := TopicConfig{
+			Database:      "db",
+			Schema:        "public",
+			StagingSchema: "public",
+		}
+		assert.Equal(t, "", tc.ReusableStagingTableNamePrefix())
+	}
+	{
+		// StagingSchema differs from Schema - returns Schema as prefix
+		tc := TopicConfig{
+			Database:      "db",
+			Schema:        "public",
+			StagingSchema: "staging",
+		}
+		assert.Equal(t, "public", tc.ReusableStagingTableNamePrefix())
 	}
 }
 
@@ -100,9 +246,6 @@ func TestTopicConfig_Validate(t *testing.T) {
 		CDCKeyFormat: JSONKeyFmt,
 	}
 
-	assert.ErrorContains(t, tc.Validate(), "opsToSkipMap is nil, call Load() first")
-
-	tc.Load()
 	assert.NoError(t, tc.Validate(), tc.String())
 
 	tc.CDCKeyFormat = "non_existent"
@@ -119,27 +262,6 @@ func TestTopicConfig_Validate(t *testing.T) {
 
 	tc.ColumnsToInclude = []string{}
 	assert.NoError(t, tc.Validate(), tc.String())
-}
-
-func TestTopicConfig_Load_ShouldSkip(t *testing.T) {
-	{
-		tc := TopicConfig{SkippedOperations: "c, r, u"}
-		tc.Load()
-		for _, op := range []string{"c", "r", "u"} {
-			assert.True(t, tc.ShouldSkip(op), tc.String())
-		}
-		assert.False(t, tc.ShouldSkip("d"), tc.String())
-	}
-	{
-		tc := TopicConfig{SkippedOperations: "c"}
-		tc.Load()
-		assert.True(t, tc.ShouldSkip("c"), tc.String())
-	}
-	{
-		tc := TopicConfig{SkippedOperations: "d"}
-		tc.Load()
-		assert.True(t, tc.ShouldSkip("d"), tc.String())
-	}
 }
 
 func TestMultiStepMergeSettings_Validate(t *testing.T) {

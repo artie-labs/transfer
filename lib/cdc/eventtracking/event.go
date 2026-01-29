@@ -2,8 +2,10 @@ package eventtracking
 
 import (
 	"maps"
+	"strings"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -67,23 +69,42 @@ func (e *EventPayload) GetData(tc kafkalib.TopicConfig) (map[string]any, error) 
 	return retMap, nil
 }
 
-func (e *EventPayload) GetOptionalSchema() (map[string]typing.KindDetails, error) {
+func (e *EventPayload) GetOptionalSchema(cfg config.SharedDestinationSettings) (map[string]typing.KindDetails, error) {
 	// Event tracking format doesn't have a schema
 	return nil, nil
 }
 
-func (e *EventPayload) GetColumns(reservedColumns map[string]bool) (*columns.Columns, error) {
-	var cols columns.Columns
+func (e *EventPayload) GetColumns(reservedColumns map[string]bool) ([]columns.Column, error) {
+	cols := columns.NewColumns(nil)
 	for k := range e.Properties {
-		cols.AddColumn(columns.NewColumn(columns.EscapeName(k, reservedColumns), typing.Invalid))
+		colName := columns.EscapeName(k, reservedColumns)
+		cols.AddColumn(columns.NewColumn(colName, inferTypeFromColumnName(colName)))
 	}
 	for k := range e.ExtraFields {
-		cols.AddColumn(columns.NewColumn(columns.EscapeName(k, reservedColumns), typing.Invalid))
+		colName := columns.EscapeName(k, reservedColumns)
+		cols.AddColumn(columns.NewColumn(colName, inferTypeFromColumnName(colName)))
 	}
 
-	cols.AddColumn(columns.NewColumn(columns.EscapeName("id", reservedColumns), typing.Invalid))
-	cols.AddColumn(columns.NewColumn(columns.EscapeName("timestamp", reservedColumns), typing.Invalid))
-	cols.AddColumn(columns.NewColumn(columns.EscapeName("event", reservedColumns), typing.Invalid))
+	cols.AddColumn(columns.NewColumn(columns.EscapeName("id", reservedColumns), typing.String))
+	cols.AddColumn(columns.NewColumn(columns.EscapeName("timestamp", reservedColumns), typing.TimestampTZ))
+	cols.AddColumn(columns.NewColumn(columns.EscapeName("event", reservedColumns), typing.String))
 
-	return &cols, nil
+	return cols.GetColumns(), nil
+}
+
+// inferTypeFromColumnName is non-exhaustive and checks for some common patterns that
+// should be interpreted as a specific column type. This is helpful for polymorphic fields
+// like IDs and timestamps, which can come through as either string or numeric; we want to
+// avoid picking too narrow a type if the first value we see for it is numeric.
+func inferTypeFromColumnName(column string) typing.KindDetails {
+	lowerName := strings.ToLower(column)
+	if strings.HasSuffix(lowerName, "_id") {
+		return typing.String
+	} else if strings.HasSuffix(lowerName, "_at") || strings.HasSuffix(lowerName, "_started") {
+		return typing.TimestampTZ
+	}
+
+	// Defaulting to [typing.Invalid] indicates that we don't know the type yet, so
+	// it will be inferred downstream based on the first non-nil value.
+	return typing.Invalid
 }

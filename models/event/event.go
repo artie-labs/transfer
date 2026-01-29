@@ -35,6 +35,7 @@ type Event struct {
 	// [executionTime] - The database timestamp for when the event was created.
 	executionTime time.Time
 	mode          config.Mode
+	appendOnly    bool
 }
 
 func (e Event) GetTableID() cdc.TableID {
@@ -45,26 +46,20 @@ func (e Event) GetTable() string {
 	return e.table
 }
 
-func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfig, cfgMode config.Mode) (Event, error) {
+func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfig, cfgMode config.Mode, sharedDestinationSettings config.SharedDestinationSettings) (Event, error) {
 	reservedColumns := destination.BuildReservedColumnNames(dest)
-	cols, err := buildColumns(event, tc, reservedColumns)
+	_cols, err := buildColumns(event, tc, reservedColumns)
 	if err != nil {
-		return Event{}, fmt.Errorf("failed to build filtered columns: %w", err)
+		return Event{}, fmt.Errorf("failed to build columns: %w", err)
 	}
 
+	cols := columns.NewColumns(_cols)
 	pks := buildPrimaryKeys(tc, pkMap, reservedColumns)
-	if cols != nil {
-		// All keys in pks are already escaped, so don't escape again
-		for _, pk := range pks {
-			err = cols.UpsertColumn(
-				pk,
-				columns.UpsertColumnArg{
-					PrimaryKey: typing.ToPtr(true),
-				},
-			)
-			if err != nil {
-				return Event{}, fmt.Errorf("failed to upsert column: %w", err)
-			}
+
+	// All keys in pks are already escaped, so don't escape again
+	for _, pk := range pks {
+		if err := cols.UpsertColumn(pk, columns.UpsertColumnArg{PrimaryKey: typing.ToPtr(true)}); err != nil {
+			return Event{}, fmt.Errorf("failed to upsert column: %w", err)
 		}
 	}
 
@@ -80,9 +75,7 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 		}
 
 		data[constants.SourceMetadataColumnMarker] = metadata
-		if cols != nil {
-			cols.AddColumn(columns.NewColumn(constants.SourceMetadataColumnMarker, typing.Struct))
-		}
+		cols.AddColumn(columns.NewColumn(constants.SourceMetadataColumnMarker, typing.Struct))
 	}
 
 	tblName := cmp.Or(tc.TableName, event.GetTableName())
@@ -99,25 +92,36 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 		// We don't need the deletion markers either.
 		delete(data, constants.DeleteColumnMarker)
 		delete(data, constants.OnlySetDeleteColumnMarker)
-	} else if tc.SoftPartitioning.Enabled {
-		// TODO: cache exact match or fix upstream to pass the column name from source table
-		maybeDatetime, ok := maputil.GetCaseInsensitiveValue(data, tc.SoftPartitioning.PartitionColumn)
-		if !ok {
-			return Event{}, fmt.Errorf("partition column %q not found in data", tc.SoftPartitioning.PartitionColumn)
+	} else {
+		if tc.AppendOnly {
+			// In append-only mode, we don't need the merge-specific column.
+			delete(data, constants.OnlySetDeleteColumnMarker)
+			// Only keep DeleteColumnMarker if soft delete is enabled.
+			if !tc.SoftDelete {
+				delete(data, constants.DeleteColumnMarker)
+			}
 		}
-		actuallyDateTime, err := typing.ParseTimestampTZFromAny(maybeDatetime)
-		if err != nil {
-			return Event{}, fmt.Errorf("failed to assert datetime: %w for table %q schema %q", err, tc.TableName, tc.Schema)
+
+		if tc.SoftPartitioning.Enabled {
+			// TODO: cache exact match or fix upstream to pass the column name from source table
+			maybeDatetime, ok := maputil.GetCaseInsensitiveValue(data, tc.SoftPartitioning.PartitionColumn)
+			if !ok {
+				return Event{}, fmt.Errorf("partition column %q not found in data", tc.SoftPartitioning.PartitionColumn)
+			}
+			actuallyDateTime, err := typing.ParseTimestampTZFromAny(maybeDatetime)
+			if err != nil {
+				return Event{}, fmt.Errorf("failed to assert datetime: %w for table %q schema %q", err, tc.TableName, tc.Schema)
+			}
+			// TODO: clean up parameters, i.e. ctx, dest, etc
+			suffix, err := BuildSoftPartitionSuffix(ctx, tc, actuallyDateTime, event.GetExecutionTime(), tblName, dest)
+			if err != nil {
+				return Event{}, fmt.Errorf("failed to calculate soft partition suffix: %w", err)
+			}
+			tblName = tblName + suffix
 		}
-		// TODO: clean up parameters, i.e. ctx, dest, etc
-		suffix, err := BuildSoftPartitionSuffix(ctx, tc, actuallyDateTime, event.GetExecutionTime(), tblName, dest)
-		if err != nil {
-			return Event{}, fmt.Errorf("failed to calculate soft partition suffix: %w", err)
-		}
-		tblName = tblName + suffix
 	}
 
-	optionalSchema, err := event.GetOptionalSchema()
+	optionalSchema, err := event.GetOptionalSchema(sharedDestinationSettings)
 	if err != nil {
 		return Event{}, fmt.Errorf("failed to get optional schema: %w", err)
 	}
@@ -136,6 +140,7 @@ func ToMemoryEvent(ctx context.Context, dest destination.Baseline, event cdc.Eve
 	return Event{
 		executionTime: event.GetExecutionTime(),
 		mode:          cfgMode,
+		appendOnly:    tc.AppendOnly,
 		// [primaryKeys] needs to be sorted so that we have a deterministic way to identify a row in our in-memory db.
 		primaryKeys:    pks,
 		table:          tblName,
@@ -163,8 +168,9 @@ func (e *Event) EmitExecutionTimeLag(metricsClient base.Client) {
 		"row.execution_time_lag",
 		float64(time.Since(e.executionTime).Milliseconds()),
 		map[string]string{
-			"mode":  e.mode.String(),
-			"table": e.table,
+			"mode":   e.mode.String(),
+			"table":  e.table,
+			"schema": e.tableID.Schema,
 		}, 0.5)
 }
 
@@ -182,7 +188,7 @@ func (e *Event) Validate() error {
 		return fmt.Errorf("event has no data")
 	}
 
-	if e.mode == config.History {
+	if e.mode == config.History || e.appendOnly {
 		// History mode does not have the delete column marker.
 		return nil
 	}
@@ -225,7 +231,7 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 	// Does the table exist?
 	td := inMemDB.GetOrCreateTableData(e.tableID, tc.Topic)
 	if td.Empty() {
-		cols := &columns.Columns{}
+		cols := columns.NewColumns(nil)
 		if e.columns != nil {
 			cols = e.columns
 		}
@@ -240,8 +246,8 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 		}
 	}
 
-	// Table columns
-	inMemoryColumns := td.ReadOnlyInMemoryCols()
+	// Table columns - use direct reference since Columns has its own mutex
+	inMemoryColumns := td.InMemoryColumns()
 	// Update col if necessary
 	sanitizedData := make(map[string]any)
 	for _col, val := range e.data {
@@ -303,9 +309,6 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 
 		sanitizedData[newColName] = val
 	}
-
-	// Now we commit the table columns.
-	td.SetInMemoryColumns(inMemoryColumns)
 
 	// Swap out sanitizedData <> data.
 	e.data = sanitizedData

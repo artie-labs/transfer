@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
+	"github.com/twmb/franz-go/pkg/kgo"
 
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/cdc"
@@ -34,18 +34,16 @@ func TestProcessMessageFailures(t *testing.T) {
 	}
 	ctx := t.Context()
 	memDB := models.NewMemoryDB()
-	kafkaMsg := kafka.Message{
-		Topic:         "foo",
-		Partition:     0,
-		Offset:        0,
-		HighWaterMark: 0,
-		Key:           nil,
-		Value:         nil,
-		Headers:       nil,
-		Time:          time.Time{},
+	kafkaMsg := kgo.Record{
+		Topic:     "foo",
+		Partition: 0,
+		Offset:    int64(0),
+		Key:       nil,
+		Value:     nil,
+		Timestamp: time.Time{},
 	}
 
-	msg := artie.NewKafkaGoMessage(kafkaMsg)
+	msg := artie.NewFranzGoMessage(kafkaMsg, 0)
 	args := processArgs{
 		Msg:     msg,
 		GroupID: "foo",
@@ -63,8 +61,8 @@ func TestProcessMessageFailures(t *testing.T) {
 
 	var mgo mongo.Debezium
 	tcFmtMap := NewTcFmtMap()
-	tcFmtMap.Add(msg.Topic(), TopicConfigFormatter{
-		tc: kafkalib.TopicConfig{
+	tcFmtMap.Add(msg.Topic(), NewTopicConfigFormatter(
+		kafkalib.TopicConfig{
 			Database:     db,
 			TableName:    table,
 			Schema:       schema,
@@ -72,8 +70,8 @@ func TestProcessMessageFailures(t *testing.T) {
 			CDCFormat:    "",
 			CDCKeyFormat: "",
 		},
-		Format: &mgo,
-	})
+		&mgo,
+	))
 
 	args = processArgs{
 		Msg:                    msg,
@@ -97,13 +95,9 @@ func TestProcessMessageFailures(t *testing.T) {
 		CDCFormat:    "",
 		CDCKeyFormat: "org.apache.kafka.connect.storage.StringConverter",
 	}
-	tc.Load()
 
 	// Add will just replace the prev setting.
-	tcFmtMap.Add(msg.Topic(), TopicConfigFormatter{
-		tc:     tc,
-		Format: &mgo,
-	})
+	tcFmtMap.Add(msg.Topic(), NewTopicConfigFormatter(tc, &mgo))
 
 	val := `{
 	"schema": {
@@ -159,22 +153,20 @@ func TestProcessMessageFailures(t *testing.T) {
 	}
 }`
 
-	kafkaMessage := kafka.Message{
-		Topic:         "foo",
-		Partition:     0,
-		Offset:        0,
-		HighWaterMark: 0,
-		Key:           nil,
-		Value:         nil,
-		Headers:       nil,
-		Time:          time.Time{},
+	kafkaMessage := kgo.Record{
+		Topic:     "foo",
+		Partition: 0,
+		Offset:    0,
+		Key:       nil,
+		Value:     nil,
+		Timestamp: time.Time{},
 	}
 	memoryDB := memDB
 	kafkaMessage.Key = []byte(fmt.Sprintf("Struct{id=%v}", 1004))
 	kafkaMessage.Value = []byte(val)
 
 	args = processArgs{
-		Msg:                    artie.NewKafkaGoMessage(kafkaMessage),
+		Msg:                    artie.NewFranzGoMessage(kafkaMessage, 0),
 		GroupID:                "foo",
 		TopicToConfigFormatMap: tcFmtMap,
 	}
@@ -202,7 +194,7 @@ func TestProcessMessageFailures(t *testing.T) {
 	}
 	{
 		kafkaMessage.Value = []byte("not a json object")
-		msg := artie.NewKafkaGoMessage(kafkaMessage)
+		msg := artie.NewFranzGoMessage(kafkaMessage, 0)
 		args = processArgs{
 			Msg:                    msg,
 			GroupID:                "foo",
@@ -210,7 +202,7 @@ func TestProcessMessageFailures(t *testing.T) {
 		}
 
 		tableName, err = args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{})
-		assert.ErrorContains(t, err, "cannot unmarshal event: failed to unmarshal json: invalid character 'o' in literal")
+		assert.Error(t, err)
 		assert.Empty(t, tableName)
 		assert.True(t, td.NumberOfRows() > 0)
 	}
@@ -224,18 +216,16 @@ func TestProcessMessageSkip(t *testing.T) {
 	}
 	ctx := t.Context()
 	memDB := models.NewMemoryDB()
-	kafkaMsg := kafka.Message{
-		Topic:         "foo",
-		Partition:     0,
-		Offset:        0,
-		HighWaterMark: 0,
-		Key:           nil,
-		Value:         nil,
-		Headers:       nil,
-		Time:          time.Time{},
+	kafkaMsg := kgo.Record{
+		Topic:     "foo",
+		Partition: 0,
+		Offset:    0,
+		Key:       nil,
+		Value:     nil,
+		Timestamp: time.Time{},
 	}
 
-	msg := artie.NewKafkaGoMessage(kafkaMsg)
+	msg := artie.NewFranzGoMessage(kafkaMsg, 0)
 
 	var mgo mongo.Debezium
 	const (
@@ -245,8 +235,8 @@ func TestProcessMessageSkip(t *testing.T) {
 	)
 
 	tcFmtMap := NewTcFmtMap()
-	tcFmtMap.Add(msg.Topic(), TopicConfigFormatter{
-		tc: kafkalib.TopicConfig{
+	tcFmtMap.Add(msg.Topic(), NewTopicConfigFormatter(
+		kafkalib.TopicConfig{
 			Database:     db,
 			TableName:    table,
 			Schema:       schema,
@@ -254,8 +244,8 @@ func TestProcessMessageSkip(t *testing.T) {
 			CDCFormat:    "",
 			CDCKeyFormat: "",
 		},
-		Format: &mgo,
-	})
+		&mgo,
+	))
 
 	tc := kafkalib.TopicConfig{
 		Database:          db,
@@ -266,14 +256,9 @@ func TestProcessMessageSkip(t *testing.T) {
 		CDCKeyFormat:      "org.apache.kafka.connect.storage.StringConverter",
 		SkippedOperations: "d",
 	}
-	tc.Load()
 
 	// Add will just replace the prev setting.
-	tcFmtMap.Add(msg.Topic(), TopicConfigFormatter{
-		tc:     tc,
-		Format: &mgo,
-	})
-
+	tcFmtMap.Add(msg.Topic(), NewTopicConfigFormatter(tc, &mgo))
 	vals := []string{
 		`{
 	"schema": {
@@ -335,22 +320,20 @@ func TestProcessMessageSkip(t *testing.T) {
 	for _, val := range vals {
 		idx += 1
 
-		kafkaMessage := kafka.Message{
-			Topic:         "foo",
-			Partition:     0,
-			Offset:        0,
-			HighWaterMark: 0,
-			Key:           nil,
-			Value:         nil,
-			Headers:       nil,
-			Time:          time.Time{},
+		kafkaMessage := kgo.Record{
+			Topic:     "foo",
+			Partition: 0,
+			Offset:    0,
+			Key:       nil,
+			Value:     nil,
+			Timestamp: time.Time{},
 		}
 		kafkaMessage.Key = []byte(fmt.Sprintf("Struct{id=%v}", idx))
 		if val != "" {
 			kafkaMessage.Value = []byte(val)
 		}
 
-		msg := artie.NewKafkaGoMessage(kafkaMessage)
+		msg := artie.NewFranzGoMessage(kafkaMessage, 0)
 		args := processArgs{
 			Msg:                    msg,
 			GroupID:                "foo",

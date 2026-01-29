@@ -3,8 +3,6 @@ package iceberg
 import (
 	"context"
 	"fmt"
-	"maps"
-	"slices"
 
 	"github.com/aws/aws-sdk-go-v2/credentials"
 
@@ -19,6 +17,7 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing/columns"
+	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
 )
 
 type Store struct {
@@ -46,13 +45,21 @@ func (s Store) Dialect() dialect.IcebergDialect {
 	return dialect.IcebergDialect{}
 }
 
-func (s Store) Append(ctx context.Context, tableData *optimization.TableData, useTempTable bool) error {
+func (s Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, useTempTable bool) error {
+	return s.append(ctx, tableData, whClient, useTempTable, 0)
+}
+
+func (s Store) append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, useTempTable bool, retryCount int) error {
 	if tableData.ShouldSkipUpdate() {
 		return nil
 	}
 
+	if retryCount > 3 {
+		return fmt.Errorf("failed to append, reached max retries count: %d", retryCount)
+	}
+
 	tableID := s.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name())
-	tempTableID := shared.TempTableIDWithSuffix(tableID, tableData.TempTableSuffix())
+	tempTableID := shared.TempTableIDWithSuffix(s.IdentifierFor(tableData.TopicConfig().BuildStagingDatabaseAndSchemaPair(), tableData.Name()), tableData.TempTableSuffix())
 	tableConfig, err := s.GetTableConfig(ctx, tableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
 		return fmt.Errorf("failed to get table config: %w", err)
@@ -93,6 +100,12 @@ func (s Store) Append(ctx context.Context, tableData *optimization.TableData, us
 	// Then append the view into the target table
 	query := s.Dialect().BuildAppendToTable(tableID, tempTableID.EscapedTable(), validColumnNames)
 	if err = s.apacheLivyClient.ExecContext(ctx, query); err != nil {
+		if s.Dialect().IsTableDoesNotExistErr(err) {
+			s.cm.RemoveTable(tableID)
+			tableConfig.SetCreateTable(true)
+			return s.append(ctx, tableData, whClient, useTempTable, retryCount+1)
+		}
+
 		return fmt.Errorf("failed to append to table: %w, query: %s", err, query)
 	}
 
@@ -132,13 +145,13 @@ func (s Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier, 
 	return tableCfg, nil
 }
 
-func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
+func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client) (bool, error) {
 	if tableData.ShouldSkipUpdate() {
 		return false, nil
 	}
 
 	tableID := s.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name())
-	temporaryTableID := shared.TempTableIDWithSuffix(tableID, tableData.TempTableSuffix())
+	temporaryTableID := shared.TempTableIDWithSuffix(s.IdentifierFor(tableData.TopicConfig().BuildStagingDatabaseAndSchemaPair(), tableData.Name()), tableData.TempTableSuffix())
 	tableConfig, err := s.GetTableConfig(ctx, tableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
 		return false, fmt.Errorf("failed to get table config: %w", err)
@@ -200,14 +213,14 @@ func (s Store) IsRetryableError(_ error) bool {
 	return false
 }
 
-func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
-	tempTableID := shared.TempTableID(tableID)
-	castedTempTableID, ok := tempTableID.(dialect.TableIdentifier)
+func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kafkalib.DatabaseAndSchemaPair, primaryKeys []string, includeArtieUpdatedAt bool) error {
+	stagingTableID := shared.BuildStagingTableID(s, pair, tableID)
+	castedStagingTableID, ok := stagingTableID.(dialect.TableIdentifier)
 	if !ok {
-		return fmt.Errorf("failed to cast temp table id to dialect table identifier")
+		return fmt.Errorf("failed to cast staging table id to dialect table identifier")
 	}
 
-	queries := s.Dialect().BuildDedupeQueries(tableID, tempTableID, primaryKeys, includeArtieUpdatedAt)
+	queries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt)
 	for _, query := range queries {
 		if err := s.apacheLivyClient.ExecContext(ctx, query); err != nil {
 			return fmt.Errorf("failed to execute dedupe query: %w", err)
@@ -215,8 +228,8 @@ func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryK
 	}
 
 	// Drop table has to be outside of the function because we need to drop tables with S3Tables API.
-	if err := s.s3TablesAPI.DeleteTable(ctx, castedTempTableID.Namespace(), castedTempTableID.Table()); err != nil {
-		return fmt.Errorf("failed to delete temp table: %w", err)
+	if err := s.s3TablesAPI.DeleteTable(ctx, castedStagingTableID.Namespace(), castedStagingTableID.Table()); err != nil {
+		return fmt.Errorf("failed to delete staging table: %w", err)
 	}
 
 	return nil
@@ -274,17 +287,15 @@ func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {
 		s3Client:         awslib.NewS3Client(awsCfg),
 	}
 
-	namespaces := make(map[string]bool)
-	for _, tc := range cfg.Kafka.TopicConfigs {
-		if err := store.EnsureNamespaceExists(ctx, store.Dialect().BuildIdentifier(tc.Schema)); err != nil {
+	// Ensure all namespaces exist (including staging namespaces)
+	for _, schema := range kafkalib.GetAllUniqueSchemas(cfg.Kafka.TopicConfigs) {
+		if err := store.EnsureNamespaceExists(ctx, store.Dialect().BuildIdentifier(schema)); err != nil {
 			return Store{}, fmt.Errorf("failed to ensure namespace exists: %w", err)
 		}
-
-		namespaces[tc.Schema] = true
 	}
 
-	// Then sweep the temporary tables.
-	if err = SweepTemporaryTables(ctx, store.s3TablesAPI, store.Dialect(), slices.Collect(maps.Keys(namespaces))); err != nil {
+	// Sweep the temporary tables from staging namespaces only.
+	if err = SweepTemporaryTables(ctx, store.s3TablesAPI, store.Dialect(), kafkalib.GetUniqueStagingSchemas(cfg.Kafka.TopicConfigs)); err != nil {
 		return Store{}, fmt.Errorf("failed to sweep temporary tables: %w", err)
 	}
 

@@ -23,6 +23,7 @@ type ParseErrorKind string
 const (
 	UnsupportedDateLayout ParseErrorKind = "unsupported_date_layout"
 	UnexpectedValue       ParseErrorKind = "unexpected_value"
+	InvalidBooleanValue   ParseErrorKind = "invalid_boolean_value"
 )
 
 type ParseError struct {

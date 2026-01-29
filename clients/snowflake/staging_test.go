@@ -75,17 +75,130 @@ func (s *SnowflakeTestSuite) TestCastColValStaging() {
 		assert.Equal(s.T(), "foo", result.Value)
 	}
 	{
-		// Bad timestamp
+		// Bad Date values
 		{
-			// Config is enabled, so we won't error, we'll just return null.
+			// SkipBadTimestamps is enabled, so we won't error, we'll just return null.
 			result, err := castColValStaging("foo", typing.Date, config.SharedDestinationSettings{SkipBadTimestamps: true})
 			assert.NoError(s.T(), err)
 			assert.Equal(s.T(), constants.NullValuePlaceholder, result.Value)
 		}
 		{
-			// Config is disabled, so we'll error.
+			// SkipBadTimestamps is disabled, so we'll error.
 			_, err := castColValStaging("foo", typing.Date, config.SharedDestinationSettings{SkipBadTimestamps: false})
 			assert.Error(s.T(), err)
+		}
+	}
+	{
+		// Bad Time values
+		{
+			// SkipBadTimestamps is enabled, so we won't error, we'll just return null.
+			result, err := castColValStaging("not-a-time", typing.TimeKindDetails, config.SharedDestinationSettings{SkipBadTimestamps: true})
+			assert.NoError(s.T(), err)
+			assert.Equal(s.T(), constants.NullValuePlaceholder, result.Value)
+		}
+		{
+			// SkipBadTimestamps is disabled, so we'll error.
+			_, err := castColValStaging("not-a-time", typing.TimeKindDetails, config.SharedDestinationSettings{SkipBadTimestamps: false})
+			assert.Error(s.T(), err)
+		}
+	}
+	{
+		// Bad TimestampNTZ values
+		{
+			// SkipBadTimestamps is enabled, so we won't error, we'll just return null.
+			result, err := castColValStaging("invalid-timestamp", typing.TimestampNTZ, config.SharedDestinationSettings{SkipBadTimestamps: true})
+			assert.NoError(s.T(), err)
+			assert.Equal(s.T(), constants.NullValuePlaceholder, result.Value)
+		}
+		{
+			// SkipBadTimestamps is disabled, so we'll error.
+			_, err := castColValStaging("invalid-timestamp", typing.TimestampNTZ, config.SharedDestinationSettings{SkipBadTimestamps: false})
+			assert.Error(s.T(), err)
+		}
+	}
+	{
+		// Bad TimestampTZ values
+		{
+			// SkipBadTimestamps is enabled, so we won't error, we'll just return null.
+			result, err := castColValStaging("invalid-timestamp", typing.TimestampTZ, config.SharedDestinationSettings{SkipBadTimestamps: true})
+			assert.NoError(s.T(), err)
+			assert.Equal(s.T(), constants.NullValuePlaceholder, result.Value)
+		}
+		{
+			// SkipBadTimestamps is disabled, so we'll error.
+			_, err := castColValStaging("invalid-timestamp", typing.TimestampTZ, config.SharedDestinationSettings{SkipBadTimestamps: false})
+			assert.Error(s.T(), err)
+		}
+	}
+	{
+		// Bad numeric value (string that can't be parsed as a number)
+		{
+			// SkipBadIntegers is enabled, so we won't error, we'll just return null.
+			result, err := castColValStaging("tNLc2OHz", typing.Float, config.SharedDestinationSettings{SkipBadIntegers: true})
+			assert.NoError(s.T(), err)
+			assert.Equal(s.T(), constants.NullValuePlaceholder, result.Value)
+		}
+		{
+			// SkipBadIntegers is enabled for EDecimal type
+			result, err := castColValStaging("notANumber", typing.EDecimal, config.SharedDestinationSettings{SkipBadIntegers: true})
+			assert.NoError(s.T(), err)
+			assert.Equal(s.T(), constants.NullValuePlaceholder, result.Value)
+		}
+		{
+			// SkipBadIntegers is disabled, so we'll error.
+			_, err := castColValStaging("tNLc2OHz", typing.Float, config.SharedDestinationSettings{SkipBadIntegers: false})
+			assert.Error(s.T(), err)
+		}
+		{
+			// Valid numeric string should work fine
+			result, err := castColValStaging("123.45", typing.Float, config.SharedDestinationSettings{SkipBadIntegers: false})
+			assert.NoError(s.T(), err)
+			assert.Equal(s.T(), "123.45", result.Value)
+		}
+	}
+	{
+		// SkipBadValues - generic setting that covers all bad value types
+		{
+			// SkipBadValues handles bad Date values
+			result, err := castColValStaging("foo", typing.Date, config.SharedDestinationSettings{SkipBadValues: true})
+			assert.NoError(s.T(), err)
+			assert.Equal(s.T(), constants.NullValuePlaceholder, result.Value)
+		}
+		{
+			// SkipBadValues handles bad Time values
+			result, err := castColValStaging("not-a-time", typing.TimeKindDetails, config.SharedDestinationSettings{SkipBadValues: true})
+			assert.NoError(s.T(), err)
+			assert.Equal(s.T(), constants.NullValuePlaceholder, result.Value)
+		}
+		{
+			// SkipBadValues handles bad TimestampNTZ values
+			result, err := castColValStaging("invalid-timestamp", typing.TimestampNTZ, config.SharedDestinationSettings{SkipBadValues: true})
+			assert.NoError(s.T(), err)
+			assert.Equal(s.T(), constants.NullValuePlaceholder, result.Value)
+		}
+		{
+			// SkipBadValues handles bad TimestampTZ values
+			result, err := castColValStaging("invalid-timestamp", typing.TimestampTZ, config.SharedDestinationSettings{SkipBadValues: true})
+			assert.NoError(s.T(), err)
+			assert.Equal(s.T(), constants.NullValuePlaceholder, result.Value)
+		}
+		{
+			// SkipBadValues handles bad numeric values
+			result, err := castColValStaging("notANumber", typing.Float, config.SharedDestinationSettings{SkipBadValues: true})
+			assert.NoError(s.T(), err)
+			assert.Equal(s.T(), constants.NullValuePlaceholder, result.Value)
+		}
+		{
+			// SkipBadValues handles bad decimal values
+			result, err := castColValStaging("notANumber", typing.EDecimal, config.SharedDestinationSettings{SkipBadValues: true})
+			assert.NoError(s.T(), err)
+			assert.Equal(s.T(), constants.NullValuePlaceholder, result.Value)
+		}
+		{
+			// SkipBadValues handles bad boolean values
+			result, err := castColValStaging("notABoolean", typing.Boolean, config.SharedDestinationSettings{SkipBadValues: true})
+			assert.NoError(s.T(), err)
+			assert.Equal(s.T(), constants.NullValuePlaceholder, result.Value)
 		}
 	}
 }
@@ -148,7 +261,7 @@ func (s *SnowflakeTestSuite) TestBackfillColumn() {
 // generateTableData - returns tableName and tableData
 func generateTableData(rows int) (dialect.TableIdentifier, *optimization.TableData) {
 	randomTableName := fmt.Sprintf("temp_%s_%s", constants.ArtiePrefix, stringutil.Random(10))
-	cols := &columns.Columns{}
+	cols := columns.NewColumns(nil)
 	for _, col := range []string{"user_id", "first_name", "last_name", "dusty"} {
 		cols.AddColumn(columns.NewColumn(col, typing.String))
 	}

@@ -158,7 +158,7 @@ func convertValue(value any, kd typing.KindDetails) (driver.Value, error) {
 			return nil, err
 		}
 		return timeVal, nil
-	case typing.Time.Kind:
+	case typing.TimeKindDetails.Kind:
 		// Parse time strings into time.Time for DuckDB appender
 		timeVal, err := typing.ParseTimeFromAny(value)
 		if err != nil {

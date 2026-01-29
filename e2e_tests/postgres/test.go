@@ -19,7 +19,6 @@ type TestCase struct {
 
 var dsns = []string{
 	"postgres://postgres:postgres@localhost:5432/destination_e2e?sslmode=disable",
-	"postgres://postgres:postgres@localhost:5432/destination_e2e_fgo?sslmode=disable",
 }
 
 var testCases = []TestCase{

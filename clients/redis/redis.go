@@ -18,6 +18,7 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	sqllib "github.com/artie-labs/transfer/lib/sql"
+	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
 )
 
 const (
@@ -48,7 +49,7 @@ func (s *Store) Dialect() sqllib.Dialect {
 	return nil
 }
 
-func (s *Store) Dedupe(_ context.Context, _ sqllib.TableIdentifier, _ []string, _ bool) error {
+func (s *Store) Dedupe(_ context.Context, _ sqllib.TableIdentifier, _ kafkalib.DatabaseAndSchemaPair, _ []string, _ bool) error {
 	return fmt.Errorf("dedupe is not supported for Redis")
 }
 
@@ -61,7 +62,7 @@ func (s *Store) GetTableConfig(_ context.Context, tableID sqllib.TableIdentifier
 	return tableConfig, nil
 }
 
-func (s *Store) SweepTemporaryTables(_ context.Context) error {
+func (s *Store) SweepTemporaryTables(_ context.Context, _ *webhooksclient.Client) error {
 	return nil
 }
 
@@ -81,9 +82,9 @@ func (s *Store) LoadDataIntoTable(_ context.Context, _ *optimization.TableData, 
 	return fmt.Errorf("LoadDataIntoTable is not supported for Redis")
 }
 
-func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, _ bool) error {
+func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, _ bool) error {
 	// For Redis, append and merge are the same - we always create new records
-	if _, err := s.Merge(ctx, tableData); err != nil {
+	if _, err := s.Merge(ctx, tableData, whClient); err != nil {
 		return fmt.Errorf("failed to append: %w", err)
 	}
 	return nil
@@ -91,7 +92,7 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, _
 
 // Merge writes rows from TableData as individual entries into a Redis Stream.
 // Each entry contains two fields: the CDC event JSON (artieData) and an emitted-at timestamp (artieEmittedAt).
-func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
+func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client) (bool, error) {
 	if tableData.ShouldSkipUpdate() {
 		return false, nil
 	}

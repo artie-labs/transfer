@@ -20,12 +20,12 @@ import (
 func (d *DDLTestSuite) TestAlterDelete_Complete() {
 	ts := time.Now()
 	allCols := []string{"a", "b", "c", "d"}
-	var cols columns.Columns
+	cols := columns.NewColumns(nil)
 	for _, colName := range allCols {
 		cols.AddColumn(columns.NewColumn(colName, typing.String))
 	}
 
-	td := optimization.NewTableData(&cols, config.Replication, nil, kafkalib.TopicConfig{
+	td := optimization.NewTableData(cols, config.Replication, nil, kafkalib.TopicConfig{
 		Database:  "db",
 		TableName: "table",
 		Schema:    "public",

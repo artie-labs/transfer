@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -24,9 +25,9 @@ type Event interface {
 	GetFullTableName() string
 	GetSourceMetadata() (string, error)
 	GetData(tc kafkalib.TopicConfig) (map[string]any, error)
-	GetOptionalSchema() (map[string]typing.KindDetails, error)
+	GetOptionalSchema(cfg config.SharedDestinationSettings) (map[string]typing.KindDetails, error)
 	// GetColumns will inspect the envelope's payload right now and return.
-	GetColumns(reservedColumns map[string]bool) (*columns.Columns, error)
+	GetColumns(reservedColumns map[string]bool) ([]columns.Column, error)
 }
 
 type TableID struct {

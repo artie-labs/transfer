@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -58,13 +59,13 @@ func TestBigQueryDialect_BuildCreateTableQuery(t *testing.T) {
 
 	// Temporary:
 	assert.Contains(t,
-		BigQueryDialect{}.BuildCreateTableQuery(fakeTableID, true, []string{"{PART_1}", "{PART_2}"}),
+		BigQueryDialect{}.BuildCreateTableQuery(fakeTableID, true, config.Replication, []string{"{PART_1}", "{PART_2}"}),
 		`CREATE TABLE IF NOT EXISTS {TABLE} ({PART_1},{PART_2}) OPTIONS (expiration_timestamp = TIMESTAMP(`,
 	)
 	// Not temporary:
 	assert.Equal(t,
 		`CREATE TABLE IF NOT EXISTS {TABLE} ({PART_1},{PART_2})`,
-		BigQueryDialect{}.BuildCreateTableQuery(fakeTableID, false, []string{"{PART_1}", "{PART_2}"}),
+		BigQueryDialect{}.BuildCreateTableQuery(fakeTableID, false, config.Replication, []string{"{PART_1}", "{PART_2}"}),
 	)
 }
 
@@ -177,7 +178,8 @@ func TestBigQueryDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
 
 func TestBigQueryDialect_BuildMergeQueries_JSONKey(t *testing.T) {
 	orderOIDCol := columns.NewColumn("order_oid", typing.Struct)
-	var cols columns.Columns
+
+	cols := columns.NewColumns(nil)
 	cols.AddColumn(orderOIDCol)
 	cols.AddColumn(columns.NewColumn("name", typing.String))
 	cols.AddColumn(columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean))

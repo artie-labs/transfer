@@ -39,7 +39,7 @@ func (e *EventsTestSuite) TestSaveEvent() {
 		anotherCol:                          13.37,
 	}, nil)
 
-	event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication)
+	event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication, config.SharedDestinationSettings{})
 	assert.NoError(e.T(), err)
 
 	_, _, err = event.Save(e.cfg, e.db, topicConfig, nil)
@@ -93,7 +93,7 @@ func (e *EventsTestSuite) TestEvent_SaveCasing() {
 		"anotherCOL":                        13.37,
 	}, nil)
 
-	event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication)
+	event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication, config.SharedDestinationSettings{})
 	assert.NoError(e.T(), err)
 
 	_, _, err = event.Save(e.cfg, e.db, topicConfig, nil)
@@ -134,7 +134,7 @@ func (e *EventsTestSuite) TestEventSaveOptionalSchema() {
 		"json_object_string":     typing.String,
 	}, nil)
 
-	event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication)
+	event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication, config.SharedDestinationSettings{})
 	assert.NoError(e.T(), err)
 
 	_, _, err = event.Save(e.cfg, e.db, topicConfig, nil)
@@ -167,7 +167,7 @@ func (e *EventsTestSuite) TestEventSaveOptionalSchema() {
 }
 
 func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
-	var cols columns.Columns
+	cols := columns.NewColumns(nil)
 	for i := range 50 {
 		cols.AddColumn(columns.NewColumn(fmt.Sprintf("col_%d", i), typing.Invalid))
 	}
@@ -179,9 +179,9 @@ func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 		constants.DeleteColumnMarker:        true,
 		constants.OnlySetDeleteColumnMarker: true,
 	}, nil)
-	mockEvent.GetColumnsReturns(&cols, nil)
+	mockEvent.GetColumnsReturns(cols.GetColumns(), nil)
 
-	evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"col_1": "123"}, topicConfig, config.Replication)
+	evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"col_1": "123"}, topicConfig, config.Replication, config.SharedDestinationSettings{})
 	assert.NoError(e.T(), err)
 
 	_, _, err = evt.Save(e.cfg, e.db, topicConfig, nil)
@@ -223,14 +223,14 @@ func (e *EventsTestSuite) TestEvent_SaveColumnsNoData() {
 }
 
 func (e *EventsTestSuite) TestEventSaveColumns() {
-	var cols columns.Columns
+	cols := columns.NewColumns(nil)
 	cols.AddColumn(columns.NewColumn("randomCol", typing.Invalid))
 	cols.AddColumn(columns.NewColumn("anotherCOL", typing.Invalid))
 	cols.AddColumn(columns.NewColumn("created_at_date_string", typing.Invalid))
 
 	mockEvent := &mocks.FakeEvent{}
 	mockEvent.GetTableNameReturns(topicConfig.TableName)
-	mockEvent.GetColumnsReturns(&cols, nil)
+	mockEvent.GetColumnsReturns(cols.GetColumns(), nil)
 	mockEvent.GetDataReturns(map[string]any{
 		"id":                                "123",
 		constants.DeleteColumnMarker:        true,
@@ -240,7 +240,7 @@ func (e *EventsTestSuite) TestEventSaveColumns() {
 		"created_at_date_string":            "2023-01-01",
 	}, nil)
 
-	event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication)
+	event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication, config.SharedDestinationSettings{})
 	assert.NoError(e.T(), err)
 
 	_, _, err = event.Save(e.cfg, e.db, topicConfig, nil)
@@ -289,7 +289,7 @@ func (e *EventsTestSuite) TestEventSaveTestDeleteFlag() {
 		constants.OnlySetDeleteColumnMarker: true,
 	}, nil)
 
-	event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication)
+	event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, topicConfig, config.Replication, config.SharedDestinationSettings{})
 	assert.NoError(e.T(), err)
 	_, _, err = event.Save(e.cfg, e.db, topicConfig, nil)
 	assert.NoError(e.T(), err)
@@ -300,4 +300,68 @@ func (e *EventsTestSuite) TestEventSaveTestDeleteFlag() {
 	_, _, err = event.Save(e.cfg, e.db, topicConfig, nil)
 	assert.NoError(e.T(), err)
 	assert.True(e.T(), e.db.GetOrCreateTableData(event.GetTableID(), topicConfig.Topic).ContainOtherOperations())
+}
+
+func (e *EventsTestSuite) TestEventSaveAppendOnlyMode() {
+	{
+		// Append-only mode without soft delete: both deletion-related markers should be removed
+		appendOnlyTC := kafkalib.TopicConfig{
+			Database:   "customer",
+			TableName:  "users",
+			Schema:     "public",
+			AppendOnly: true,
+			SoftDelete: false,
+		}
+
+		mockEvent := &mocks.FakeEvent{}
+		mockEvent.GetTableNameReturns(appendOnlyTC.TableName)
+		mockEvent.GetDataReturns(map[string]any{
+			"id":                                "123",
+			"name":                              "test",
+			constants.DeleteColumnMarker:        false,
+			constants.OnlySetDeleteColumnMarker: false,
+		}, nil)
+
+		event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, appendOnlyTC, config.Replication, config.SharedDestinationSettings{})
+		assert.NoError(e.T(), err)
+
+		// Verify OnlySetDeleteColumnMarker is removed
+		_, hasOnlySetDelete := event.GetData()[constants.OnlySetDeleteColumnMarker]
+		assert.False(e.T(), hasOnlySetDelete, "OnlySetDeleteColumnMarker should be removed in append-only mode")
+
+		// Verify DeleteColumnMarker is removed when SoftDelete is false
+		_, hasDelete := event.GetData()[constants.DeleteColumnMarker]
+		assert.False(e.T(), hasDelete, "DeleteColumnMarker should be removed in append-only mode without soft delete")
+	}
+	{
+		// Append-only mode with soft delete: DeleteColumnMarker should be kept, OnlySetDeleteColumnMarker should be removed
+		appendOnlyWithSoftDeleteTC := kafkalib.TopicConfig{
+			Database:   "customer",
+			TableName:  "users",
+			Schema:     "public",
+			AppendOnly: true,
+			SoftDelete: true,
+		}
+
+		mockEvent := &mocks.FakeEvent{}
+		mockEvent.GetTableNameReturns(appendOnlyWithSoftDeleteTC.TableName)
+		mockEvent.GetDataReturns(map[string]any{
+			"id":                                "456",
+			"name":                              "test",
+			constants.DeleteColumnMarker:        true,
+			constants.OnlySetDeleteColumnMarker: true,
+		}, nil)
+
+		event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "456"}, appendOnlyWithSoftDeleteTC, config.Replication, config.SharedDestinationSettings{})
+		assert.NoError(e.T(), err)
+
+		// Verify OnlySetDeleteColumnMarker is removed
+		_, hasOnlySetDelete := event.GetData()[constants.OnlySetDeleteColumnMarker]
+		assert.False(e.T(), hasOnlySetDelete, "OnlySetDeleteColumnMarker should be removed in append-only mode")
+
+		// Verify DeleteColumnMarker is kept when SoftDelete is true
+		deleteVal, hasDelete := event.GetData()[constants.DeleteColumnMarker]
+		assert.True(e.T(), hasDelete, "DeleteColumnMarker should be kept in append-only mode with soft delete")
+		assert.Equal(e.T(), true, deleteVal)
+	}
 }

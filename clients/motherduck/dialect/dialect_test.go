@@ -153,7 +153,7 @@ func TestKindForDataType(t *testing.T) {
 	{
 		kind, err := dd.KindForDataType("time")
 		assert.NoError(t, err)
-		assert.Equal(t, typing.Time, kind)
+		assert.Equal(t, typing.TimeKindDetails, kind)
 	}
 	{
 		kind, err := dd.KindForDataType("timestamp")
@@ -291,7 +291,7 @@ func TestDataTypeForKind(t *testing.T) {
 
 	// Time
 	{
-		result, err := dd.DataTypeForKind(typing.Time, false, config.SharedDestinationColumnSettings{})
+		result, err := dd.DataTypeForKind(typing.TimeKindDetails, false, config.SharedDestinationColumnSettings{})
 		assert.NoError(t, err)
 		assert.Equal(t, "time", result)
 	}

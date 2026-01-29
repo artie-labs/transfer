@@ -60,7 +60,7 @@ func (PostgresDialect) IsTableDoesNotExistErr(err error) bool {
 	return false
 }
 
-func (PostgresDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, _ bool, colSQLParts []string) string {
+func (PostgresDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, _ bool, _ config.Mode, colSQLParts []string) string {
 	// We will create temporary tables in Postgres the exact same way as we do for permanent tables.
 	// This is because temporary tables are session scoped and this will not work for us as we leverage connection pooling.
 	return fmt.Sprintf("CREATE TABLE %s (%s);", tableID.FullyQualifiedName(), strings.Join(colSQLParts, ","))
@@ -314,15 +314,15 @@ func (pd PostgresDialect) buildNoMergeDeleteQuery(tableID sql.TableIdentifier, s
 }
 
 var kindDetailsMap = map[typing.KindDetails]string{
-	typing.Float:        "double precision",
-	typing.Boolean:      "boolean",
-	typing.Struct:       "jsonb",
-	typing.Array:        "jsonb",
-	typing.String:       "text",
-	typing.Date:         "date",
-	typing.Time:         "time",
-	typing.TimestampNTZ: "timestamp without time zone",
-	typing.TimestampTZ:  "timestamp with time zone",
+	typing.Float:           "double precision",
+	typing.Boolean:         "boolean",
+	typing.Struct:          "jsonb",
+	typing.Array:           "jsonb",
+	typing.String:          "text",
+	typing.Date:            "date",
+	typing.TimeKindDetails: "time",
+	typing.TimestampNTZ:    "timestamp without time zone",
+	typing.TimestampTZ:     "timestamp with time zone",
 }
 
 func (PostgresDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, settings config.SharedDestinationColumnSettings) (string, error) {
@@ -371,7 +371,7 @@ var dataTypeMap = map[string]typing.KindDetails{
 	"double precision": typing.Float,
 	// Date and timestamp data types:
 	"date":                        typing.Date,
-	"time":                        typing.Time,
+	"time":                        typing.TimeKindDetails,
 	"timestamp with time zone":    typing.TimestampTZ,
 	"timestamp without time zone": typing.TimestampNTZ,
 	// Other data types:

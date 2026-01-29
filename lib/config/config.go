@@ -87,7 +87,7 @@ func readFileToConfig(pathToConfig string) (*Config, error) {
 	config.BufferRows = cmp.Or(config.BufferRows, defaultBufferPoolSize)
 	config.FlushSizeKb = cmp.Or(config.FlushSizeKb, defaultFlushSizeKb)
 	config.Mode = cmp.Or(config.Mode, Replication)
-	config.KafkaClient = cmp.Or(config.KafkaClient, KafkaGoClient)
+	config.KafkaClient = cmp.Or(config.KafkaClient, FranzGoClient)
 
 	return &config, nil
 }
@@ -133,6 +133,26 @@ func (c Config) ValidateMSSQL() error {
 	return nil
 }
 
+func (c Config) ValidateMySQL() error {
+	if c.Output != constants.MySQL {
+		return fmt.Errorf("output is not mysql, output: %v", c.Output)
+	}
+
+	if c.MySQL == nil {
+		return fmt.Errorf("mysql config is nil")
+	}
+
+	if empty := stringutil.Empty(c.MySQL.Host, c.MySQL.Username, c.MySQL.Password, c.MySQL.Database); empty {
+		return fmt.Errorf("one of mysql settings is empty (host, username, password, database)")
+	}
+
+	if c.MySQL.Port <= 0 {
+		return fmt.Errorf("invalid mysql port: %d", c.MySQL.Port)
+	}
+
+	return nil
+}
+
 func (c Config) ValidateMotherDuck() error {
 	if c.Output != constants.MotherDuck {
 		return fmt.Errorf("output is not motherduck, output: %q", c.Output)
@@ -161,6 +181,36 @@ func (c Config) ValidateRedis() error {
 	return c.Redis.Validate()
 }
 
+func (c Config) ValidateClickhouse() error {
+	if c.Output != constants.Clickhouse {
+		return fmt.Errorf("output is not Clickhouse, output: %q", c.Output)
+	}
+
+	if c.Clickhouse == nil {
+		return fmt.Errorf("Clickhouse config is nil")
+	}
+
+	if len(c.Clickhouse.Addresses) == 0 {
+		return fmt.Errorf("Clickhouse addresses are empty")
+	}
+
+	for _, topicConfig := range c.TopicConfigs() {
+		if !topicConfig.IncludeArtieUpdatedAt {
+			return fmt.Errorf("includeArtieUpdatedAt is required, topic: %s", topicConfig.String())
+		}
+	}
+
+	return nil
+}
+
+func (c Config) ValidateSQS() error {
+	if c.Output != constants.SQS {
+		return fmt.Errorf("output is not SQS, output: %q", c.Output)
+	}
+
+	return c.SQS.Validate()
+}
+
 // Validate will check the output source validity
 // It will also check if a topic exists + iterate over each topic to make sure it's valid.
 // The actual output source (like Snowflake) and CDC parser will be loaded and checked by other funcs.
@@ -187,6 +237,10 @@ func (c Config) Validate() error {
 		if err := c.ValidateMSSQL(); err != nil {
 			return err
 		}
+	case constants.MySQL:
+		if err := c.ValidateMySQL(); err != nil {
+			return err
+		}
 	case constants.Redshift:
 		if err := c.ValidateRedshift(); err != nil {
 			return err
@@ -205,6 +259,14 @@ func (c Config) Validate() error {
 		}
 	case constants.MotherDuck:
 		if err := c.ValidateMotherDuck(); err != nil {
+			return err
+		}
+	case constants.Clickhouse:
+		if err := c.ValidateClickhouse(); err != nil {
+			return err
+		}
+	case constants.SQS:
+		if err := c.ValidateSQS(); err != nil {
 			return err
 		}
 	}

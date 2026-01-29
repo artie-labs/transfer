@@ -56,12 +56,12 @@ func (s Store) CreateTable(ctx context.Context, tableID sql.TableIdentifier, tab
 		return fmt.Errorf("failed to build column parts: %w", err)
 	}
 
-	if err := s.apacheLivyClient.ExecContext(ctx, s.Dialect().BuildCreateTableQuery(tableID, false, colParts)); err != nil {
+	if err := s.apacheLivyClient.ExecContext(ctx, s.Dialect().BuildCreateTableQuery(tableID, false, config.Replication, colParts)); err != nil {
 		return fmt.Errorf("failed to create table: %w", err)
 	}
 
 	// Now add this to our [tableConfig]
-	tableConfig.MutateInMemoryColumns(constants.AddColumn, cols...)
+	tableConfig.MutateInMemoryColumns(constants.AddColumn, cols)
 	return nil
 }
 
@@ -83,7 +83,7 @@ func (s Store) AlterTableAddColumns(ctx context.Context, tableID sql.TableIdenti
 	}
 
 	// Now add this to our [tableConfig]
-	tableConfig.MutateInMemoryColumns(constants.AddColumn, cols...)
+	tableConfig.MutateInMemoryColumns(constants.AddColumn, cols)
 	return nil
 }
 
@@ -105,7 +105,7 @@ func (s Store) AlterTableDropColumns(ctx context.Context, tableID sql.TableIdent
 		}
 	}
 
-	tableConfig.MutateInMemoryColumns(constants.DropColumn, colsToDrop...)
+	tableConfig.MutateInMemoryColumns(constants.DropColumn, colsToDrop)
 	return nil
 }
 

@@ -18,7 +18,7 @@ func TestInferSeverity(t *testing.T) {
 	}
 
 	for eventType, expectedSeverity := range expectedMap {
-		assert.Equal(t, expectedSeverity, BuildSeverity(eventType))
+		assert.Equal(t, expectedSeverity, GetEventSeverity(eventType))
 	}
 }
 
@@ -34,6 +34,6 @@ func TestInferMessage(t *testing.T) {
 	}
 
 	for eventType, expectedMessage := range expectedMap {
-		assert.Equal(t, expectedMessage, BuildMessage(eventType))
+		assert.Equal(t, expectedMessage, GetEventMessage(eventType))
 	}
 }

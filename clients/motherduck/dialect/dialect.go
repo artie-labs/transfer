@@ -62,7 +62,7 @@ func (DuckDBDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, settings 
 		return "text", nil
 	case typing.Date.Kind:
 		return "date", nil
-	case typing.Time.Kind:
+	case typing.TimeKindDetails.Kind:
 		return "time", nil
 	case typing.TimestampNTZ.Kind:
 		return "timestamp", nil
@@ -112,7 +112,7 @@ func (DuckDBDialect) KindForDataType(_type string) (typing.KindDetails, error) {
 	case "date":
 		return typing.Date, nil
 	case "time":
-		return typing.Time, nil
+		return typing.TimeKindDetails, nil
 	case "timestamp", "datetime":
 		return typing.TimestampNTZ, nil
 	case "timestamp with time zone", "timestamptz":
@@ -132,7 +132,7 @@ func (DuckDBDialect) IsTableDoesNotExistErr(err error) bool {
 	return strings.Contains(err.Error(), "does not exist")
 }
 
-func (DuckDBDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, temporary bool, colSQLParts []string) string {
+func (DuckDBDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, temporary bool, _ config.Mode, colSQLParts []string) string {
 	// We will create temporary tables in DuckDB the exact same way as we do for permanent tables.
 	// This is because temporary tables are session scoped and this will not work for us as we leverage connection pooling.
 	return fmt.Sprintf("CREATE TABLE %s (%s);", tableID.FullyQualifiedName(), strings.Join(colSQLParts, ","))

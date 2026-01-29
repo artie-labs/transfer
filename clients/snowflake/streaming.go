@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -25,6 +26,38 @@ import (
 
 // https://docs.snowflake.com/en/user-guide/snowpipe-streaming/snowpipe-streaming-high-performance-limitations#channel-limits
 const maxChunkSize = 4 * 1024 * 1024 // 4MB
+
+// Error codes that require channel reopening
+// https://docs.snowflake.com/en/user-guide/snowpipe-streaming/snowpipe-streaming-high-performance-error-handling#channel-errors-that-require-a-manual-reopen
+var channelReopenErrorCodes = map[string]bool{
+	"ERR_CHANNEL_HAS_INVALID_ROW_SEQUENCER":           true,
+	"ERR_CHANNEL_HAS_INVALID_CLIENT_SEQUENCER":        true,
+	"ERR_CHANNEL_MUST_BE_REOPENED":                    true,
+	"ERR_CHANNEL_MUST_BE_REOPENED_DUE_TO_ROW_SEQ_GAP": true,
+	"ERR_CHANNEL_DOES_NOT_EXIST_OR_IS_NOT_AUTHORIZED": true,
+	"STALE_PIPE_CACHE":                                true,
+}
+
+type ErrorResponse struct {
+	Code          string `json:"code"`
+	Message       string `json:"message"`
+	ResultHandler string `json:"result_handler,omitempty"`
+}
+
+func NewErrorResponse(code, message string) ErrorResponse {
+	return ErrorResponse{Code: code, Message: message}
+}
+
+func (e ErrorResponse) Error() string {
+	if e.Message != "" {
+		return fmt.Sprintf("%s: %s", e.Code, e.Message)
+	}
+	return e.Code
+}
+
+func (e *ErrorResponse) IsChannelReopenError() bool {
+	return channelReopenErrorCodes[e.Code]
+}
 
 type SnowpipeStreamingChannel struct {
 	mu                sync.Mutex
@@ -51,6 +84,12 @@ func (s *SnowpipeStreamingChannel) UpdateContinuationToken(token string) string 
 	defer s.mu.Unlock()
 	s.continuationToken = token
 	return s.continuationToken
+}
+
+func (s *SnowpipeStreamingChannel) InvalidateChannel() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.continuationToken = ""
 }
 
 type SnowpipeStreamingChannelManager struct {
@@ -124,6 +163,36 @@ func (s *SnowpipeStreamingChannelManager) refresh(ctx context.Context) error {
 	return nil
 }
 
+// openChannel gets or creates a channel and opens it if needed.
+// This method is thread-safe and prevents multiple goroutines from calling OpenChannel() concurrently.
+// If forceReopen is true, the channel will be reopened even if it has a valid continuation token.
+func (s *SnowpipeStreamingChannelManager) openChannel(ctx context.Context, db, schema, pipe, channelName string, forceReopen bool) (*SnowpipeStreamingChannel, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	channel, ok := s.channelNameToChannel[channelName]
+	if !ok {
+		channel = NewSnowpipeStreamingChannel()
+		s.channelNameToChannel[channelName] = channel
+	}
+
+	// If force reopen, invalidate the channel first
+	if forceReopen {
+		channel.InvalidateChannel()
+	}
+
+	// Check if channel needs to be opened
+	if contToken := channel.GetContinuationToken(); contToken == "" {
+		channelResponse, err := OpenChannel(ctx, s.scopedToken, s.ingestHost, db, schema, pipe, channelName)
+		if err != nil {
+			return nil, fmt.Errorf("failed to open channel for snowpipe streaming: %w", err)
+		}
+		channel.UpdateContinuationToken(channelResponse.NextContinuationToken)
+	}
+
+	return channel, nil
+}
+
 func (s *SnowpipeStreamingChannelManager) LoadData(ctx context.Context, db, schema, pipe string, now time.Time, data optimization.TableData) error {
 	s.mu.Lock()
 	needsRefresh := s.expiresAt.Before(now.Add(1 * time.Minute))
@@ -137,32 +206,18 @@ func (s *SnowpipeStreamingChannelManager) LoadData(ctx context.Context, db, sche
 
 	channelName := fmt.Sprintf("%s-%d", data.Name(), 0)
 
-	// Get or create channel and open it if needed, all while holding manager lock
-	// This prevents multiple goroutines from calling OpenChannel() concurrently
-	s.mu.Lock()
-	channel, ok := s.channelNameToChannel[channelName]
-	if !ok {
-		channel = NewSnowpipeStreamingChannel()
-		s.channelNameToChannel[channelName] = channel
+	// Get or create channel and open it if needed
+	channel, err := s.openChannel(ctx, db, schema, pipe, channelName, false)
+	if err != nil {
+		return err
 	}
 
-	// Check if channel needs to be opened
-	if contToken := channel.GetContinuationToken(); contToken == "" {
-		if channelResponse, err := OpenChannel(ctx, s.scopedToken, s.ingestHost, db, schema, pipe, channelName); err != nil {
-			s.mu.Unlock()
-			return fmt.Errorf("failed to open channel for snowpipe streaming: %w", err)
-		} else {
-			channel.UpdateContinuationToken(channelResponse.NextContinuationToken)
-		}
-	}
-	s.mu.Unlock()
-
-	_, err := batch.BySize(
+	_, err = batch.BySize(
 		data.Rows(),
 		maxChunkSize,
 		true,
 		func(row optimization.Row) ([]byte, error) {
-			rowBytes, err := jsoniter.Marshal(row.GetData())
+			rowBytes, err := jsoniter.Marshal(_dialect.NormalizeColumnNames(row).GetData())
 			if err != nil {
 				return nil, err
 			}
@@ -181,19 +236,45 @@ func (s *SnowpipeStreamingChannelManager) LoadData(ctx context.Context, db, sche
 			reader := io.MultiReader(readers...)
 
 			appendResp, err := AppendRows(ctx, s.scopedToken, s.ingestHost, db, schema, pipe, channelName, channel.GetContinuationToken(), reader)
-			if err != nil {
-				return fmt.Errorf("failed to append rows for snowpipe streaming channel %q: %w", channelName, err)
+			if err == nil {
+				channel.UpdateContinuationToken(appendResp.NextContinuationToken)
+				return nil
 			}
 
-			channel.UpdateContinuationToken(appendResp.NextContinuationToken)
-			return nil
+			// Check if this is a reopenable error
+			var appendErr ErrorResponse
+			if errors.As(err, &appendErr) && appendErr.IsChannelReopenError() {
+				// Reopen the channel and retry once
+				channel, retryErr := s.openChannel(ctx, db, schema, pipe, channelName, true)
+				if retryErr != nil {
+					return fmt.Errorf("failed to reopen channel %q after error %q: %w", channelName, appendErr.Code, retryErr)
+				}
+
+				// Rebuild the reader since it was consumed
+				retryReaders := make([]io.Reader, len(encodedBytes))
+				for i, b := range encodedBytes {
+					retryReaders[i] = bytes.NewReader(b)
+				}
+				retryReader := io.MultiReader(retryReaders...)
+				appendResp, err = AppendRows(ctx, s.scopedToken, s.ingestHost, db, schema, pipe, channelName, channel.GetContinuationToken(), retryReader)
+				if err != nil {
+					return fmt.Errorf("failed to append rows for snowpipe streaming channel %q after reopen: %w", channelName, err)
+				}
+
+				channel.UpdateContinuationToken(appendResp.NextContinuationToken)
+				return nil
+			}
+
+			return fmt.Errorf("failed to append rows for snowpipe streaming channel %q: %w", channelName, err)
 		},
 	)
 
 	return err
 }
 
-// copied from https://github.com/snowflakedb/gosnowflake/blob/v1.17.0/auth.go#L640
+// copied from https://github.com/snowflakedb/gosnowflake/blob/v1.17.1/auth.go#L646
+//
+//nolint:staticcheck // JWTExpireTimeout is deprecated but still functional; no replacement available yet in gosnowflake v1.17.1
 func PrepareJWTToken(config *gosnowflake.Config) (string, error) {
 	if config.PrivateKey == nil {
 		return "", fmt.Errorf("trying to use keypair authentication, but PrivateKey was not provided in the driver config")
@@ -463,8 +544,12 @@ func AppendRows(
 		return AppendRowsResponse{}, fmt.Errorf("failed to read response body: %w body: %s", err, string(body))
 	}
 
-	if resp.StatusCode != 200 && resp.StatusCode != 201 {
-		return AppendRowsResponse{}, fmt.Errorf("unexpected status code %d, body: %s", resp.StatusCode, body)
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		var errorResponse ErrorResponse
+		if err := json.Unmarshal(body, &errorResponse); err != nil {
+			return AppendRowsResponse{}, fmt.Errorf("failed to unmarshal error response: %w status: %d, body: %s", err, resp.StatusCode, string(body))
+		}
+		return AppendRowsResponse{}, errorResponse
 	}
 
 	var appendRowsResponse AppendRowsResponse

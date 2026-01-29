@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/segmentio/kafka-go"
+	"github.com/twmb/franz-go/pkg/kerr"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/kmsg"
 
@@ -16,7 +16,8 @@ import (
 )
 
 const (
-	FetchMessageTimeout = 5 * time.Minute
+	FetchMessageTimeout     = 5 * time.Minute
+	TopicExistsPollInterval = 5 * time.Minute
 )
 
 type ctxKey string
@@ -29,31 +30,6 @@ type Consumer interface {
 	Close() (err error)
 	FetchMessage(ctx context.Context) (artie.Message, error)
 	CommitMessages(ctx context.Context, msgs ...artie.Message) error
-}
-
-type KafkaGoConsumer struct {
-	*kafka.Reader
-}
-
-func (k KafkaGoConsumer) CommitMessages(ctx context.Context, msgs ...artie.Message) error {
-	// TODO: Find a better way to get an array of kafka.Message without allocating a new slice.
-	kafkaMsgs := make([]kafka.Message, len(msgs))
-	for i, msg := range msgs {
-		if kMsg, ok := msg.(artie.KafkaGoMessage); ok {
-			kafkaMsgs[i] = kMsg.GetMessage()
-		} else {
-			return fmt.Errorf("message is not of type artie.KafkaGoMessage: %T", msg)
-		}
-	}
-	return k.Reader.CommitMessages(ctx, kafkaMsgs...)
-}
-
-func (k KafkaGoConsumer) FetchMessage(ctx context.Context) (artie.Message, error) {
-	msg, err := k.Reader.FetchMessage(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return artie.NewKafkaGoMessage(msg), nil
 }
 
 type FranzGoConsumer struct {
@@ -137,6 +113,51 @@ func (f *FranzGoConsumer) FetchMessage(ctx context.Context) (artie.Message, erro
 	return artie.NewFranzGoMessage(*record, f.GetHighWatermark(*record)), nil
 }
 
+// TopicExists checks if a topic exists in the Kafka cluster using metadata request.
+func TopicExists(ctx context.Context, client *kgo.Client, topic string) (bool, error) {
+	req := kmsg.NewMetadataRequest()
+	req.Topics = []kmsg.MetadataRequestTopic{{Topic: kmsg.StringPtr(topic)}}
+
+	resp, err := req.RequestWith(ctx, client)
+	if err != nil {
+		return false, fmt.Errorf("failed to fetch metadata: %w", err)
+	}
+
+	for _, t := range resp.Topics {
+		if t.Topic != nil && *t.Topic == topic {
+			if err := kerr.ErrorForCode(t.ErrorCode); err != nil {
+				if errors.Is(err, kerr.UnknownTopicOrPartition) {
+					return false, nil
+				}
+				return false, fmt.Errorf("topic metadata error for %q: %w", topic, err)
+			}
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// WaitForTopicToExist polls until the topic exists or the context is cancelled.
+func WaitForTopicToExist(ctx context.Context, client *kgo.Client, topic string) error {
+	for {
+		exists, err := TopicExists(ctx, client, topic)
+		if err != nil {
+			return fmt.Errorf("failed to check topic existence: %w", err)
+		}
+		if exists {
+			slog.Info("Topic exists, proceeding with consumer setup", slog.String("topic", topic))
+			return nil
+		}
+
+		slog.Info("Topic does not exist yet, waiting...", slog.String("topic", topic), slog.Duration("pollInterval", TopicExistsPollInterval))
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(TopicExistsPollInterval):
+		}
+	}
+}
+
 func (f *FranzGoConsumer) CommitMessages(ctx context.Context, msgs ...artie.Message) error {
 	offsetsToCommit := make(map[string]map[int32]kgo.EpochOffset)
 
@@ -212,6 +233,14 @@ type ConsumerProvider struct {
 	Consumer
 }
 
+// WaitForTopic waits for the topic to exist. Only supported for FranzGo consumers.
+func (c *ConsumerProvider) WaitForTopic(ctx context.Context) error {
+	if c.client == nil {
+		return nil // skip if no franz-go client is set
+	}
+	return WaitForTopicToExist(ctx, c.client, c.topic)
+}
+
 func (c *ConsumerProvider) SetPartitionToAppliedOffsetTest(msg artie.Message) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -227,44 +256,22 @@ func NewConsumerProviderForTest(consumer Consumer, topic, groupID string) *Consu
 	}
 }
 
-func InjectConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) (context.Context, error) {
-	kafkaConn := NewConnection(cfg.EnableAWSMSKIAM, cfg.DisableTLS, cfg.Username, cfg.Password, DefaultTimeout)
-	dialer, err := kafkaConn.Dialer(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Kafka dialer: %w", err)
-	}
-
-	for _, topicConfig := range cfg.TopicConfigs {
-		kafkaCfg := kafka.ReaderConfig{
-			GroupID: cfg.GroupID,
-			Dialer:  dialer,
-			Topic:   topicConfig.Topic,
-			Brokers: cfg.BootstrapServers(true),
-
-			// This will ensure that we're watching metadata updates from Kafka.
-			// When there's a partition change, we'll rediscover and refresh our assignment and connections automatically without a restart.
-			WatchPartitionChanges: true,
-		}
-
-		ctx = context.WithValue(ctx, BuildContextKey(topicConfig.Topic), &ConsumerProvider{
-			Consumer:                 &KafkaGoConsumer{kafka.NewReader(kafkaCfg)},
-			topic:                    topicConfig.Topic,
-			groupID:                  cfg.GroupID,
-			partitionToAppliedOffset: make(map[int]artie.Message),
-		})
-	}
-
-	return ctx, nil
-}
-
 func InjectFranzGoConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) (context.Context, error) {
 	kafkaConn := NewConnection(cfg.EnableAWSMSKIAM, cfg.DisableTLS, cfg.Username, cfg.Password, DefaultTimeout)
 	brokers := cfg.BootstrapServers(true)
+
+	var createdClients []*kgo.Client
+	closeClients := func() {
+		for _, c := range createdClients {
+			c.Close()
+		}
+	}
 
 	// Create separate clients for each topic
 	for _, topicConfig := range cfg.TopicConfigs {
 		clientOpts, err := kafkaConn.ClientOptions(ctx, brokers)
 		if err != nil {
+			closeClients()
 			return nil, fmt.Errorf("failed to create Kafka client options for topic %s: %w", topicConfig.Topic, err)
 		}
 
@@ -309,10 +316,26 @@ func InjectFranzGoConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) 
 			}),
 		)
 
+		// Apply optional fetch tuning settings if configured
+		if cfg.FetchMaxBytes > 0 {
+			clientOpts = append(clientOpts, kgo.FetchMaxBytes(cfg.FetchMaxBytes))
+		}
+		if cfg.FetchMaxPartitionBytes > 0 {
+			clientOpts = append(clientOpts, kgo.FetchMaxPartitionBytes(cfg.FetchMaxPartitionBytes))
+		}
+		if cfg.FetchMinBytes > 0 {
+			clientOpts = append(clientOpts, kgo.FetchMinBytes(cfg.FetchMinBytes))
+		}
+		if cfg.FetchMaxWaitMs > 0 {
+			clientOpts = append(clientOpts, kgo.FetchMaxWait(time.Duration(cfg.FetchMaxWaitMs)*time.Millisecond))
+		}
+
 		client, err := kgo.NewClient(clientOpts...)
 		if err != nil {
+			closeClients()
 			return nil, fmt.Errorf("failed to create Kafka client for topic %s: %w", topicConfig.Topic, err)
 		}
+		createdClients = append(createdClients, client)
 
 		slog.Info("Created Kafka consumer for topic",
 			slog.String("topic", topicConfig.Topic),

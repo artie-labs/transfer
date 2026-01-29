@@ -16,11 +16,11 @@ import (
 )
 
 func (f *FlushTestSuite) TestFlushSingleTopic_NilDB() {
-	assert.NoError(f.T(), FlushSingleTopic(f.T().Context(), nil, f.baseline, metrics.NullMetricsProvider{}, Args{Reason: "test"}, "topic", false))
+	assert.NoError(f.T(), FlushSingleTopic(f.T().Context(), nil, f.baseline, metrics.NullMetricsProvider{}, nil, Args{Reason: "test"}, "topic", false))
 }
 
 func (f *FlushTestSuite) TestFlushSingleTopic_NoTables() {
-	assert.NoError(f.T(), FlushSingleTopic(f.T().Context(), f.db, f.baseline, metrics.NullMetricsProvider{}, Args{Reason: "test"}, "topic", false))
+	assert.NoError(f.T(), FlushSingleTopic(f.T().Context(), f.db, f.baseline, metrics.NullMetricsProvider{}, nil, Args{Reason: "test"}, "topic", false))
 }
 
 func (f *FlushTestSuite) TestFlushSingleTopic_Success() {
@@ -30,11 +30,11 @@ func (f *FlushTestSuite) TestFlushSingleTopic_Success() {
 
 	tableID := cdc.NewTableID("public", "users")
 	td := f.db.GetOrCreateTableData(tableID, topicName)
-	td.SetTableData(optimization.NewTableData(&columns.Columns{}, config.Replication, []string{"id"}, topicConfig, tableID.Table))
+	td.SetTableData(optimization.NewTableData(columns.NewColumns(nil), config.Replication, []string{"id"}, topicConfig, tableID.Table))
 	td.InsertRow("1", map[string]any{"id": 1, "name": "Alice"}, false)
 
 	f.fakeBaseline.MergeReturns(true, nil)
-	assert.NoError(f.T(), FlushSingleTopic(ctx, f.db, f.baseline, metrics.NullMetricsProvider{}, Args{Reason: "test"}, topicName, false))
+	assert.NoError(f.T(), FlushSingleTopic(ctx, f.db, f.baseline, metrics.NullMetricsProvider{}, nil, Args{Reason: "test"}, topicName, false))
 	assert.Equal(f.T(), 1, f.fakeBaseline.MergeCallCount())
 	assert.Equal(f.T(), 1, f.fakeConsumer.CommitMessagesCallCount())
 	assert.True(f.T(), td.Empty())
@@ -48,7 +48,7 @@ func (f *FlushTestSuite) TestFlushSingleTopic_EmptyTable() {
 	tableID := cdc.NewTableID("public", "empty")
 	f.db.GetOrCreateTableData(tableID, topicName)
 
-	assert.NoError(f.T(), FlushSingleTopic(ctx, f.db, f.baseline, metrics.NullMetricsProvider{}, Args{Reason: "test"}, topicName, false))
+	assert.NoError(f.T(), FlushSingleTopic(ctx, f.db, f.baseline, metrics.NullMetricsProvider{}, nil, Args{Reason: "test"}, topicName, false))
 	assert.Equal(f.T(), 0, f.fakeBaseline.MergeCallCount())
 	assert.Equal(f.T(), 0, f.fakeConsumer.CommitMessagesCallCount())
 }
@@ -67,13 +67,13 @@ func (f *FlushTestSuite) TestFlushSingleTopic_MultipleTablesSuccess() {
 	var tableDatas []*models.TableData
 	for _, tableID := range tableIDs {
 		td := f.db.GetOrCreateTableData(tableID, topicName)
-		td.SetTableData(optimization.NewTableData(&columns.Columns{}, config.Replication, []string{"id"}, topicConfig, tableID.Table))
+		td.SetTableData(optimization.NewTableData(columns.NewColumns(nil), config.Replication, []string{"id"}, topicConfig, tableID.Table))
 		td.InsertRow("1", map[string]any{"id": 1, "data": "test"}, false)
 		tableDatas = append(tableDatas, td)
 	}
 
 	f.fakeBaseline.MergeReturns(true, nil)
-	err := FlushSingleTopic(ctx, f.db, f.baseline, metrics.NullMetricsProvider{}, Args{Reason: "test"}, topicName, false)
+	err := FlushSingleTopic(ctx, f.db, f.baseline, metrics.NullMetricsProvider{}, nil, Args{Reason: "test"}, topicName, false)
 	assert.NoError(f.T(), err)
 	assert.Equal(f.T(), 3, f.fakeBaseline.MergeCallCount())
 	assert.Equal(f.T(), 1, f.fakeConsumer.CommitMessagesCallCount())
@@ -97,18 +97,18 @@ func (f *FlushTestSuite) TestFlushSingleTopic_MultipleTablesWithCooldown() {
 	var tableDatas []*models.TableData
 	for _, tableID := range tableIDs {
 		td := f.db.GetOrCreateTableData(tableID, topicName)
-		td.SetTableData(optimization.NewTableData(&columns.Columns{}, config.Replication, []string{"id"}, topicConfig, tableID.Table))
+		td.SetTableData(optimization.NewTableData(columns.NewColumns(nil), config.Replication, []string{"id"}, topicConfig, tableID.Table))
 		td.InsertRow("1", map[string]any{"id": 1, "data": "test"}, false)
 		tableDatas = append(tableDatas, td)
 	}
 
 	// Set cooldown on one table by simulating a recent flush
 	tableDatas[1].Wipe()
-	tableDatas[1].SetTableData(optimization.NewTableData(&columns.Columns{}, config.Replication, []string{"id"}, topicConfig, tableIDs[1].Table))
+	tableDatas[1].SetTableData(optimization.NewTableData(columns.NewColumns(nil), config.Replication, []string{"id"}, topicConfig, tableIDs[1].Table))
 	tableDatas[1].InsertRow("1", map[string]any{"id": 1, "data": "test"}, false)
 
 	cooldown := 10 * time.Second
-	assert.NoError(f.T(), FlushSingleTopic(ctx, f.db, f.baseline, metrics.NullMetricsProvider{}, Args{CoolDown: &cooldown, Reason: "test"}, topicName, false))
+	assert.NoError(f.T(), FlushSingleTopic(ctx, f.db, f.baseline, metrics.NullMetricsProvider{}, nil, Args{CoolDown: &cooldown, Reason: "test"}, topicName, false))
 
 	// No tables should have been flushed
 	assert.Equal(f.T(), 0, f.fakeBaseline.MergeCallCount())
@@ -127,11 +127,11 @@ func (f *FlushTestSuite) TestFlushSingleTopic_HistoryMode() {
 
 	tableID := cdc.NewTableID("public", "events")
 	td := f.db.GetOrCreateTableData(tableID, topicName)
-	td.SetTableData(optimization.NewTableData(&columns.Columns{}, config.History, []string{"id"}, topicConfig, tableID.Table))
+	td.SetTableData(optimization.NewTableData(columns.NewColumns(nil), config.History, []string{"id"}, topicConfig, tableID.Table))
 	td.InsertRow("1", map[string]any{"id": 1, "event": "login"}, false)
 
 	f.fakeBaseline.AppendReturns(nil)
-	assert.NoError(f.T(), FlushSingleTopic(ctx, f.db, f.baseline, metrics.NullMetricsProvider{}, Args{Reason: "test"}, topicName, false))
+	assert.NoError(f.T(), FlushSingleTopic(ctx, f.db, f.baseline, metrics.NullMetricsProvider{}, nil, Args{Reason: "test"}, topicName, false))
 	assert.Equal(f.T(), 1, f.fakeBaseline.AppendCallCount())
 	assert.Equal(f.T(), 0, f.fakeBaseline.MergeCallCount())
 	assert.Equal(f.T(), 1, f.fakeConsumer.CommitMessagesCallCount())
@@ -145,12 +145,12 @@ func (f *FlushTestSuite) TestFlushSingleTopic_MergeNoCommit() {
 
 	tableID := cdc.NewTableID("public", "users")
 	td := f.db.GetOrCreateTableData(tableID, topicName)
-	td.SetTableData(optimization.NewTableData(&columns.Columns{}, config.Replication, []string{"id"}, topicConfig, tableID.Table))
+	td.SetTableData(optimization.NewTableData(columns.NewColumns(nil), config.Replication, []string{"id"}, topicConfig, tableID.Table))
 	td.InsertRow("1", map[string]any{"id": 1, "name": "Alice"}, false)
 
 	// Merge succeeds but returns false (don't commit offset)
 	f.fakeBaseline.MergeReturns(false, nil)
-	assert.NoError(f.T(), FlushSingleTopic(ctx, f.db, f.baseline, metrics.NullMetricsProvider{}, Args{Reason: "test"}, topicName, false))
+	assert.NoError(f.T(), FlushSingleTopic(ctx, f.db, f.baseline, metrics.NullMetricsProvider{}, nil, Args{Reason: "test"}, topicName, false))
 	assert.Equal(f.T(), 1, f.fakeBaseline.MergeCallCount())
 	assert.Equal(f.T(), 0, f.fakeConsumer.CommitMessagesCallCount())
 	assert.False(f.T(), td.Empty())

@@ -35,7 +35,7 @@ done
 # Check Kafka
 echo -e "${YELLOW}🔍 Checking Kafka...${NC}"
 for i in {1..30}; do
-    if docker exec kafka /kafka/bin/kafka-topics.sh --bootstrap-server localhost:29092 --list >/dev/null 2>&1; then
+    if docker exec kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:29092 --list >/dev/null 2>&1; then
         echo -e "${GREEN}✅ Kafka is ready${NC}"
         break
     fi
@@ -62,11 +62,9 @@ DATE="$(date +%Y_%m_%d_%H_%M_%S)"
 if sed --version >/dev/null 2>&1; then
     # GNU sed
     sed -i "s/^  groupID: .*/  groupID: group_e2e_${DATE}/" config/e2e.yaml
-    sed -i "s/^  groupID: .*/  groupID: group_fgo_${DATE}/" config/e2e_fgo.yaml
 else
     # BSD/macOS sed
     sed -i '' "s/^  groupID: .*/  groupID: group_e2e_${DATE}/" config/e2e.yaml
-    sed -i '' "s/^  groupID: .*/  groupID: group_fgo_${DATE}/" config/e2e_fgo.yaml
 fi
 
 echo -e "${GREEN}✅ E2E infrastructure is ready!${NC}"

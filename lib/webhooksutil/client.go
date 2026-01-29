@@ -44,8 +44,8 @@ func NewWebhooksClient(apiKey, url string, source Source, properties map[string]
 func (w WebhooksClient) BuildProperties(eventType EventType, additionalProperties map[string]any) map[string]any {
 	props := map[string]any{
 		"source":   w.source,
-		"message":  BuildMessage(eventType),
-		"severity": BuildSeverity(eventType),
+		"message":  GetEventMessage(eventType),
+		"severity": GetEventSeverity(eventType),
 	}
 	maps.Copy(props, w.properties)
 	maps.Copy(props, additionalProperties)

@@ -1,10 +1,14 @@
 package typing
 
-import "time"
+import (
+	"time"
+
+	"github.com/artie-labs/transfer/lib/typing/ext"
+)
 
 const (
-	PostgresTimeFormat     = PostgresTimeFormatNoTZ + TimezoneOffsetFormat
-	PostgresTimeFormatNoTZ = "15:04:05.999999" // microsecond precision, used because certain destinations do not like `Time` types to specify tz locale
+	PostgresTimeFormat     = ext.PostgresTimeFormatNoTZ + TimezoneOffsetFormat
+	PostgresTimeFormatNoTZ = ext.PostgresTimeFormatNoTZ // microsecond precision, used because certain destinations do not like `Time` types to specify tz locale
 )
 
 var supportedDateTimeLayouts = []string{

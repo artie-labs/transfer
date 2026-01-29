@@ -17,6 +17,8 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
+	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
+	"github.com/artie-labs/transfer/lib/webhooksutil"
 	"github.com/artie-labs/transfer/models"
 	"github.com/artie-labs/transfer/processes/consumer"
 	"github.com/artie-labs/transfer/processes/pool"
@@ -26,8 +28,22 @@ var version = "dev" // this will be set by the goreleaser configuration to appro
 
 func main() {
 	// Parse args into settings
+	ctx := context.Background()
 	settings, err := config.LoadSettings(os.Args, true)
+	var webhookSettings *config.WebhookSettings
+	if settings != nil {
+		webhookSettings = settings.Config.WebhookSettings
+	}
+	whClient, whErr := webhooksclient.NewFromConfig(webhookSettings)
+	if whErr != nil {
+		logger.Fatal("Failed to initialize webhooks client", slog.Any("err", whErr))
+	}
+
 	if err != nil {
+		whClient.SendEvent(ctx, webhooksutil.ConfigInvalid, map[string]any{
+			"error":   "Failed to initialize config",
+			"details": err.Error(),
+		})
 		logger.Fatal("Failed to initialize config", slog.Any("err", err))
 	}
 
@@ -60,36 +76,48 @@ func main() {
 		slog.Int("flushPoolSizeKb", settings.Config.FlushSizeKb),
 	)
 
-	ctx := context.Background()
 	metricsClient := metrics.LoadExporter(settings.Config)
 	var dest destination.Baseline
 	if utils.IsOutputBaseline(settings.Config) {
 		dest, err = utils.LoadBaseline(ctx, settings.Config)
 		if err != nil {
+			whClient.SendEvent(ctx, webhooksutil.ConnectionFailed, map[string]any{
+				"error":   "unable to connect to destination",
+				"details": err.Error(),
+			})
 			logger.Fatal("Unable to load baseline destination", slog.Any("err", err))
 		}
 	} else {
 		_dest, err := utils.LoadDestination(ctx, settings.Config, nil)
 		if err != nil {
+			whClient.SendEvent(ctx, webhooksutil.ConnectionFailed, map[string]any{
+				"error":   "Unable to load destination",
+				"details": err.Error(),
+			})
 			logger.Fatal("Unable to load destination", slog.Any("err", err))
 		}
 
-		if err = _dest.SweepTemporaryTables(ctx); err != nil {
+		if err = _dest.SweepTemporaryTables(ctx, whClient); err != nil {
+			whClient.SendEvent(ctx, webhooksutil.ConnectionFailed, map[string]any{
+				"error":   "Failed to clean up temporary tables",
+				"details": err.Error(),
+			})
 			logger.Fatal("Failed to clean up temporary tables", slog.Any("err", err))
 		}
-
+		whClient.SendEvent(ctx, webhooksutil.ConnectionEstablished, map[string]any{
+			"mode": settings.Config.Mode,
+		})
 		dest = _dest
 	}
 
 	slog.Info("Starting...", slog.String("version", version))
+	whClient.SendEvent(ctx, webhooksutil.ReplicationStarted, map[string]any{
+		"version": version,
+		"mode":    settings.Config.Mode,
+	})
 
 	inMemDB := models.NewMemoryDB()
 	switch settings.Config.KafkaClient {
-	case config.KafkaGoClient:
-		ctx, err = kafkalib.InjectConsumerProvidersIntoContext(ctx, settings.Config.Kafka)
-		if err != nil {
-			logger.Fatal("Failed to inject kafka-go consumer providers into context", slog.Any("err", err))
-		}
 	case config.FranzGoClient:
 		ctx, err = kafkalib.InjectFranzGoConsumerProvidersIntoContext(ctx, settings.Config.Kafka)
 		if err != nil {
@@ -103,7 +131,7 @@ func main() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		pool.StartPool(ctx, inMemDB, dest, metricsClient, settings.Config.Kafka.Topics(), time.Duration(settings.Config.FlushIntervalSeconds)*time.Second)
+		pool.StartPool(ctx, inMemDB, dest, metricsClient, whClient, settings.Config.Kafka.Topics(), time.Duration(settings.Config.FlushIntervalSeconds)*time.Second)
 	}()
 
 	wg.Add(1)
@@ -111,7 +139,7 @@ func main() {
 		defer wg.Done()
 		switch settings.Config.Queue {
 		case constants.Kafka:
-			consumer.StartKafkaConsumer(ctx, settings.Config, inMemDB, dest, metricsClient)
+			consumer.StartKafkaConsumer(ctx, settings.Config, inMemDB, dest, metricsClient, whClient)
 		default:
 			logger.Fatal(fmt.Sprintf("Message queue: %q not supported", settings.Config.Queue))
 		}

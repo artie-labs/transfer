@@ -11,13 +11,15 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
+// [buildDistinctDates] - Builds a list of distinct dates from the rows for BigQuery date partitioning.
 func buildDistinctDates(colName string, rows []optimization.Row, reservedColumnNames map[string]bool) ([]string, error) {
 	dateMap := make(map[string]bool)
 	colName = columns.EscapeName(colName, reservedColumnNames)
 	for _, row := range rows {
 		val, ok := row.GetValue(colName)
-		if !ok {
-			return nil, fmt.Errorf("column %q does not exist in row: %v", colName, row)
+		if !ok || val == nil {
+			// Skip distinct date filtering if there are nil or missing values. They will all end up in the `__NULL__` partition.
+			return nil, nil
 		}
 
 		_time, err := typing.ParseDateFromAny(val)

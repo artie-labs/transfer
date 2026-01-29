@@ -59,6 +59,7 @@ Transfer is aiming to provide coverage across all OLTPs and OLAPs databases. Cur
 
 - [Destinations](https://artie.com/docs/destinations):
     - BigQuery
+    - ClickHouse
     - Databricks
     - Iceberg (through S3 Tables)
     - Microsoft SQL Server
@@ -67,6 +68,7 @@ Transfer is aiming to provide coverage across all OLTPs and OLAPs databases. Cur
     - Redshift
     - S3
     - Snowflake
+    - Amazon SQS
 
 - [Sources](https://artie.com/docs/sources):
     - DocumentDB

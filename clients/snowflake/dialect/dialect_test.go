@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/mocks"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -39,12 +40,12 @@ func TestSnowflakeDialect_BuildCreateTableQuery(t *testing.T) {
 	// Temporary:
 	assert.Equal(t,
 		`CREATE TRANSIENT TABLE IF NOT EXISTS {TABLE} ({PART_1},{PART_2}) DATA_RETENTION_TIME_IN_DAYS = 0 STAGE_COPY_OPTIONS = ( PURGE = TRUE ) STAGE_FILE_FORMAT = ( TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='__artie_null_value' EMPTY_FIELD_AS_NULL=FALSE)`,
-		SnowflakeDialect{}.BuildCreateTableQuery(fakeTableID, true, []string{"{PART_1}", "{PART_2}"}),
+		SnowflakeDialect{}.BuildCreateTableQuery(fakeTableID, true, config.Replication, []string{"{PART_1}", "{PART_2}"}),
 	)
 	// Not temporary:
 	assert.Equal(t,
 		`CREATE TABLE IF NOT EXISTS {TABLE} ({PART_1},{PART_2})`,
-		SnowflakeDialect{}.BuildCreateTableQuery(fakeTableID, false, []string{"{PART_1}", "{PART_2}"}),
+		SnowflakeDialect{}.BuildCreateTableQuery(fakeTableID, false, config.Replication, []string{"{PART_1}", "{PART_2}"}),
 	)
 }
 
@@ -114,12 +115,12 @@ func buildColumns(colTypesMap map[string]typing.KindDetails) *columns.Columns {
 	// Sort the column names alphabetically to ensure deterministic order
 	slices.Sort(colNames)
 
-	var cols columns.Columns
+	cols := columns.NewColumns(nil)
 	for _, colName := range colNames {
 		cols.AddColumn(columns.NewColumn(colName, colTypesMap[colName]))
 	}
 
-	return &cols
+	return cols
 }
 
 func TestSnowflakeDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
@@ -333,14 +334,14 @@ func TestSnowflakeDialect_BuildRemoveAllFilesFromStage(t *testing.T) {
 func TestSnowflakeDialect_EscapeColumns(t *testing.T) {
 	{
 		// Test basic string columns
-		var cols columns.Columns
+		cols := columns.NewColumns(nil)
 		cols.AddColumn(columns.NewColumn("foo", typing.String))
 		cols.AddColumn(columns.NewColumn("bar", typing.String))
 		assert.Equal(t, "$1,$2", SnowflakeDialect{}.EscapeColumns(cols.GetColumns(), ","))
 	}
 	{
 		// Test string columns with struct
-		var cols columns.Columns
+		cols := columns.NewColumns(nil)
 		cols.AddColumn(columns.NewColumn("foo", typing.String))
 		cols.AddColumn(columns.NewColumn("bar", typing.String))
 		cols.AddColumn(columns.NewColumn("struct", typing.Struct))
@@ -348,7 +349,7 @@ func TestSnowflakeDialect_EscapeColumns(t *testing.T) {
 	}
 	{
 		// Test string columns with struct and array
-		var cols columns.Columns
+		cols := columns.NewColumns(nil)
 		cols.AddColumn(columns.NewColumn("foo", typing.String))
 		cols.AddColumn(columns.NewColumn("bar", typing.String))
 		cols.AddColumn(columns.NewColumn("struct", typing.Struct))
@@ -357,7 +358,7 @@ func TestSnowflakeDialect_EscapeColumns(t *testing.T) {
 	}
 	{
 		// Test with invalid columns mixed in
-		var cols columns.Columns
+		cols := columns.NewColumns(nil)
 		cols.AddColumn(columns.NewColumn("foo", typing.String))
 		cols.AddColumn(columns.NewColumn("bar", typing.String))
 		cols.AddColumn(columns.NewColumn("struct", typing.Struct))

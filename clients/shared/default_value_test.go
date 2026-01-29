@@ -101,7 +101,7 @@ func TestColumn_DefaultValue(t *testing.T) {
 	}
 	{
 		// TIME
-		col := columns.NewColumnWithDefaultValue("", typing.Time, birthday)
+		col := columns.NewColumnWithDefaultValue("", typing.TimeKindDetails, birthday)
 		for _, dialect := range dialects {
 			actualValue, actualErr := DefaultValue(col, dialect)
 			assert.NoError(t, actualErr, fmt.Sprintf("dialect: %v", dialect))

@@ -8,9 +8,10 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing/columns"
+	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
 )
 
-func Append(ctx context.Context, dest destination.Destination, tableData *optimization.TableData, opts types.AdditionalSettings) error {
+func Append(ctx context.Context, dest destination.Destination, tableData *optimization.TableData, _ *webhooksclient.Client, opts types.AdditionalSettings) error {
 	if tableData.ShouldSkipUpdate() {
 		return nil
 	}
@@ -50,8 +51,9 @@ func Append(ctx context.Context, dest destination.Destination, tableData *optimi
 				tableData,
 				tableConfig,
 				dest.IdentifierFor(
-					tableData.TopicConfig().BuildDatabaseAndSchemaPair(),
+					tableData.TopicConfig().BuildStagingDatabaseAndSchemaPair(),
 					GenerateReusableStagingTableName(
+						tableData.TopicConfig().ReusableStagingTableNamePrefix(),
 						tableID.Table(),
 						config.GetStagingTableSuffix(),
 					),

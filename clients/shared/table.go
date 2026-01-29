@@ -12,6 +12,7 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/jitter"
+	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -51,7 +52,7 @@ func CreateTable(ctx context.Context, dest destination.Destination, mode config.
 	}
 
 	// Update cache with the new columns that we've added.
-	tc.MutateInMemoryColumns(constants.AddColumn, cols...)
+	tc.MutateInMemoryColumns(constants.AddColumn, cols)
 	return nil
 }
 
@@ -103,7 +104,7 @@ func AlterTableAddColumns(ctx context.Context, dest destination.Destination, tc 
 		}
 	}
 
-	tc.MutateInMemoryColumns(constants.AddColumn, cols...)
+	tc.MutateInMemoryColumns(constants.AddColumn, cols)
 	return nil
 }
 
@@ -135,6 +136,14 @@ func AlterTableDropColumns(ctx context.Context, dest destination.Destination, tc
 		}
 	}
 
-	tc.MutateInMemoryColumns(constants.DropColumn, colsToDrop...)
+	tc.MutateInMemoryColumns(constants.DropColumn, colsToDrop)
 	return nil
+}
+
+func BuildStagingTableID(dest destination.Baseline, pair kafkalib.DatabaseAndSchemaPair, tableID sql.TableIdentifier) sql.TableIdentifier {
+	if pair.IsValid() {
+		return TempTableID(dest.IdentifierFor(pair, tableID.Table()))
+	}
+
+	return TempTableID(tableID)
 }
