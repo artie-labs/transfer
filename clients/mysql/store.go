@@ -85,8 +85,8 @@ func (s *Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier,
 		Destination:           s,
 		TableID:               tableID,
 		ConfigMap:             s.configMap,
-		ColumnNameForName:     "COLUMN_NAME",
-		ColumnNameForDataType: "DATA_TYPE",
+		ColumnNameForName:     "column_name",
+		ColumnNameForDataType: "data_type",
 		DropDeletedColumns:    dropDeletedColumns,
 	}.GetTableConfig(ctx)
 }
