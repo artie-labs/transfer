@@ -6,6 +6,7 @@ import (
 	"log/slog"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"google.golang.org/protobuf/internal/version"
 
 	"github.com/artie-labs/transfer/clients/postgres/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
@@ -32,7 +33,7 @@ func LoadStore(ctx context.Context, cfg config.Config) (*Store, error) {
 		return nil, err
 	}
 
-	version, err := db.RetrieveVersion(ctx, store.GetDatabase())
+	out, err := db.RetrieveVersion(ctx, store.GetDatabase())
 	if err != nil {
 		if closeErr := store.Close(); closeErr != nil {
 			slog.Warn("Failed to close database after error", slog.Any("error", closeErr))
@@ -41,7 +42,7 @@ func LoadStore(ctx context.Context, cfg config.Config) (*Store, error) {
 		return nil, fmt.Errorf("failed to retrieve version: %w", err)
 	}
 
-	slog.Info("Loaded Postgres as a destination", slog.Int("version", version))
+	slog.Info("Loaded Postgres as a destination", slog.Int("version", out.Major))
 	return &Store{
 		Store:     store,
 		configMap: &types.DestinationTableConfigMap{},
