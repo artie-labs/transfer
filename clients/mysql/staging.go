@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log/slog"
+	"slices"
 	"strings"
 
 	"github.com/artie-labs/transfer/clients/shared"
@@ -48,13 +49,7 @@ func (s *Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.T
 	}()
 
 	var rowsLoaded int64
-	for start := 0; start < len(rows); start += batchSize {
-		end := start + batchSize
-		if end > len(rows) {
-			end = len(rows)
-		}
-
-		batch := rows[start:end]
+	for batch := range slices.Chunk(rows, batchSize) {
 		affected, err := s.executeBatchInsert(ctx, tx, tableID, cols, batch)
 		if err != nil {
 			return fmt.Errorf("failed to execute batch insert: %w", err)
