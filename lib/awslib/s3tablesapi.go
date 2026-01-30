@@ -80,7 +80,21 @@ func (s S3TablesAPIWrapper) GetNamespace(ctx context.Context, namespace string) 
 	return *resp, nil
 }
 
-func (s S3TablesAPIWrapper) ListNamespaces(ctx context.Context) ([]types.NamespaceSummary, error) {
+func (s S3TablesAPIWrapper) ListNamespaces(ctx context.Context) ([]string, error) {
+	namespaces, err := s.ListS3Namespaces(ctx)
+	if err != nil {
+		return []string{}, err
+	}
+
+	var out []string
+	for _, ns := range namespaces {
+		out = append(out, ns.Namespace...)
+	}
+
+	return out, nil
+}
+
+func (s S3TablesAPIWrapper) ListS3Namespaces(ctx context.Context) ([]types.NamespaceSummary, error) {
 	var res []types.NamespaceSummary
 	var continuationToken *string
 
@@ -120,8 +134,32 @@ func (s S3TablesAPIWrapper) CreateNamespace(ctx context.Context, namespace strin
 	return err
 }
 
-// ListTables requires the namespace to be exact match and is case sensitive
-func (s S3TablesAPIWrapper) ListTables(ctx context.Context, namespace string) ([]types.TableSummary, error) {
+func (s S3TablesAPIWrapper) ListTables(ctx context.Context, namespace string) ([]iceberg.Table, error) {
+	tables, err := s.ListS3Tables(ctx, namespace)
+	if err != nil {
+		return []iceberg.Table{}, err
+	}
+
+	var out []iceberg.Table
+	for _, table := range tables {
+		_table := iceberg.Table{
+			Namespace:  namespace,
+			CreatedAt:  table.CreatedAt,
+			ModifiedAt: table.ModifiedAt,
+		}
+
+		if table.Name != nil {
+			_table.Name = *table.Name
+		}
+
+		out = append(out, _table)
+	}
+
+	return out, nil
+}
+
+// ListS3Tables requires the namespace to be exact match and is case sensitive
+func (s S3TablesAPIWrapper) ListS3Tables(ctx context.Context, namespace string) ([]types.TableSummary, error) {
 	var tables []types.TableSummary
 	var continuationToken *string
 
