@@ -22,7 +22,7 @@ import (
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func BuildDSN(token string) string {
-	return fmt.Sprintf("md:?motherduck_token=%s;custom_user_agent=artie-transfer", token)
+	return fmt.Sprintf("md:?motherduck_token=%s&custom_user_agent=artie-transfer", token)
 }
 
 type Store struct {
