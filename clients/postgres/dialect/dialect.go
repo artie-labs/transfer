@@ -221,8 +221,9 @@ func (pd PostgresDialect) buildNoMergeQueries(
 	softDelete bool,
 	containsHardDeletes bool,
 ) ([]string, error) {
+	var err error
 	if !softDelete {
-		cols, err := columns.RemoveDeleteColumnMarker(cols)
+		cols, err = columns.RemoveDeleteColumnMarker(cols)
 		if err != nil {
 			return nil, err
 		}
