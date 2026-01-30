@@ -23,7 +23,6 @@ import (
 
 type Store struct {
 	catalogName      string
-	s3TablesAPI      awslib.S3TablesAPIWrapper
 	s3Client         awslib.S3Client
 	catalog          iceberg.IcebergCatalog
 	apacheLivyClient *apachelivy.Client
@@ -39,7 +38,16 @@ func (s Store) GetApacheLivyClient() *apachelivy.Client {
 	return s.apacheLivyClient
 }
 
-func (s Store) GetS3TablesAPI() awslib.S3TablesAPIWrapper {
+func (s Store) GetS3TablesAPI() (awslib.S3TablesAPIWrapper, error) {
+	if s.catalog == nil {
+		return awslib.S3TablesAPIWrapper{}, fmt.Errorf("catalog is not set")
+	}
+
+	catalog, ok := s.catalog.(awslib.S3TablesAPIWrapper)
+	if !ok {
+		return awslib.S3TablesAPIWrapper{}, fmt.Errorf("catalog is not an IcebergCatalog")
+	}
+
 	return s.s3TablesAPI
 }
 

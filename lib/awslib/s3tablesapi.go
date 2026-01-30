@@ -8,6 +8,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/artie-labs/transfer/lib/iceberg"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3tables"
@@ -158,7 +159,44 @@ func (s S3TablesAPIWrapper) GetTable(ctx context.Context, namespace, table strin
 	return *resp, nil
 }
 
-func (s S3TablesAPIWrapper) GetTableMetadata(ctx context.Context, s3URI string) (S3TableSchema, error) {
+func (s S3TablesAPIWrapper) GetTableMetadata(ctx context.Context, namespace, name string) (iceberg.TableMetadata, error) {
+	out, err := s.GetTable(ctx, namespace, name)
+	if err != nil {
+		return iceberg.TableMetadata{}, fmt.Errorf("failed to get table: %w", err)
+	}
+
+	schema, err := s.GetS3TableMetadata(ctx, *out.MetadataLocation)
+	if err != nil {
+		return iceberg.TableMetadata{}, fmt.Errorf("failed to get table metadata: %w", err)
+	}
+
+	currentSchema, err := schema.RetrieveCurrentSchema()
+	if err != nil {
+		return iceberg.TableMetadata{}, fmt.Errorf("failed to retrieve current schema: %w", err)
+	}
+
+	var columns []iceberg.Column
+	for _, field := range currentSchema.Fields {
+		columns = append(columns,
+			iceberg.Column{
+				ID:       field.ID,
+				Name:     field.Name,
+				Type:     field.Type,
+				Required: field.Required,
+			})
+	}
+
+	return iceberg.TableMetadata{
+		TableARN:        out.TableARN,
+		CreatedAt:       out.CreatedAt,
+		ModifiedAt:      out.ModifiedAt,
+		CurrentSchemaID: currentSchema.SchemaID,
+		Location:        schema.Location,
+		Columns:         columns,
+	}, nil
+}
+
+func (s S3TablesAPIWrapper) GetS3TableMetadata(ctx context.Context, s3URI string) (S3TableSchema, error) {
 	body, err := s.readFromS3URI(ctx, s3URI)
 	if err != nil {
 		return S3TableSchema{}, err
@@ -172,7 +210,7 @@ func (s S3TablesAPIWrapper) GetTableMetadata(ctx context.Context, s3URI string) 
 	return tableSchema, nil
 }
 
-func (s S3TablesAPIWrapper) DeleteTable(ctx context.Context, namespace, table string) error {
+func (s S3TablesAPIWrapper) DropTable(ctx context.Context, namespace, table string) error {
 	_, err := s.client.DeleteTable(ctx, &s3tables.DeleteTableInput{
 		Namespace:      aws.String(namespace),
 		Name:           aws.String(table),
