@@ -8,12 +8,13 @@ import (
 	"io"
 	"strings"
 
-	"github.com/artie-labs/transfer/lib/iceberg"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3tables"
 	"github.com/aws/aws-sdk-go-v2/service/s3tables/types"
 	"github.com/aws/smithy-go"
+
+	"github.com/artie-labs/transfer/lib/iceberg"
 )
 
 // Full API spec can be seen here: https://docs.aws.amazon.com/AmazonS3/latest/API/API_Operations_Amazon_S3_Tables.html

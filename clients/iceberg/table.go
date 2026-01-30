@@ -115,7 +115,7 @@ func (s Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error
 		return fmt.Errorf("failed to cast table ID to dialect.TableIdentifier")
 	}
 
-	if err := s.s3TablesAPI.DeleteTable(ctx, castedTableID.Namespace(), castedTableID.Table()); err != nil {
+	if err := s.catalog.DropTable(ctx, castedTableID.Namespace(), castedTableID.Table()); err != nil {
 		return fmt.Errorf("failed to delete table: %w", err)
 	}
 
