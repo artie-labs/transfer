@@ -32,7 +32,7 @@ func LoadStore(ctx context.Context, cfg config.Config) (*Store, error) {
 		return nil, err
 	}
 
-	version, err := db.RetrieveVersion(ctx, store.GetDatabase())
+	out, err := db.RetrieveVersion(ctx, store.GetDatabase())
 	if err != nil {
 		if closeErr := store.Close(); closeErr != nil {
 			slog.Warn("Failed to close database after error", slog.Any("error", closeErr))
@@ -41,16 +41,18 @@ func LoadStore(ctx context.Context, cfg config.Config) (*Store, error) {
 		return nil, fmt.Errorf("failed to retrieve version: %w", err)
 	}
 
+	slog.Info("Loaded Postgres as a destination", slog.Int("version", out.Major))
 	return &Store{
 		Store:     store,
 		configMap: &types.DestinationTableConfigMap{},
 		config:    cfg,
-		version:   version.Major,
+		version:   out.Major,
 	}, nil
 }
 
 func (s Store) dialect() dialect.PostgresDialect {
-	return dialect.PostgresDialect{}
+	// https://www.postgresql.org/docs/current/sql-merge.html
+	return dialect.NewPostgresDialect(s.version < 15)
 }
 
 func (s Store) Dialect() sql.Dialect {
