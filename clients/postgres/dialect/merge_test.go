@@ -253,3 +253,119 @@ func TestPostgresDialect_BuildMergeQueries_DisableMerge_AdditionalEqualityString
 	// INSERT should include the additional equality string
 	assert.Contains(t, queries[2], `tgt."id" = stg."id" AND tgt."partition_date" = stg."partition_date"`)
 }
+
+func TestPostgresDialect_BuildMergeQueries_DisableMerge_ToastColumns(t *testing.T) {
+	dialect := NewPostgresDialect(true)
+	tableID := &mocks.FakeTableIdentifier{}
+	tableID.FullyQualifiedNameReturns(`"schema"."table"`)
+
+	subQuery := `"schema"."table__temp"`
+	primaryKeys := []columns.Column{
+		columns.NewColumn("id", typing.String),
+	}
+
+	// Create columns with TOAST columns (like in Redshift tests)
+	idCol := columns.NewColumn("id", typing.String)
+	nameCol := columns.NewColumn("name", typing.String)
+
+	// Regular string column - not TOAST
+	emailCol := columns.NewColumn("email", typing.String)
+	emailCol.ToastColumn = false
+
+	// TOAST-able text column
+	toastTextCol := columns.NewColumn("toast_text", typing.String)
+	toastTextCol.ToastColumn = true
+
+	// TOAST-able JSONB column
+	toastJsonCol := columns.NewColumn("json_data", typing.Struct)
+	toastJsonCol.ToastColumn = true
+
+	cols := []columns.Column{
+		idCol,
+		nameCol,
+		emailCol,
+		toastTextCol,
+		toastJsonCol,
+		columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean),
+		columns.NewColumn(constants.OnlySetDeleteColumnMarker, typing.Boolean),
+	}
+
+	// Test regular mode with hard deletes
+	queries, err := dialect.BuildMergeQueries(tableID, subQuery, primaryKeys, nil, cols, false, true)
+	assert.NoError(t, err)
+	assert.Len(t, queries, 3)
+
+	// UPDATE query should have TOAST column handling with CASE WHEN for toast columns
+	updateQuery := queries[0]
+	// Regular columns should be simple assignments
+	assert.Contains(t, updateQuery, `"id"=stg."id"`)
+	assert.Contains(t, updateQuery, `"name"=stg."name"`)
+	assert.Contains(t, updateQuery, `"email"=stg."email"`)
+	// TOAST text column should have CASE WHEN with NOT LIKE check
+	assert.Contains(t, updateQuery, `"toast_text"= CASE WHEN COALESCE(stg."toast_text", '') NOT LIKE '%__debezium_unavailable_value%' THEN stg."toast_text" ELSE tgt."toast_text" END`)
+	// TOAST JSONB column should have CASE WHEN with ::text cast and NOT LIKE check
+	assert.Contains(t, updateQuery, `"json_data"= CASE WHEN COALESCE(stg."json_data"::text, '') NOT LIKE '%__debezium_unavailable_value%' THEN stg."json_data" ELSE tgt."json_data" END`)
+
+	// INSERT query should include all columns (TOAST handling not needed for INSERT)
+	insertQuery := queries[1]
+	assert.Contains(t, insertQuery, `INSERT INTO "schema"."table"`)
+	assert.Contains(t, insertQuery, `"toast_text"`)
+	assert.Contains(t, insertQuery, `"json_data"`)
+
+	// DELETE query should not be affected by TOAST columns
+	deleteQuery := queries[2]
+	assert.Contains(t, deleteQuery, `DELETE FROM "schema"."table" AS tgt USING`)
+	assert.Contains(t, deleteQuery, `stg."__artie_delete" = true`)
+}
+
+func TestPostgresDialect_BuildMergeQueries_DisableMerge_ToastColumns_SoftDelete(t *testing.T) {
+	dialect := NewPostgresDialect(true)
+	tableID := &mocks.FakeTableIdentifier{}
+	tableID.FullyQualifiedNameReturns(`"schema"."table"`)
+
+	subQuery := `"schema"."table__temp"`
+	primaryKeys := []columns.Column{
+		columns.NewColumn("id", typing.String),
+	}
+
+	// Create columns with TOAST columns
+	idCol := columns.NewColumn("id", typing.String)
+	nameCol := columns.NewColumn("name", typing.String)
+
+	// TOAST-able text column
+	toastTextCol := columns.NewColumn("toast_text", typing.String)
+	toastTextCol.ToastColumn = true
+
+	cols := []columns.Column{
+		idCol,
+		nameCol,
+		toastTextCol,
+		columns.NewColumn(constants.DeleteColumnMarker, typing.Boolean),
+		columns.NewColumn(constants.OnlySetDeleteColumnMarker, typing.Boolean),
+	}
+
+	// Test soft delete mode
+	queries, err := dialect.BuildMergeQueries(tableID, subQuery, primaryKeys, nil, cols, true, false)
+	assert.NoError(t, err)
+	assert.Len(t, queries, 3)
+
+	// First UPDATE query (all columns) should have TOAST column handling
+	updateAllQuery := queries[0]
+	assert.Contains(t, updateAllQuery, `"id"=stg."id"`)
+	assert.Contains(t, updateAllQuery, `"name"=stg."name"`)
+	assert.Contains(t, updateAllQuery, `"toast_text"= CASE WHEN COALESCE(stg."toast_text", '') NOT LIKE '%__debezium_unavailable_value%' THEN stg."toast_text" ELSE tgt."toast_text" END`)
+	assert.Contains(t, updateAllQuery, `"__artie_delete"=stg."__artie_delete"`)
+	assert.Contains(t, updateAllQuery, `COALESCE(stg."__artie_only_set_delete", false) = false`)
+
+	// Second UPDATE query (only delete marker) should NOT have TOAST handling since it only updates __artie_delete
+	updateDeleteOnlyQuery := queries[1]
+	assert.Contains(t, updateDeleteOnlyQuery, `SET "__artie_delete"=stg."__artie_delete"`)
+	assert.Contains(t, updateDeleteOnlyQuery, `COALESCE(stg."__artie_only_set_delete", false) = true`)
+	// Should not contain TOAST column handling in this query
+	assert.NotContains(t, updateDeleteOnlyQuery, `toast_text`)
+
+	// INSERT query should include __artie_delete column for soft delete
+	insertQuery := queries[2]
+	assert.Contains(t, insertQuery, `"__artie_delete"`)
+	assert.Contains(t, insertQuery, `"toast_text"`)
+}
