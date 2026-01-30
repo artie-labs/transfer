@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -68,7 +69,7 @@ func (e *EventPayload) GetData(tc kafkalib.TopicConfig) (map[string]any, error) 
 	return retMap, nil
 }
 
-func (e *EventPayload) GetOptionalSchema() (map[string]typing.KindDetails, error) {
+func (e *EventPayload) GetOptionalSchema(cfg config.SharedDestinationSettings) (map[string]typing.KindDetails, error) {
 	// Event tracking format doesn't have a schema
 	return nil, nil
 }

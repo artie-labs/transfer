@@ -11,11 +11,13 @@ import (
 	"github.com/artie-labs/transfer/clients/iceberg"
 	"github.com/artie-labs/transfer/clients/motherduck"
 	"github.com/artie-labs/transfer/clients/mssql"
+	"github.com/artie-labs/transfer/clients/mysql"
 	"github.com/artie-labs/transfer/clients/postgres"
 	"github.com/artie-labs/transfer/clients/redis"
 	"github.com/artie-labs/transfer/clients/redshift"
 	"github.com/artie-labs/transfer/clients/s3"
 	"github.com/artie-labs/transfer/clients/snowflake"
+	"github.com/artie-labs/transfer/clients/sqs"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
@@ -23,7 +25,12 @@ import (
 )
 
 func IsOutputBaseline(cfg config.Config) bool {
-	return cfg.Output == constants.S3 || cfg.Output == constants.GCS || cfg.Output == constants.Iceberg || cfg.Output == constants.Redis
+	switch cfg.Output {
+	case constants.S3, constants.GCS, constants.Iceberg, constants.Redis, constants.SQS:
+		return true
+	default:
+		return false
+	}
 }
 
 func LoadBaseline(ctx context.Context, cfg config.Config) (destination.Baseline, error) {
@@ -54,6 +61,12 @@ func LoadBaseline(ctx context.Context, cfg config.Config) (destination.Baseline,
 			return nil, fmt.Errorf("failed to load Redis: %w", err)
 		}
 		return store, nil
+	case constants.SQS:
+		store, err := sqs.LoadSQS(ctx, cfg)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load SQS: %w", err)
+		}
+		return store, nil
 	}
 
 	return nil, fmt.Errorf("invalid baseline output source specified: %q", cfg.Output)
@@ -69,6 +82,8 @@ func LoadDestination(ctx context.Context, cfg config.Config, store *db.Store) (d
 		return databricks.LoadStore(cfg)
 	case constants.MSSQL:
 		return mssql.LoadStore(cfg)
+	case constants.MySQL:
+		return mysql.LoadStore(cfg)
 	case constants.Postgres:
 		return postgres.LoadStore(ctx, cfg)
 	case constants.Redshift:

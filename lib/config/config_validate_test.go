@@ -116,6 +116,57 @@ func TestGCSSettings_Validate(t *testing.T) {
 	}
 }
 
+func TestSQSSettings_Validate(t *testing.T) {
+	{
+		// nil
+		var sqs *SQSSettings
+		assert.ErrorContains(t, sqs.Validate(), "sqs settings are nil")
+	}
+	{
+		// missing region
+		sqs := &SQSSettings{}
+		assert.ErrorContains(t, sqs.Validate(), "sqs awsRegion is required")
+	}
+	{
+		// valid with static credentials
+		sqs := &SQSSettings{
+			AwsRegion:          "us-east-1",
+			AwsAccessKeyID:     "key",
+			AwsSecretAccessKey: "secret",
+		}
+		assert.NoError(t, sqs.Validate())
+	}
+	{
+		// valid with role ARN
+		sqs := &SQSSettings{
+			AwsRegion: "us-east-1",
+			RoleARN:   "arn:aws:iam::123456789:role/my-role",
+		}
+		assert.NoError(t, sqs.Validate())
+	}
+	{
+		// valid single queue mode
+		sqs := &SQSSettings{
+			AwsRegion:          "us-east-1",
+			AwsSecretAccessKey: "foo",
+			AwsAccessKeyID:     "bar",
+			QueueURL:           "https://sqs.us-east-1.amazonaws.com/123456789/my-queue",
+		}
+		assert.NoError(t, sqs.Validate())
+		assert.True(t, sqs.IsSingleQueueMode())
+	}
+	{
+		// per-table mode (empty queueURL)
+		sqs := &SQSSettings{
+			AwsRegion:          "us-east-1",
+			AwsSecretAccessKey: "foo",
+			AwsAccessKeyID:     "bar",
+		}
+		assert.NoError(t, sqs.Validate())
+		assert.False(t, sqs.IsSingleQueueMode())
+	}
+}
+
 func TestCfg_ValidateRedshift(t *testing.T) {
 	{
 		// nil

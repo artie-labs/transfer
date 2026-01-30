@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/viant/bigquery"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 
@@ -32,10 +34,27 @@ func TestBigQuery_DSN(t *testing.T) {
 		DefaultDataset: "dataset",
 		ProjectID:      "project",
 	}
+	{
+		assert.Equal(t, "bigquery://project/dataset", b.DSN())
+		_, err := bigquery.ParseDSN(b.DSN())
+		assert.NoError(t, err)
+	}
+	{
+		b.Location = "eu"
+		assert.Equal(t, "bigquery://project/eu/dataset", b.DSN())
+		config, err := bigquery.ParseDSN(b.DSN())
+		assert.NoError(t, err)
+		assert.Equal(t, "eu", config.Location)
+	}
+	{
+		// Now, let's set priority.
+		b.Priority = "INTERACTIVE"
+		assert.Equal(t, "bigquery://project/eu/dataset?priority=INTERACTIVE", b.DSN())
 
-	assert.Equal(t, "bigquery://project/dataset", b.DSN())
-	b.Location = "eu"
-	assert.Equal(t, "bigquery://project/eu/dataset", b.DSN())
+		config, err := bigquery.ParseDSN(b.DSN())
+		assert.NoError(t, err)
+		assert.Equal(t, "INTERACTIVE", config.Priority)
+	}
 }
 
 func TestReadNonExistentFile(t *testing.T) {

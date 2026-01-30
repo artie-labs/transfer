@@ -1,6 +1,7 @@
 package kafkalib
 
 import (
+	"cmp"
 	"fmt"
 	"maps"
 	"slices"
@@ -15,10 +16,36 @@ type DatabaseAndSchemaPair struct {
 	Schema   string
 }
 
-func GetUniqueDatabaseAndSchemaPairs(tcs []*TopicConfig) []DatabaseAndSchemaPair {
+func (d DatabaseAndSchemaPair) IsValid() bool {
+	return d.Database != "" && d.Schema != ""
+}
+
+func GetUniqueStagingDatabaseAndSchemaPairs(tcs []*TopicConfig) []DatabaseAndSchemaPair {
 	seenMap := make(map[DatabaseAndSchemaPair]bool)
 	for _, tc := range tcs {
-		seenMap[tc.BuildDatabaseAndSchemaPair()] = true
+		seenMap[tc.BuildStagingDatabaseAndSchemaPair()] = true
+	}
+
+	return slices.Collect(maps.Keys(seenMap))
+}
+
+// GetUniqueStagingSchemas returns a deduplicated list of staging schemas from the topic configs.
+// This uses GetStagingSchema() which falls back to Schema if StagingSchema is not set.
+func GetUniqueStagingSchemas(tcs []*TopicConfig) []string {
+	seenMap := make(map[string]bool)
+	for _, tc := range tcs {
+		seenMap[tc.GetStagingSchema()] = true
+	}
+
+	return slices.Collect(maps.Keys(seenMap))
+}
+
+// GetAllUniqueSchemas returns a deduplicated list of all schemas (both destination and staging) from the topic configs.
+func GetAllUniqueSchemas(tcs []*TopicConfig) []string {
+	seenMap := make(map[string]bool)
+	for _, tc := range tcs {
+		seenMap[tc.Schema] = true
+		seenMap[tc.GetStagingSchema()] = true
 	}
 
 	return slices.Collect(maps.Keys(seenMap))
@@ -125,7 +152,7 @@ type TopicConfig struct {
 	Database string `yaml:"db"`
 	Schema   string `yaml:"schema"`
 	// [StagingSchema] - Optional schema to use for staging tables. If not specified, Schema will be used.
-	StagingSchema string `yaml:"stagingSchema"`
+	StagingSchema string `yaml:"stagingSchema,omitempty"`
 	// [TableName] - if left empty, the table name will be deduced from each event.
 	TableName                  string `yaml:"tableName"`
 	Topic                      string `yaml:"topic"`
@@ -168,6 +195,24 @@ type TopicConfig struct {
 
 func (t TopicConfig) BuildDatabaseAndSchemaPair() DatabaseAndSchemaPair {
 	return DatabaseAndSchemaPair{Database: t.Database, Schema: t.Schema}
+}
+
+func (t TopicConfig) GetStagingSchema() string {
+	return cmp.Or(t.StagingSchema, t.Schema)
+}
+
+func (t TopicConfig) BuildStagingDatabaseAndSchemaPair() DatabaseAndSchemaPair {
+	return DatabaseAndSchemaPair{Database: t.Database, Schema: t.GetStagingSchema()}
+}
+
+// ReusableStagingTableNamePrefix returns the target schema as a prefix when StagingSchema is explicitly
+// set to a different value than Schema. This is necessary to prevent name collisions for reusable staging tables
+// when multiple topic configs share the same StagingSchema but have different target schemas.
+func (t TopicConfig) ReusableStagingTableNamePrefix() string {
+	if t.StagingSchema != "" && t.StagingSchema != t.Schema {
+		return t.Schema
+	}
+	return ""
 }
 
 const (

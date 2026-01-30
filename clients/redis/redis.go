@@ -49,7 +49,7 @@ func (s *Store) Dialect() sqllib.Dialect {
 	return nil
 }
 
-func (s *Store) Dedupe(_ context.Context, _ sqllib.TableIdentifier, _ []string, _ bool) error {
+func (s *Store) Dedupe(_ context.Context, _ sqllib.TableIdentifier, _ kafkalib.DatabaseAndSchemaPair, _ []string, _ bool) error {
 	return fmt.Errorf("dedupe is not supported for Redis")
 }
 

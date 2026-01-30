@@ -133,6 +133,26 @@ func (c Config) ValidateMSSQL() error {
 	return nil
 }
 
+func (c Config) ValidateMySQL() error {
+	if c.Output != constants.MySQL {
+		return fmt.Errorf("output is not mysql, output: %v", c.Output)
+	}
+
+	if c.MySQL == nil {
+		return fmt.Errorf("mysql config is nil")
+	}
+
+	if empty := stringutil.Empty(c.MySQL.Host, c.MySQL.Username, c.MySQL.Password, c.MySQL.Database); empty {
+		return fmt.Errorf("one of mysql settings is empty (host, username, password, database)")
+	}
+
+	if c.MySQL.Port <= 0 {
+		return fmt.Errorf("invalid mysql port: %d", c.MySQL.Port)
+	}
+
+	return nil
+}
+
 func (c Config) ValidateMotherDuck() error {
 	if c.Output != constants.MotherDuck {
 		return fmt.Errorf("output is not motherduck, output: %q", c.Output)
@@ -183,6 +203,14 @@ func (c Config) ValidateClickhouse() error {
 	return nil
 }
 
+func (c Config) ValidateSQS() error {
+	if c.Output != constants.SQS {
+		return fmt.Errorf("output is not SQS, output: %q", c.Output)
+	}
+
+	return c.SQS.Validate()
+}
+
 // Validate will check the output source validity
 // It will also check if a topic exists + iterate over each topic to make sure it's valid.
 // The actual output source (like Snowflake) and CDC parser will be loaded and checked by other funcs.
@@ -209,6 +237,10 @@ func (c Config) Validate() error {
 		if err := c.ValidateMSSQL(); err != nil {
 			return err
 		}
+	case constants.MySQL:
+		if err := c.ValidateMySQL(); err != nil {
+			return err
+		}
 	case constants.Redshift:
 		if err := c.ValidateRedshift(); err != nil {
 			return err
@@ -231,6 +263,10 @@ func (c Config) Validate() error {
 		}
 	case constants.Clickhouse:
 		if err := c.ValidateClickhouse(); err != nil {
+			return err
+		}
+	case constants.SQS:
+		if err := c.ValidateSQS(); err != nil {
 			return err
 		}
 	}

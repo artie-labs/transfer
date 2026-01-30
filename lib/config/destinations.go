@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/go-sql-driver/mysql"
 	"github.com/snowflakedb/gosnowflake"
 
 	"github.com/artie-labs/transfer/lib/cryptography"
@@ -20,6 +21,10 @@ func (b *BigQuery) DSN() string {
 
 	if b.Location != "" {
 		dsn = fmt.Sprintf("bigquery://%s/%s/%s", b.ProjectID, b.Location, b.DefaultDataset)
+	}
+
+	if b.Priority != "" {
+		dsn = fmt.Sprintf("%s?priority=%s", dsn, b.Priority)
 	}
 
 	return dsn
@@ -46,6 +51,24 @@ func (m MSSQL) DSN() string {
 	}
 
 	return u.String()
+}
+
+func (m MySQL) DSN() string {
+	config := mysql.NewConfig()
+	config.User = m.Username
+	config.Passwd = m.Password
+	config.Net = "tcp"
+	config.Addr = fmt.Sprintf("%s:%d", m.Host, m.Port)
+	config.DBName = m.Database
+	config.ParseTime = true
+	// If we don't specify this, it will default to the server's timezone.
+	// This will then cause a bug because MySQL is internally storing the TIMESTAMP value in UTC format.
+	// We use '+00:00' instead of 'UTC' because some MySQL servers don't have timezone tables populated,
+	// which would cause: Error 1298 (HY000): Unknown or incorrect time zone: 'UTC'
+	config.Params = map[string]string{
+		"time_zone": "'+00:00'",
+	}
+	return config.FormatDSN()
 }
 
 func (s Snowflake) ToConfig() (*gosnowflake.Config, error) {

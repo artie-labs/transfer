@@ -90,11 +90,13 @@ const (
 	Iceberg    DestinationKind = "iceberg"
 	MSSQL      DestinationKind = "mssql"
 	MotherDuck DestinationKind = "motherduck"
+	MySQL      DestinationKind = "mysql"
 	Postgres   DestinationKind = "postgres"
 	Redshift   DestinationKind = "redshift"
 	S3         DestinationKind = "s3"
 	Snowflake  DestinationKind = "snowflake"
 	Redis      DestinationKind = "redis"
+	SQS        DestinationKind = "sqs"
 )
 
 var ValidDestinations = []DestinationKind{
@@ -105,11 +107,13 @@ var ValidDestinations = []DestinationKind{
 	Iceberg,
 	MSSQL,
 	MotherDuck,
+	MySQL,
 	Postgres,
 	Redshift,
 	S3,
 	Snowflake,
 	Redis,
+	SQS,
 }
 
 func IsValidDestination(destination DestinationKind) bool {

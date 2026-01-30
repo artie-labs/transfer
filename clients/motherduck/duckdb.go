@@ -22,7 +22,7 @@ import (
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 func BuildDSN(token string) string {
-	return fmt.Sprintf("md:?motherduck_token=%s", token)
+	return fmt.Sprintf("md:?motherduck_token=%s&custom_user_agent=artie-transfer", token)
 }
 
 type Store struct {
@@ -112,8 +112,8 @@ func (s Store) IsRetryableError(err error) bool {
 	return false
 }
 
-func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) error {
-	stagingTableID := shared.TempTableID(tableID)
+func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kafkalib.DatabaseAndSchemaPair, primaryKeys []string, includeArtieUpdatedAt bool) error {
+	stagingTableID := shared.BuildStagingTableID(s, pair, tableID)
 	dedupeQueries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt)
 
 	var request ducktape.ExecuteRequest
@@ -142,8 +142,7 @@ func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, primaryK
 }
 
 func (s Store) SweepTemporaryTables(ctx context.Context, _ *webhooksclient.Client) error {
-	for _, topicConfig := range s.config.TopicConfigs() {
-		dbAndSchema := topicConfig.BuildDatabaseAndSchemaPair()
+	for _, dbAndSchema := range kafkalib.GetUniqueStagingDatabaseAndSchemaPairs(s.config.TopicConfigs()) {
 		query, args := s.dialect().BuildSweepQuery(dbAndSchema.Database, dbAndSchema.Schema)
 
 		response, err := s.QueryContextHttp(ctx, query, args...)

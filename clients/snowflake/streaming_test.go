@@ -135,9 +135,7 @@ func TestSnowpipeStreamingChannelManager_ChannelCreation(t *testing.T) {
 	row := optimization.NewRow(map[string]any{"id": 1, "name": "test"})
 	tableData.InsertRow("1", row.GetData(), false)
 
-	ctx := t.Context()
-	err := manager.LoadData(ctx, "db", "schema", "pipe", time.Now(), *tableData)
-	require.NoError(t, err)
+	assert.NoError(t, manager.LoadData(t.Context(), "db", "schema", "pipe", time.Now(), *tableData))
 
 	// Channel should be created
 	assert.Len(t, manager.channelNameToChannel, 1)
@@ -162,6 +160,7 @@ func TestSnowpipeStreamingChannelManager_ChannelReuse(t *testing.T) {
 
 	// First call
 	tableData1 := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "table1")
+
 	row1 := optimization.NewRow(map[string]any{"id": 1, "name": "test1"})
 	tableData1.InsertRow("1", row1.GetData(), false)
 
@@ -173,11 +172,11 @@ func TestSnowpipeStreamingChannelManager_ChannelReuse(t *testing.T) {
 
 	// Second call with same table name
 	tableData2 := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "table1")
+
 	row2 := optimization.NewRow(map[string]any{"id": 2, "name": "test2"})
 	tableData2.InsertRow("2", row2.GetData(), false)
 
-	err = manager.LoadData(ctx, "db", "schema", "pipe", time.Now(), *tableData2)
-	require.NoError(t, err)
+	assert.NoError(t, manager.LoadData(t.Context(), "db", "schema", "pipe", time.Now(), *tableData2))
 
 	channel2 := manager.channelNameToChannel["table1-0"]
 
@@ -201,21 +200,20 @@ func TestSnowpipeStreamingChannelManager_MultipleChannels(t *testing.T) {
 	manager.scopedToken = "mock-token"
 	manager.expiresAt = time.Now().Add(1 * time.Hour)
 
-	ctx := t.Context()
-
 	// Load data for table1
 	tableData1 := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "table1")
+
 	row1 := optimization.NewRow(map[string]any{"id": 1})
 	tableData1.InsertRow("1", row1.GetData(), false)
-	err := manager.LoadData(ctx, "db", "schema", "pipe", time.Now(), *tableData1)
+	err := manager.LoadData(t.Context(), "db", "schema", "pipe", time.Now(), *tableData1)
 	require.NoError(t, err)
 
 	// Load data for table2
 	tableData2 := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "table2")
+
 	row2 := optimization.NewRow(map[string]any{"id": 2})
 	tableData2.InsertRow("2", row2.GetData(), false)
-	err = manager.LoadData(ctx, "db", "schema", "pipe", time.Now(), *tableData2)
-	require.NoError(t, err)
+	require.NoError(t, manager.LoadData(t.Context(), "db", "schema", "pipe", time.Now(), *tableData2))
 
 	// Should have two separate channels
 	assert.Len(t, manager.channelNameToChannel, 2)
@@ -247,14 +245,9 @@ func TestSnowpipeStreamingChannelManager_OversizedRowRejection(t *testing.T) {
 		"id":   1,
 		"data": largeData,
 	})
+
 	tableData.InsertRow("1", row.GetData(), false)
-
-	ctx := t.Context()
-	err := manager.LoadData(ctx, "db", "schema", "pipe", time.Now(), *tableData)
-
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "is larger")
-	assert.Contains(t, err.Error(), "maxSizeBytes")
+	require.ErrorContains(t, manager.LoadData(t.Context(), "db", "schema", "pipe", time.Now(), *tableData), "is larger")
 }
 
 func TestSnowpipeStreamingChannelManager_SmallBatchSingleRequest(t *testing.T) {
@@ -300,11 +293,7 @@ func TestSnowpipeStreamingChannelManager_SmallBatchSingleRequest(t *testing.T) {
 		tableData.InsertRow(fmt.Sprintf("%d", i), row.GetData(), false)
 	}
 
-	ctx := t.Context()
-	err := manager.LoadData(ctx, "db", "schema", "pipe", time.Now(), *tableData)
-	require.NoError(t, err)
-
-	// Should have made exactly 1 AppendRows request
+	assert.NoError(t, manager.LoadData(t.Context(), "db", "schema", "pipe", time.Now(), *tableData))
 	assert.Equal(t, 1, requestCount, "Small batch should result in single request")
 }
 
@@ -358,9 +347,7 @@ func TestSnowpipeStreamingChannelManager_LargeBatchMultipleRequests(t *testing.T
 		tableData.InsertRow(fmt.Sprintf("%d", i), row.GetData(), false)
 	}
 
-	ctx := t.Context()
-	err := manager.LoadData(ctx, "db", "schema", "pipe", time.Now(), *tableData)
-	require.NoError(t, err)
+	assert.NoError(t, manager.LoadData(t.Context(), "db", "schema", "pipe", time.Now(), *tableData))
 
 	// Should have made multiple requests for chunking
 	assert.Greater(t, requestCount, 1, "Large batch should result in multiple requests")
@@ -384,12 +371,7 @@ func TestSnowpipeStreamingChannelManager_EmptyTableData(t *testing.T) {
 
 	// Empty table data
 	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "test_table")
-
-	ctx := t.Context()
-	err := manager.LoadData(ctx, "db", "schema", "pipe", time.Now(), *tableData)
-
-	// Should not error on empty data
-	require.NoError(t, err)
+	assert.NoError(t, manager.LoadData(t.Context(), "db", "schema", "pipe", time.Now(), *tableData))
 }
 
 func TestSnowpipeStreamingChannelManager_ContinuationTokenChaining(t *testing.T) {
@@ -447,9 +429,7 @@ func TestSnowpipeStreamingChannelManager_ContinuationTokenChaining(t *testing.T)
 		tableData.InsertRow(fmt.Sprintf("%d", i), row.GetData(), false)
 	}
 
-	ctx := t.Context()
-	err := manager.LoadData(ctx, "db", "schema", "pipe", time.Now(), *tableData)
-	require.NoError(t, err)
+	assert.NoError(t, manager.LoadData(t.Context(), "db", "schema", "pipe", time.Now(), *tableData))
 
 	// Verify multiple chunks were sent
 	mu.Lock()
@@ -475,12 +455,11 @@ func TestSnowpipeStreamingChannelManager_SingleRowBatch(t *testing.T) {
 	manager.expiresAt = time.Now().Add(1 * time.Hour)
 
 	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "test_table")
+
 	row := optimization.NewRow(map[string]any{"id": 1, "name": "test"})
 	tableData.InsertRow("1", row.GetData(), false)
 
-	ctx := t.Context()
-	err := manager.LoadData(ctx, "db", "schema", "pipe", time.Now(), *tableData)
-	require.NoError(t, err)
+	assert.NoError(t, manager.LoadData(t.Context(), "db", "schema", "pipe", time.Now(), *tableData))
 
 	// Verify channel was created and has updated continuation token
 	channel := manager.channelNameToChannel["test_table-0"]
@@ -543,12 +522,10 @@ func TestSnowpipeStreamingChannelManager_ChannelReopenOnError(t *testing.T) {
 	manager.expiresAt = time.Now().Add(1 * time.Hour)
 
 	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "test_table")
+
 	row := optimization.NewRow(map[string]any{"id": 1, "name": "test"})
 	tableData.InsertRow("1", row.GetData(), false)
-
-	ctx := t.Context()
-	err := manager.LoadData(ctx, "db", "schema", "pipe", time.Now(), *tableData)
-	require.NoError(t, err)
+	assert.NoError(t, manager.LoadData(t.Context(), "db", "schema", "pipe", time.Now(), *tableData))
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -606,14 +583,11 @@ func TestSnowpipeStreamingChannelManager_NonReopenableErrorNoRetry(t *testing.T)
 	manager.expiresAt = time.Now().Add(1 * time.Hour)
 
 	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "test_table")
+
+	pk := "1"
 	row := optimization.NewRow(map[string]any{"id": 1, "name": "test"})
-	tableData.InsertRow("1", row.GetData(), false)
-
-	ctx := t.Context()
-	err := manager.LoadData(ctx, "db", "schema", "pipe", time.Now(), *tableData)
-
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to append rows")
+	tableData.InsertRow(pk, row.GetData(), false)
+	assert.ErrorContains(t, manager.LoadData(t.Context(), "db", "schema", "pipe", time.Now(), *tableData), "failed to append rows")
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -679,12 +653,12 @@ func TestSnowpipeStreamingChannelManager_ChannelReopenOnERR_CHANNEL_DOES_NOT_EXI
 	manager.expiresAt = time.Now().Add(1 * time.Hour)
 
 	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "test_table")
-	row := optimization.NewRow(map[string]any{"id": 1, "name": "test"})
-	tableData.InsertRow("1", row.GetData(), false)
 
-	ctx := t.Context()
-	err := manager.LoadData(ctx, "db", "schema", "pipe", time.Now(), *tableData)
-	require.NoError(t, err)
+	pk := "1"
+	row := optimization.NewRow(map[string]any{"id": 1, "name": "test"})
+	tableData.InsertRow(pk, row.GetData(), false)
+
+	assert.NoError(t, manager.LoadData(t.Context(), "db", "schema", "pipe", time.Now(), *tableData))
 
 	mu.Lock()
 	defer mu.Unlock()

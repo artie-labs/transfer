@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -205,7 +206,7 @@ func (r *RelationTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 	assert.Equal(r.T(), evtData["id"], int64(1001))
 	assert.Equal(r.T(), evtData["another_id"], int64(333))
 
-	optionalSchema, err := evt.GetOptionalSchema()
+	optionalSchema, err := evt.GetOptionalSchema(config.SharedDestinationSettings{})
 	assert.NoError(r.T(), err)
 	assert.Equal(r.T(), typing.Integer, typing.MustParseValue("another_id", optionalSchema, evtData["another_id"]))
 	assert.Equal(r.T(), "sally.thomas@acme.com", evtData["email"])
@@ -526,7 +527,7 @@ func (r *RelationTestSuite) TestGetEventFromBytes_MySQL() {
 	assert.Equal(r.T(), time.Date(2023, time.March, 13, 19, 19, 24, 0, time.UTC), evt.GetExecutionTime())
 	assert.Equal(r.T(), "customers", evt.GetTableName())
 
-	schema, err := evt.GetOptionalSchema()
+	schema, err := evt.GetOptionalSchema(config.SharedDestinationSettings{})
 	assert.NoError(r.T(), err)
 	assert.Equal(r.T(), typing.Struct, schema["custom_fields"])
 

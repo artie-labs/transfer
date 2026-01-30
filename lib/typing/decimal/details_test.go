@@ -151,3 +151,18 @@ func TestDetails_DuckDBKind(t *testing.T) {
 		})
 	}
 }
+
+func TestDetails_MySQLKind(t *testing.T) {
+	expectedMapToDetails := map[Details]string{
+		NewDetails(PrecisionNotSpecified, DefaultScale): "DECIMAL(65, 5)",
+		NewDetails(10, 2):  "DECIMAL(10, 2)",
+		NewDetails(65, 30): "DECIMAL(65, 30)",
+		NewDetails(66, 5):  "TEXT",
+		NewDetails(40, 31): "TEXT",
+		NewDetails(15, 0):  "DECIMAL(15, 0)",
+	}
+
+	for details, expectedValue := range expectedMapToDetails {
+		assert.Equal(t, expectedValue, details.MySQLKind())
+	}
+}

@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
@@ -17,7 +18,7 @@ func TestGetOptionalSchema(t *testing.T) {
 			var schemaEventPayload SchemaEventPayload
 			assert.NoError(t, json.Unmarshal([]byte(MySQLInsert), &schemaEventPayload))
 
-			optionalSchema, err := schemaEventPayload.GetOptionalSchema()
+			optionalSchema, err := schemaEventPayload.GetOptionalSchema(config.SharedDestinationSettings{})
 			assert.NoError(t, err)
 			assert.Equal(
 				t,
@@ -35,7 +36,7 @@ func TestGetOptionalSchema(t *testing.T) {
 			var schemaEventPayload SchemaEventPayload
 			assert.NoError(t, json.Unmarshal([]byte(MySQLUpdate), &schemaEventPayload))
 
-			optionalSchema, err := schemaEventPayload.GetOptionalSchema()
+			optionalSchema, err := schemaEventPayload.GetOptionalSchema(config.SharedDestinationSettings{})
 			assert.NoError(t, err)
 			assert.Equal(
 				t,
@@ -53,7 +54,7 @@ func TestGetOptionalSchema(t *testing.T) {
 			var schemaEventPayload SchemaEventPayload
 			assert.NoError(t, json.Unmarshal([]byte(MySQLDelete), &schemaEventPayload))
 
-			optionalSchema, err := schemaEventPayload.GetOptionalSchema()
+			optionalSchema, err := schemaEventPayload.GetOptionalSchema(config.SharedDestinationSettings{})
 			assert.NoError(t, err)
 			assert.Equal(
 				t,
@@ -74,7 +75,7 @@ func TestGetOptionalSchema(t *testing.T) {
 			var schemaEventPayload SchemaEventPayload
 			assert.NoError(t, json.Unmarshal([]byte(PostgresDelete), &schemaEventPayload))
 
-			optionalSchema, err := schemaEventPayload.GetOptionalSchema()
+			optionalSchema, err := schemaEventPayload.GetOptionalSchema(config.SharedDestinationSettings{})
 			assert.NoError(t, err)
 			assert.Equal(
 				t,
@@ -92,7 +93,7 @@ func TestGetOptionalSchema(t *testing.T) {
 			var schemaEventPayload SchemaEventPayload
 			assert.NoError(t, json.Unmarshal([]byte(PostgresUpdate), &schemaEventPayload))
 
-			optionalSchema, err := schemaEventPayload.GetOptionalSchema()
+			optionalSchema, err := schemaEventPayload.GetOptionalSchema(config.SharedDestinationSettings{})
 			assert.NoError(t, err)
 			assert.Equal(
 				t,
