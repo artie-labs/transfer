@@ -141,7 +141,7 @@ func (s S3TablesAPIWrapper) GetNamespace(ctx context.Context, namespace string) 
 		return "", err
 	}
 
-	if len(resp.Namespace) == 1 {
+	if len(resp.Namespace) != 1 {
 		return "", fmt.Errorf("expected 1 namespace, got %d", len(resp.Namespace))
 	}
 
