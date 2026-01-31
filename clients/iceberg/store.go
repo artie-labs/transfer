@@ -123,7 +123,7 @@ func (s Store) append(ctx context.Context, tableData *optimization.TableData, wh
 }
 
 func (s Store) EnsureNamespaceExists(ctx context.Context, namespace string) error {
-	if _, err := s.catalog.ListNamespaces(ctx); err != nil {
+	if _, err := s.catalog.GetNamespace(ctx, namespace); err != nil {
 		if awslib.IsNotFoundError(err) {
 			return s.catalog.CreateNamespace(ctx, namespace)
 		}

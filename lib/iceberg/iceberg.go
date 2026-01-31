@@ -8,6 +8,7 @@ import (
 type IcebergCatalog interface {
 	ListTables(ctx context.Context, namespace string) ([]Table, error)
 	GetTableMetadata(ctx context.Context, namespace, name string) (TableMetadata, error)
+	GetNamespace(ctx context.Context, name string) (string, error)
 	ListNamespaces(ctx context.Context) ([]string, error)
 	CreateNamespace(ctx context.Context, name string) error
 	DropTable(ctx context.Context, namespace, name string) error

@@ -69,7 +69,7 @@ func (s S3TablesAPIWrapper) GetTableBucket(ctx context.Context) (s3tables.GetTab
 	return *resp, nil
 }
 
-func (s S3TablesAPIWrapper) GetNamespace(ctx context.Context, namespace string) (s3tables.GetNamespaceOutput, error) {
+func (s S3TablesAPIWrapper) GetS3Namespace(ctx context.Context, namespace string) (s3tables.GetNamespaceOutput, error) {
 	resp, err := s.client.GetNamespace(ctx, &s3tables.GetNamespaceInput{
 		Namespace:      aws.String(namespace),
 		TableBucketARN: aws.String(s.tableBucketARN),
@@ -133,6 +133,19 @@ func (s S3TablesAPIWrapper) CreateNamespace(ctx context.Context, namespace strin
 	}
 
 	return err
+}
+
+func (s S3TablesAPIWrapper) GetNamespace(ctx context.Context, namespace string) (string, error) {
+	resp, err := s.GetS3Namespace(ctx, namespace)
+	if err != nil {
+		return "", err
+	}
+
+	if len(resp.Namespace) == 0 {
+		return "", fmt.Errorf("namespace not found: %q", namespace)
+	}
+
+	return resp.Namespace[0], nil
 }
 
 func (s S3TablesAPIWrapper) ListTables(ctx context.Context, namespace string) ([]iceberg.Table, error) {
