@@ -67,7 +67,25 @@ func (s *storeWrapper) ExecContext(ctx context.Context, query string, args ...an
 }
 
 func (s *storeWrapper) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
-	return s.DB.QueryContext(ctx, query, args...)
+	var rows *sql.Rows
+	var err error
+	for attempts := 0; attempts < maxAttempts; attempts++ {
+		if attempts > 0 {
+			sleepDuration := jitter.Jitter(sleepBaseMs, jitter.DefaultMaxMs, attempts-1)
+			slog.Warn("Failed to execute the query, retrying...",
+				slog.Any("err", err),
+				slog.Duration("sleep", sleepDuration),
+				slog.Int("attempts", attempts),
+			)
+			time.Sleep(sleepDuration)
+		}
+
+		rows, err = s.DB.QueryContext(ctx, query, args...)
+		if err == nil || !s.IsRetryableError(err) {
+			break
+		}
+	}
+	return rows, err
 }
 
 func (s *storeWrapper) QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row {
