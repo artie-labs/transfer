@@ -217,6 +217,10 @@ func (s S3TablesAPIWrapper) GetTableMetadata(ctx context.Context, namespace, nam
 		return iceberg.TableMetadata{}, fmt.Errorf("failed to get table: %w", err)
 	}
 
+	if out.MetadataLocation == nil {
+		return iceberg.TableMetadata{}, fmt.Errorf("metadata location is nil")
+	}
+
 	schema, err := s.GetS3TableMetadata(ctx, *out.MetadataLocation)
 	if err != nil {
 		return iceberg.TableMetadata{}, fmt.Errorf("failed to get table metadata: %w", err)

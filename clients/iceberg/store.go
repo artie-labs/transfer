@@ -45,7 +45,7 @@ func (s Store) GetS3TablesAPI() (awslib.S3TablesAPIWrapper, error) {
 
 	catalog, ok := s.catalog.(awslib.S3TablesAPIWrapper)
 	if !ok {
-		return awslib.S3TablesAPIWrapper{}, fmt.Errorf("catalog is not an IcebergCatalog")
+		return awslib.S3TablesAPIWrapper{}, fmt.Errorf("expected awslib.S3TablesAPIWrapper, got %T", s.catalog)
 	}
 
 	return catalog, nil
