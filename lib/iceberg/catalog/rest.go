@@ -13,8 +13,7 @@ import (
 	icebergTypes "github.com/artie-labs/transfer/lib/iceberg"
 )
 
-// RESTCatalogConfig holds the configuration for creating a REST catalog.
-type RESTCatalogConfig struct {
+type Config struct {
 	URI        string
 	Token      string
 	Credential string
@@ -22,15 +21,12 @@ type RESTCatalogConfig struct {
 	Prefix     string
 }
 
-// restCatalog wraps the iceberg-go REST catalog and implements IcebergCatalog.
-type restCatalog struct {
+type RestCatalog struct {
 	catalog *rest.Catalog
 }
 
-// NewRESTCatalog creates a new REST catalog that implements IcebergCatalog.
-func NewRESTCatalog(ctx context.Context, cfg RESTCatalogConfig) (icebergTypes.IcebergCatalog, error) {
+func NewRESTCatalog(ctx context.Context, cfg Config) (*RestCatalog, error) {
 	var opts []rest.Option
-
 	if cfg.Token != "" {
 		opts = append(opts, rest.WithOAuthToken(cfg.Token))
 	}
@@ -49,13 +45,13 @@ func NewRESTCatalog(ctx context.Context, cfg RESTCatalogConfig) (icebergTypes.Ic
 		return nil, fmt.Errorf("failed to create REST catalog: %w", err)
 	}
 
-	return &restCatalog{catalog: cat}, nil
+	return &RestCatalog{catalog: cat}, nil
 }
 
 // ListTables returns all tables in the given namespace.
-func (r *restCatalog) ListTables(ctx context.Context, namespace string) ([]icebergTypes.Table, error) {
+func (r *RestCatalog) ListTables(ctx context.Context, namespace string) ([]icebergTypes.Table, error) {
 	var tables []icebergTypes.Table
-	for ident, err := range r.catalog.ListTables(ctx, namespaceToIdentifier(namespace)) {
+	for ident, err := range r.catalog.ListTables(ctx, buildNamespaceToIdentifier(namespace)) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to list tables: %w", err)
 		}
@@ -69,8 +65,8 @@ func (r *restCatalog) ListTables(ctx context.Context, namespace string) ([]icebe
 }
 
 // GetTableMetadata loads table metadata for the given namespace and table name.
-func (r *restCatalog) GetTableMetadata(ctx context.Context, namespace, name string) (icebergTypes.TableMetadata, error) {
-	tbl, err := r.catalog.LoadTable(ctx, namespaceToIdentifier(namespace, name))
+func (r *RestCatalog) GetTableMetadata(ctx context.Context, namespace, name string) (icebergTypes.TableMetadata, error) {
+	tbl, err := r.catalog.LoadTable(ctx, buildNamespaceToIdentifier(namespace, name))
 	if err != nil {
 		return icebergTypes.TableMetadata{}, fmt.Errorf("failed to load table: %w", err)
 	}
@@ -99,8 +95,8 @@ func (r *restCatalog) GetTableMetadata(ctx context.Context, namespace, name stri
 }
 
 // GetNamespace checks if a namespace exists and returns its name.
-func (r *restCatalog) GetNamespace(ctx context.Context, name string) (string, error) {
-	if _, err := r.catalog.LoadNamespaceProperties(ctx, namespaceToIdentifier(name)); err != nil {
+func (r *RestCatalog) GetNamespace(ctx context.Context, name string) (string, error) {
+	if _, err := r.catalog.LoadNamespaceProperties(ctx, buildNamespaceToIdentifier(name)); err != nil {
 		return "", fmt.Errorf("failed to load namespace properties: %w", err)
 	}
 
@@ -108,7 +104,7 @@ func (r *restCatalog) GetNamespace(ctx context.Context, name string) (string, er
 }
 
 // ListNamespaces returns all namespaces in the catalog.
-func (r *restCatalog) ListNamespaces(ctx context.Context) ([]string, error) {
+func (r *RestCatalog) ListNamespaces(ctx context.Context) ([]string, error) {
 	namespaces, err := r.catalog.ListNamespaces(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list namespaces: %w", err)
@@ -125,26 +121,25 @@ func (r *restCatalog) ListNamespaces(ctx context.Context) ([]string, error) {
 }
 
 // CreateNamespace creates a new namespace in the catalog.
-func (r *restCatalog) CreateNamespace(ctx context.Context, name string) error {
-	err := r.catalog.CreateNamespace(ctx, namespaceToIdentifier(name), nil)
-	if err != nil {
+func (r *RestCatalog) CreateNamespace(ctx context.Context, name string) error {
+	if err := r.catalog.CreateNamespace(ctx, buildNamespaceToIdentifier(name), nil); err != nil {
 		return fmt.Errorf("failed to create namespace: %w", err)
 	}
 	return nil
 }
 
 // DropTable removes a table from the catalog.
-func (r *restCatalog) DropTable(ctx context.Context, namespace, name string) error {
-	if err := r.catalog.DropTable(ctx, namespaceToIdentifier(namespace, name)); err != nil {
+func (r *RestCatalog) DropTable(ctx context.Context, namespace, name string) error {
+	if err := r.catalog.DropTable(ctx, buildNamespaceToIdentifier(namespace, name)); err != nil {
 		return fmt.Errorf("failed to drop table: %w", err)
 	}
 	return nil
 }
 
-// namespaceToIdentifier converts namespace string(s) to a table.Identifier.
+// buildNamespaceToIdentifier converts namespace string(s) to a table.Identifier.
 // If multiple parts are provided (e.g., namespace and table name), they are combined.
 // Namespace parts separated by "." are split into individual components.
-func namespaceToIdentifier(parts ...string) table.Identifier {
+func buildNamespaceToIdentifier(parts ...string) table.Identifier {
 	var result table.Identifier
 	for _, part := range parts {
 		// Split by "." to handle hierarchical namespaces like "db.schema"
