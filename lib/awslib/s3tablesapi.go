@@ -156,8 +156,12 @@ func (s S3TablesAPIWrapper) ListTables(ctx context.Context, namespace string) ([
 
 	var out []iceberg.Table
 	for _, table := range tables {
+		if len(table.Namespace) != 1 {
+			return []iceberg.Table{}, fmt.Errorf("expected 1 namespace, got %d", len(table.Namespace))
+		}
+
 		_table := iceberg.Table{
-			Namespace:  namespace,
+			Namespace:  table.Namespace[0],
 			CreatedAt:  table.CreatedAt,
 			ModifiedAt: table.ModifiedAt,
 		}
