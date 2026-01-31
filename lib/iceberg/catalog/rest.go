@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/apache/iceberg-go"
 	"github.com/apache/iceberg-go/catalog"
@@ -11,6 +12,7 @@ import (
 	"github.com/apache/iceberg-go/table"
 
 	icebergTypes "github.com/artie-labs/transfer/lib/iceberg"
+	"github.com/artie-labs/transfer/lib/typing"
 )
 
 type Config struct {
@@ -73,6 +75,9 @@ func (r *RestCatalog) GetTableMetadata(ctx context.Context, namespace, name stri
 
 	metadata := tbl.Metadata()
 	schema := metadata.CurrentSchema()
+	if schema == nil {
+		return icebergTypes.TableMetadata{}, fmt.Errorf("schema is nil")
+	}
 
 	var columns []icebergTypes.Column
 	for _, field := range schema.Fields() {
@@ -87,7 +92,7 @@ func (r *RestCatalog) GetTableMetadata(ctx context.Context, namespace, name stri
 	return icebergTypes.TableMetadata{
 		TableARN:        nil, // REST catalog doesn't have ARN
 		CreatedAt:       nil, // Would need to parse from properties
-		ModifiedAt:      nil, // Would need to parse from properties
+		ModifiedAt:      typing.ToPtr(time.UnixMilli(metadata.LastUpdatedMillis())),
 		CurrentSchemaID: schema.ID,
 		Location:        metadata.Location(),
 		Columns:         columns,
