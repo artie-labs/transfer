@@ -156,7 +156,51 @@ type Iceberg struct {
 	SessionName                     string `yaml:"sessionName"`
 
 	// Current implementation of Iceberg uses S3Tables:
-	S3Tables *S3Tables `yaml:"s3Tables,omitempty"`
+	S3Tables    *S3Tables    `yaml:"s3Tables,omitempty"`
+	RestCatalog *RestCatalog `yaml:"restCatalog,omitempty"`
+}
+
+type RestCatalog struct {
+	// Base credentials to write delta files to S3.
+	AwsAccessKeyID     string `yaml:"awsAccessKeyID"`
+	AwsSecretAccessKey string `yaml:"awsSecretAccessKey"`
+
+	URI        string `yaml:"uri"`
+	Token      string `yaml:"token"`
+	Credential string `yaml:"credential"`
+	// [Warehouse] - This is the name of your Iceberg catalog.
+	Warehouse string `yaml:"warehouse"`
+	Prefix    string `yaml:"prefix"`
+
+	// [SessionConfig] - Additional session configurations that we will specify when creating a new Livy session.
+	SessionConfig map[string]string `yaml:"sessionConfig,omitempty"`
+}
+
+// [BuildApacheLivyConfig] - This is building the catalog configuration to use Iceberg with REST catalog.
+// Ref: https://iceberg.apache.org/docs/latest/spark-configuration/#catalog-configuration
+func (r RestCatalog) ApacheLivyConfig() map[string]any {
+	config := map[string]any{
+		// Used by SparkSQL to interact with Hadoop S3:
+		"spark.hadoop.fs.s3a.secret.key": r.AwsSecretAccessKey,
+		"spark.hadoop.fs.s3a.access.key": r.AwsAccessKeyID,
+
+		fmt.Sprintf("spark.sql.catalog.%s", r.Warehouse):            "org.apache.iceberg.spark.SparkCatalog",
+		fmt.Sprintf("spark.sql.catalog.%s.type", r.Warehouse):       "rest",
+		fmt.Sprintf("spark.sql.catalog.%s.uri", r.Warehouse):        r.URI,
+		fmt.Sprintf("spark.sql.catalog.%s.token", r.Warehouse):      r.Token,
+		fmt.Sprintf("spark.sql.catalog.%s.credential", r.Warehouse): r.Credential,
+		fmt.Sprintf("spark.sql.catalog.%s.warehouse", r.Warehouse):  r.Warehouse,
+	}
+
+	if r.Prefix != "" {
+		config[fmt.Sprintf("spark.sql.catalog.%s.prefix", r.Warehouse)] = r.Prefix
+	}
+
+	for key, value := range r.SessionConfig {
+		config[key] = value
+	}
+
+	return config
 }
 
 type S3Tables struct {
