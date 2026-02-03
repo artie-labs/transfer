@@ -90,6 +90,8 @@ func (id IcebergDialect) BuildDedupeQueries(
 	)
 
 	parts = append(parts, fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s", stagingTableID.FullyQualifiedName(), rowNumberMarker))
+	// INSERT OVERWRITE is atomic - if it fails, the original table remains unchanged.
+	// This avoids data loss that could occur with separate DELETE + INSERT operations.
 	parts = append(parts, fmt.Sprintf("INSERT OVERWRITE %s TABLE %s", tableID.FullyQualifiedName(), stagingTableID.FullyQualifiedName()))
 	return parts
 }
