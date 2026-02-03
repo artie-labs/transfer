@@ -66,45 +66,34 @@ func (id IcebergDialect) BuildDedupeQueries(
 		orderColsToIterate = append(orderColsToIterate, id.QuoteIdentifier(constants.UpdateColumnMarker))
 	}
 
-	// Use ASC order so ROW_NUMBER() = 2 identifies the duplicate row to keep (2nd occurrence in sort order).
-	// This approach only materializes duplicate rows in the staging table, not the entire table.
 	var orderByCols []string
 	for _, pk := range orderColsToIterate {
-		orderByCols = append(orderByCols, fmt.Sprintf("%s ASC", pk))
+		orderByCols = append(orderByCols, fmt.Sprintf("%s DESC", pk))
 	}
 
 	rowNumberMarker := "__artie_rn"
-	// Step 1: Create staging table with ONLY duplicate rows (ROW_NUMBER = 2).
-	// This is more memory-efficient than the previous approach which materialized the entire table.
-	// SparkSQL doesn't have QUALIFY, so we use a subquery with WHERE filter.
-	stagingQuery := fmt.Sprintf(`CREATE OR REPLACE TABLE %s AS SELECT * FROM ( SELECT *, ROW_NUMBER() OVER ( PARTITION BY %s ORDER BY %s ) AS %s FROM %s ) WHERE %s = 2`,
-		stagingTableID.FullyQualifiedName(),
-		strings.Join(primaryKeysEscaped, ", "),
-		strings.Join(orderByCols, ", "),
-		rowNumberMarker,
-		tableID.FullyQualifiedName(),
-		rowNumberMarker,
+	// This needs to be a separate table that we drop later because:
+	// 1. SparkSQL does not have a QUALIFY function
+	// 2. SparkSQL does not have a SELECT EXCEPT function (only Databricks Spark does)
+	// 3. SparkSQL does not support dropping a column from a temporary view
+	// 4. Adding a temporary column to the target table for row_number() does not work as the view is just a shim on top of Spark dataframe. We ran into the ambiguous column error previously.
+	var parts []string
+	parts = append(parts,
+		fmt.Sprintf(`CREATE OR REPLACE TABLE %s AS SELECT * FROM ( SELECT *, ROW_NUMBER() OVER ( PARTITION BY %s ORDER BY %s ) AS %s FROM %s ) WHERE %s = 1`,
+			stagingTableID.FullyQualifiedName(),
+			strings.Join(primaryKeysEscaped, ", "),
+			strings.Join(orderByCols, ", "),
+			rowNumberMarker,
+			tableID.FullyQualifiedName(),
+			rowNumberMarker,
+		),
 	)
 
-	// Step 2: Drop the row number column from the staging table.
-	dropColQuery := fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s", stagingTableID.FullyQualifiedName(), rowNumberMarker)
-
-	// Step 3: Delete ALL rows from the main table where the primary key exists in the staging table.
-	// This removes all occurrences of duplicated rows (whether there are 2, 3, or more).
-	var whereClauses []string
-	for _, primaryKeyEscaped := range primaryKeysEscaped {
-		whereClauses = append(whereClauses, fmt.Sprintf("t1.%s = t2.%s", primaryKeyEscaped, primaryKeyEscaped))
-	}
-	deleteQuery := fmt.Sprintf("DELETE FROM %s t1 WHERE EXISTS (SELECT 1 FROM %s t2 WHERE %s)",
-		tableID.FullyQualifiedName(),
-		stagingTableID.FullyQualifiedName(),
-		strings.Join(whereClauses, " AND "),
-	)
-
-	// Step 4: Insert the correct (deduplicated) rows back into the main table.
-	insertQuery := fmt.Sprintf("INSERT INTO %s SELECT * FROM %s", tableID.FullyQualifiedName(), stagingTableID.FullyQualifiedName())
-
-	return []string{stagingQuery, dropColQuery, deleteQuery, insertQuery}
+	parts = append(parts, fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s", stagingTableID.FullyQualifiedName(), rowNumberMarker))
+	// INSERT OVERWRITE is atomic - if it fails, the original table remains unchanged.
+	// This avoids data loss that could occur with separate DELETE + INSERT operations.
+	parts = append(parts, fmt.Sprintf("INSERT OVERWRITE %s TABLE %s", tableID.FullyQualifiedName(), stagingTableID.FullyQualifiedName()))
+	return parts
 }
 
 func (id IcebergDialect) BuildMergeQueries(
