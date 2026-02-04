@@ -3,7 +3,7 @@ package parquetutil
 import (
 	"fmt"
 
-	"github.com/apache/arrow/go/v17/arrow"
+	"github.com/apache/arrow-go/v18/arrow"
 
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )

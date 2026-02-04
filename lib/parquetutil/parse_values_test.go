@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/apache/arrow/go/v17/arrow/decimal128"
+	"github.com/apache/arrow-go/v18/arrow/decimal128"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/lib/numbers"
