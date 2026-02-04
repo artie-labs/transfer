@@ -14,6 +14,7 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/iceberg"
+	icebergcatalog "github.com/artie-labs/transfer/lib/iceberg/catalog"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -124,7 +125,7 @@ func (s Store) append(ctx context.Context, tableData *optimization.TableData, wh
 
 func (s Store) EnsureNamespaceExists(ctx context.Context, namespace string) error {
 	if _, err := s.catalog.GetNamespace(ctx, namespace); err != nil {
-		if awslib.IsNotFoundError(err) {
+		if awslib.IsNotFoundError(err) || iceberg.NamespaceNotFoundError(err) {
 			return s.catalog.CreateNamespace(ctx, namespace)
 		}
 
@@ -269,6 +270,38 @@ func SweepTemporaryTables(ctx context.Context, catalog iceberg.IcebergCatalog, _
 }
 
 func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {
+	var store Store
+	var err error
+
+	switch {
+	case cfg.Iceberg.S3Tables != nil:
+		store, err = loadS3TablesStore(ctx, cfg)
+	case cfg.Iceberg.RestCatalog != nil:
+		store, err = loadRestCatalogStore(ctx, cfg)
+	default:
+		return Store{}, fmt.Errorf("no catalog configuration provided (s3Tables or restCatalog)")
+	}
+
+	if err != nil {
+		return Store{}, err
+	}
+
+	// Ensure all namespaces exist (including staging namespaces)
+	for _, schema := range kafkalib.GetAllUniqueSchemas(cfg.Kafka.TopicConfigs) {
+		if err := store.EnsureNamespaceExists(ctx, store.Dialect().BuildIdentifier(schema)); err != nil {
+			return Store{}, fmt.Errorf("failed to ensure namespace exists: %w", err)
+		}
+	}
+
+	// Sweep the temporary tables from staging namespaces only.
+	if err = SweepTemporaryTables(ctx, store.catalog, store.Dialect(), kafkalib.GetUniqueStagingSchemas(cfg.Kafka.TopicConfigs)); err != nil {
+		return Store{}, fmt.Errorf("failed to sweep temporary tables: %w", err)
+	}
+
+	return store, nil
+}
+
+func loadS3TablesStore(ctx context.Context, cfg config.Config) (Store, error) {
 	apacheLivyClient, err := apachelivy.NewClient(
 		ctx,
 		cfg.Iceberg.ApacheLivyURL,
@@ -288,26 +321,60 @@ func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {
 		cfg.Iceberg.S3Tables.Region,
 	)
 
-	store := Store{
+	return Store{
 		catalogName:      cfg.Iceberg.S3Tables.CatalogName(),
 		config:           cfg,
 		apacheLivyClient: apacheLivyClient,
 		cm:               &types.DestinationTableConfigMap{},
 		catalog:          awslib.NewS3TablesAPI(awsCfg, cfg.Iceberg.S3Tables.BucketARN),
 		s3Client:         awslib.NewS3Client(awsCfg),
+	}, nil
+}
+
+func loadRestCatalogStore(ctx context.Context, cfg config.Config) (Store, error) {
+	restCfg := cfg.Iceberg.RestCatalog
+	if err := restCfg.Validate(); err != nil {
+		return Store{}, fmt.Errorf("invalid rest catalog configuration: %w", err)
 	}
 
-	// Ensure all namespaces exist (including staging namespaces)
-	for _, schema := range kafkalib.GetAllUniqueSchemas(cfg.Kafka.TopicConfigs) {
-		if err := store.EnsureNamespaceExists(ctx, store.Dialect().BuildIdentifier(schema)); err != nil {
-			return Store{}, fmt.Errorf("failed to ensure namespace exists: %w", err)
-		}
+	apacheLivyClient, err := apachelivy.NewClient(
+		ctx,
+		cfg.Iceberg.ApacheLivyURL,
+		restCfg.ApacheLivyConfig(),
+		restCfg.SessionJars,
+		cfg.Iceberg.SessionHeartbeatTimeoutInSecond,
+		cfg.Iceberg.SessionDriverMemory,
+		cfg.Iceberg.SessionExecutorMemory,
+		cfg.Iceberg.SessionName,
+	)
+	if err != nil {
+		return Store{}, err
 	}
 
-	// Sweep the temporary tables from staging namespaces only.
-	if err = SweepTemporaryTables(ctx, store.catalog, store.Dialect(), kafkalib.GetUniqueStagingSchemas(cfg.Kafka.TopicConfigs)); err != nil {
-		return Store{}, fmt.Errorf("failed to sweep temporary tables: %w", err)
+	catalogCfg := icebergcatalog.Config{
+		URI:        restCfg.URI,
+		Token:      restCfg.Token,
+		Credential: restCfg.Credential,
+		Warehouse:  restCfg.Warehouse,
+		Prefix:     restCfg.Prefix,
 	}
 
-	return store, nil
+	cat, err := icebergcatalog.NewRESTCatalog(ctx, catalogCfg)
+	if err != nil {
+		return Store{}, fmt.Errorf("failed to create REST catalog: %w", err)
+	}
+
+	awsCfg := awslib.NewConfigWithCredentialsAndRegion(
+		credentials.NewStaticCredentialsProvider(restCfg.AwsAccessKeyID, restCfg.AwsSecretAccessKey, ""),
+		restCfg.Region,
+	)
+
+	return Store{
+		catalogName:      restCfg.CatalogName(),
+		config:           cfg,
+		apacheLivyClient: apacheLivyClient,
+		cm:               &types.DestinationTableConfigMap{},
+		catalog:          cat,
+		s3Client:         awslib.NewS3Client(awsCfg),
+	}, nil
 }
