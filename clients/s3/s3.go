@@ -149,7 +149,7 @@ func writeArrowRecordsInBatches(writer *pqarrow.FileWriter, schema *arrow.Schema
 			arrays = append(arrays, builder.NewArray())
 		}
 
-		record := array.NewRecord(schema, arrays, int64(len(batch)))
+		record := array.NewRecordBatch(schema, arrays, int64(len(batch)))
 		if err := writer.WriteBuffered(record); err != nil {
 			record.Release()
 			for _, arr := range arrays {
