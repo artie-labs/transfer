@@ -175,12 +175,6 @@ type RestCatalog struct {
 	Warehouse string `yaml:"warehouse"`
 	Prefix    string `yaml:"prefix"`
 
-	// OAuth2 configuration (required for Databricks Unity Catalog)
-	// [OAuth2ServerURI] - The OAuth2 token endpoint (e.g., https://<workspace>.cloud.databricks.com/oidc/v1/token)
-	OAuth2ServerURI string `yaml:"oauth2ServerURI,omitempty"`
-	// [Scope] - OAuth2 scope (e.g., "all-apis" for Databricks)
-	Scope string `yaml:"scope,omitempty"`
-
 	// Sourced from: https://mvnrepository.com/artifact/org.apache.iceberg/iceberg-spark-runtime-3.5_2.12
 	RuntimePackageOverride string `yaml:"runtimePackageOverride,omitempty"`
 	// [SessionJars] - Additional JAR files to include in the Spark session.
@@ -203,6 +197,22 @@ func (r RestCatalog) Validate() error {
 		return fmt.Errorf("rest catalog requires either token or credential for authentication")
 	}
 
+	// Bucket is always required for staging delta files
+	if r.Bucket == "" {
+		return fmt.Errorf("rest catalog bucket is required for staging files")
+	}
+
+	// AWS credentials are required for S3 access
+	if r.AwsAccessKeyID == "" {
+		return fmt.Errorf("rest catalog awsAccessKeyID is required")
+	}
+	if r.AwsSecretAccessKey == "" {
+		return fmt.Errorf("rest catalog awsSecretAccessKey is required")
+	}
+	if r.Region == "" {
+		return fmt.Errorf("rest catalog region is required")
+	}
+
 	return nil
 }
 
@@ -216,17 +226,10 @@ func (r RestCatalog) GetRuntimePackage() string {
 
 // [ApacheLivyConfig] - This is building the catalog configuration to use Iceberg with REST catalog.
 // Ref: https://iceberg.apache.org/docs/latest/spark-configuration/#catalog-configuration
-// Ref: https://docs.databricks.com/aws/en/external-access/iceberg (for Databricks Unity Catalog)
 func (r RestCatalog) ApacheLivyConfig() map[string]any {
-	packages := r.GetRuntimePackage()
-	// If using OAuth2 (Databricks), add the AWS bundle for credential vending
-	if r.OAuth2ServerURI != "" {
-		packages = packages + ",org.apache.iceberg:iceberg-aws-bundle:1.7.1"
-	}
-
 	config := map[string]any{
 		// Required for Iceberg Spark runtime:
-		"spark.jars.packages": packages,
+		"spark.jars.packages": r.GetRuntimePackage(),
 		// Required for Iceberg SQL extensions:
 		"spark.sql.extensions": "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions",
 
@@ -234,23 +237,10 @@ func (r RestCatalog) ApacheLivyConfig() map[string]any {
 		fmt.Sprintf("spark.sql.catalog.%s.type", r.Warehouse):      "rest",
 		fmt.Sprintf("spark.sql.catalog.%s.uri", r.Warehouse):       r.URI,
 		fmt.Sprintf("spark.sql.catalog.%s.warehouse", r.Warehouse): r.Warehouse,
-	}
 
-	// OAuth2 authentication (required for Databricks Unity Catalog)
-	if r.OAuth2ServerURI != "" {
-		config[fmt.Sprintf("spark.sql.catalog.%s.rest.auth.type", r.Warehouse)] = "oauth2"
-		config[fmt.Sprintf("spark.sql.catalog.%s.oauth2-server-uri", r.Warehouse)] = r.OAuth2ServerURI
-		if r.Scope != "" {
-			config[fmt.Sprintf("spark.sql.catalog.%s.scope", r.Warehouse)] = r.Scope
-		}
-	} else {
-		// Non-OAuth2: Use static S3 credentials for Hadoop
-		if r.AwsAccessKeyID != "" {
-			config["spark.hadoop.fs.s3a.access.key"] = r.AwsAccessKeyID
-		}
-		if r.AwsSecretAccessKey != "" {
-			config["spark.hadoop.fs.s3a.secret.key"] = r.AwsSecretAccessKey
-		}
+		// S3 credentials for Hadoop
+		"spark.hadoop.fs.s3a.access.key": r.AwsAccessKeyID,
+		"spark.hadoop.fs.s3a.secret.key": r.AwsSecretAccessKey,
 	}
 
 	if r.Token != "" {
