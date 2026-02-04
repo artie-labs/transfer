@@ -2,6 +2,7 @@ package iceberg
 
 import (
 	"context"
+	"strings"
 	"time"
 )
 
@@ -35,4 +36,12 @@ type Column struct {
 	Name     string `json:"name"`
 	Type     string `json:"type"`
 	Required bool   `json:"required"`
+}
+
+func NamespaceNotFoundError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	return strings.Contains(err.Error(), "NoSuchNamespaceException: Namespace")
 }
