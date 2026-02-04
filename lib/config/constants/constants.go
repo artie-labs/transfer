@@ -46,7 +46,8 @@ const (
 
 	EventTrackingFormat = "artie.trackevents"
 
-	DefaultS3TablesPackage = "software.amazon.s3tables:s3-tables-catalog-for-iceberg-runtime:0.1.4"
+	DefaultS3TablesPackage       = "software.amazon.s3tables:s3-tables-catalog-for-iceberg-runtime:0.1.4"
+	DefaultIcebergRuntimePackage = "org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.7.1"
 )
 
 var ArtieColumns = []string{

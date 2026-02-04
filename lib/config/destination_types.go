@@ -161,9 +161,12 @@ type Iceberg struct {
 }
 
 type RestCatalog struct {
-	// Base credentials to write delta files to S3.
+	// AWS credentials to write delta files to S3.
 	AwsAccessKeyID     string `yaml:"awsAccessKeyID"`
 	AwsSecretAccessKey string `yaml:"awsSecretAccessKey"`
+	Region             string `yaml:"region"`
+	// [Bucket] - This is where all the ephemeral delta files will be stored.
+	Bucket string `yaml:"bucket"`
 
 	URI        string `yaml:"uri"`
 	Token      string `yaml:"token"`
@@ -172,17 +175,51 @@ type RestCatalog struct {
 	Warehouse string `yaml:"warehouse"`
 	Prefix    string `yaml:"prefix"`
 
+	// Sourced from: https://mvnrepository.com/artifact/org.apache.iceberg/iceberg-spark-runtime-3.5_2.12
+	RuntimePackageOverride string `yaml:"runtimePackageOverride,omitempty"`
+	// [SessionJars] - Additional JAR files to include in the Spark session.
+	SessionJars []string `yaml:"sessionJars,omitempty"`
 	// [SessionConfig] - Additional session configurations that we will specify when creating a new Livy session.
 	SessionConfig map[string]string `yaml:"sessionConfig,omitempty"`
 }
 
-// [BuildApacheLivyConfig] - This is building the catalog configuration to use Iceberg with REST catalog.
+func (r RestCatalog) Validate() error {
+	if r.URI == "" {
+		return fmt.Errorf("rest catalog uri is required")
+	}
+
+	if r.Warehouse == "" {
+		return fmt.Errorf("rest catalog warehouse is required")
+	}
+
+	// Either token or credential should be provided for authentication
+	if r.Token == "" && r.Credential == "" {
+		return fmt.Errorf("rest catalog requires either token or credential for authentication")
+	}
+
+	return nil
+}
+
+func (r RestCatalog) CatalogName() string {
+	return r.Warehouse
+}
+
+func (r RestCatalog) GetRuntimePackage() string {
+	return cmp.Or(r.RuntimePackageOverride, constants.DefaultIcebergRuntimePackage)
+}
+
+// [ApacheLivyConfig] - This is building the catalog configuration to use Iceberg with REST catalog.
 // Ref: https://iceberg.apache.org/docs/latest/spark-configuration/#catalog-configuration
 func (r RestCatalog) ApacheLivyConfig() map[string]any {
 	config := map[string]any{
 		// Used by SparkSQL to interact with Hadoop S3:
 		"spark.hadoop.fs.s3a.secret.key": r.AwsSecretAccessKey,
 		"spark.hadoop.fs.s3a.access.key": r.AwsAccessKeyID,
+
+		// Required for Iceberg Spark runtime:
+		"spark.jars.packages": r.GetRuntimePackage(),
+		// Required for Iceberg SQL extensions:
+		"spark.sql.extensions": "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions",
 
 		fmt.Sprintf("spark.sql.catalog.%s", r.Warehouse):            "org.apache.iceberg.spark.SparkCatalog",
 		fmt.Sprintf("spark.sql.catalog.%s.type", r.Warehouse):       "rest",
