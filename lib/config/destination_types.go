@@ -155,7 +155,7 @@ type Iceberg struct {
 	SessionExecutorMemory           string `yaml:"sessionExecutorMemory"`
 	SessionName                     string `yaml:"sessionName"`
 
-	// Current implementation of Iceberg uses S3Tables:
+	// These are the supported catalog types for Iceberg:
 	S3Tables    *S3Tables    `yaml:"s3Tables,omitempty"`
 	RestCatalog *RestCatalog `yaml:"restCatalog,omitempty"`
 }
