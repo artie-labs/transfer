@@ -143,7 +143,7 @@ func (c Config) ValidateMySQL() error {
 	}
 
 	if empty := stringutil.Empty(c.MySQL.Host, c.MySQL.Username, c.MySQL.Password); empty {
-		return fmt.Errorf("one of mysql settings is empty (host, username, password, database)")
+		return fmt.Errorf("one of mysql settings is empty (host, username, password)")
 	}
 
 	if c.MySQL.Port <= 0 {
