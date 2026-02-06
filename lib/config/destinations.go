@@ -59,10 +59,7 @@ func (m MySQL) DSN() string {
 	config.Passwd = m.Password
 	config.Net = "tcp"
 	config.Addr = fmt.Sprintf("%s:%d", m.Host, m.Port)
-	if m.Database != "" {
-		config.DBName = m.Database
-	}
-
+	config.DBName = cmp.Or(m.Database, "mysql")
 	config.ParseTime = true
 	// If we don't specify this, it will default to the server's timezone.
 	// This will then cause a bug because MySQL is internally storing the TIMESTAMP value in UTC format.
