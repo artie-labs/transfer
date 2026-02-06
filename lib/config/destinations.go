@@ -59,6 +59,9 @@ func (m MySQL) DSN() string {
 	config.Passwd = m.Password
 	config.Net = "tcp"
 	config.Addr = fmt.Sprintf("%s:%d", m.Host, m.Port)
+
+	// We need to specify the database name here because MySQL requires a database to be specified to perform insert/update/delete operations
+	// Even if we're using a fully qualified table name
 	config.DBName = cmp.Or(m.Database, "mysql")
 	config.ParseTime = true
 	// If we don't specify this, it will default to the server's timezone.
