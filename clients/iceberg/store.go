@@ -35,6 +35,10 @@ func (s Store) GetConfig() config.Config {
 	return s.config
 }
 
+func (s Store) IsOLTP() bool {
+	return false
+}
+
 func (s Store) GetApacheLivyClient() *apachelivy.Client {
 	return s.apacheLivyClient
 }

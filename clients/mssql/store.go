@@ -28,6 +28,10 @@ func (s Store) GetConfig() config.Config {
 	return s.config
 }
 
+func (s Store) IsOLTP() bool {
+	return true
+}
+
 func getSchema(schema string) string {
 	// MSSQL has their default schema called `dbo`, `public` is a reserved keyword.
 	if strings.ToLower(schema) == "public" {

@@ -39,6 +39,9 @@ type Baseline interface {
 	IsRetryableError(err error) bool
 	IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, table string) sqllib.TableIdentifier
 	DropTable(ctx context.Context, tableID sqllib.TableIdentifier) error
+	// IsOLTP returns true if the destination is an OLTP database (e.g. MySQL, PostgreSQL, MSSQL)
+	// and false for OLAP databases (e.g. Snowflake, BigQuery) or non-SQL destinations (e.g. S3, Redis).
+	IsOLTP() bool
 }
 
 // ExecContextStatements executes one or more statements against a [Destination].

@@ -53,6 +53,10 @@ func (s Store) GetConfig() config.Config {
 	return s.config
 }
 
+func (s Store) IsOLTP() bool {
+	return false
+}
+
 func (s Store) Begin() (*goSql.Tx, error) {
 	return nil, fmt.Errorf("not implemented: Begin")
 }
