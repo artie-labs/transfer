@@ -233,8 +233,7 @@ func (t TopicConfig) String() string {
 }
 
 func (t TopicConfig) Validate() error {
-	empty := stringutil.Empty(t.Schema, t.Topic, t.CDCFormat)
-	if empty {
+	if stringutil.Empty(t.Schema, t.Topic, t.CDCFormat) {
 		return fmt.Errorf("schema, topic or cdc format is empty")
 	}
 
