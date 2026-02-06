@@ -233,9 +233,8 @@ func (t TopicConfig) String() string {
 }
 
 func (t TopicConfig) Validate() error {
-	empty := stringutil.Empty(t.Database, t.Schema, t.Topic, t.CDCFormat)
-	if empty {
-		return fmt.Errorf("database, schema, topic or cdc format is empty")
+	if stringutil.Empty(t.Schema, t.Topic, t.CDCFormat) {
+		return fmt.Errorf("schema, topic or cdc format is empty")
 	}
 
 	if !slices.Contains(validKeyFormats, t.CDCKeyFormat) {
