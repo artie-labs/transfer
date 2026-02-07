@@ -262,6 +262,13 @@ func (r RestCatalog) ApacheLivyConfig() map[string]any {
 		config[fmt.Sprintf("spark.sql.catalog.%s.prefix", r.Warehouse)] = r.Prefix
 	}
 
+	if r.AuthURI != "" {
+		config[fmt.Sprintf("spark.sql.catalog.%s.oauth2-server-uri", r.Warehouse)] = r.AuthURI
+	}
+	if r.Scope != "" {
+		config[fmt.Sprintf("spark.sql.catalog.%s.scope", r.Warehouse)] = r.Scope
+	}
+
 	for key, value := range r.SessionConfig {
 		config[key] = value
 	}
