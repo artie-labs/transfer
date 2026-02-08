@@ -166,7 +166,8 @@ type RestCatalog struct {
 	AwsSecretAccessKey string `yaml:"awsSecretAccessKey"`
 	Region             string `yaml:"region"`
 	// [Bucket] - This is where all the ephemeral delta files will be stored.
-	Bucket string `yaml:"bucket"`
+	Bucket       string `yaml:"bucket"`
+	BucketSuffix string `yaml:"bucketSuffix"`
 
 	URI string `yaml:"uri"`
 
