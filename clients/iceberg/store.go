@@ -358,6 +358,8 @@ func loadRestCatalogStore(ctx context.Context, cfg config.Config) (Store, error)
 	catalogCfg := icebergcatalog.Config{
 		URI:        restCfg.URI,
 		Token:      restCfg.Token,
+		AuthURI:    restCfg.AuthURI,
+		Scope:      restCfg.Scope,
 		Credential: restCfg.Credential,
 		Warehouse:  restCfg.Warehouse,
 		Prefix:     restCfg.Prefix,

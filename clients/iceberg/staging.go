@@ -65,13 +65,25 @@ func (s Store) getBucket() string {
 	return ""
 }
 
+func (s Store) getBucketSuffix() string {
+	if s.config.Iceberg.S3Tables != nil {
+		return ""
+	}
+
+	if s.config.Iceberg.RestCatalog != nil {
+		return s.config.Iceberg.RestCatalog.BucketSuffix
+	}
+
+	return ""
+}
+
 func (s Store) uploadToS3(ctx context.Context, fp string) (string, error) {
 	bucket := s.getBucket()
 	if bucket == "" {
 		return "", fmt.Errorf("no bucket configured for staging")
 	}
 
-	s3URI, err := s.s3Client.UploadLocalFileToS3(ctx, bucket, "", fp)
+	s3URI, err := s.s3Client.UploadLocalFileToS3(ctx, bucket, s.getBucketSuffix(), fp)
 	if err != nil {
 		return "", fmt.Errorf("failed to upload to s3: %w", err)
 	}

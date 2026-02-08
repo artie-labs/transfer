@@ -3,6 +3,7 @@ package catalog
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -19,8 +20,12 @@ type Config struct {
 	URI        string
 	Token      string
 	Credential string
-	Warehouse  string
-	Prefix     string
+	// AuthURI is the OAuth2 token endpoint URL (for client_credentials when not at catalog_uri/v1/oauth/tokens).
+	AuthURI string
+	// Scope is the OAuth2 scope (iceberg-go defaults to "catalog" when empty).
+	Scope     string
+	Warehouse string
+	Prefix    string
 }
 
 type RestCatalog struct {
@@ -34,6 +39,16 @@ func NewRESTCatalog(ctx context.Context, cfg Config) (*RestCatalog, error) {
 	}
 	if cfg.Credential != "" {
 		opts = append(opts, rest.WithCredential(cfg.Credential))
+	}
+	if cfg.AuthURI != "" {
+		authURL, err := url.Parse(cfg.AuthURI)
+		if err != nil {
+			return nil, fmt.Errorf("invalid auth URI %q: %w", cfg.AuthURI, err)
+		}
+		opts = append(opts, rest.WithAuthURI(authURL))
+	}
+	if cfg.Scope != "" {
+		opts = append(opts, rest.WithScope(cfg.Scope))
 	}
 	if cfg.Warehouse != "" {
 		opts = append(opts, rest.WithWarehouseLocation(cfg.Warehouse))

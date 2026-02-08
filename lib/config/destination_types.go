@@ -166,10 +166,18 @@ type RestCatalog struct {
 	AwsSecretAccessKey string `yaml:"awsSecretAccessKey"`
 	Region             string `yaml:"region"`
 	// [Bucket] - This is where all the ephemeral delta files will be stored.
-	Bucket string `yaml:"bucket"`
+	Bucket       string `yaml:"bucket"`
+	BucketSuffix string `yaml:"bucketSuffix"`
 
-	URI        string `yaml:"uri"`
-	Token      string `yaml:"token"`
+	URI string `yaml:"uri"`
+
+	// [Token] - This is a personal access token for the service principal / user.
+	Token string `yaml:"token"`
+
+	// [AuthURI] - This is used for OAuth2 M2M authentication.
+	AuthURI string `yaml:"authURI"`
+	Scope   string `yaml:"scope"`
+
 	Credential string `yaml:"credential"`
 	// [Warehouse] - This is the name of your Iceberg catalog.
 	Warehouse string `yaml:"warehouse"`
@@ -253,6 +261,13 @@ func (r RestCatalog) ApacheLivyConfig() map[string]any {
 
 	if r.Prefix != "" {
 		config[fmt.Sprintf("spark.sql.catalog.%s.prefix", r.Warehouse)] = r.Prefix
+	}
+
+	if r.AuthURI != "" {
+		config[fmt.Sprintf("spark.sql.catalog.%s.oauth2-server-uri", r.Warehouse)] = r.AuthURI
+	}
+	if r.Scope != "" {
+		config[fmt.Sprintf("spark.sql.catalog.%s.scope", r.Warehouse)] = r.Scope
 	}
 
 	for key, value := range r.SessionConfig {
