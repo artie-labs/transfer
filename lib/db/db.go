@@ -97,7 +97,7 @@ func Open(driverName, dsn string) (Store, error) {
 	}, nil
 }
 
-func BuildStore(db *sql.DB) Store {
+func WithDatabase(db *sql.DB) Store {
 	return &storeWrapper{
 		DB: db,
 	}

@@ -284,7 +284,7 @@ func LoadStore(cfg config.Config) (Store, error) {
 	}
 
 	return Store{
-		Store:       db.BuildStore(sqlDB),
+		Store:       db.WithDatabase(sqlDB),
 		cfg:         cfg,
 		volume:      cfg.Databricks.Volume,
 		configMap:   &types.DestinationTableConfigMap{},
