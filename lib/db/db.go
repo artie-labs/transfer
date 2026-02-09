@@ -97,8 +97,10 @@ func Open(driverName, dsn string) (Store, error) {
 	}, nil
 }
 
-func WithDatabase(db *sql.DB) Store {
-	return &storeWrapper{
-		DB: db,
+func WithDatabase(db *sql.DB) (Store, error) {
+	if err := db.Ping(); err != nil {
+		return nil, fmt.Errorf("failed to validate the DB connection: %w", err)
 	}
+
+	return &storeWrapper{DB: db}, nil
 }

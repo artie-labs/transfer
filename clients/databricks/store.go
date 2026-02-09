@@ -260,12 +260,7 @@ func BuildDatabricksSQL(dbCfg config.Databricks) (*gosql.DB, error) {
 		return nil, fmt.Errorf("failed to create Databricks connector: %w", err)
 	}
 
-	sqlDB := gosql.OpenDB(connector)
-	if err := sqlDB.Ping(); err != nil {
-		return nil, fmt.Errorf("failed to validate the Databricks connection: %w", err)
-	}
-
-	return sqlDB, nil
+	return gosql.OpenDB(connector), nil
 }
 
 func LoadStore(cfg config.Config) (Store, error) {
@@ -283,8 +278,13 @@ func LoadStore(cfg config.Config) (Store, error) {
 		return Store{}, fmt.Errorf("failed to create retry config: %w", err)
 	}
 
+	_store, err := db.WithDatabase(sqlDB)
+	if err != nil {
+		return Store{}, fmt.Errorf("failed to create store: %w", err)
+	}
+
 	return Store{
-		Store:       db.WithDatabase(sqlDB),
+		Store:       _store,
 		cfg:         cfg,
 		volume:      cfg.Databricks.Volume,
 		configMap:   &types.DestinationTableConfigMap{},
