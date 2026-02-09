@@ -122,8 +122,8 @@ func (d Databricks) Validate() error {
 	hasPAT := d.PersonalAccessToken != ""
 	hasOAuthM2M := d.ClientID != "" || d.ClientSecret != ""
 
-	if hasPAT && hasOAuthM2M {
-		return fmt.Errorf("both personalAccessToken and clientID/clientSecret cannot be provided")
+	if hasPAT == hasOAuthM2M {
+		return fmt.Errorf("only one of personalAccessToken or clientID/clientSecret must be provided")
 	}
 
 	if hasOAuthM2M {

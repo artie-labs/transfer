@@ -10,12 +10,12 @@ func TestDatabricks_Validate(t *testing.T) {
 	{
 		// No auth configured
 		d := Databricks{}
-		assert.ErrorContains(t, d.Validate(), "both personalAccessToken and clientID/clientSecret cannot be provided")
+		assert.ErrorContains(t, d.Validate(), "only one of personalAccessToken or clientID/clientSecret must be provided")
 	}
 	{
 		// Both PAT and OAuth M2M configured
 		d := Databricks{PersonalAccessToken: "pat", ClientID: "id", ClientSecret: "secret"}
-		assert.ErrorContains(t, d.Validate(), "both personalAccessToken and clientID/clientSecret cannot be provided")
+		assert.ErrorContains(t, d.Validate(), "only one of personalAccessToken or clientID/clientSecret must be provided")
 	}
 	{
 		// OAuth M2M missing clientSecret
