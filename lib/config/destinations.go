@@ -118,6 +118,26 @@ func (s Snowflake) ToConfig() (*gosnowflake.Config, error) {
 	return cfg, nil
 }
 
+func (d Databricks) Validate() error {
+	hasPAT := d.PersonalAccessToken != ""
+	hasOAuthM2M := d.ClientID != "" || d.ClientSecret != ""
+
+	if hasPAT == hasOAuthM2M {
+		return fmt.Errorf("only one of personalAccessToken or clientID/clientSecret must be provided")
+	}
+
+	if hasOAuthM2M {
+		if d.ClientID == "" {
+			return fmt.Errorf("OAuth M2M requires clientID")
+		}
+		if d.ClientSecret == "" {
+			return fmt.Errorf("OAuth M2M requires clientSecret")
+		}
+	}
+
+	return nil
+}
+
 func (d Databricks) DSN() string {
 	query := url.Values{}
 	query.Add("catalog", d.Catalog)

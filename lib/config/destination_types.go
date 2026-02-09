@@ -19,12 +19,19 @@ type BigQuery struct {
 }
 
 type Databricks struct {
-	Host                string `yaml:"host"`
-	HttpPath            string `yaml:"httpPath"`
-	Port                int    `yaml:"port"`
-	Catalog             string `yaml:"catalog"`
-	PersonalAccessToken string `yaml:"personalAccessToken"`
-	Volume              string `yaml:"volume"`
+	Host     string `yaml:"host" json:"host"`
+	HttpPath string `yaml:"httpPath" json:"httpPath"`
+	Port     int    `yaml:"port" json:"port"`
+	Catalog  string `yaml:"catalog" json:"catalog"`
+	Volume   string `yaml:"volume" json:"volume"`
+
+	// Authentication: exactly one of the following methods must be configured.
+	// Option 1: Personal Access Token
+	PersonalAccessToken string `yaml:"personalAccessToken,omitempty" json:"personalAccessToken,omitempty"`
+
+	// Option 2: OAuth M2M (machine-to-machine) using a service principal
+	ClientID     string `yaml:"clientID,omitempty" json:"clientID,omitempty"`
+	ClientSecret string `yaml:"clientSecret,omitempty" json:"clientSecret,omitempty"`
 }
 
 type Postgres struct {
