@@ -1,12 +1,15 @@
 package databricks
 
 import (
+	"cmp"
 	"context"
+	gosql "database/sql"
 	"fmt"
 	"log/slog"
 	"os"
 
-	_ "github.com/databricks/databricks-sql-go"
+	dbsql "github.com/databricks/databricks-sql-go"
+	"github.com/databricks/databricks-sql-go/auth/oauth/m2m"
 	"github.com/databricks/databricks-sql-go/driverctx"
 
 	"github.com/artie-labs/transfer/clients/databricks/dialect"
@@ -238,8 +241,39 @@ func (s Store) SweepTemporaryTables(ctx context.Context, whClient *webhooksclien
 	return shared.Sweep(ctx, s, s.cfg.TopicConfigs(), whClient, s.dialect().BuildSweepQuery)
 }
 
+func BuildDatabricksSQL(dbCfg config.Databricks) (*gosql.DB, error) {
+	if dbCfg.PersonalAccessToken != "" {
+		return gosql.Open("databricks", dbCfg.DSN())
+	}
+
+	// OAuth M2M: use NewConnector with m2m.NewAuthenticator
+	// Ref: https://github.com/databricks/databricks-sql-go/blob/main/examples/oauth/main.go
+	authenticator := m2m.NewAuthenticator(dbCfg.ClientID, dbCfg.ClientSecret, dbCfg.Host)
+	connector, err := dbsql.NewConnector(
+		dbsql.WithServerHostname(dbCfg.Host),
+		dbsql.WithHTTPPath(dbCfg.HttpPath),
+		dbsql.WithPort(cmp.Or(dbCfg.Port, 443)),
+		dbsql.WithAuthenticator(authenticator),
+		dbsql.WithInitialNamespace(dbCfg.Catalog, ""),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Databricks connector: %w", err)
+	}
+
+	sqlDB := gosql.OpenDB(connector)
+	if err := sqlDB.Ping(); err != nil {
+		return nil, fmt.Errorf("failed to validate the Databricks connection: %w", err)
+	}
+
+	return sqlDB, nil
+}
+
 func LoadStore(cfg config.Config) (Store, error) {
-	store, err := db.Open("databricks", cfg.Databricks.DSN())
+	if err := cfg.Databricks.Validate(); err != nil {
+		return Store{}, fmt.Errorf("invalid Databricks config: %w", err)
+	}
+
+	sqlDB, err := BuildDatabricksSQL(*cfg.Databricks)
 	if err != nil {
 		return Store{}, err
 	}
@@ -250,7 +284,7 @@ func LoadStore(cfg config.Config) (Store, error) {
 	}
 
 	return Store{
-		Store:       store,
+		Store:       db.BuildStore(sqlDB),
 		cfg:         cfg,
 		volume:      cfg.Databricks.Volume,
 		configMap:   &types.DestinationTableConfigMap{},
