@@ -65,7 +65,7 @@ COALESCE(
 	}
 }
 
-func (rd RedshiftDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string {
+func (rd RedshiftDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool, _ []string) []string {
 	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, rd)
 
 	orderColsToIterate := primaryKeysEscaped

@@ -133,7 +133,7 @@ func TestDatabricksDialect_BuildDedupeQueries(t *testing.T) {
 
 	{
 		// includeArtieUpdatedAt = true
-		queries := dialect.BuildDedupeQueries(fakeTableID, fakeStagingTableID, []string{"id"}, true)
+		queries := dialect.BuildDedupeQueries(fakeTableID, fakeStagingTableID, []string{"id"}, true, nil)
 		assert.Len(t, queries, 3)
 		assert.Equal(t,
 			fmt.Sprintf("CREATE TABLE {STAGING} AS SELECT * FROM {TARGET} QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s ASC, %s ASC) = 2",
@@ -152,7 +152,7 @@ func TestDatabricksDialect_BuildDedupeQueries(t *testing.T) {
 	}
 	{
 		// includeArtieUpdatedAt = false
-		queries := dialect.BuildDedupeQueries(fakeTableID, fakeStagingTableID, []string{"id"}, false)
+		queries := dialect.BuildDedupeQueries(fakeTableID, fakeStagingTableID, []string{"id"}, false, nil)
 		assert.Len(t, queries, 3)
 		assert.Equal(t,
 			fmt.Sprintf("CREATE TABLE {STAGING} AS SELECT * FROM {TARGET} QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s ASC) = 2",

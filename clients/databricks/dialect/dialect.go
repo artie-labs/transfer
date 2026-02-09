@@ -45,7 +45,7 @@ func (d DatabricksDialect) BuildIsNotToastValueExpression(tableAlias constants.T
 	}
 }
 
-func (d DatabricksDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string {
+func (d DatabricksDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool, _ []string) []string {
 	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, d)
 	orderColsToIterate := primaryKeysEscaped
 	if includeArtieUpdatedAt {

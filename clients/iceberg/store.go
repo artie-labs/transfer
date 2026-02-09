@@ -235,16 +235,24 @@ func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kaf
 		return fmt.Errorf("failed to cast staging table id to dialect table identifier")
 	}
 
-	queries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt)
+	var tableColumns []string
+	if tableConfig, err := s.GetTableConfig(ctx, tableID, false); err == nil && tableConfig != nil {
+		for _, col := range tableConfig.GetColumns() {
+			tableColumns = append(tableColumns, col.Name())
+		}
+	}
+	queries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt, tableColumns)
 	for _, query := range queries {
 		if err := s.apacheLivyClient.ExecContext(ctx, query); err != nil {
 			return fmt.Errorf("failed to execute dedupe query: %w", err)
 		}
 	}
 
-	// Drop table has to be outside of the function because we need to drop tables with S3Tables API.
-	if err := s.catalog.DropTable(ctx, castedStagingTableID.Namespace(), castedStagingTableID.Table()); err != nil {
-		return fmt.Errorf("failed to delete staging table: %w", err)
+	// Only drop staging table when we used the multi-query path (we created it). Fast path uses a single INSERT OVERWRITE ... SELECT and does not create a staging table.
+	if len(queries) > 1 {
+		if err := s.catalog.DropTable(ctx, castedStagingTableID.Namespace(), castedStagingTableID.Table()); err != nil {
+			return fmt.Errorf("failed to delete staging table: %w", err)
+		}
 	}
 
 	return nil

@@ -86,7 +86,7 @@ func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kaf
 		_ = ddl.DropTemporaryTable(ctx, s, stagingTableID, false)
 	}()
 
-	for _, query := range s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt) {
+	for _, query := range s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt, nil) {
 		// Databricks doesn't support transactions, so we can't wrap this in a transaction.
 		if _, err := s.ExecContext(ctx, query); err != nil {
 			return fmt.Errorf("failed to execute query: %w", err)

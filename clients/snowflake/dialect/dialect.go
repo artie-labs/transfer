@@ -74,7 +74,7 @@ func (sd SnowflakeDialect) BuildIsNotToastValueExpression(tableAlias constants.T
 	}
 }
 
-func (sd SnowflakeDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string {
+func (sd SnowflakeDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool, _ []string) []string {
 	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, sd)
 
 	orderColsToIterate := primaryKeysEscaped

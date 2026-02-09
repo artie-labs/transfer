@@ -15,7 +15,7 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeQueries() {
 		tableID := dialect.NewTableIdentifier("public", "customers")
 		stagingTableID := shared.TempTableID(tableID)
 
-		parts := dialect.RedshiftDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"id"}, false)
+		parts := dialect.RedshiftDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"id"}, false, nil)
 		assert.Len(r.T(), parts, 3)
 		assert.Equal(
 			r.T(),
@@ -30,7 +30,7 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeQueries() {
 		tableID := dialect.NewTableIdentifier("public", "customers")
 		stagingTableID := shared.TempTableID(tableID)
 
-		parts := dialect.RedshiftDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"id"}, true)
+		parts := dialect.RedshiftDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"id"}, true, nil)
 		assert.Len(r.T(), parts, 3)
 		assert.Equal(
 			r.T(),
@@ -45,7 +45,7 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeQueries() {
 		tableID := dialect.NewTableIdentifier("public", "user_settings")
 		stagingTableID := shared.TempTableID(tableID)
 
-		parts := dialect.RedshiftDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"user_id", "settings"}, false)
+		parts := dialect.RedshiftDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"user_id", "settings"}, false, nil)
 		assert.Len(r.T(), parts, 3)
 		assert.Equal(
 			r.T(),
@@ -60,7 +60,7 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeQueries() {
 		tableID := dialect.NewTableIdentifier("public", "user_settings")
 		stagingTableID := shared.TempTableID(tableID)
 
-		parts := dialect.RedshiftDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"user_id", "settings"}, true)
+		parts := dialect.RedshiftDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"user_id", "settings"}, true, nil)
 		assert.Len(r.T(), parts, 3)
 		assert.Equal(
 			r.T(),

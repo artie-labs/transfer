@@ -378,7 +378,7 @@ func TestBuildDedupeQueries(t *testing.T) {
 		stagingTableID := NewTableIdentifier("test_db", "public", "users_staging")
 		primaryKeys := []string{"id"}
 
-		queries := dd.BuildDedupeQueries(tableID, stagingTableID, primaryKeys, false)
+		queries := dd.BuildDedupeQueries(tableID, stagingTableID, primaryKeys, false, nil)
 
 		assert.Len(t, queries, 4, "Should return 4 queries")
 
@@ -394,7 +394,7 @@ func TestBuildDedupeQueries(t *testing.T) {
 		stagingTableID := NewTableIdentifier("test_db", "public", "orders_staging")
 		primaryKeys := []string{"order_id", "line_item_id"}
 
-		queries := dd.BuildDedupeQueries(tableID, stagingTableID, primaryKeys, false)
+		queries := dd.BuildDedupeQueries(tableID, stagingTableID, primaryKeys, false, nil)
 
 		assert.Len(t, queries, 4, "Should return 4 queries")
 
@@ -410,7 +410,7 @@ func TestBuildDedupeQueries(t *testing.T) {
 		stagingTableID := NewTableIdentifier("test_db", "public", "users_staging")
 		primaryKeys := []string{"id"}
 
-		queries := dd.BuildDedupeQueries(tableID, stagingTableID, primaryKeys, true)
+		queries := dd.BuildDedupeQueries(tableID, stagingTableID, primaryKeys, true, nil)
 
 		assert.Len(t, queries, 4, "Should return 4 queries")
 
@@ -426,7 +426,7 @@ func TestBuildDedupeQueries(t *testing.T) {
 		stagingTableID := NewTableIdentifier("test_db", "public", "orders_staging")
 		primaryKeys := []string{"order_id", "line_item_id"}
 
-		queries := dd.BuildDedupeQueries(tableID, stagingTableID, primaryKeys, true)
+		queries := dd.BuildDedupeQueries(tableID, stagingTableID, primaryKeys, true, nil)
 
 		assert.Len(t, queries, 4, "Should return 4 queries")
 

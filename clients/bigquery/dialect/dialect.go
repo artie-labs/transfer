@@ -54,7 +54,7 @@ func (bd BigQueryDialect) BuildIsNotToastValueExpression(tableAlias constants.Ta
 	return fmt.Sprintf(`TO_JSON_STRING(%s) NOT LIKE '%s'`, colName, "%"+constants.ToastUnavailableValuePlaceholder+"%")
 }
 
-func (bd BigQueryDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string {
+func (bd BigQueryDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool, _ []string) []string {
 	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, bd)
 
 	orderColsToIterate := primaryKeysEscaped

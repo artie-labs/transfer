@@ -40,7 +40,8 @@ type Dialect interface {
 	BuildCreateTableQuery(tableID TableIdentifier, temporary bool, mode config.Mode, colSQLParts []string) string
 	BuildDropTableQuery(tableID TableIdentifier) string
 	BuildTruncateTableQuery(tableID TableIdentifier) string
-	BuildDedupeQueries(tableID, stagingTableID TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string
+	// tableColumns is optional: when non-nil and non-empty, dialects may use it to emit a faster dedupe (e.g. single INSERT OVERWRITE ... SELECT).
+	BuildDedupeQueries(tableID, stagingTableID TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool, tableColumns []string) []string
 	BuildDescribeTableQuery(tableID TableIdentifier) (string, []any, error)
 	BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string
 	BuildMergeQueryIntoStagingTable(tableID TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string

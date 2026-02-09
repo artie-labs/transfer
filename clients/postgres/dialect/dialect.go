@@ -74,7 +74,7 @@ func (PostgresDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) stri
 	return fmt.Sprintf("TRUNCATE TABLE %s", tableID.FullyQualifiedName())
 }
 
-func (PostgresDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string {
+func (PostgresDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool, _ []string) []string {
 	panic("not implemented") // We don't currently support deduping for Postgres.
 }
 

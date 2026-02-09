@@ -18,7 +18,7 @@ func TestGenerateDedupeQueries(t *testing.T) {
 		tableID := dialect.NewTableIdentifier("project12", "public", "customers")
 		stagingTableID := shared.TempTableID(tableID)
 
-		parts := dialect.BigQueryDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"id"}, false)
+		parts := dialect.BigQueryDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"id"}, false, nil)
 		assert.Len(t, parts, 3)
 		assert.Equal(
 			t,
@@ -36,7 +36,7 @@ func TestGenerateDedupeQueries(t *testing.T) {
 		tableID := dialect.NewTableIdentifier("project12", "public", "customers")
 		stagingTableID := shared.TempTableID(tableID)
 
-		parts := dialect.BigQueryDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"id"}, true)
+		parts := dialect.BigQueryDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"id"}, true, nil)
 		assert.Len(t, parts, 3)
 		assert.Equal(
 			t,
@@ -54,7 +54,7 @@ func TestGenerateDedupeQueries(t *testing.T) {
 		tableID := dialect.NewTableIdentifier("project123", "public", "user_settings")
 		stagingTableID := shared.TempTableID(tableID)
 
-		parts := dialect.BigQueryDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"user_id", "settings"}, false)
+		parts := dialect.BigQueryDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"user_id", "settings"}, false, nil)
 		assert.Len(t, parts, 3)
 		assert.Equal(
 			t,
@@ -72,7 +72,7 @@ func TestGenerateDedupeQueries(t *testing.T) {
 		tableID := dialect.NewTableIdentifier("project123", "public", "user_settings")
 		stagingTableID := shared.TempTableID(tableID)
 
-		parts := dialect.BigQueryDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"user_id", "settings"}, true)
+		parts := dialect.BigQueryDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"user_id", "settings"}, true, nil)
 		assert.Len(t, parts, 3)
 		assert.Equal(
 			t,

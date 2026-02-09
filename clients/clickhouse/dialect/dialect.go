@@ -43,7 +43,7 @@ func (ClickhouseDialect) BuildIsNotToastValueExpression(tableAlias constants.Tab
 	panic("not implemented")
 }
 
-func (ClickhouseDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string {
+func (ClickhouseDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool, _ []string) []string {
 	panic("not implemented")
 }
 

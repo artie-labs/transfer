@@ -146,7 +146,7 @@ func (DuckDBDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) string
 	return fmt.Sprintf("TRUNCATE TABLE %s;", tableID.FullyQualifiedName())
 }
 
-func (d DuckDBDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string {
+func (d DuckDBDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool, _ []string) []string {
 	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, d)
 
 	orderColsToIterate := primaryKeysEscaped
