@@ -23,19 +23,21 @@ func TestIcebergDialect_BuildDedupeQueries(t *testing.T) {
 	{
 		// __artie_updated_at = false
 		queries := _dialect.BuildDedupeQueries(tableID, stagingTableID, primaryKeys, false)
-		assert.Equal(t, 3, len(queries))
-		assert.Equal(t, "CREATE OR REPLACE TABLE `{{catalog}}`.`{{schema}}`.`{{table_staging}}` AS SELECT * FROM ( SELECT *, ROW_NUMBER() OVER ( PARTITION BY `id` ORDER BY `id` DESC ) AS __artie_rn FROM `{{catalog}}`.`{{schema}}`.`{{table}}` ) WHERE __artie_rn = 1", queries[0])
+		assert.Equal(t, 4, len(queries))
+		assert.Equal(t, "CREATE OR REPLACE TABLE `{{catalog}}`.`{{schema}}`.`{{table_staging}}` AS SELECT * FROM ( SELECT *, ROW_NUMBER() OVER ( PARTITION BY `id` ORDER BY `id` ASC ) AS __artie_rn FROM `{{catalog}}`.`{{schema}}`.`{{table}}` ) WHERE __artie_rn = 2", queries[0])
 		assert.Equal(t, "ALTER TABLE `{{catalog}}`.`{{schema}}`.`{{table_staging}}` DROP COLUMN __artie_rn", queries[1])
-		assert.Equal(t, "INSERT OVERWRITE `{{catalog}}`.`{{schema}}`.`{{table}}` TABLE `{{catalog}}`.`{{schema}}`.`{{table_staging}}`", queries[2])
+		assert.Equal(t, "DELETE FROM `{{catalog}}`.`{{schema}}`.`{{table}}` t1 WHERE EXISTS (SELECT 1 FROM `{{catalog}}`.`{{schema}}`.`{{table_staging}}` t2 WHERE t1.`id` = t2.`id`)", queries[2])
+		assert.Equal(t, "INSERT INTO `{{catalog}}`.`{{schema}}`.`{{table}}` SELECT * FROM `{{catalog}}`.`{{schema}}`.`{{table_staging}}`", queries[3])
 	}
 
 	{
 		// __artie_updated_at = true
 		queries := _dialect.BuildDedupeQueries(tableID, stagingTableID, primaryKeys, true)
-		assert.Equal(t, 3, len(queries))
-		assert.Equal(t, "CREATE OR REPLACE TABLE `{{catalog}}`.`{{schema}}`.`{{table_staging}}` AS SELECT * FROM ( SELECT *, ROW_NUMBER() OVER ( PARTITION BY `id` ORDER BY `id` DESC, `__artie_updated_at` DESC ) AS __artie_rn FROM `{{catalog}}`.`{{schema}}`.`{{table}}` ) WHERE __artie_rn = 1", queries[0])
+		assert.Equal(t, 4, len(queries))
+		assert.Equal(t, "CREATE OR REPLACE TABLE `{{catalog}}`.`{{schema}}`.`{{table_staging}}` AS SELECT * FROM ( SELECT *, ROW_NUMBER() OVER ( PARTITION BY `id` ORDER BY `id` ASC, `__artie_updated_at` ASC ) AS __artie_rn FROM `{{catalog}}`.`{{schema}}`.`{{table}}` ) WHERE __artie_rn = 2", queries[0])
 		assert.Equal(t, "ALTER TABLE `{{catalog}}`.`{{schema}}`.`{{table_staging}}` DROP COLUMN __artie_rn", queries[1])
-		assert.Equal(t, "INSERT OVERWRITE `{{catalog}}`.`{{schema}}`.`{{table}}` TABLE `{{catalog}}`.`{{schema}}`.`{{table_staging}}`", queries[2])
+		assert.Equal(t, "DELETE FROM `{{catalog}}`.`{{schema}}`.`{{table}}` t1 WHERE EXISTS (SELECT 1 FROM `{{catalog}}`.`{{schema}}`.`{{table_staging}}` t2 WHERE t1.`id` = t2.`id`)", queries[2])
+		assert.Equal(t, "INSERT INTO `{{catalog}}`.`{{schema}}`.`{{table}}` SELECT * FROM `{{catalog}}`.`{{schema}}`.`{{table_staging}}`", queries[3])
 	}
 }
 

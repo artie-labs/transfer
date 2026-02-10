@@ -68,18 +68,17 @@ func (id IcebergDialect) BuildDedupeQueries(
 
 	var orderByCols []string
 	for _, pk := range orderColsToIterate {
-		orderByCols = append(orderByCols, fmt.Sprintf("%s DESC", pk))
+		orderByCols = append(orderByCols, fmt.Sprintf("%s ASC", pk))
 	}
 
 	rowNumberMarker := "__artie_rn"
-	// This needs to be a separate table that we drop later because:
-	// 1. SparkSQL does not have a QUALIFY function
-	// 2. SparkSQL does not have a SELECT EXCEPT function (only Databricks Spark does)
-	// 3. SparkSQL does not support dropping a column from a temporary view
-	// 4. Adding a temporary column to the target table for row_number() does not work as the view is just a shim on top of Spark dataframe. We ran into the ambiguous column error previously.
+	// This needs to be a separate table because SparkSQL does not have a QUALIFY function.
+	// We use a subquery with ROW_NUMBER() and filter for rn = 2 to identify one row per duplicate PK to keep.
+	// Then we delete all rows for those PKs from the target and re-insert just the kept rows.
+	// This is an incremental approach — only duplicate PKs are touched, avoiding a full table rewrite.
 	var parts []string
 	parts = append(parts,
-		fmt.Sprintf(`CREATE OR REPLACE TABLE %s AS SELECT * FROM ( SELECT *, ROW_NUMBER() OVER ( PARTITION BY %s ORDER BY %s ) AS %s FROM %s ) WHERE %s = 1`,
+		fmt.Sprintf(`CREATE OR REPLACE TABLE %s AS SELECT * FROM ( SELECT *, ROW_NUMBER() OVER ( PARTITION BY %s ORDER BY %s ) AS %s FROM %s ) WHERE %s = 2`,
 			stagingTableID.FullyQualifiedName(),
 			strings.Join(primaryKeysEscaped, ", "),
 			strings.Join(orderByCols, ", "),
@@ -90,9 +89,19 @@ func (id IcebergDialect) BuildDedupeQueries(
 	)
 
 	parts = append(parts, fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s", stagingTableID.FullyQualifiedName(), rowNumberMarker))
-	// INSERT OVERWRITE is atomic - if it fails, the original table remains unchanged.
-	// This avoids data loss that could occur with separate DELETE + INSERT operations.
-	parts = append(parts, fmt.Sprintf("INSERT OVERWRITE %s TABLE %s", tableID.FullyQualifiedName(), stagingTableID.FullyQualifiedName()))
+
+	var whereClauses []string
+	for _, pk := range primaryKeysEscaped {
+		whereClauses = append(whereClauses, fmt.Sprintf("t1.%s = t2.%s", pk, pk))
+	}
+
+	parts = append(parts, fmt.Sprintf("DELETE FROM %s t1 WHERE EXISTS (SELECT 1 FROM %s t2 WHERE %s)",
+		tableID.FullyQualifiedName(),
+		stagingTableID.FullyQualifiedName(),
+		strings.Join(whereClauses, " AND "),
+	))
+
+	parts = append(parts, fmt.Sprintf("INSERT INTO %s SELECT * FROM %s", tableID.FullyQualifiedName(), stagingTableID.FullyQualifiedName()))
 	return parts
 }
 
