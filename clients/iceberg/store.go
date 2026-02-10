@@ -1,8 +1,10 @@
 package iceberg
 
 import (
+	"cmp"
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/aws/aws-sdk-go-v2/credentials"
 
@@ -372,7 +374,7 @@ func loadRestCatalogStore(ctx context.Context, cfg config.Config) (Store, error)
 
 	awsCfg := awslib.NewConfigWithCredentialsAndRegion(
 		credentials.NewStaticCredentialsProvider(restCfg.AwsAccessKeyID, restCfg.AwsSecretAccessKey, ""),
-		restCfg.Region,
+		cmp.Or(restCfg.Region, os.Getenv("AWS_REGION")),
 	)
 
 	return Store{
