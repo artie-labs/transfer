@@ -109,3 +109,46 @@ func (Geometry) Convert(value any) (any, error) {
 
 	return string(bytes), nil
 }
+
+type Line struct{}
+
+func (Line) ToKindDetails() typing.KindDetails {
+	return typing.Array
+}
+
+// Convert takes a value that represents a PostgreSQL line type {A, B, C} (coefficients of Ax + By + C = 0)
+// and returns it as an array of float64 values.
+func (Line) Convert(value any) (any, error) {
+	// PostgreSQL line type comes through as an array of 3 numeric values: {A, B, C}
+	// representing the linear equation Ax + By + C = 0
+	arr, ok := value.([]any)
+	if !ok {
+		return nil, fmt.Errorf("value is not []any type, got %T", value)
+	}
+
+	if len(arr) != 3 {
+		return nil, fmt.Errorf("expected array of length 3 for line type, got %d", len(arr))
+	}
+
+	// Convert each element to float64
+	result := make([]float64, 3)
+	for i, v := range arr {
+		switch val := v.(type) {
+		case float64:
+			result[i] = val
+		case float32:
+			result[i] = float64(val)
+		case int:
+			result[i] = float64(val)
+		case int32:
+			result[i] = float64(val)
+		case int64:
+			result[i] = float64(val)
+		default:
+			return nil, fmt.Errorf("unexpected type %T for line coefficient at index %d", v, i)
+		}
+	}
+
+	// Return as []any to match the expected return type
+	return []any{result[0], result[1], result[2]}, nil
+}

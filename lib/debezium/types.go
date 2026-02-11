@@ -68,7 +68,8 @@ const (
 	GeometryType      SupportedDebeziumType = "io.debezium.data.geometry.Geometry"
 	GeographyType     SupportedDebeziumType = "io.debezium.data.geometry.Geography"
 
-	KafkaDecimalPrecisionKey = "connect.decimal.precision"
+	KafkaDecimalPrecisionKey                       = "connect.decimal.precision"
+	LineType                 SupportedDebeziumType = "io.debezium.data.LineString"
 )
 
 // toInt64 attempts to convert a value of unknown type to a an int64.

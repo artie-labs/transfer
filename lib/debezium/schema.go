@@ -53,6 +53,7 @@ const (
 	Struct  FieldType = "struct"
 	Array   FieldType = "array"
 	Map     FieldType = "map"
+	Line    FieldType = "line"
 )
 
 type Field struct {
@@ -102,6 +103,8 @@ func (f Field) ToValueConverter() (converters.ValueConverter, error) {
 		return converters.GeometryPoint{}, nil
 	case GeographyType, GeometryType:
 		return converters.Geometry{}, nil
+	case LineType:
+		return converters.Line{}, nil
 	case JSON:
 		return converters.JSON{}, nil
 	case Date, DateKafkaConnect:
