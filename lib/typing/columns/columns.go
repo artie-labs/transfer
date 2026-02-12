@@ -232,12 +232,16 @@ func (c *Columns) AddColumn(col Column) {
 	c.Lock()
 	defer c.Unlock()
 
+	if c.index == nil {
+		c.index = make(map[string]int)
+	}
+
 	if _, ok := c.index[col.name]; ok {
 		return
 	}
 
 	c.columns = append(c.columns, col)
-	c.BuildIndex()
+	c.index[col.name] = len(c.columns) - 1
 }
 
 func (c *Columns) GetColumn(name string) (Column, bool) {
