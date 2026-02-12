@@ -56,13 +56,13 @@ func LoadBaseline(ctx context.Context, cfg config.Config) (destination.Baseline,
 		}
 		return store, nil
 	case constants.Redis:
-		store, err := redis.LoadRedis(ctx, cfg, nil)
+		store, err := redis.LoadStore(ctx, cfg, nil)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load Redis: %w", err)
 		}
 		return store, nil
 	case constants.SQS:
-		store, err := sqs.LoadSQS(ctx, cfg)
+		store, err := sqs.LoadStore(ctx, cfg)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load SQS: %w", err)
 		}
@@ -75,9 +75,9 @@ func LoadBaseline(ctx context.Context, cfg config.Config) (destination.Baseline,
 func LoadDestination(ctx context.Context, cfg config.Config, store *db.Store) (destination.Destination, error) {
 	switch cfg.Output {
 	case constants.Snowflake:
-		return snowflake.LoadSnowflake(ctx, cfg, store)
+		return snowflake.LoadStore(ctx, cfg, store)
 	case constants.BigQuery:
-		return bigquery.LoadBigQuery(ctx, cfg, store)
+		return bigquery.LoadStore(ctx, cfg, store)
 	case constants.Databricks:
 		return databricks.LoadStore(cfg)
 	case constants.MSSQL:
@@ -87,11 +87,11 @@ func LoadDestination(ctx context.Context, cfg config.Config, store *db.Store) (d
 	case constants.Postgres:
 		return postgres.LoadStore(ctx, cfg)
 	case constants.Redshift:
-		return redshift.LoadRedshift(ctx, cfg, store)
+		return redshift.LoadStore(ctx, cfg, store)
 	case constants.MotherDuck:
 		return motherduck.LoadStore(cfg)
 	case constants.Clickhouse:
-		return clickhouse.LoadClickhouse(ctx, cfg, store)
+		return clickhouse.LoadStore(ctx, cfg, store)
 	}
 
 	return nil, fmt.Errorf("invalid destination: %q", cfg.Output)

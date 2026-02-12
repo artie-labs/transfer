@@ -199,7 +199,7 @@ func (s *Store) DropTable(ctx context.Context, tableID sqllib.TableIdentifier) e
 	return nil
 }
 
-func LoadSQS(ctx context.Context, cfg config.Config) (*Store, error) {
+func LoadStore(ctx context.Context, cfg config.Config) (*Store, error) {
 	if cfg.SQS == nil {
 		return nil, fmt.Errorf("sqs config is nil")
 	}

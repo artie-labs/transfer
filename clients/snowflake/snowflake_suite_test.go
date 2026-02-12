@@ -27,7 +27,7 @@ func (s *SnowflakeTestSuite) ResetStore() {
 	assert.NoError(s.T(), err)
 
 	s.mockDB = mock
-	s.stageStore, err = LoadSnowflake(s.T().Context(), config.Config{Snowflake: &config.Snowflake{}}, typing.ToPtr(db.NewStoreWrapper(_db)))
+	s.stageStore, err = LoadStore(s.T().Context(), config.Config{Snowflake: &config.Snowflake{}}, typing.ToPtr(db.NewStoreWrapper(_db)))
 	assert.NoError(s.T(), err)
 }
 
