@@ -39,7 +39,8 @@ func TestTableIdentifier_NoSchema(t *testing.T) {
 
 func TestTableIdentifier_WithTable(t *testing.T) {
 	ti := NewTableIdentifier("mydb", "public", "users")
-	newTI := ti.WithTable("orders").(TableIdentifier)
+	newTI, ok := ti.WithTable("orders").(TableIdentifier)
+	assert.True(t, ok)
 
 	assert.Equal(t, "mydb", newTI.Database())
 	assert.Equal(t, "public", newTI.Schema())
