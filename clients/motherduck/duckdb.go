@@ -97,7 +97,7 @@ func (s Store) ExecContext(ctx context.Context, query string, args ...any) (goSq
 	}, func(r []byte) (*ducktape.ExecuteResponse, error) {
 		var response ducktape.ExecuteResponse
 		if err := json.Unmarshal(r, &response); err != nil {
-			return nil, fmt.Errorf("failed to unmarshall execute response: %w", err)
+			return nil, fmt.Errorf("failed to unmarshal execute response: %w", err)
 		}
 		return &response, nil
 	})
@@ -130,7 +130,7 @@ func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kaf
 	}, func(r []byte) (*ducktape.ExecuteResponse, error) {
 		var response ducktape.ExecuteResponse
 		if err := json.Unmarshal(r, &response); err != nil {
-			return nil, fmt.Errorf("failed to unmarshall execute response: %w", err)
+			return nil, fmt.Errorf("failed to unmarshal execute response: %w", err)
 		}
 		return &response, nil
 	})

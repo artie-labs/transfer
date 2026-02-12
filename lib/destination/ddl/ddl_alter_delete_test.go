@@ -43,7 +43,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 	snowflakeName := snowflakeTableID.FullyQualifiedName()
 
 	// Testing 3 scenarios here
-	// 1. DropDeletedColumns = false, ContainOtherOperations = true, don't delete ever.
+	// 1. DropDeletedColumns = false, ContainsOtherOperations = true, don't delete ever.
 	d.bigQueryStore.GetConfigMap().AddTable(bqTableID, types.NewDestinationTableConfig(cols.GetColumns(), false))
 	bqTc := d.bigQueryStore.GetConfigMap().GetTableConfig(bqTableID)
 
@@ -85,7 +85,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 	assert.Equal(d.T(), 0, len(redshiftTc.ReadOnlyColumnsToDelete()), redshiftTc.ReadOnlyColumnsToDelete())
 	assert.Len(d.T(), redshiftTc.GetColumns(), originalColumnLength)
 
-	// 2. DropDeletedColumns = true, ContainOtherOperations = false, don't delete ever
+	// 2. DropDeletedColumns = true, ContainsOtherOperations = false, don't delete ever
 	d.bigQueryStore.GetConfigMap().AddTable(bqTableID, types.NewDestinationTableConfig(cols.GetColumns(), true))
 	bqTc = d.bigQueryStore.GetConfigMap().GetTableConfig(bqTableID)
 
@@ -126,7 +126,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 	assert.Empty(d.T(), redshiftTc.ReadOnlyColumnsToDelete())
 	assert.Len(d.T(), redshiftTc.GetColumns(), originalColumnLength)
 
-	// 3. DropDeletedColumns = true, ContainOtherOperations = true, drop based on timestamp.
+	// 3. DropDeletedColumns = true, ContainsOtherOperations = true, drop based on timestamp.
 	d.bigQueryStore.GetConfigMap().AddTable(bqTableID, types.NewDestinationTableConfig(cols.GetColumns(), true))
 	bqTc = d.bigQueryStore.GetConfigMap().GetTableConfig(bqTableID)
 
