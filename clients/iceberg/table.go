@@ -87,10 +87,10 @@ func (s Store) AlterTableAddColumns(ctx context.Context, tableID sql.TableIdenti
 	return nil
 }
 
-func (s Store) AlterTableDropColumns(ctx context.Context, tableID sql.TableIdentifier, tableConfig *types.DestinationTableConfig, cols []columns.Column, cdcTime time.Time, containOtherOperations bool) error {
+func (s Store) AlterTableDropColumns(ctx context.Context, tableID sql.TableIdentifier, tableConfig *types.DestinationTableConfig, cols []columns.Column, cdcTime time.Time, containsOtherOperations bool) error {
 	var colsToDrop []columns.Column
 	for _, col := range cols {
-		if tableConfig.ShouldDeleteColumn(col.Name(), cdcTime, containOtherOperations) {
+		if tableConfig.ShouldDeleteColumn(col.Name(), cdcTime, containsOtherOperations) {
 			colsToDrop = append(colsToDrop, col)
 		}
 	}
