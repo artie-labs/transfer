@@ -28,7 +28,7 @@ func (b *BigQueryTestSuite) SetupTest() {
 	b.fakeStore = &mocks.FakeStore{}
 	store := db.Store(b.fakeStore)
 	var err error
-	b.store, err = LoadBigQuery(b.T().Context(), cfg, &store)
+	b.store, err = LoadStore(b.T().Context(), cfg, &store)
 	assert.NoError(b.T(), err)
 }
 
