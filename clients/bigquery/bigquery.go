@@ -279,7 +279,7 @@ func (s *Store) SweepTemporaryTables(_ context.Context, _ *webhooksclient.Client
 	return nil
 }
 
-func LoadBigQuery(ctx context.Context, cfg config.Config, _store *db.Store) (*Store, error) {
+func LoadStore(ctx context.Context, cfg config.Config, _store *db.Store) (*Store, error) {
 	if _store != nil {
 		// Used for tests.
 		return &Store{

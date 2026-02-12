@@ -140,7 +140,7 @@ func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair ka
 	return nil
 }
 
-func LoadRedshift(ctx context.Context, cfg config.Config, _store *db.Store) (*Store, error) {
+func LoadStore(ctx context.Context, cfg config.Config, _store *db.Store) (*Store, error) {
 	if _store != nil {
 		// Used for tests.
 		return &Store{
