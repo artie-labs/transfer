@@ -187,7 +187,7 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whC
 			return false, fmt.Errorf("failed to alter table: %w", err)
 		}
 
-		if err := s.AlterTableDropColumns(ctx, tableID, tableConfig, srcKeysMissing, tableData.GetLatestTimestamp(), tableData.ContainOtherOperations()); err != nil {
+		if err := s.AlterTableDropColumns(ctx, tableID, tableConfig, srcKeysMissing, tableData.GetLatestTimestamp(), tableData.ContainsOtherOperations()); err != nil {
 			return false, fmt.Errorf("failed to drop columns: %w", err)
 		}
 	}

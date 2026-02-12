@@ -53,9 +53,9 @@ type TableData struct {
 	// [latestTimestamp] - This property is used for the automatic schema detection
 	latestTimestamp time.Time
 	approxSize      int
-	// containOtherOperations - this means the `TableData` object contains other events that arises from CREATE, UPDATE, REPLICATION
+	// containsOtherOperations - this means the `TableData` object contains other events that arises from CREATE, UPDATE, REPLICATION
 	// if this value is false, that means it is only deletes. Which means we should not drop columns
-	containOtherOperations bool
+	containsOtherOperations bool
 
 	// containsHardDeletes - this means there are hard deletes in `rowsData`, so for multi-part merge statements, we should include a DELETE SQL statement.
 	containsHardDeletes bool
@@ -105,8 +105,8 @@ func (t *TableData) ContainsHardDeletes() bool {
 	return t.containsHardDeletes
 }
 
-func (t *TableData) ContainOtherOperations() bool {
-	return t.containOtherOperations
+func (t *TableData) ContainsOtherOperations() bool {
+	return t.containsOtherOperations
 }
 
 func (t *TableData) PrimaryKeys() []string {
@@ -218,7 +218,7 @@ func (t *TableData) InsertRow(pk string, rowData map[string]any, delete bool) {
 	t.approxSize += newRowSize - prevRowSize
 	t.rowsData[pk] = NewRow(rowData)
 	if !delete {
-		t.containOtherOperations = true
+		t.containsOtherOperations = true
 	} else if delete && !t.topicConfig.SoftDelete {
 		// If there's an actual hard delete, let's update it.
 		// We know because we have a delete operation and this topic is not configured to do soft deletes.

@@ -108,14 +108,14 @@ func AlterTableAddColumns(ctx context.Context, dest destination.Destination, tc 
 	return nil
 }
 
-func AlterTableDropColumns(ctx context.Context, dest destination.Destination, tc *types.DestinationTableConfig, tableID sql.TableIdentifier, cols []columns.Column, cdcTime time.Time, containOtherOperations bool) error {
+func AlterTableDropColumns(ctx context.Context, dest destination.Destination, tc *types.DestinationTableConfig, tableID sql.TableIdentifier, cols []columns.Column, cdcTime time.Time, containsOtherOperations bool) error {
 	if len(cols) == 0 {
 		return nil
 	}
 
 	var colsToDrop []columns.Column
 	for _, col := range cols {
-		if tc.ShouldDeleteColumn(col.Name(), cdcTime, containOtherOperations) {
+		if tc.ShouldDeleteColumn(col.Name(), cdcTime, containsOtherOperations) {
 			colsToDrop = append(colsToDrop, col)
 		}
 	}
