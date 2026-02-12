@@ -40,7 +40,7 @@ func (d *DDLTestSuite) SetupTest() {
 	bqStore := db.Store(d.fakeBigQueryStore)
 
 	var err error
-	d.bigQueryStore, err = bigquery.LoadBigQuery(d.T().Context(), d.bigQueryCfg, &bqStore)
+	d.bigQueryStore, err = bigquery.LoadStore(d.T().Context(), d.bigQueryCfg, &bqStore)
 	assert.NoError(d.T(), err)
 
 	d.fakeSnowflakeStagesStore = &mocks.FakeStore{}
@@ -48,13 +48,13 @@ func (d *DDLTestSuite) SetupTest() {
 	snowflakeCfg := config.Config{
 		Snowflake: &config.Snowflake{},
 	}
-	d.snowflakeStagesStore, err = snowflake.LoadSnowflake(d.T().Context(), snowflakeCfg, &snowflakeStagesStore)
+	d.snowflakeStagesStore, err = snowflake.LoadStore(d.T().Context(), snowflakeCfg, &snowflakeStagesStore)
 	assert.NoError(d.T(), err)
 
 	d.fakeRedshiftStore = &mocks.FakeStore{}
 	redshiftStore := db.Store(d.fakeRedshiftStore)
 	redshiftCfg := config.Config{Redshift: &config.Redshift{}}
-	d.redshiftStore, err = redshift.LoadRedshift(d.T().Context(), redshiftCfg, &redshiftStore)
+	d.redshiftStore, err = redshift.LoadStore(d.T().Context(), redshiftCfg, &redshiftStore)
 	assert.NoError(d.T(), err)
 }
 
