@@ -24,7 +24,7 @@ type Store struct {
 	config    config.Config
 }
 
-func LoadClickhouse(ctx context.Context, cfg config.Config, _store *db.Store) (*Store, error) {
+func LoadStore(ctx context.Context, cfg config.Config, _store *db.Store) (*Store, error) {
 	if _store != nil {
 		// Used for tests.
 		return &Store{

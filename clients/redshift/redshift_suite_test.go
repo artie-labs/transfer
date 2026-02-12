@@ -25,7 +25,7 @@ func (r *RedshiftTestSuite) SetupTest() {
 	r.fakeStore = &mocks.FakeStore{}
 	store := db.Store(r.fakeStore)
 	var err error
-	r.store, err = LoadRedshift(r.T().Context(), cfg, &store)
+	r.store, err = LoadStore(r.T().Context(), cfg, &store)
 	assert.NoError(r.T(), err)
 }
 
