@@ -1,4 +1,4 @@
-package mssql
+package shared
 
 import (
 	"testing"
@@ -13,7 +13,7 @@ import (
 
 func TestParseValue(t *testing.T) {
 	{
-		val, err := parseValue(nil, columns.Column{})
+		val, err := ParseValue(nil, columns.Column{})
 		assert.NoError(t, err)
 		assert.Nil(t, val)
 	}
@@ -21,13 +21,13 @@ func TestParseValue(t *testing.T) {
 		// Date
 		{
 			// String
-			val, err := parseValue("2021-01-01", columns.NewColumn("date", typing.Date))
+			val, err := ParseValue("2021-01-01", columns.NewColumn("date", typing.Date))
 			assert.NoError(t, err)
 			assert.Equal(t, "2021-01-01", val.(time.Time).Format(time.DateOnly))
 		}
 		{
 			// time.Time
-			val, err := parseValue(time.Date(2021, time.January, 1, 0, 0, 0, 0, time.UTC), columns.NewColumn("date", typing.Date))
+			val, err := ParseValue(time.Date(2021, time.January, 1, 0, 0, 0, 0, time.UTC), columns.NewColumn("date", typing.Date))
 			assert.NoError(t, err)
 			assert.Equal(t, "2021-01-01", val.(time.Time).Format(time.DateOnly))
 		}
@@ -36,13 +36,13 @@ func TestParseValue(t *testing.T) {
 		// Timestamp NTZ
 		{
 			// String
-			val, err := parseValue("2021-01-04T09:32:00", columns.NewColumn("timestamp_ntz", typing.TimestampNTZ))
+			val, err := ParseValue("2021-01-04T09:32:00", columns.NewColumn("timestamp_ntz", typing.TimestampNTZ))
 			assert.NoError(t, err)
 			assert.Equal(t, time.Date(2021, time.January, 4, 9, 32, 0, 0, time.UTC), val.(time.Time))
 		}
 		{
 			// time.Time
-			val, err := parseValue(time.Date(2021, time.January, 4, 9, 32, 0, 0, time.UTC), columns.NewColumn("timestamp_ntz", typing.TimestampNTZ))
+			val, err := ParseValue(time.Date(2021, time.January, 4, 9, 32, 0, 0, time.UTC), columns.NewColumn("timestamp_ntz", typing.TimestampNTZ))
 			assert.NoError(t, err)
 			assert.Equal(t, time.Date(2021, time.January, 4, 9, 32, 0, 0, time.UTC), val.(time.Time))
 		}
@@ -51,24 +51,24 @@ func TestParseValue(t *testing.T) {
 		// Timestamp TZ
 		{
 			// String
-			val, err := parseValue("2021-01-04T09:32:00Z", columns.NewColumn("timestamp_tz", typing.TimestampTZ))
+			val, err := ParseValue("2021-01-04T09:32:00Z", columns.NewColumn("timestamp_tz", typing.TimestampTZ))
 			assert.NoError(t, err)
 			assert.Equal(t, time.Date(2021, time.January, 4, 9, 32, 0, 0, time.UTC), val.(time.Time))
 		}
 		{
 			// time.Time
-			val, err := parseValue(time.Date(2021, time.January, 4, 9, 32, 0, 0, time.UTC), columns.NewColumn("timestamp_tz", typing.TimestampTZ))
+			val, err := ParseValue(time.Date(2021, time.January, 4, 9, 32, 0, 0, time.UTC), columns.NewColumn("timestamp_tz", typing.TimestampTZ))
 			assert.NoError(t, err)
 			assert.Equal(t, time.Date(2021, time.January, 4, 9, 32, 0, 0, time.UTC), val.(time.Time))
 		}
 	}
 	{
-		val, err := parseValue("string value", columns.NewColumn("foo", typing.String))
+		val, err := ParseValue("string value", columns.NewColumn("foo", typing.String))
 		assert.NoError(t, err)
 		assert.Equal(t, "string value", val)
 
 		// We don't need to escape backslashes.
-		val, err = parseValue(`dusty o\donald`, columns.NewColumn("foo", typing.String))
+		val, err = ParseValue(`dusty o\donald`, columns.NewColumn("foo", typing.String))
 		assert.NoError(t, err)
 		assert.Equal(t, `dusty o\donald`, val)
 
@@ -76,63 +76,63 @@ func TestParseValue(t *testing.T) {
 		stringCol := columns.NewColumn("foo", typing.String)
 		stringCol.KindDetails.OptionalStringPrecision = typing.ToPtr(int32(25))
 
-		val, err = parseValue(`abcdefabcdefabcdefabcdef113321`, stringCol)
+		val, err = ParseValue(`abcdefabcdefabcdefabcdef113321`, stringCol)
 		assert.NoError(t, err)
 		assert.Equal(t, constants.ExceededValueMarker, val)
 	}
 	{
-		val, err := parseValue(map[string]any{"foo": "bar"}, columns.NewColumn("json", typing.Struct))
+		val, err := ParseValue(map[string]any{"foo": "bar"}, columns.NewColumn("json", typing.Struct))
 		assert.NoError(t, err)
 		assert.Equal(t, `{"foo":"bar"}`, val)
 	}
 	{
-		val, err := parseValue([]any{"foo", "bar"}, columns.NewColumn("array", typing.Array))
+		val, err := ParseValue([]any{"foo", "bar"}, columns.NewColumn("array", typing.Array))
 		assert.NoError(t, err)
 		assert.Equal(t, `["foo","bar"]`, val)
 	}
 	{
 		// Integers
-		val, err := parseValue(1234, columns.NewColumn("int", typing.Integer))
+		val, err := ParseValue(1234, columns.NewColumn("int", typing.Integer))
 		assert.NoError(t, err)
 		assert.Equal(t, 1234, val)
 
 		// Should be able to handle string ints
-		val, err = parseValue("1234", columns.NewColumn("float", typing.Integer))
+		val, err = ParseValue("1234", columns.NewColumn("float", typing.Integer))
 		assert.NoError(t, err)
 		assert.Equal(t, 1234, val)
 	}
 	{
 		// Floats
-		val, err := parseValue(1234.5678, columns.NewColumn("float", typing.Float))
+		val, err := ParseValue(1234.5678, columns.NewColumn("float", typing.Float))
 		assert.NoError(t, err)
 		assert.Equal(t, 1234.5678, val)
 
 		// Should be able to handle string floats
-		val, err = parseValue("1234.5678", columns.NewColumn("float", typing.Float))
+		val, err = ParseValue("1234.5678", columns.NewColumn("float", typing.Float))
 		assert.NoError(t, err)
 		assert.Equal(t, 1234.5678, val)
 	}
 	{
 		// Boolean, but the column is an integer column.
-		val, err := parseValue(true, columns.NewColumn("bigint", typing.Integer))
+		val, err := ParseValue(true, columns.NewColumn("bigint", typing.Integer))
 		assert.NoError(t, err)
 		assert.Equal(t, 1, val)
 
 		// Booleans
-		val, err = parseValue(true, columns.NewColumn("bool", typing.Boolean))
+		val, err = ParseValue(true, columns.NewColumn("bool", typing.Boolean))
 		assert.NoError(t, err)
 		assert.True(t, val.(bool))
 
-		val, err = parseValue(false, columns.NewColumn("bool", typing.Boolean))
+		val, err = ParseValue(false, columns.NewColumn("bool", typing.Boolean))
 		assert.NoError(t, err)
 		assert.False(t, val.(bool))
 
 		// Should be able to handle string booleans
-		val, err = parseValue("true", columns.NewColumn("bool", typing.Boolean))
+		val, err = ParseValue("true", columns.NewColumn("bool", typing.Boolean))
 		assert.NoError(t, err)
 		assert.True(t, val.(bool))
 
-		val, err = parseValue("false", columns.NewColumn("bool", typing.Boolean))
+		val, err = ParseValue("false", columns.NewColumn("bool", typing.Boolean))
 		assert.NoError(t, err)
 		assert.False(t, val.(bool))
 	}

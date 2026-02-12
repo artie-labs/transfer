@@ -1,4 +1,4 @@
-package mysql
+package shared
 
 import (
 	"encoding/json"
@@ -14,7 +14,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
 
-func parseValue(colVal any, colKind columns.Column) (any, error) {
+func ParseValue(colVal any, colKind columns.Column) (any, error) {
 	if colVal == nil {
 		return colVal, nil
 	}
