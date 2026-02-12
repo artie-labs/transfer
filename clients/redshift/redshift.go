@@ -56,17 +56,7 @@ func (s *Store) BuildCredentialsClause(ctx context.Context) (string, error) {
 }
 
 func (s *Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error {
-	if !tableID.TemporaryTable() {
-		return fmt.Errorf("table %q is not a temporary table, so it cannot be dropped", tableID.FullyQualifiedName())
-	}
-
-	if _, err := s.ExecContext(ctx, s.Dialect().BuildDropTableQuery(tableID)); err != nil {
-		return fmt.Errorf("failed to drop table: %w", err)
-	}
-
-	// We'll then clear it from our cache
-	s.configMap.RemoveTable(tableID)
-	return nil
+	return shared.DropTemporaryTable(ctx, s, tableID, s.configMap)
 }
 
 func (s *Store) TruncateTable(ctx context.Context, tableID sql.TableIdentifier) error {
