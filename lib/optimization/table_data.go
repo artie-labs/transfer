@@ -134,12 +134,7 @@ func (t *TableData) ReadOnlyInMemoryCols() *columns.Columns {
 		return nil
 	}
 
-	cols := columns.NewColumns(nil)
-	for _, col := range t.inMemoryColumns.GetColumns() {
-		cols.AddColumn(col)
-	}
-
-	return cols
+	return columns.NewColumns(t.inMemoryColumns.GetColumns())
 }
 
 func (t *TableData) TopicConfig() kafkalib.TopicConfig {
