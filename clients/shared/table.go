@@ -147,3 +147,19 @@ func BuildStagingTableID(dest destination.Baseline, pair kafkalib.DatabaseAndSch
 
 	return TempTableID(tableID)
 }
+
+// DropTemporaryTable is a shared implementation of DropTable for SQL-based destinations.
+// It guards against dropping non-temporary tables, executes the DROP statement, and clears the table from the config cache.
+func DropTemporaryTable(ctx context.Context, dest destination.Destination, tableID sql.TableIdentifier, configMap *types.DestinationTableConfigMap) error {
+	if !tableID.TemporaryTable() {
+		return fmt.Errorf("table %q is not a temporary table, so it cannot be dropped", tableID.FullyQualifiedName())
+	}
+
+	if _, err := dest.ExecContext(ctx, dest.Dialect().BuildDropTableQuery(tableID)); err != nil {
+		return fmt.Errorf("failed to drop table: %w", err)
+	}
+
+	// We'll then clear it from our cache
+	configMap.RemoveTable(tableID)
+	return nil
+}
