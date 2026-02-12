@@ -32,6 +32,10 @@ func (s Store) GetConfig() config.Config {
 	return s.config
 }
 
+func (s Store) IsOLTP() bool {
+	return false
+}
+
 func (s Store) Validate() error {
 	if err := s.config.GCS.Validate(); err != nil {
 		return fmt.Errorf("failed to validate settings: %w", err)

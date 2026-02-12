@@ -27,6 +27,10 @@ func (s Store) GetConfig() config.Config {
 	return s.config
 }
 
+func (s Store) IsOLTP() bool {
+	return true
+}
+
 func (s *Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error {
 	if !tableID.TemporaryTable() {
 		return fmt.Errorf("table %q is not a temporary table, so it cannot be dropped", tableID.FullyQualifiedName())
@@ -63,8 +67,7 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, w
 
 // specificIdentifierFor returns a MySQL [TableIdentifier] for a [TopicConfig] + table name.
 func (s *Store) specificIdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, table string) dialect.TableIdentifier {
-	// MySQL uses database instead of schema, so we use the database from the config
-	return dialect.NewTableIdentifier(databaseAndSchema.Database, table)
+	return dialect.NewTableIdentifier(databaseAndSchema.Schema, table)
 }
 
 // IdentifierFor returns a generic [sql.TableIdentifier] interface for a [TopicConfig] + table name.

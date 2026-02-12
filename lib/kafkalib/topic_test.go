@@ -235,7 +235,7 @@ func TestTopicConfig_String(t *testing.T) {
 
 func TestTopicConfig_Validate(t *testing.T) {
 	var tc TopicConfig
-	assert.ErrorContains(t, tc.Validate(), "database, schema, topic or cdc format is empty", tc.String())
+	assert.ErrorContains(t, tc.Validate(), "schema, topic or cdc format is empty", tc.String())
 
 	tc = TopicConfig{
 		Database:     "12",

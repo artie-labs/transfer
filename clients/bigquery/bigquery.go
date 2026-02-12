@@ -47,6 +47,10 @@ func (s Store) GetConfig() config.Config {
 	return s.config
 }
 
+func (s Store) IsOLTP() bool {
+	return false
+}
+
 func (s *Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error {
 	if !tableID.TemporaryTable() {
 		return fmt.Errorf("table %q is not a temporary table, so it cannot be dropped", tableID.FullyQualifiedName())

@@ -36,6 +36,10 @@ func (s *Store) GetConfig() config.Config {
 	return s.config
 }
 
+func (s *Store) IsOLTP() bool {
+	return false
+}
+
 func (s *Store) Validate() error {
 	return s.config.Redis.Validate()
 }

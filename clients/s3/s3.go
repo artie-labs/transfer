@@ -9,12 +9,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/apache/arrow/go/v17/arrow"
-	"github.com/apache/arrow/go/v17/arrow/array"
-	"github.com/apache/arrow/go/v17/arrow/memory"
-	"github.com/apache/arrow/go/v17/parquet"
-	"github.com/apache/arrow/go/v17/parquet/compress"
-	"github.com/apache/arrow/go/v17/parquet/pqarrow"
+	"github.com/apache/arrow-go/v18/arrow"
+	"github.com/apache/arrow-go/v18/arrow/array"
+	"github.com/apache/arrow-go/v18/arrow/memory"
+	"github.com/apache/arrow-go/v18/parquet"
+	"github.com/apache/arrow-go/v18/parquet/compress"
+	"github.com/apache/arrow-go/v18/parquet/pqarrow"
 	awsCfg "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 
@@ -37,6 +37,10 @@ type Store struct {
 
 func (s Store) GetConfig() config.Config {
 	return s.config
+}
+
+func (s Store) IsOLTP() bool {
+	return false
 }
 
 func (s Store) Validate() error {
@@ -149,7 +153,7 @@ func writeArrowRecordsInBatches(writer *pqarrow.FileWriter, schema *arrow.Schema
 			arrays = append(arrays, builder.NewArray())
 		}
 
-		record := array.NewRecord(schema, arrays, int64(len(batch)))
+		record := array.NewRecordBatch(schema, arrays, int64(len(batch)))
 		if err := writer.WriteBuffered(record); err != nil {
 			record.Release()
 			for _, arr := range arrays {

@@ -44,6 +44,10 @@ func (s Store) GetConfig() config.Config {
 	return s.config
 }
 
+func (s Store) IsOLTP() bool {
+	return false
+}
+
 func (s *Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, table string) sql.TableIdentifier {
 	return dialect.NewTableIdentifier(databaseAndSchema.Database, databaseAndSchema.Schema, table)
 }

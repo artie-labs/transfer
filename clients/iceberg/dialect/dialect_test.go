@@ -17,6 +17,7 @@ func TestIcebergDialect_BuildDedupeQueries(t *testing.T) {
 	_dialect := IcebergDialect{}
 	tableID := NewTableIdentifier("{{catalog}}", "{{schema}}", "{{table}}")
 	stagingTableID := NewTableIdentifier("{{catalog}}", "{{schema}}", "{{table_staging}}")
+
 	primaryKeys := []string{"id"}
 
 	{

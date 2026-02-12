@@ -61,7 +61,9 @@ Transfer is aiming to provide coverage across all OLTPs and OLAPs databases. Cur
     - BigQuery
     - ClickHouse
     - Databricks
-    - Iceberg (through S3 Tables)
+    - Iceberg
+        * S3Tables
+        * REST catalog
     - Microsoft SQL Server
     - MotherDuck
     - PostgreSQL

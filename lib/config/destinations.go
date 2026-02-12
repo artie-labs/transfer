@@ -59,7 +59,10 @@ func (m MySQL) DSN() string {
 	config.Passwd = m.Password
 	config.Net = "tcp"
 	config.Addr = fmt.Sprintf("%s:%d", m.Host, m.Port)
-	config.DBName = m.Database
+
+	// We need to specify the database name here because MySQL requires a database to be specified to perform insert/update/delete operations
+	// Even if we're using a fully qualified table name
+	config.DBName = cmp.Or(m.Database, "mysql")
 	config.ParseTime = true
 	// If we don't specify this, it will default to the server's timezone.
 	// This will then cause a bug because MySQL is internally storing the TIMESTAMP value in UTC format.
@@ -113,6 +116,26 @@ func (s Snowflake) ToConfig() (*gosnowflake.Config, error) {
 	}
 
 	return cfg, nil
+}
+
+func (d Databricks) Validate() error {
+	hasPAT := d.PersonalAccessToken != ""
+	hasOAuthM2M := d.ClientID != "" || d.ClientSecret != ""
+
+	if hasPAT == hasOAuthM2M {
+		return fmt.Errorf("only one of personalAccessToken or clientID/clientSecret must be provided")
+	}
+
+	if hasOAuthM2M {
+		if d.ClientID == "" {
+			return fmt.Errorf("OAuth M2M requires clientID")
+		}
+		if d.ClientSecret == "" {
+			return fmt.Errorf("OAuth M2M requires clientSecret")
+		}
+	}
+
+	return nil
 }
 
 func (d Databricks) DSN() string {

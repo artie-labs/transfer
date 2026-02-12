@@ -53,8 +53,37 @@ func (s Store) buildColumnParts(columns []columns.Column) ([]string, error) {
 	return colParts, nil
 }
 
+func (s Store) getBucket() string {
+	if s.config.Iceberg.S3Tables != nil {
+		return s.config.Iceberg.S3Tables.Bucket
+	}
+
+	if s.config.Iceberg.RestCatalog != nil {
+		return s.config.Iceberg.RestCatalog.Bucket
+	}
+
+	return ""
+}
+
+func (s Store) getBucketSuffix() string {
+	if s.config.Iceberg.S3Tables != nil {
+		return ""
+	}
+
+	if s.config.Iceberg.RestCatalog != nil {
+		return s.config.Iceberg.RestCatalog.BucketSuffix
+	}
+
+	return ""
+}
+
 func (s Store) uploadToS3(ctx context.Context, fp string) (string, error) {
-	s3URI, err := s.s3Client.UploadLocalFileToS3(ctx, s.config.Iceberg.S3Tables.Bucket, "", fp)
+	bucket := s.getBucket()
+	if bucket == "" {
+		return "", fmt.Errorf("no bucket configured for staging")
+	}
+
+	s3URI, err := s.s3Client.UploadLocalFileToS3(ctx, bucket, s.getBucketSuffix(), fp)
 	if err != nil {
 		return "", fmt.Errorf("failed to upload to s3: %w", err)
 	}

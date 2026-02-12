@@ -13,6 +13,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3tables"
 	"github.com/aws/aws-sdk-go-v2/service/s3tables/types"
 	"github.com/aws/smithy-go"
+
+	"github.com/artie-labs/transfer/lib/iceberg"
 )
 
 // Full API spec can be seen here: https://docs.aws.amazon.com/AmazonS3/latest/API/API_Operations_Amazon_S3_Tables.html
@@ -67,7 +69,7 @@ func (s S3TablesAPIWrapper) GetTableBucket(ctx context.Context) (s3tables.GetTab
 	return *resp, nil
 }
 
-func (s S3TablesAPIWrapper) GetNamespace(ctx context.Context, namespace string) (s3tables.GetNamespaceOutput, error) {
+func (s S3TablesAPIWrapper) GetS3Namespace(ctx context.Context, namespace string) (s3tables.GetNamespaceOutput, error) {
 	resp, err := s.client.GetNamespace(ctx, &s3tables.GetNamespaceInput{
 		Namespace:      aws.String(namespace),
 		TableBucketARN: aws.String(s.tableBucketARN),
@@ -79,7 +81,21 @@ func (s S3TablesAPIWrapper) GetNamespace(ctx context.Context, namespace string) 
 	return *resp, nil
 }
 
-func (s S3TablesAPIWrapper) ListNamespaces(ctx context.Context) ([]types.NamespaceSummary, error) {
+func (s S3TablesAPIWrapper) ListNamespaces(ctx context.Context) ([]string, error) {
+	namespaces, err := s.ListS3Namespaces(ctx)
+	if err != nil {
+		return []string{}, err
+	}
+
+	var out []string
+	for _, ns := range namespaces {
+		out = append(out, ns.Namespace...)
+	}
+
+	return out, nil
+}
+
+func (s S3TablesAPIWrapper) ListS3Namespaces(ctx context.Context) ([]types.NamespaceSummary, error) {
 	var res []types.NamespaceSummary
 	var continuationToken *string
 
@@ -119,8 +135,49 @@ func (s S3TablesAPIWrapper) CreateNamespace(ctx context.Context, namespace strin
 	return err
 }
 
-// ListTables requires the namespace to be exact match and is case sensitive
-func (s S3TablesAPIWrapper) ListTables(ctx context.Context, namespace string) ([]types.TableSummary, error) {
+func (s S3TablesAPIWrapper) GetNamespace(ctx context.Context, namespace string) (string, error) {
+	resp, err := s.GetS3Namespace(ctx, namespace)
+	if err != nil {
+		return "", err
+	}
+
+	if len(resp.Namespace) != 1 {
+		return "", fmt.Errorf("expected 1 namespace, got %d", len(resp.Namespace))
+	}
+
+	return resp.Namespace[0], nil
+}
+
+func (s S3TablesAPIWrapper) ListTables(ctx context.Context, namespace string) ([]iceberg.Table, error) {
+	tables, err := s.ListS3Tables(ctx, namespace)
+	if err != nil {
+		return []iceberg.Table{}, err
+	}
+
+	var out []iceberg.Table
+	for _, table := range tables {
+		if len(table.Namespace) != 1 {
+			return []iceberg.Table{}, fmt.Errorf("expected 1 namespace, got %d", len(table.Namespace))
+		}
+
+		_table := iceberg.Table{
+			Namespace:  table.Namespace[0],
+			CreatedAt:  table.CreatedAt,
+			ModifiedAt: table.ModifiedAt,
+		}
+
+		if table.Name != nil {
+			_table.Name = *table.Name
+		}
+
+		out = append(out, _table)
+	}
+
+	return out, nil
+}
+
+// ListS3Tables requires the namespace to be exact match and is case sensitive
+func (s S3TablesAPIWrapper) ListS3Tables(ctx context.Context, namespace string) ([]types.TableSummary, error) {
 	var tables []types.TableSummary
 	var continuationToken *string
 
@@ -158,7 +215,48 @@ func (s S3TablesAPIWrapper) GetTable(ctx context.Context, namespace, table strin
 	return *resp, nil
 }
 
-func (s S3TablesAPIWrapper) GetTableMetadata(ctx context.Context, s3URI string) (S3TableSchema, error) {
+func (s S3TablesAPIWrapper) GetTableMetadata(ctx context.Context, namespace, name string) (iceberg.TableMetadata, error) {
+	out, err := s.GetTable(ctx, namespace, name)
+	if err != nil {
+		return iceberg.TableMetadata{}, fmt.Errorf("failed to get table: %w", err)
+	}
+
+	if out.MetadataLocation == nil {
+		return iceberg.TableMetadata{}, fmt.Errorf("metadata location is nil")
+	}
+
+	schema, err := s.GetS3TableMetadata(ctx, *out.MetadataLocation)
+	if err != nil {
+		return iceberg.TableMetadata{}, fmt.Errorf("failed to get table metadata: %w", err)
+	}
+
+	currentSchema, err := schema.RetrieveCurrentSchema()
+	if err != nil {
+		return iceberg.TableMetadata{}, fmt.Errorf("failed to retrieve current schema: %w", err)
+	}
+
+	var columns []iceberg.Column
+	for _, field := range currentSchema.Fields {
+		columns = append(columns,
+			iceberg.Column{
+				ID:       field.ID,
+				Name:     field.Name,
+				Type:     field.Type,
+				Required: field.Required,
+			})
+	}
+
+	return iceberg.TableMetadata{
+		TableARN:        out.TableARN,
+		CreatedAt:       out.CreatedAt,
+		ModifiedAt:      out.ModifiedAt,
+		CurrentSchemaID: currentSchema.SchemaID,
+		Location:        schema.Location,
+		Columns:         columns,
+	}, nil
+}
+
+func (s S3TablesAPIWrapper) GetS3TableMetadata(ctx context.Context, s3URI string) (S3TableSchema, error) {
 	body, err := s.readFromS3URI(ctx, s3URI)
 	if err != nil {
 		return S3TableSchema{}, err
@@ -172,7 +270,7 @@ func (s S3TablesAPIWrapper) GetTableMetadata(ctx context.Context, s3URI string) 
 	return tableSchema, nil
 }
 
-func (s S3TablesAPIWrapper) DeleteTable(ctx context.Context, namespace, table string) error {
+func (s S3TablesAPIWrapper) DropTable(ctx context.Context, namespace, table string) error {
 	_, err := s.client.DeleteTable(ctx, &s3tables.DeleteTableInput{
 		Namespace:      aws.String(namespace),
 		Name:           aws.String(table),
