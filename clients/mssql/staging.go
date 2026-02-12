@@ -47,7 +47,7 @@ func (s *Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.T
 		var parsedValues []any
 		for _, col := range cols {
 			value, _ := row.GetValue(col.Name())
-			parsedValue, err := parseValue(value, col)
+			parsedValue, err := shared.ParseValue(value, col)
 			if err != nil {
 				return fmt.Errorf("failed to parse value: %w", err)
 			}

@@ -169,16 +169,16 @@ func TestTableData_ShouldFlushRowSize(t *testing.T) {
 func TestTableData_InsertRowIntegrity(t *testing.T) {
 	td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "foo")
 	assert.Equal(t, 0, int(td.NumberOfRows()))
-	assert.False(t, td.ContainOtherOperations())
+	assert.False(t, td.ContainsOtherOperations())
 
 	for i := 0; i < 100; i++ {
 		td.InsertRow("123", map[string]any{"id": "123"}, true)
-		assert.False(t, td.ContainOtherOperations())
+		assert.False(t, td.ContainsOtherOperations())
 	}
 
 	for i := 0; i < 100; i++ {
 		td.InsertRow("123", map[string]any{"id": "123"}, false)
-		assert.True(t, td.ContainOtherOperations())
+		assert.True(t, td.ContainsOtherOperations())
 	}
 }
 

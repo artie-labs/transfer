@@ -109,7 +109,7 @@ func (s *Store) executeBatchInsert(ctx context.Context, tx *sql.Tx, tableID libs
 	for _, row := range rows {
 		for _, col := range cols {
 			value, _ := row.GetValue(col.Name())
-			parsedValue, err := parseValue(value, col)
+			parsedValue, err := shared.ParseValue(value, col)
 			if err != nil {
 				return 0, fmt.Errorf("failed to parse value for column %q: %w", col.Name(), err)
 			}

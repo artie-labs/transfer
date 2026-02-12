@@ -293,13 +293,13 @@ func (e *EventsTestSuite) TestEventSaveTestDeleteFlag() {
 	assert.NoError(e.T(), err)
 	_, _, err = event.Save(e.cfg, e.db, topicConfig, nil)
 	assert.NoError(e.T(), err)
-	assert.False(e.T(), e.db.GetOrCreateTableData(event.GetTableID(), topicConfig.Topic).ContainOtherOperations())
+	assert.False(e.T(), e.db.GetOrCreateTableData(event.GetTableID(), topicConfig.Topic).ContainsOtherOperations())
 	assert.True(e.T(), e.db.GetOrCreateTableData(event.GetTableID(), topicConfig.Topic).ContainsHardDeletes())
 
 	event.deleted = false
 	_, _, err = event.Save(e.cfg, e.db, topicConfig, nil)
 	assert.NoError(e.T(), err)
-	assert.True(e.T(), e.db.GetOrCreateTableData(event.GetTableID(), topicConfig.Topic).ContainOtherOperations())
+	assert.True(e.T(), e.db.GetOrCreateTableData(event.GetTableID(), topicConfig.Topic).ContainsOtherOperations())
 }
 
 func (e *EventsTestSuite) TestEventSaveAppendOnlyMode() {

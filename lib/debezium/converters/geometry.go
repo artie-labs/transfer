@@ -95,7 +95,7 @@ func (Geometry) Convert(value any) (any, error) {
 
 	geom, err := ewkb.Unmarshal(wkbBytes)
 	if err != nil {
-		return "", fmt.Errorf("error unmarshalling WKB bytes: %w", err)
+		return "", fmt.Errorf("error unmarshaling WKB bytes: %w", err)
 	}
 
 	feature := geojson.Feature{
