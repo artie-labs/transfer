@@ -232,7 +232,7 @@ func (t *TableData) Rows() []Row {
 		return t.rows
 	}
 
-	var rows []Row
+	rows := make([]Row, 0, len(t.rowsData))
 	for _, row := range t.rowsData {
 		rows = append(rows, row)
 	}
