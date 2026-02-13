@@ -4,7 +4,6 @@ import (
 	"cmp"
 	"context"
 	gosql "database/sql"
-	"encoding/base64"
 	"fmt"
 	"log/slog"
 	"os"
