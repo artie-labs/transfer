@@ -67,11 +67,11 @@ func (PostgresDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, _ bool
 }
 
 func (PostgresDialect) BuildDropTableQuery(tableID sql.TableIdentifier) string {
-	return fmt.Sprintf("DROP TABLE IF EXISTS %s", tableID.FullyQualifiedName())
+	return sql.DefaultBuildDropTableQuery(tableID)
 }
 
 func (PostgresDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) string {
-	return fmt.Sprintf("TRUNCATE TABLE %s", tableID.FullyQualifiedName())
+	return sql.DefaultBuildTruncateTableQuery(tableID)
 }
 
 func (PostgresDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string {

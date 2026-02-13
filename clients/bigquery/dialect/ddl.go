@@ -26,19 +26,19 @@ func (BigQueryDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, tempor
 }
 
 func (BigQueryDialect) BuildDropTableQuery(tableID sql.TableIdentifier) string {
-	return "DROP TABLE IF EXISTS " + tableID.FullyQualifiedName()
+	return sql.DefaultBuildDropTableQuery(tableID)
 }
 
 func (BigQueryDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) string {
-	return "TRUNCATE TABLE " + tableID.FullyQualifiedName()
+	return sql.DefaultBuildTruncateTableQuery(tableID)
 }
 
 func (BigQueryDialect) BuildAddColumnQuery(tableID sql.TableIdentifier, sqlPart string) string {
-	return fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s", tableID.FullyQualifiedName(), sqlPart)
+	return sql.DefaultBuildAddColumnQuery(tableID, sqlPart)
 }
 
 func (BigQueryDialect) BuildDropColumnQuery(tableID sql.TableIdentifier, colName string) string {
-	return fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s", tableID.FullyQualifiedName(), colName)
+	return sql.DefaultBuildDropColumnQuery(tableID, colName)
 }
 
 func (BigQueryDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (string, []interface{}, error) {

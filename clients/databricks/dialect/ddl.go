@@ -14,19 +14,19 @@ func (DatabricksDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, _ bo
 }
 
 func (DatabricksDialect) BuildDropTableQuery(tableID sql.TableIdentifier) string {
-	return "DROP TABLE IF EXISTS " + tableID.FullyQualifiedName()
+	return sql.DefaultBuildDropTableQuery(tableID)
 }
 
 func (DatabricksDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) string {
-	return "TRUNCATE TABLE " + tableID.FullyQualifiedName()
+	return sql.DefaultBuildTruncateTableQuery(tableID)
 }
 
 func (DatabricksDialect) BuildAddColumnQuery(tableID sql.TableIdentifier, sqlPart string) string {
-	return fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s", tableID.FullyQualifiedName(), sqlPart)
+	return sql.DefaultBuildAddColumnQuery(tableID, sqlPart)
 }
 
 func (DatabricksDialect) BuildDropColumnQuery(tableID sql.TableIdentifier, colName string) string {
-	return fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s", tableID.FullyQualifiedName(), colName)
+	return sql.DefaultBuildDropColumnQuery(tableID, colName)
 }
 
 func (DatabricksDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (string, []any, error) {
