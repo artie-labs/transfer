@@ -79,12 +79,6 @@ func TestField_GetScaleAndPrecision(t *testing.T) {
 
 func TestField_ToKindDetails(t *testing.T) {
 	{
-		// Bytes
-		kd, err := Field{Type: Bytes}.ToKindDetails(config.SharedDestinationSettings{})
-		assert.NoError(t, err)
-		assert.Equal(t, typing.Bytes, kd)
-	}
-	{
 		// Integers
 		{
 			// Int16
@@ -143,6 +137,9 @@ func TestField_ToKindDetails(t *testing.T) {
 	{
 		// Bytes
 		kd, err := Field{Type: Bytes}.ToKindDetails(config.SharedDestinationSettings{})
+		assert.NoError(t, err)
+		assert.Equal(t, typing.String, kd)
+		kd, err = Field{Type: Bytes}.ToKindDetails(config.SharedDestinationSettings{WriteRawBinaryValues: true})
 		assert.NoError(t, err)
 		assert.Equal(t, typing.Bytes, kd)
 	}
