@@ -95,7 +95,7 @@ func (s *Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier,
 	}.GetTableConfig(ctx)
 }
 
-func LoadStore(cfg config.Config) (*Store, error) {
+func LoadStore(_ context.Context, cfg config.Config) (*Store, error) {
 	store, err := db.Open("mssql", cfg.MSSQL.DSN())
 	if err != nil {
 		return nil, err

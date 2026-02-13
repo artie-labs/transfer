@@ -79,17 +79,17 @@ func LoadDestination(ctx context.Context, cfg config.Config, store *db.Store) (d
 	case constants.BigQuery:
 		return bigquery.LoadStore(ctx, cfg, store)
 	case constants.Databricks:
-		return databricks.LoadStore(cfg)
+		return databricks.LoadStore(ctx, cfg)
 	case constants.MSSQL:
-		return mssql.LoadStore(cfg)
+		return mssql.LoadStore(ctx, cfg)
 	case constants.MySQL:
-		return mysql.LoadStore(cfg)
+		return mysql.LoadStore(ctx, cfg)
 	case constants.Postgres:
 		return postgres.LoadStore(ctx, cfg)
 	case constants.Redshift:
 		return redshift.LoadStore(ctx, cfg, store)
 	case constants.MotherDuck:
-		return motherduck.LoadStore(cfg)
+		return motherduck.LoadStore(ctx, cfg)
 	case constants.Clickhouse:
 		return clickhouse.LoadStore(ctx, cfg, store)
 	}

@@ -253,7 +253,7 @@ func BuildDatabricksSQL(dbCfg config.Databricks) (*gosql.DB, error) {
 	return gosql.OpenDB(connector), nil
 }
 
-func LoadStore(cfg config.Config) (Store, error) {
+func LoadStore(_ context.Context, cfg config.Config) (Store, error) {
 	if err := cfg.Databricks.Validate(); err != nil {
 		return Store{}, fmt.Errorf("invalid Databricks config: %w", err)
 	}
