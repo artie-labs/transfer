@@ -2,6 +2,7 @@ package converters
 
 import (
 	"cmp"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -58,6 +59,8 @@ func GetStringConverter(kd typing.KindDetails, opts GetStringConverterOpts) (Con
 		return IntegerConverter{}, nil
 	case typing.Float.Kind:
 		return FloatConverter{}, nil
+	case typing.Bytes.Kind:
+		return BytesConverter{}, nil
 	default:
 		return nil, fmt.Errorf("unsupported type: %q", kd.Kind)
 	}
@@ -137,6 +140,19 @@ func (StringConverter) ConvertOld(value any) (string, error) {
 	}
 
 	return stringutil.EscapeBackslashes(fmt.Sprint(value)), nil
+}
+
+type BytesConverter struct{}
+
+func (BytesConverter) Convert(value any) (string, error) {
+	switch castedValue := value.(type) {
+	case string:
+		return castedValue, nil
+	case []byte:
+		return base64.StdEncoding.EncodeToString(castedValue), nil
+	default:
+		return "", fmt.Errorf("unexpected value: '%v', type: %T", value, value)
+	}
 }
 
 type DateConverter struct{}

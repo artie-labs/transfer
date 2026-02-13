@@ -82,10 +82,36 @@ func TestGetStringConverter(t *testing.T) {
 		assert.IsType(t, FloatConverter{}, converter)
 	}
 	{
+		// Bytes
+		converter, err := GetStringConverter(typing.Bytes, GetStringConverterOpts{})
+		assert.NoError(t, err)
+		assert.IsType(t, BytesConverter{}, converter)
+	}
+	{
 		// Invalid
 		converter, err := GetStringConverter(typing.Invalid, GetStringConverterOpts{})
 		assert.ErrorContains(t, err, `unsupported type: "invalid"`)
 		assert.Nil(t, converter)
+	}
+}
+
+func TestBytesConverter_Convert(t *testing.T) {
+	{
+		// String (already base64 encoded)
+		val, err := BytesConverter{}.Convert("aGVsbG8gd29ybGQ=")
+		assert.NoError(t, err)
+		assert.Equal(t, "aGVsbG8gd29ybGQ=", val)
+	}
+	{
+		// []byte
+		val, err := BytesConverter{}.Convert([]byte("hello world"))
+		assert.NoError(t, err)
+		assert.Equal(t, "aGVsbG8gd29ybGQ=", val)
+	}
+	{
+		// Unsupported type
+		_, err := BytesConverter{}.Convert(42)
+		assert.ErrorContains(t, err, "unexpected value: '42', type: int")
 	}
 }
 
