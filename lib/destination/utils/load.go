@@ -56,7 +56,7 @@ func LoadBaseline(ctx context.Context, cfg config.Config) (destination.Destinati
 		}
 		return store, nil
 	case constants.Redis:
-		store, err := redis.LoadStore(ctx, cfg, nil)
+		store, err := redis.LoadStore(ctx, cfg)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load Redis: %w", err)
 		}
