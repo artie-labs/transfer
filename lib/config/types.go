@@ -56,6 +56,8 @@ type SharedDestinationSettings struct {
 	SkipBadIntegers bool `yaml:"skipBadIntegers"`
 	// [ForceUTCTimezone] - If enabled, for all TimestampNTZ types, we will return TimestampTZ kind. The converters should ensure that the timezone is set to UTC.
 	ForceUTCTimezone bool `yaml:"forceUTCTimezone"`
+	// [WriteRawBinaryValues] - If enabled, we will write raw binary values to the destination instead of encoding with Base64.
+	WriteRawBinaryValues bool `yaml:"writeRawBinaryValues"`
 }
 
 type StagingTableReuseConfig struct {
