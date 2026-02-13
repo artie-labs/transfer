@@ -182,20 +182,9 @@ func (s Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.Ta
 	return nil
 }
 
-func castColValStaging(colVal any, colKind typing.KindDetails, settings config.SharedDestinationSettings) (shared.ValueConvertResponse, error) {
+func castColValStaging(colVal any, colKind typing.KindDetails, _ config.SharedDestinationSettings) (shared.ValueConvertResponse, error) {
 	if colVal == nil {
 		return shared.ValueConvertResponse{Value: constants.NullValuePlaceholder}, nil
-	}
-
-	if colKind.Kind == typing.Bytes.Kind {
-		if settings.WriteRawBinaryValues {
-			castedBytes, ok := colVal.([]byte)
-			if !ok {
-				return shared.ValueConvertResponse{}, fmt.Errorf("expected []byte, got %T", colVal)
-			}
-			// encode for writing to CSV
-			return shared.ValueConvertResponse{Value: base64.StdEncoding.EncodeToString(castedBytes)}, nil
-		}
 	}
 
 	value, err := values.ToString(colVal, colKind)
