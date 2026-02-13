@@ -239,7 +239,7 @@ func (s *Store) DropTable(ctx context.Context, tableID sqllib.TableIdentifier) e
 	return nil
 }
 
-func LoadStore(ctx context.Context, cfg config.Config, _ *db.Store) (destination.Destination, error) {
+func LoadStore(ctx context.Context, cfg config.Config, _ *db.Store) (destination.SQLDestination, error) {
 	if cfg.Redis == nil {
 		return nil, fmt.Errorf("redis config is nil")
 	}

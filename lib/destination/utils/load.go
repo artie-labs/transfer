@@ -33,7 +33,7 @@ func IsOutputBaseline(cfg config.Config) bool {
 	}
 }
 
-func LoadBaseline(ctx context.Context, cfg config.Config) (destination.Baseline, error) {
+func LoadBaseline(ctx context.Context, cfg config.Config) (destination.Destination, error) {
 	switch cfg.Output {
 	case constants.S3:
 		store, err := s3.LoadStore(ctx, cfg)
@@ -72,7 +72,7 @@ func LoadBaseline(ctx context.Context, cfg config.Config) (destination.Baseline,
 	return nil, fmt.Errorf("invalid baseline output source specified: %q", cfg.Output)
 }
 
-func LoadDestination(ctx context.Context, cfg config.Config, store *db.Store) (destination.Destination, error) {
+func LoadDestination(ctx context.Context, cfg config.Config, store *db.Store) (destination.SQLDestination, error) {
 	switch cfg.Output {
 	case constants.Snowflake:
 		return snowflake.LoadStore(ctx, cfg, store)

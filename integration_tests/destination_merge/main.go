@@ -21,7 +21,7 @@ type MergeTest struct {
 	framework *shared.TestFramework
 }
 
-func NewMergeTest(dest destination.Destination, _iceberg *iceberg.Store, topicConfig kafkalib.TopicConfig) *MergeTest {
+func NewMergeTest(dest destination.SQLDestination, _iceberg *iceberg.Store, topicConfig kafkalib.TopicConfig) *MergeTest {
 	return &MergeTest{
 		framework: shared.NewTestFramework(dest, _iceberg, topicConfig),
 	}

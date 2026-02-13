@@ -77,7 +77,7 @@ func main() {
 	)
 
 	metricsClient := metrics.LoadExporter(settings.Config)
-	var dest destination.Baseline
+	var dest destination.Destination
 	if utils.IsOutputBaseline(settings.Config) {
 		dest, err = utils.LoadBaseline(ctx, settings.Config)
 		if err != nil {

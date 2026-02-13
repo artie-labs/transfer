@@ -86,7 +86,7 @@ func DefaultValue(column columns.Column, dialect sql.Dialect) (any, error) {
 	}
 }
 
-func BackfillColumn(ctx context.Context, dest destination.Destination, column columns.Column, tableID sql.TableIdentifier) error {
+func BackfillColumn(ctx context.Context, dest destination.SQLDestination, column columns.Column, tableID sql.TableIdentifier) error {
 	if envVar := os.Getenv("DISABLE_DEFAULT_VAL_BACKFILL"); envVar != "" {
 		disable, err := strconv.ParseBool(envVar)
 		if err != nil {

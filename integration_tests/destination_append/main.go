@@ -20,7 +20,7 @@ type AppendTest struct {
 	framework *shared.TestFramework
 }
 
-func NewAppendTest(ctx context.Context, dest destination.Destination, _iceberg *iceberg.Store, topicConfig kafkalib.TopicConfig) *AppendTest {
+func NewAppendTest(ctx context.Context, dest destination.SQLDestination, _iceberg *iceberg.Store, topicConfig kafkalib.TopicConfig) *AppendTest {
 	return &AppendTest{
 		framework: shared.NewTestFramework(dest, _iceberg, topicConfig),
 	}
@@ -77,7 +77,7 @@ func main() {
 	}
 
 	var _iceberg *iceberg.Store
-	var dest destination.Destination
+	var dest destination.SQLDestination
 	if settings.Config.Output == constants.Iceberg {
 		baseline, err := utils.LoadBaseline(ctx, settings.Config)
 		if err != nil {

@@ -18,8 +18,8 @@ type FlushTestSuite struct {
 	fakeConsumer *mocks.FakeConsumer
 	cfg          config.Config
 	db           *models.DatabaseData
-	fakeBaseline *mocks.FakeBaseline
-	baseline     destination.Baseline
+	fakeBaseline *mocks.FakeDestination
+	baseline     destination.Destination
 }
 
 func (f *FlushTestSuite) SetupTest() {
@@ -47,7 +47,7 @@ func (f *FlushTestSuite) SetupTest() {
 		FlushSizeKb:          500,
 	}
 
-	f.fakeBaseline = &mocks.FakeBaseline{}
+	f.fakeBaseline = &mocks.FakeDestination{}
 	f.baseline = f.fakeBaseline
 	f.db = models.NewMemoryDB()
 	f.fakeConsumer = &mocks.FakeConsumer{}

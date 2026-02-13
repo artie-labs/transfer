@@ -20,14 +20,14 @@ import (
 )
 
 type DestinationTypes struct {
-	destination destination.Destination
+	destination destination.SQLDestination
 	topicConfig kafkalib.TopicConfig
 
 	// Generated:
 	tableID sql.TableIdentifier
 }
 
-func NewDestinationTypes(dest destination.Destination, topicConfig kafkalib.TopicConfig) (DestinationTypes, error) {
+func NewDestinationTypes(dest destination.SQLDestination, topicConfig kafkalib.TopicConfig) (DestinationTypes, error) {
 	return DestinationTypes{
 		destination: dest,
 		topicConfig: topicConfig,
