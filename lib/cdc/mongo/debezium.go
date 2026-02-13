@@ -11,6 +11,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/debezium"
+	"github.com/artie-labs/transfer/lib/jsonutil"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -26,7 +27,7 @@ func (Debezium) GetEventFromBytes(bytes []byte) (cdc.Event, error) {
 	}
 
 	var schemaEventPayload SchemaEventPayload
-	if err := json.Unmarshal(bytes, &schemaEventPayload); err != nil {
+	if err := jsonutil.Unmarshal(bytes, &schemaEventPayload); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal json: %w", err)
 	}
 
@@ -66,7 +67,7 @@ func (Debezium) GetPrimaryKey(key []byte, tc kafkalib.TopicConfig, reservedColum
 	// Such that, the value looks like this: {"id":"{\"$oid\": \"640127e4beeb1ccfc821c25b\"}"}
 	for k, v := range kvMap {
 		var obj map[string]any
-		if err = json.Unmarshal([]byte(fmt.Sprint(v)), &obj); err != nil {
+		if err = jsonutil.Unmarshal([]byte(fmt.Sprint(v)), &obj); err != nil {
 			continue
 		}
 

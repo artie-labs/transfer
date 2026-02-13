@@ -16,13 +16,13 @@ func (t Time) ToKindDetails() typing.KindDetails {
 }
 
 func (t Time) Convert(val any) (any, error) {
-	valInt64, ok := val.(int64)
-	if !ok {
-		return nil, fmt.Errorf("expected int64 got '%v' with type %T", val, val)
+	castedVal, err := typing.AssertType[int64](val)
+	if err != nil {
+		return nil, err
 	}
 
 	// Represents the number of milliseconds past midnight, and does not include timezone information.
-	return ext.NewTime(time.UnixMilli(valInt64).In(time.UTC)), nil
+	return ext.NewTime(time.UnixMilli(castedVal).In(time.UTC)), nil
 }
 
 type NanoTime struct{}
