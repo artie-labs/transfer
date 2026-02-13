@@ -1,6 +1,7 @@
 package redis
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"testing"
@@ -144,7 +145,7 @@ func TestStore_QueryContext(t *testing.T) {
 
 func TestStore_Begin(t *testing.T) {
 	store := &Store{}
-	tx, err := store.Begin()
+	tx, err := store.Begin(context.Background())
 	assert.Nil(t, tx)
 	assert.Error(t, err)
 	assert.ErrorContains(t, err, "transactions are not supported for Redis")

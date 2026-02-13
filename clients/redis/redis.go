@@ -78,7 +78,7 @@ func (s *Store) QueryContext(_ context.Context, _ string, _ ...any) (*sql.Rows, 
 	return nil, fmt.Errorf("QueryContext is not supported for Redis")
 }
 
-func (s *Store) Begin() (*sql.Tx, error) {
+func (s *Store) Begin(_ context.Context) (*sql.Tx, error) {
 	return nil, fmt.Errorf("transactions are not supported for Redis")
 }
 

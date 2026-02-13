@@ -32,7 +32,7 @@ type Store struct {
 	config    config.Config
 }
 
-func LoadStore(cfg config.Config) (*Store, error) {
+func LoadStore(_ context.Context, cfg config.Config) (*Store, error) {
 	return &Store{
 		dsn:       BuildDSN(cfg.MotherDuck.Token),
 		client:    ducktape.NewClient(cfg.MotherDuck.DucktapeURL),
@@ -57,7 +57,7 @@ func (s Store) IsOLTP() bool {
 	return false
 }
 
-func (s Store) Begin() (*goSql.Tx, error) {
+func (s Store) Begin(_ context.Context) (*goSql.Tx, error) {
 	return nil, fmt.Errorf("not implemented: Begin")
 }
 
