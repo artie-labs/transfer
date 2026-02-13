@@ -91,7 +91,7 @@ func main() {
 
 		_iceberg = &_icebergStore
 	} else {
-		dest, err = utils.LoadSQLDestination(ctx, settings.Config, nil)
+		dest, err = utils.LoadSQLDestination(ctx, settings.Config)
 		if err != nil {
 			logger.Fatal("Failed to load destination", slog.Any("err", err))
 		}

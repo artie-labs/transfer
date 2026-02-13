@@ -20,7 +20,6 @@ import (
 	"github.com/artie-labs/transfer/clients/sqs"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination"
 )
 
@@ -72,27 +71,16 @@ func Load(ctx context.Context, cfg config.Config) (destination.Destination, erro
 
 // LoadSQLDestination returns a [destination.SQLDestination] for SQL-based outputs only.
 // This is a convenience wrapper for callers that specifically need a SQL destination (e.g., integration tests).
-func LoadSQLDestination(ctx context.Context, cfg config.Config, store *db.Store) (destination.SQLDestination, error) {
-	switch cfg.Output {
-	case constants.Snowflake:
-		return snowflake.LoadStore(ctx, cfg, store)
-	case constants.BigQuery:
-		return bigquery.LoadStore(ctx, cfg, store)
-	case constants.Databricks:
-		return databricks.LoadStore(cfg)
-	case constants.MSSQL:
-		return mssql.LoadStore(cfg)
-	case constants.MySQL:
-		return mysql.LoadStore(cfg)
-	case constants.Postgres:
-		return postgres.LoadStore(ctx, cfg)
-	case constants.Redshift:
-		return redshift.LoadStore(ctx, cfg, store)
-	case constants.MotherDuck:
-		return motherduck.LoadStore(cfg)
-	case constants.Clickhouse:
-		return clickhouse.LoadStore(ctx, cfg, store)
+func LoadSQLDestination(ctx context.Context, cfg config.Config) (destination.SQLDestination, error) {
+	dest, err := Load(ctx, cfg)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil, fmt.Errorf("invalid SQL destination: %q", cfg.Output)
+	sqlDest, ok := dest.(destination.SQLDestination)
+	if !ok {
+		return nil, fmt.Errorf("destination %q is not a SQL destination", cfg.Output)
+	}
+
+	return sqlDest, nil
 }
