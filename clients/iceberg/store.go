@@ -372,11 +372,14 @@ func loadRestCatalogStore(ctx context.Context, cfg config.Config) (Store, error)
 		return Store{}, fmt.Errorf("failed to create REST catalog: %w", err)
 	}
 
-	awsCfg := awslib.NewConfigWithCredentialsAndRegion(
-		credentials.NewStaticCredentialsProvider(restCfg.AwsAccessKeyID, restCfg.AwsSecretAccessKey, ""),
-		cmp.Or(restCfg.Region, os.Getenv("AWS_REGION")),
-	)
+	region := cmp.Or(restCfg.Region, os.Getenv("AWS_REGION"))
+	if region == "" {
+		return Store{}, fmt.Errorf("aws region is not set")
+	}
 
+	awsCfg := awslib.NewConfigWithCredentialsAndRegion(
+		credentials.NewStaticCredentialsProvider(restCfg.AwsAccessKeyID, restCfg.AwsSecretAccessKey, ""), region,
+	)
 	return Store{
 		catalogName:      restCfg.CatalogName(),
 		config:           cfg,
