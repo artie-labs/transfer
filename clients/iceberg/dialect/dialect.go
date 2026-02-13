@@ -203,6 +203,8 @@ func (IcebergDialect) BuildDropTableQuery(tableID sql.TableIdentifier) string {
 }
 
 func (IcebergDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) string {
+	// Spark 3.3 (released in 2023) supports TRUNCATE TABLE.
+	// If we need to support an older version later, we can use DELETE FROM.
 	return sql.DefaultBuildTruncateTableQuery(tableID)
 }
 
