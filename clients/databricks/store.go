@@ -154,8 +154,9 @@ func (s Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.Ta
 			ordinalColumn = fmt.Sprintf(`PARSE_JSON(%s)`, ordinalColumn)
 		case typing.Bytes.Kind:
 			if s.cfg.SharedDestinationSettings.WriteRawBinaryValues {
-				// decode from Base64 in CSV file
-				ordinalColumn = fmt.Sprintf(`UNBASE64(%s)`, ordinalColumn)
+				// Decode from Base64 in CSV file, but preserve TOAST placeholders as-is (cast to BINARY)
+				// so that BuildIsNotToastValueExpression can still detect them via CAST(col AS STRING).
+				ordinalColumn = fmt.Sprintf(`IF(%s = '%s', CAST(%s AS BINARY), UNBASE64(%s))`, ordinalColumn, constants.ToastUnavailableValuePlaceholder, ordinalColumn, ordinalColumn)
 			}
 		}
 
