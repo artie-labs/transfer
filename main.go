@@ -94,10 +94,11 @@ func main() {
 			})
 			logger.Fatal("Failed to clean up temporary tables", slog.Any("err", err))
 		}
+
+		whClient.SendEvent(ctx, webhooksutil.ConnectionEstablished, map[string]any{
+			"mode": settings.Config.Mode,
+		})
 	}
-	whClient.SendEvent(ctx, webhooksutil.ConnectionEstablished, map[string]any{
-		"mode": settings.Config.Mode,
-	})
 
 	slog.Info("Starting...", slog.String("version", version))
 	whClient.SendEvent(ctx, webhooksutil.ReplicationStarted, map[string]any{
