@@ -82,6 +82,30 @@ func (s *storeWrapper) IsRetryableError(err error) bool {
 	return isRetryableError(err)
 }
 
+// CommitOrRollback executes fn within the scope of the given transaction.
+// If fn returns an error, the transaction is rolled back. Otherwise, it is committed.
+func CommitOrRollback(tx *sql.Tx, fn func(*sql.Tx) error) error {
+	var committed bool
+	defer func() {
+		if !committed {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				slog.Warn("Failed to rollback transaction", slog.Any("error", rollbackErr))
+			}
+		}
+	}()
+
+	if err := fn(tx); err != nil {
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	committed = true
+	return nil
+}
+
 func Open(driverName, dsn string) (Store, error) {
 	db, err := sql.Open(driverName, dsn)
 	if err != nil {
