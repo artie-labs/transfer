@@ -132,7 +132,7 @@ func TestField_ParseValue(t *testing.T) {
 			field := Field{Type: Bytes}
 			value, err := field.ParseValue([]byte{40, 30, 20, 10})
 			assert.NoError(t, err)
-			assert.Equal(t, "KB4UCg==", value)
+			assert.Equal(t, []byte{40, 30, 20, 10}, value)
 		}
 		{
 			// Bits

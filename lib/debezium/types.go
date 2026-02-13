@@ -1,7 +1,6 @@
 package debezium
 
 import (
-	"encoding/base64"
 	"fmt"
 	"log/slog"
 	"time"
@@ -155,13 +154,6 @@ func (f Field) ParseValue(value any) (any, error) {
 
 	if converter != nil {
 		return converter.Convert(value)
-	}
-
-	if bytes, ok := value.([]byte); ok {
-		// Preserve existing behavior by base64 encoding []byte values to a string.
-		// TODO: Look into inverting this logic so that in the case the field type is "bytes" but the value is a string we
-		// base64 decode it in a preprocessing step above. Then things downstream from this method can just deal with []byte values.
-		return base64.StdEncoding.EncodeToString(bytes), nil
 	}
 
 	return value, nil
