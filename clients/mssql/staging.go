@@ -21,7 +21,7 @@ func (s *Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.T
 		}
 	}
 
-	tx, err := s.Begin()
+	tx, err := s.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}

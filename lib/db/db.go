@@ -20,7 +20,7 @@ type Store interface {
 	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
 	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 	Conn(ctx context.Context) (*sql.Conn, error)
-	Begin() (*sql.Tx, error)
+	Begin(ctx context.Context) (*sql.Tx, error)
 	IsRetryableError(err error) bool
 	GetDatabase() *sql.DB
 	Close() error
@@ -74,8 +74,8 @@ func (s *storeWrapper) QueryRowContext(ctx context.Context, query string, args .
 	return s.DB.QueryRowContext(ctx, query, args...)
 }
 
-func (s *storeWrapper) Begin() (*sql.Tx, error) {
-	return s.DB.Begin()
+func (s *storeWrapper) Begin(ctx context.Context) (*sql.Tx, error) {
+	return s.DB.BeginTx(ctx, nil)
 }
 
 func (s *storeWrapper) IsRetryableError(err error) bool {
