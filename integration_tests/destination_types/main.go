@@ -89,7 +89,7 @@ func main() {
 		logger.Fatal("Failed to load settings", slog.Any("err", err))
 	}
 
-	dest, err := utils.LoadDestination(ctx, settings.Config, nil)
+	dest, err := utils.LoadSQLDestination(ctx, settings.Config, nil)
 	if err != nil {
 		logger.Fatal("Failed to load destination", slog.Any("err", err))
 	}
