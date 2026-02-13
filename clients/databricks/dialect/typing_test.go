@@ -15,6 +15,8 @@ func TestDatabricksDialect_DataTypeForKind(t *testing.T) {
 		// Strings:
 		typing.Struct: "STRING",
 		typing.String: "STRING",
+		// Bytes:
+		typing.Bytes: "BINARY",
 		// Booleans:
 		typing.Boolean: "BOOLEAN",
 		// Numbers:
@@ -69,7 +71,7 @@ func TestDatabricksDialect_KindForDataType(t *testing.T) {
 		// Binary
 		kd, err := DatabricksDialect{}.KindForDataType("BINARY")
 		assert.NoError(t, err)
-		assert.Equal(t, typing.String, kd)
+		assert.Equal(t, typing.Bytes, kd)
 	}
 	{
 		// BigInt

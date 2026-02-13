@@ -22,6 +22,8 @@ func (DatabricksDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool,
 		return "ARRAY<string>", nil
 	case typing.String.Kind:
 		return "STRING", nil
+	case typing.Bytes.Kind:
+		return "BINARY", nil
 	case typing.Boolean.Kind:
 		return "BOOLEAN", nil
 	case typing.Date.Kind:
@@ -56,7 +58,9 @@ func (DatabricksDialect) KindForDataType(rawType string) (typing.KindDetails, er
 	}
 
 	switch rawType {
-	case "string", "binary", "variant", "object":
+	case "binary":
+		return typing.Bytes, nil
+	case "string", "variant", "object":
 		return typing.String, nil
 	case "bigint":
 		return typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.BigIntegerKind)}, nil
