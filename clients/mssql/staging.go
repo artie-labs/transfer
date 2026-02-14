@@ -2,7 +2,7 @@ package mssql
 
 import (
 	"context"
-	goSql "database/sql"
+	gosql "database/sql"
 	"fmt"
 
 	mssql "github.com/microsoft/go-mssqldb"
@@ -22,12 +22,12 @@ func (s *Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.T
 		}
 	}
 
-	tx, err := s.Begin()
+	tx, err := s.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 
-	return db.CommitOrRollback(tx, func(tx *goSql.Tx) error {
+	return db.CommitOrRollback(tx, func(tx *gosql.Tx) error {
 		cols := tableData.ReadOnlyInMemoryCols().ValidColumns()
 		stmt, err := tx.Prepare(mssql.CopyIn(tableID.FullyQualifiedName(), mssql.BulkOptions{}, columns.ColumnNames(cols)...))
 		if err != nil {

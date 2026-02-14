@@ -13,7 +13,7 @@ import (
 	"github.com/artie-labs/transfer/processes/consumer"
 )
 
-func StartPool(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, whClient *webhooksclient.Client, topics []string, td time.Duration) {
+func StartPool(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client, whClient *webhooksclient.Client, topics []string, td time.Duration) {
 	slog.Info("Starting pool timer...")
 	ticker := time.NewTicker(td)
 	for range ticker.C {

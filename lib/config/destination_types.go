@@ -224,9 +224,6 @@ func (r RestCatalog) Validate() error {
 	if r.AwsSecretAccessKey == "" {
 		return fmt.Errorf("rest catalog awsSecretAccessKey is required")
 	}
-	if r.Region == "" {
-		return fmt.Errorf("rest catalog region is required")
-	}
 
 	return nil
 }

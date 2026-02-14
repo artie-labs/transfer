@@ -15,8 +15,8 @@ import (
 	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
 )
 
-type Destination interface {
-	Baseline
+type SQLDestination interface {
+	Destination
 
 	// SQL specific commands
 	Dialect() sqllib.Dialect
@@ -24,7 +24,7 @@ type Destination interface {
 	SweepTemporaryTables(ctx context.Context, whClient *webhooksclient.Client) error
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
 	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
-	Begin() (*sql.Tx, error)
+	Begin(ctx context.Context) (*sql.Tx, error)
 
 	// Helper functions for merge
 	GetTableConfig(ctx context.Context, tableID sqllib.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error)
@@ -32,7 +32,7 @@ type Destination interface {
 	LoadDataIntoTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, tableID, parentTableID sqllib.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error
 }
 
-type Baseline interface {
+type Destination interface {
 	GetConfig() config.Config
 
 	Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client) (commitTransaction bool, err error)
@@ -45,9 +45,9 @@ type Baseline interface {
 	IsOLTP() bool
 }
 
-// ExecContextStatements executes one or more statements against a [Destination].
+// ExecContextStatements executes one or more statements against a [SQLDestination].
 // If there is more than one statement, the statements will be executed inside of a transaction.
-func ExecContextStatements(ctx context.Context, dest Destination, statements []string) ([]sql.Result, error) {
+func ExecContextStatements(ctx context.Context, dest SQLDestination, statements []string) ([]sql.Result, error) {
 	switch len(statements) {
 	case 0:
 		return nil, fmt.Errorf("statements is empty")
@@ -60,7 +60,7 @@ func ExecContextStatements(ctx context.Context, dest Destination, statements []s
 
 		return []sql.Result{result}, nil
 	default:
-		tx, err := dest.Begin()
+		tx, err := dest.Begin(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to start tx: %w", err)
 		}
@@ -86,9 +86,9 @@ func ExecContextStatements(ctx context.Context, dest Destination, statements []s
 	}
 }
 
-func BuildReservedColumnNames(baseline Baseline) map[string]bool {
-	if _dest, ok := baseline.(Destination); ok {
-		if dialect := _dest.Dialect(); dialect != nil {
+func BuildReservedColumnNames(dest Destination) map[string]bool {
+	if sqlDest, ok := dest.(SQLDestination); ok {
+		if dialect := sqlDest.Dialect(); dialect != nil {
 			return dialect.ReservedColumnNames()
 		}
 	}

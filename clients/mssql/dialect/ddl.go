@@ -55,9 +55,9 @@ func (MSSQLDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, _ bool, _
 }
 
 func (MSSQLDialect) BuildDropTableQuery(tableID sql.TableIdentifier) string {
-	return "DROP TABLE IF EXISTS " + tableID.FullyQualifiedName()
+	return sql.DefaultBuildDropTableQuery(tableID)
 }
 
 func (MSSQLDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) string {
-	return "TRUNCATE TABLE " + tableID.FullyQualifiedName()
+	return sql.DefaultBuildTruncateTableQuery(tableID)
 }

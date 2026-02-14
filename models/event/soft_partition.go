@@ -10,7 +10,7 @@ import (
 )
 
 // [BuildSoftPartitionSuffix] - This will check what the right suffix we should add to the soft-partitioned table should be.
-func BuildSoftPartitionSuffix(ctx context.Context, tc kafkalib.TopicConfig, columnValue, executionTime time.Time, tblName string, dest destination.Baseline) (string, error) {
+func BuildSoftPartitionSuffix(ctx context.Context, tc kafkalib.TopicConfig, columnValue, executionTime time.Time, tblName string, dest destination.Destination) (string, error) {
 	if !tc.SoftPartitioning.Enabled {
 		return "", nil
 	}
@@ -20,9 +20,9 @@ func BuildSoftPartitionSuffix(ctx context.Context, tc kafkalib.TopicConfig, colu
 		return "", fmt.Errorf("failed to get partition frequency suffix: %w for table %q schema %q", err, tc.TableName, tc.Schema)
 	}
 
-	destination, ok := dest.(destination.Destination)
+	sqlDest, ok := dest.(destination.SQLDestination)
 	if !ok {
-		// Soft partitioning is only supported for [destination.Destination]
+		// Soft partitioning is only supported for [destination.SQLDestination]
 		return suffix, nil
 	}
 
@@ -32,7 +32,7 @@ func BuildSoftPartitionSuffix(ctx context.Context, tc kafkalib.TopicConfig, colu
 	} else if distance > 0 {
 		partitionedTableName := tblName + suffix
 		tableID := dest.IdentifierFor(kafkalib.DatabaseAndSchemaPair{Database: tc.Database, Schema: tc.Schema}, partitionedTableName)
-		tableConfig, err := destination.GetTableConfig(ctx, tableID, false)
+		tableConfig, err := sqlDest.GetTableConfig(ctx, tableID, false)
 		if err != nil {
 			return "", fmt.Errorf("failed to get table config: %w", err)
 		}

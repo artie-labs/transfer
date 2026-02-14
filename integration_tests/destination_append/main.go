@@ -20,7 +20,7 @@ type AppendTest struct {
 	framework *shared.TestFramework
 }
 
-func NewAppendTest(ctx context.Context, dest destination.Destination, _iceberg *iceberg.Store, topicConfig kafkalib.TopicConfig) *AppendTest {
+func NewAppendTest(ctx context.Context, dest destination.SQLDestination, _iceberg *iceberg.Store, topicConfig kafkalib.TopicConfig) *AppendTest {
 	return &AppendTest{
 		framework: shared.NewTestFramework(dest, _iceberg, topicConfig),
 	}
@@ -77,21 +77,21 @@ func main() {
 	}
 
 	var _iceberg *iceberg.Store
-	var dest destination.Destination
+	var dest destination.SQLDestination
 	if settings.Config.Output == constants.Iceberg {
-		baseline, err := utils.LoadBaseline(ctx, settings.Config)
+		loaded, err := utils.Load(ctx, settings.Config)
 		if err != nil {
-			logger.Fatal("Failed to load baseline", slog.Any("err", err))
+			logger.Fatal("Failed to load destination", slog.Any("err", err))
 		}
 
-		_icebergStore, ok := baseline.(iceberg.Store)
+		_icebergStore, ok := loaded.(iceberg.Store)
 		if !ok {
-			logger.Fatal(fmt.Sprintf("baseline is not an iceberg store: %T", baseline))
+			logger.Fatal(fmt.Sprintf("destination is not an iceberg store: %T", loaded))
 		}
 
 		_iceberg = &_icebergStore
 	} else {
-		dest, err = utils.LoadDestination(ctx, settings.Config, nil)
+		dest, err = utils.LoadSQLDestination(ctx, settings.Config)
 		if err != nil {
 			logger.Fatal("Failed to load destination", slog.Any("err", err))
 		}

@@ -2,6 +2,7 @@ package converters
 
 import (
 	"cmp"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -58,6 +59,8 @@ func GetStringConverter(kd typing.KindDetails, opts GetStringConverterOpts) (Con
 		return IntegerConverter{}, nil
 	case typing.Float.Kind:
 		return FloatConverter{}, nil
+	case typing.Bytes.Kind:
+		return BytesConverter{}, nil
 	default:
 		return nil, fmt.Errorf("unsupported type: %q", kd.Kind)
 	}
@@ -101,10 +104,14 @@ func (StringConverter) ConvertNew(value any) (string, error) {
 		return IntegerConverter{}.Convert(castedValue)
 	case float32, float64:
 		return FloatConverter{}.Convert(castedValue)
+	case json.Number:
+		return castedValue.String(), nil
 	case bool:
 		return BooleanConverter{}.Convert(castedValue)
 	case string:
 		return castedValue, nil
+	case []byte:
+		return BytesConverter{}.Convert(castedValue)
 	case map[string]any:
 		return StructConverter{}.Convert(castedValue)
 	case time.Time:
@@ -124,6 +131,11 @@ func (StringConverter) ConvertNew(value any) (string, error) {
 
 func (StringConverter) ConvertOld(value any) (string, error) {
 	// TODO Simplify this function
+	// Handle []byte before the reflect.Slice check so it doesn't get json.Marshal'd (which would produce a quoted base64 string).
+	if castedValue, ok := value.([]byte); ok {
+		return BytesConverter{}.Convert(castedValue)
+	}
+
 	isArray := reflect.ValueOf(value).Kind() == reflect.Slice
 	_, isMap := value.(map[string]any)
 	// If colVal is either an array or a JSON object, we should run JSON parse.
@@ -137,6 +149,19 @@ func (StringConverter) ConvertOld(value any) (string, error) {
 	}
 
 	return stringutil.EscapeBackslashes(fmt.Sprint(value)), nil
+}
+
+type BytesConverter struct{}
+
+func (BytesConverter) Convert(value any) (string, error) {
+	switch castedValue := value.(type) {
+	case string:
+		return castedValue, nil
+	case []byte:
+		return base64.StdEncoding.EncodeToString(castedValue), nil
+	default:
+		return "", fmt.Errorf("unexpected value: '%v', type: %T", value, value)
+	}
 }
 
 type DateConverter struct{}
@@ -237,6 +262,11 @@ func (IntegerConverter) Convert(value any) (string, error) {
 		return fmt.Sprint(parsedVal), nil
 	case *decimal.Decimal:
 		return parsedVal.String(), nil
+	case json.Number:
+		if _, err := strconv.ParseInt(parsedVal.String(), 10, 64); err != nil {
+			return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.UnexpectedValue)
+		}
+		return parsedVal.String(), nil
 	case string:
 		// If it's a string, does it parse properly to an integer? If so, that's fine.
 		if _, err := strconv.ParseInt(parsedVal, 10, 64); err != nil {
@@ -261,6 +291,11 @@ func (FloatConverter) Convert(value any) (string, error) {
 		return fmt.Sprint(parsedVal), nil
 	case *decimal.Decimal:
 		return parsedVal.String(), nil
+	case json.Number:
+		if _, err := strconv.ParseFloat(parsedVal.String(), 64); err != nil {
+			return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.UnexpectedValue)
+		}
+		return parsedVal.String(), nil
 	case string:
 		// If it's a string, verify it can be parsed as a float
 		if _, err := strconv.ParseFloat(parsedVal, 64); err != nil {
@@ -282,6 +317,11 @@ func (DecimalConverter) Convert(value any) (string, error) {
 		return Float64ToString(castedColVal), nil
 	case int, int8, int16, int32, int64:
 		return fmt.Sprint(castedColVal), nil
+	case json.Number:
+		if _, _, err := apd.NewFromString(castedColVal.String()); err != nil {
+			return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.UnexpectedValue)
+		}
+		return castedColVal.String(), nil
 	case string:
 		// If it's a string, verify it can be parsed as a number.
 		// We use apd.NewFromString instead of strconv.ParseFloat because ParseFloat

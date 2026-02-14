@@ -21,7 +21,7 @@ import (
 	"github.com/artie-labs/transfer/models"
 )
 
-func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, whClient *webhooksclient.Client) {
+func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client, whClient *webhooksclient.Client) {
 	tcFmtMap := NewTcFmtMap()
 	var topics []string
 	for _, topicConfig := range cfg.Kafka.TopicConfigs {
