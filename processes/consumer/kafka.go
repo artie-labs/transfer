@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"runtime/debug"
 	"sync"
 	"time"
 
@@ -37,7 +38,7 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 		go func(topic string) {
 			defer func() {
 				if x := recover(); x != nil {
-					logger.Fatal("Recovered from panic", slog.Any("err", x))
+					logger.Fatal("Recovered from panic", slog.Any("err", x), slog.String("stack", string(debug.Stack())))
 				}
 				wg.Done()
 			}()

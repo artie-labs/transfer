@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"runtime/debug"
 	"strconv"
 	"sync"
 	"time"
@@ -130,13 +131,23 @@ func main() {
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
-		defer wg.Done()
+		defer func() {
+			if x := recover(); x != nil {
+				logger.Fatal("Recovered from panic", slog.Any("err", x), slog.String("stack", string(debug.Stack())))
+			}
+			wg.Done()
+		}()
 		pool.StartPool(ctx, inMemDB, dest, metricsClient, whClient, settings.Config.Kafka.Topics(), time.Duration(settings.Config.FlushIntervalSeconds)*time.Second)
 	}()
 
 	wg.Add(1)
 	go func(ctx context.Context) {
-		defer wg.Done()
+		defer func() {
+			if x := recover(); x != nil {
+				logger.Fatal("Recovered from panic", slog.Any("err", x), slog.String("stack", string(debug.Stack())))
+			}
+			wg.Done()
+		}()
 		switch settings.Config.Queue {
 		case constants.Kafka:
 			consumer.StartKafkaConsumer(ctx, settings.Config, inMemDB, dest, metricsClient, whClient)

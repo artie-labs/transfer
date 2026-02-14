@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"runtime/debug"
 	"sync/atomic"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/retry"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
@@ -70,6 +72,13 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 
 		for _, table := range tables {
 			grp.Go(func() error {
+				// ErrGroup still requires recover handling for panics :(.
+				defer func() {
+					if rec := recover(); rec != nil {
+						logger.Fatal("Recovered from panic", slog.Any("err", rec), slog.String("stack", string(debug.Stack())))
+					}
+				}()
+
 				retryCfg, err := retry.NewJitterRetryConfig(1_000, 30_000, 15, retry.AlwaysRetry)
 				if err != nil {
 					return err
