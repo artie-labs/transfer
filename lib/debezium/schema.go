@@ -181,7 +181,10 @@ func (f Field) ToKindDetails(cfg config.SharedDestinationSettings) (typing.KindD
 	case String:
 		return typing.String, nil
 	case Bytes:
-		return typing.Bytes, nil
+		if cfg.ColumnSettings.WriteRawBinaryValues {
+			return typing.Bytes, nil
+		}
+		return typing.String, nil
 	case Struct:
 		return typing.Struct, nil
 	case Boolean:

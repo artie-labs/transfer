@@ -108,6 +108,8 @@ func (StringConverter) ConvertNew(value any) (string, error) {
 		return BooleanConverter{}.Convert(castedValue)
 	case string:
 		return castedValue, nil
+	case []byte:
+		return BytesConverter{}.Convert(castedValue)
 	case map[string]any:
 		return StructConverter{}.Convert(castedValue)
 	case time.Time:
@@ -127,6 +129,11 @@ func (StringConverter) ConvertNew(value any) (string, error) {
 
 func (StringConverter) ConvertOld(value any) (string, error) {
 	// TODO Simplify this function
+	// Handle []byte before the reflect.Slice check so it doesn't get json.Marshal'd (which would produce a quoted base64 string).
+	if castedValue, ok := value.([]byte); ok {
+		return BytesConverter{}.Convert(castedValue)
+	}
+
 	isArray := reflect.ValueOf(value).Kind() == reflect.Slice
 	_, isMap := value.(map[string]any)
 	// If colVal is either an array or a JSON object, we should run JSON parse.

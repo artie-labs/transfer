@@ -136,9 +136,20 @@ func TestField_ToKindDetails(t *testing.T) {
 	}
 	{
 		// Bytes
-		kd, err := Field{Type: Bytes}.ToKindDetails(config.SharedDestinationSettings{})
-		assert.NoError(t, err)
-		assert.Equal(t, typing.Bytes, kd)
+		{
+			// WriteRawBinaryValues = false (default)
+			kd, err := Field{Type: Bytes}.ToKindDetails(config.SharedDestinationSettings{})
+			assert.NoError(t, err)
+			assert.Equal(t, typing.String, kd)
+		}
+		{
+			// WriteRawBinaryValues = true
+			kd, err := Field{Type: Bytes}.ToKindDetails(config.SharedDestinationSettings{
+				ColumnSettings: config.SharedDestinationColumnSettings{WriteRawBinaryValues: true},
+			})
+			assert.NoError(t, err)
+			assert.Equal(t, typing.Bytes, kd)
+		}
 	}
 	{
 		// String passthrough
