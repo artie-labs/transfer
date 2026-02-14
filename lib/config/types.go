@@ -31,6 +31,9 @@ type SharedDestinationColumnSettings struct {
 	// BigNumericForVariableNumeric - If enabled, we will use BigQuery's BIGNUMERIC type for variable numeric types.
 	// Note: this field also accepts the legacy YAML key "bigQueryNumericForVariableNumeric" for backward compatibility.
 	BigNumericForVariableNumeric bool `yaml:"bigQueryNumericForVariableNumeric"`
+	// [WriteRawBinaryValues] - If enabled, we will write raw binary values to the destination (e.g. BINARY column type)
+	// instead of storing them as Base64 encoded strings.
+	WriteRawBinaryValues bool `yaml:"writeRawBinaryValues"`
 }
 
 type SharedDestinationSettings struct {
@@ -56,8 +59,6 @@ type SharedDestinationSettings struct {
 	SkipBadIntegers bool `yaml:"skipBadIntegers"`
 	// [ForceUTCTimezone] - If enabled, for all TimestampNTZ types, we will return TimestampTZ kind. The converters should ensure that the timezone is set to UTC.
 	ForceUTCTimezone bool `yaml:"forceUTCTimezone"`
-	// [WriteRawBinaryValues] - If enabled, we will write raw binary values to the destination instead of encoding with Base64.
-	WriteRawBinaryValues bool `yaml:"writeRawBinaryValues"`
 }
 
 type StagingTableReuseConfig struct {

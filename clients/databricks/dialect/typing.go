@@ -9,7 +9,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func (DatabricksDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, _ config.SharedDestinationColumnSettings) (string, error) {
+func (DatabricksDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, settings config.SharedDestinationColumnSettings) (string, error) {
 	switch kindDetails.Kind {
 	case typing.Float.Kind:
 		return "DOUBLE", nil
@@ -23,7 +23,10 @@ func (DatabricksDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool,
 	case typing.String.Kind:
 		return "STRING", nil
 	case typing.Bytes.Kind:
-		return "BINARY", nil
+		if settings.WriteRawBinaryValues {
+			return "BINARY", nil
+		}
+		return "STRING", nil
 	case typing.Boolean.Kind:
 		return "BOOLEAN", nil
 	case typing.Date.Kind:
