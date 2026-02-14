@@ -2,7 +2,9 @@ package converters
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/jsonutil"
@@ -35,11 +37,14 @@ func (Int64Passthrough) ToKindDetails() typing.KindDetails {
 }
 
 func (Int64Passthrough) Convert(value any) (any, error) {
-	if _, err := typing.AssertType[int64](value); err != nil {
-		return nil, err
+	switch castedValue := value.(type) {
+	case int64:
+		return castedValue, nil
+	case json.Number:
+		return castedValue.Int64()
+	default:
+		return nil, fmt.Errorf("expected int64 or json.Number, got %T", value)
 	}
-
-	return value, nil
 }
 
 type Base64 struct{}
@@ -77,6 +82,8 @@ func (Float64) Convert(value any) (any, error) {
 		return float64(castedValue), nil
 	case float64:
 		return castedValue, nil
+	case json.Number:
+		return strconv.ParseFloat(castedValue.String(), 64)
 	case string:
 		if castedValue == "NaN" {
 			return nil, nil
