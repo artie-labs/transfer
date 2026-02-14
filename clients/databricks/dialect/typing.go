@@ -9,7 +9,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func (DatabricksDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, _ config.SharedDestinationColumnSettings) (string, error) {
+func (DatabricksDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, settings config.SharedDestinationColumnSettings) (string, error) {
 	switch kindDetails.Kind {
 	case typing.Float.Kind:
 		return "DOUBLE", nil
@@ -21,6 +21,11 @@ func (DatabricksDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool,
 		// Databricks requires arrays to be typed. As such, we're going to use an array of strings.
 		return "ARRAY<string>", nil
 	case typing.String.Kind:
+		return "STRING", nil
+	case typing.Bytes.Kind:
+		if settings.WriteRawBinaryValues {
+			return "BINARY", nil
+		}
 		return "STRING", nil
 	case typing.Boolean.Kind:
 		return "BOOLEAN", nil
@@ -56,7 +61,9 @@ func (DatabricksDialect) KindForDataType(rawType string) (typing.KindDetails, er
 	}
 
 	switch rawType {
-	case "string", "binary", "variant", "object":
+	case "binary":
+		return typing.Bytes, nil
+	case "string", "variant", "object":
 		return typing.String, nil
 	case "bigint":
 		return typing.KindDetails{Kind: typing.Integer.Kind, OptionalIntegerKind: typing.ToPtr(typing.BigIntegerKind)}, nil

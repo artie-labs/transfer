@@ -2,6 +2,7 @@ package converters
 
 import (
 	"cmp"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -58,6 +59,8 @@ func GetStringConverter(kd typing.KindDetails, opts GetStringConverterOpts) (Con
 		return IntegerConverter{}, nil
 	case typing.Float.Kind:
 		return FloatConverter{}, nil
+	case typing.Bytes.Kind:
+		return BytesConverter{}, nil
 	default:
 		return nil, fmt.Errorf("unsupported type: %q", kd.Kind)
 	}
@@ -107,6 +110,8 @@ func (StringConverter) ConvertNew(value any) (string, error) {
 		return BooleanConverter{}.Convert(castedValue)
 	case string:
 		return castedValue, nil
+	case []byte:
+		return BytesConverter{}.Convert(castedValue)
 	case map[string]any:
 		return StructConverter{}.Convert(castedValue)
 	case time.Time:
@@ -126,6 +131,11 @@ func (StringConverter) ConvertNew(value any) (string, error) {
 
 func (StringConverter) ConvertOld(value any) (string, error) {
 	// TODO Simplify this function
+	// Handle []byte before the reflect.Slice check so it doesn't get json.Marshal'd (which would produce a quoted base64 string).
+	if castedValue, ok := value.([]byte); ok {
+		return BytesConverter{}.Convert(castedValue)
+	}
+
 	isArray := reflect.ValueOf(value).Kind() == reflect.Slice
 	_, isMap := value.(map[string]any)
 	// If colVal is either an array or a JSON object, we should run JSON parse.
@@ -139,6 +149,19 @@ func (StringConverter) ConvertOld(value any) (string, error) {
 	}
 
 	return stringutil.EscapeBackslashes(fmt.Sprint(value)), nil
+}
+
+type BytesConverter struct{}
+
+func (BytesConverter) Convert(value any) (string, error) {
+	switch castedValue := value.(type) {
+	case string:
+		return castedValue, nil
+	case []byte:
+		return base64.StdEncoding.EncodeToString(castedValue), nil
+	default:
+		return "", fmt.Errorf("unexpected value: '%v', type: %T", value, value)
+	}
 }
 
 type DateConverter struct{}
