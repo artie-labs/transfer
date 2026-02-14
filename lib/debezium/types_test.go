@@ -1,6 +1,7 @@
 package debezium
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -110,6 +111,18 @@ func TestToInt64(t *testing.T) {
 		actual, err := toInt64(float64(12321))
 		assert.NoError(t, err)
 		assert.Equal(t, int64(12321), actual)
+	}
+	{
+		// json.Number
+		actual, err := toInt64(json.Number("12321"))
+		assert.NoError(t, err)
+		assert.Equal(t, int64(12321), actual)
+	}
+	{
+		// json.Number - bigint that would lose precision as float64
+		actual, err := toInt64(json.Number("9223372036854775806"))
+		assert.NoError(t, err)
+		assert.Equal(t, int64(9223372036854775806), actual)
 	}
 	{
 		// Different types

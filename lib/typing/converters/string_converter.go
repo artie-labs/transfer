@@ -101,6 +101,8 @@ func (StringConverter) ConvertNew(value any) (string, error) {
 		return IntegerConverter{}.Convert(castedValue)
 	case float32, float64:
 		return FloatConverter{}.Convert(castedValue)
+	case json.Number:
+		return castedValue.String(), nil
 	case bool:
 		return BooleanConverter{}.Convert(castedValue)
 	case string:
@@ -237,6 +239,11 @@ func (IntegerConverter) Convert(value any) (string, error) {
 		return fmt.Sprint(parsedVal), nil
 	case *decimal.Decimal:
 		return parsedVal.String(), nil
+	case json.Number:
+		if _, err := strconv.ParseInt(parsedVal.String(), 10, 64); err != nil {
+			return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.UnexpectedValue)
+		}
+		return parsedVal.String(), nil
 	case string:
 		// If it's a string, does it parse properly to an integer? If so, that's fine.
 		if _, err := strconv.ParseInt(parsedVal, 10, 64); err != nil {
@@ -261,6 +268,11 @@ func (FloatConverter) Convert(value any) (string, error) {
 		return fmt.Sprint(parsedVal), nil
 	case *decimal.Decimal:
 		return parsedVal.String(), nil
+	case json.Number:
+		if _, err := strconv.ParseFloat(parsedVal.String(), 64); err != nil {
+			return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.UnexpectedValue)
+		}
+		return parsedVal.String(), nil
 	case string:
 		// If it's a string, verify it can be parsed as a float
 		if _, err := strconv.ParseFloat(parsedVal, 64); err != nil {
@@ -282,6 +294,11 @@ func (DecimalConverter) Convert(value any) (string, error) {
 		return Float64ToString(castedColVal), nil
 	case int, int8, int16, int32, int64:
 		return fmt.Sprint(castedColVal), nil
+	case json.Number:
+		if _, _, err := apd.NewFromString(castedColVal.String()); err != nil {
+			return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.UnexpectedValue)
+		}
+		return castedColVal.String(), nil
 	case string:
 		// If it's a string, verify it can be parsed as a number.
 		// We use apd.NewFromString instead of strconv.ParseFloat because ParseFloat

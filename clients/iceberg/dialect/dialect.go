@@ -38,7 +38,7 @@ func (IcebergDialect) IsColumnAlreadyExistsErr(err error) bool {
 		return false
 	}
 
-	return strings.HasPrefix(err.Error(), "[FIELDS_ALREADY_EXISTS]")
+	return strings.Contains(err.Error(), "[FIELDS_ALREADY_EXISTS]")
 }
 
 func (IcebergDialect) IsTableDoesNotExistErr(err error) bool {
@@ -46,7 +46,7 @@ func (IcebergDialect) IsTableDoesNotExistErr(err error) bool {
 		return false
 	}
 
-	return strings.HasPrefix(err.Error(), "[TABLE_OR_VIEW_NOT_FOUND]")
+	return strings.Contains(err.Error(), "[TABLE_OR_VIEW_NOT_FOUND]")
 }
 
 func (id IcebergDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {

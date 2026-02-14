@@ -2,6 +2,7 @@ package debezium
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"time"
@@ -71,8 +72,8 @@ const (
 	KafkaDecimalPrecisionKey = "connect.decimal.precision"
 )
 
-// toInt64 attempts to convert a value of unknown type to a an int64.
-// - If the value is coming from Kafka it will be decoded as a float64 when it is unmarshalled from JSON.
+// toInt64 attempts to convert a value of unknown type to an int64.
+// - If the value is coming from Kafka it will be decoded as a [json.Number] when it is unmarshalled from JSON with UseNumber.
 // - If the value is coming from reader the value will be an int16/int32/int64.
 func toInt64(value any) (int64, error) {
 	switch typedValue := value.(type) {
@@ -88,6 +89,8 @@ func toInt64(value any) (int64, error) {
 		return typedValue, nil
 	case float64:
 		return int64(typedValue), nil
+	case json.Number:
+		return typedValue.Int64()
 	}
 	return 0, fmt.Errorf("failed to cast value '%v' with type '%T' to int64", value, value)
 }

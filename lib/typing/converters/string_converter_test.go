@@ -136,6 +136,14 @@ func TestArrayConverter_Convert(t *testing.T) {
 
 func TestFloatConverter_Convert(t *testing.T) {
 	{
+		// json.Number
+		for _, variant := range []json.Number{"123.45", "42", "-1.5", "1.23e10"} {
+			val, err := FloatConverter{}.Convert(variant)
+			assert.NoError(t, err)
+			assert.Equal(t, variant.String(), val)
+		}
+	}
+	{
 		// Unexpected type
 		_, err := FloatConverter{}.Convert(true)
 		assert.ErrorContains(t, err, `unexpected value: 'true', type: bool`)
@@ -204,7 +212,7 @@ func TestFloatConverter_Convert(t *testing.T) {
 func TestIntegerConverter_Convert(t *testing.T) {
 	{
 		// Various numbers
-		for _, val := range []any{42, int8(42), int16(42), int32(42), int64(42), float32(42), float64(42), "42"} {
+		for _, val := range []any{42, int8(42), int16(42), int32(42), int64(42), float32(42), float64(42), "42", json.Number("42")} {
 			parsedVal, err := IntegerConverter{}.Convert(val)
 			assert.NoError(t, err)
 			assert.Equal(t, "42", parsedVal)
@@ -254,6 +262,14 @@ func TestDecimalConverter_Convert(t *testing.T) {
 			val, err := DecimalConverter{}.Convert(input)
 			assert.NoError(t, err)
 			assert.Equal(t, "42", val)
+		}
+	}
+	{
+		// json.Number
+		for _, input := range []json.Number{"123.45", "-123.45", "42", "1.23e10"} {
+			val, err := DecimalConverter{}.Convert(input)
+			assert.NoError(t, err)
+			assert.Equal(t, input.String(), val)
 		}
 	}
 	{
@@ -371,6 +387,14 @@ func TestStringConverter_Convert(t *testing.T) {
 			val, err := conv.Convert(value)
 			assert.NoError(t, err)
 			assert.Equal(t, "123.45", val)
+		}
+	}
+	{
+		// json.Number
+		for _, variant := range []json.Number{"42", "123.45", "-1.5"} {
+			val, err := conv.Convert(variant)
+			assert.NoError(t, err)
+			assert.Equal(t, variant.String(), val)
 		}
 	}
 	{

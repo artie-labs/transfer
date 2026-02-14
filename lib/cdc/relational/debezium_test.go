@@ -1,6 +1,7 @@
 package relational
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -31,7 +32,7 @@ func (r *RelationTestSuite) TestGetPrimaryKey() {
 
 	val, ok := pkMap["id"]
 	assert.True(r.T(), ok)
-	assert.Equal(r.T(), val, float64(47))
+	assert.Equal(r.T(), val, json.Number("47"))
 	assert.Equal(r.T(), err, nil)
 }
 
@@ -90,7 +91,7 @@ func (r *RelationTestSuite) TestPostgresEvent() {
 
 	evtData, err := evt.GetData(kafkalib.TopicConfig{IncludeDatabaseUpdatedAt: true})
 	assert.NoError(r.T(), err)
-	assert.Equal(r.T(), float64(59), evtData["id"])
+	assert.Equal(r.T(), json.Number("59"), evtData["id"])
 	assert.Equal(r.T(), time.Date(2022, time.November, 16, 4, 1, 53, 308000000, time.UTC), evtData[constants.DatabaseUpdatedColumnMarker])
 
 	assert.Equal(r.T(), "Barings Participation Investors", evtData["item"])
@@ -218,7 +219,7 @@ func (r *RelationTestSuite) TestPostgresEventWithSchemaAndTimestampNoTZ() {
 		evtData["ts_no_tz1"],
 	)
 
-	assert.Equal(r.T(), map[string]any{"a": float64(1), "b": float64(2)}, evtData["c_json"])
+	assert.Equal(r.T(), map[string]any{"a": json.Number("1"), "b": json.Number("2")}, evtData["c_json"])
 	jsonData, err := converters.StructConverter{}.Convert(evtData["c_json"])
 	assert.NoError(r.T(), err)
 	assert.Equal(r.T(), `{"a":1,"b":2}`, jsonData)

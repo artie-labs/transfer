@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -35,10 +36,12 @@ func (Int64Converter) Convert(value any) (any, error) {
 		return int64(castedValue), nil
 	case float64:
 		return int64(castedValue), nil
+	case json.Number:
+		return castedValue.Int64()
 	case *decimal.Decimal:
 		return castedValue.Value().Int64()
 	default:
-		return nil, fmt.Errorf("expected int/int32/int64/float32/float64/*decimal.Decimal received %T with value %v", value, value)
+		return nil, fmt.Errorf("expected int/int32/int64/float32/float64/json.Number/*decimal.Decimal received %T with value %v", value, value)
 	}
 }
 
@@ -72,6 +75,8 @@ func (Float64Converter) Convert(value any) (any, error) {
 		return float64(castedVal), nil
 	case int64:
 		return float64(castedVal), nil
+	case json.Number:
+		return castedVal.Float64()
 	case *decimal.Decimal:
 		floatValue, err := castedVal.Value().Float64()
 		if err != nil {
