@@ -401,6 +401,7 @@ func GetConsumerFromContext(ctx context.Context, topic string) (*ConsumerProvide
 		return nil, fmt.Errorf("consumer not found for topic %q, got: %T", topic, value)
 	}
 
+	panic("consumer PANIK")
 	return consumer, nil
 }
 

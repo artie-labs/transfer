@@ -37,8 +37,15 @@ func NewLogger(verbose bool, sentryCfg *config.Sentry, version string) (*slog.Lo
 			handler = slogmulti.Fanout(handler, slogsentry.Option{Level: slog.LevelError}.NewSentryHandler())
 			handlersToTerminate = append(handlersToTerminate, func() {
 				sentry.Flush(2 * time.Second)
+				slog.Info("hi")
 			})
 		}
+	} else {
+		slog.New(handler).Info("test sentry")
+
+		handlersToTerminate = append(handlersToTerminate, func() {
+			slog.Info("this would have been a sentry thingy")
+		})
 	}
 
 	return slog.New(handler), runHandlers

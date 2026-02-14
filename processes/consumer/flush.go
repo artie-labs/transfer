@@ -27,6 +27,7 @@ type Args struct {
 }
 
 func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, whClient *webhooksclient.Client, topics []string, args Args) error {
+	panic("less deep PANIk")
 	if inMemDB == nil {
 		return nil
 	}
@@ -50,6 +51,7 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 		return nil
 	}
 
+	panic("DEEP PANIk")
 	consumer, err := kafkalib.GetConsumerFromContext(ctx, topic)
 	if err != nil {
 		return fmt.Errorf("failed to get consumer from context: %w", err)

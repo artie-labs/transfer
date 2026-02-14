@@ -33,7 +33,6 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 		"groupID": p.GroupID,
 		"what":    "success",
 	}
-
 	st := time.Now()
 	// We are wrapping this in a defer function so that the values do not get immediately evaluated and miss with our actual process duration.
 	defer func() {
