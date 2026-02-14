@@ -31,6 +31,9 @@ type SharedDestinationColumnSettings struct {
 	// BigNumericForVariableNumeric - If enabled, we will use BigQuery's BIGNUMERIC type for variable numeric types.
 	// Note: this field also accepts the legacy YAML key "bigQueryNumericForVariableNumeric" for backward compatibility.
 	BigNumericForVariableNumeric bool `yaml:"bigQueryNumericForVariableNumeric"`
+	// [WriteRawBinaryValues] - If enabled, we will write raw binary values to the destination (e.g. BINARY column type)
+	// instead of storing them as Base64 encoded strings.
+	WriteRawBinaryValues bool `yaml:"writeRawBinaryValues"`
 }
 
 type SharedDestinationSettings struct {

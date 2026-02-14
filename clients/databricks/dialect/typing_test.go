@@ -15,6 +15,8 @@ func TestDatabricksDialect_DataTypeForKind(t *testing.T) {
 		// Strings:
 		typing.Struct: "STRING",
 		typing.String: "STRING",
+		// Bytes (WriteRawBinaryValues = false):
+		typing.Bytes: "STRING",
 		// Booleans:
 		typing.Boolean: "BOOLEAN",
 		// Numbers:
@@ -35,6 +37,12 @@ func TestDatabricksDialect_DataTypeForKind(t *testing.T) {
 		actual, err := DatabricksDialect{}.DataTypeForKind(kind, false, config.SharedDestinationColumnSettings{})
 		assert.NoError(t, err)
 		assert.Equal(t, expected, actual)
+	}
+	{
+		// Bytes with WriteRawBinaryValues = true
+		actual, err := DatabricksDialect{}.DataTypeForKind(typing.Bytes, false, config.SharedDestinationColumnSettings{WriteRawBinaryValues: true})
+		assert.NoError(t, err)
+		assert.Equal(t, "BINARY", actual)
 	}
 }
 
@@ -69,7 +77,7 @@ func TestDatabricksDialect_KindForDataType(t *testing.T) {
 		// Binary
 		kd, err := DatabricksDialect{}.KindForDataType("BINARY")
 		assert.NoError(t, err)
-		assert.Equal(t, typing.String, kd)
+		assert.Equal(t, typing.Bytes, kd)
 	}
 	{
 		// BigInt
