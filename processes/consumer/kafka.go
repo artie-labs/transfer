@@ -35,7 +35,12 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 		time.Sleep(jitter.Jitter(100, 3000, num))
 		wg.Add(1)
 		go func(topic string) {
-			defer wg.Done()
+			defer func() {
+				if x := recover(); x != nil {
+					logger.Fatal("Recovered from panic", slog.Any("err", x))
+				}
+				wg.Done()
+			}()
 			kafkaConsumer, err := kafkalib.GetConsumerFromContext(ctx, topic)
 			if err != nil {
 				logger.Fatal("Failed to get consumer from context", slog.Any("err", err))
