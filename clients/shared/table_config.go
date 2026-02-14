@@ -54,7 +54,7 @@ func (g GetTableCfgArgs) query(ctx context.Context) ([]columns.Column, error) {
 	for _, row := range rows {
 		col, err := g.buildColumnFromRow(row)
 		if err != nil {
-			return nil, fmt.Errorf("failed to build column from row: %w", err)
+			return nil, fmt.Errorf("failed to build column from row: %w, value: %v", err, row)
 		}
 
 		cols = append(cols, col)
