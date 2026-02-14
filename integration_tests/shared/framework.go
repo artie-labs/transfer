@@ -24,7 +24,7 @@ type TestFramework struct {
 	tableData   *optimization.TableData
 	topicConfig kafkalib.TopicConfig
 
-	dest    destination.Destination
+	dest    destination.SQLDestination
 	iceberg *iceberg.Store
 }
 
@@ -46,7 +46,7 @@ func (t TestFramework) MSSQL() bool {
 	return ok
 }
 
-func NewTestFramework(dest destination.Destination, _iceberg *iceberg.Store, topicConfig kafkalib.TopicConfig) *TestFramework {
+func NewTestFramework(dest destination.SQLDestination, _iceberg *iceberg.Store, topicConfig kafkalib.TopicConfig) *TestFramework {
 	var tableID sql.TableIdentifier
 	if _iceberg != nil {
 		tableID = _iceberg.IdentifierFor(topicConfig.BuildDatabaseAndSchemaPair(), topicConfig.TableName)
@@ -166,11 +166,11 @@ func (tf *TestFramework) GetTableID() sql.TableIdentifier {
 	return tf.tableID
 }
 
-func (tf *TestFramework) GetDestination() destination.Destination {
+func (tf *TestFramework) GetDestination() destination.SQLDestination {
 	return tf.dest
 }
 
-func (tf *TestFramework) GetBaseline() destination.Baseline {
+func (tf *TestFramework) GetBaseline() destination.Destination {
 	if tf.iceberg != nil {
 		return tf.iceberg
 	}

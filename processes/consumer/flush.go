@@ -26,7 +26,7 @@ type Args struct {
 	Reason string
 }
 
-func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, whClient *webhooksclient.Client, topics []string, args Args) error {
+func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client, whClient *webhooksclient.Client, topics []string, args Args) error {
 	if inMemDB == nil {
 		return nil
 	}
@@ -40,7 +40,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.B
 	return nil
 }
 
-func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client, whClient *webhooksclient.Client, args Args, topic string, shouldLock bool) error {
+func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client, whClient *webhooksclient.Client, args Args, topic string, shouldLock bool) error {
 	if inMemDB == nil {
 		return nil
 	}
@@ -142,7 +142,7 @@ type flushResult struct {
 	CommitOffset bool
 }
 
-func flush(ctx context.Context, dest destination.Baseline, _tableData *models.TableData, whClient *webhooksclient.Client) (flushResult, error) {
+func flush(ctx context.Context, dest destination.Destination, _tableData *models.TableData, whClient *webhooksclient.Client) (flushResult, error) {
 	// This is added so that we have a new temporary table suffix for each merge / append.
 	_tableData.ResetTempTableSuffix()
 

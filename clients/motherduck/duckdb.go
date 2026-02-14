@@ -82,7 +82,7 @@ func (s Store) QueryContextHttp(ctx context.Context, query string, args ...any) 
 	return response, nil
 }
 
-// QueryContext is a stub to satisfy the destination.Destination interface
+// QueryContext is a stub to satisfy the destination.SQLDestination interface
 // This should never be called since we override GetTableConfig with our custom implementation
 func (s Store) QueryContext(ctx context.Context, query string, args ...any) (*goSql.Rows, error) {
 	return nil, fmt.Errorf("QueryContext is not implemented for MotherDuck - use QueryContextHttp methods instead")

@@ -3,7 +3,6 @@ package redis
 import (
 	"context"
 	"crypto/tls"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -13,8 +12,6 @@ import (
 
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/db"
-	"github.com/artie-labs/transfer/lib/destination"
-	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	sqllib "github.com/artie-labs/transfer/lib/sql"
@@ -29,7 +26,6 @@ const (
 type Store struct {
 	config      config.Config
 	redisClient *redis.Client
-	configMap   *types.DestinationTableConfigMap
 }
 
 func (s *Store) GetConfig() config.Config {
@@ -46,44 +42,6 @@ func (s *Store) Validate() error {
 
 func (s *Store) IdentifierFor(topicConfig kafkalib.DatabaseAndSchemaPair, table string) sqllib.TableIdentifier {
 	return NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table)
-}
-
-func (s *Store) Dialect() sqllib.Dialect {
-	// Redis doesn't use SQL dialects
-	return nil
-}
-
-func (s *Store) Dedupe(_ context.Context, _ sqllib.TableIdentifier, _ kafkalib.DatabaseAndSchemaPair, _ []string, _ bool) error {
-	return fmt.Errorf("dedupe is not supported for Redis")
-}
-
-func (s *Store) GetTableConfig(_ context.Context, tableID sqllib.TableIdentifier, _ bool) (*types.DestinationTableConfig, error) {
-	tableConfig := s.configMap.GetTableConfig(tableID)
-	if tableConfig == nil {
-		tableConfig = types.NewDestinationTableConfig(nil, false)
-		s.configMap.AddTable(tableID, tableConfig)
-	}
-	return tableConfig, nil
-}
-
-func (s *Store) SweepTemporaryTables(_ context.Context, _ *webhooksclient.Client) error {
-	return nil
-}
-
-func (s *Store) ExecContext(_ context.Context, _ string, _ ...any) (sql.Result, error) {
-	return nil, fmt.Errorf("ExecContext is not supported for Redis")
-}
-
-func (s *Store) QueryContext(_ context.Context, _ string, _ ...any) (*sql.Rows, error) {
-	return nil, fmt.Errorf("QueryContext is not supported for Redis")
-}
-
-func (s *Store) Begin(_ context.Context) (*sql.Tx, error) {
-	return nil, fmt.Errorf("transactions are not supported for Redis")
-}
-
-func (s *Store) LoadDataIntoTable(_ context.Context, _ *optimization.TableData, _ *types.DestinationTableConfig, _, _ sqllib.TableIdentifier, _ types.AdditionalSettings, _ bool) error {
-	return fmt.Errorf("LoadDataIntoTable is not supported for Redis")
 }
 
 func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, _ bool) error {
@@ -234,12 +192,10 @@ func (s *Store) DropTable(ctx context.Context, tableID sqllib.TableIdentifier) e
 		slog.String("stream", streamKey),
 	)
 
-	s.configMap.RemoveTable(tableID)
-
 	return nil
 }
 
-func LoadStore(ctx context.Context, cfg config.Config, _ *db.Store) (destination.Destination, error) {
+func LoadStore(ctx context.Context, cfg config.Config) (*Store, error) {
 	if cfg.Redis == nil {
 		return nil, fmt.Errorf("redis config is nil")
 	}
@@ -271,7 +227,6 @@ func LoadStore(ctx context.Context, cfg config.Config, _ *db.Store) (destination
 	store := &Store{
 		config:      cfg,
 		redisClient: rdb,
-		configMap:   &types.DestinationTableConfigMap{},
 	}
 
 	if err := store.Validate(); err != nil {

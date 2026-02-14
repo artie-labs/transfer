@@ -95,7 +95,7 @@ func (e *EventsTestSuite) TestBuildSoftPartitionSuffix() {
 		}
 
 		// Create a mock destination that returns existing table config
-		mockDest := &mocks.FakeDestination{}
+		mockDest := &mocks.FakeSQLDestination{}
 		mockTableConfig := types.NewDestinationTableConfig(nil, false) // Table exists (not empty columns)
 		mockDest.GetTableConfigReturns(mockTableConfig, nil)
 
@@ -125,7 +125,7 @@ func (e *EventsTestSuite) TestBuildSoftPartitionSuffix() {
 		executionTime := baseTime
 
 		// Create a mock destination that returns new table config
-		mockDest := &mocks.FakeDestination{}
+		mockDest := &mocks.FakeSQLDestination{}
 		mockTableConfig := types.NewDestinationTableConfig([]columns.Column{}, false) // Table doesn't exist (empty columns)
 		mockDest.GetTableConfigReturns(mockTableConfig, nil)
 
@@ -151,7 +151,7 @@ func (e *EventsTestSuite) TestBuildSoftPartitionSuffix() {
 		sameTime := baseTime
 		executionTime := sameTime
 
-		mockDest := &mocks.FakeDestination{}
+		mockDest := &mocks.FakeSQLDestination{}
 		mockTableConfig := types.NewDestinationTableConfig([]columns.Column{}, false) // Table doesn't exist (empty columns)
 		mockDest.GetTableConfigReturns(mockTableConfig, nil)
 
@@ -200,7 +200,7 @@ func (e *EventsTestSuite) TestBuildSoftPartitionSuffix() {
 			pastTime := baseTime.Add(-25 * time.Hour) // 25 hours ago, so distance > 0 for daily partitioning
 			executionTime := baseTime
 
-			mockDest := &mocks.FakeDestination{}
+			mockDest := &mocks.FakeSQLDestination{}
 			mockDest.GetTableConfigReturns(nil, fmt.Errorf("database connection failed"))
 
 			suffix, err := BuildSoftPartitionSuffix(ctx, tc, pastTime, executionTime, "users", mockDest)
