@@ -17,7 +17,7 @@ func TestGetPrimaryKey(t *testing.T) {
 		// Test JSON key format with numeric ID
 		pkMap, err := Debezium{}.GetPrimaryKey([]byte(`{"id": 1001}`), kafkalib.TopicConfig{CDCKeyFormat: kafkalib.JSONKeyFmt}, nil)
 		assert.NoError(t, err)
-		assert.Equal(t, float64(1001), pkMap["_id"])
+		assert.Equal(t, int32(1001), pkMap["_id"])
 
 		// The `id` column should not exist anymore
 		_, ok := pkMap["id"]

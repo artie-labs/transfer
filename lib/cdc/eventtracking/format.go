@@ -3,15 +3,12 @@ package eventtracking
 import (
 	"fmt"
 
-	jsoniter "github.com/json-iterator/go"
-
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/jsonutil"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
-
-var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 type Format struct{}
 
@@ -21,7 +18,7 @@ func (Format) GetEventFromBytes(bytes []byte) (cdc.Event, error) {
 	}
 
 	var payload EventPayload
-	if err := json.Unmarshal(bytes, &payload); err != nil {
+	if err := jsonutil.Unmarshal(bytes, &payload); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal json: %w", err)
 	}
 

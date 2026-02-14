@@ -1,6 +1,7 @@
 package primitives
 
 import (
+	"encoding/json"
 	"math"
 	"testing"
 
@@ -118,6 +119,23 @@ func TestInt64Converter_Convert(t *testing.T) {
 			assert.ErrorContains(t, err, "has fractional component")
 		}
 	}
+	{
+		// json.Number - valid integer
+		got, err := converter.Convert(json.Number("42"))
+		assert.NoError(t, err)
+		assert.Equal(t, int64(42), got)
+	}
+	{
+		// json.Number - large int64
+		got, err := converter.Convert(json.Number("9223372036854775806"))
+		assert.NoError(t, err)
+		assert.Equal(t, int64(9223372036854775806), got)
+	}
+	{
+		// json.Number - invalid (float with fraction)
+		_, err := converter.Convert(json.Number("42.5"))
+		assert.Error(t, err)
+	}
 }
 
 func TestBooleanConverter_Convert(t *testing.T) {
@@ -169,6 +187,18 @@ func TestFloat32Converter_Convert(t *testing.T) {
 		actual, err := converter.Convert("1.1")
 		assert.NoError(t, err)
 		assert.Equal(t, float32(1.1), actual)
+	}
+	{
+		// json.Number
+		actual, err := converter.Convert(json.Number("1.1"))
+		assert.NoError(t, err)
+		assert.Equal(t, float32(1.1), actual)
+	}
+	{
+		// json.Number - integer
+		actual, err := converter.Convert(json.Number("42"))
+		assert.NoError(t, err)
+		assert.Equal(t, float32(42), actual)
 	}
 	{
 		// Irrelevant
