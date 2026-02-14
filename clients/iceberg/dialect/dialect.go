@@ -179,7 +179,7 @@ func (IcebergDialect) BuildAddColumnQuery(tableID sql.TableIdentifier, sqlPart s
 
 // https://spark.apache.org/docs/3.5.3/sql-ref-syntax-ddl-alter-table.html#drop-columns
 func (IcebergDialect) BuildDropColumnQuery(tableID sql.TableIdentifier, colName string) string {
-	return fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s", tableID.FullyQualifiedName(), colName)
+	return sql.DefaultBuildDropColumnQuery(tableID, colName)
 }
 
 func (IcebergDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (string, []interface{}, error) {
@@ -199,13 +199,13 @@ func (IcebergDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, _ bool,
 }
 
 func (IcebergDialect) BuildDropTableQuery(tableID sql.TableIdentifier) string {
-	return fmt.Sprintf("DROP TABLE IF EXISTS %s", tableID.FullyQualifiedName())
+	return sql.DefaultBuildDropTableQuery(tableID)
 }
 
 func (IcebergDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) string {
 	// Spark 3.3 (released in 2023) supports TRUNCATE TABLE.
 	// If we need to support an older version later, we can use DELETE FROM.
-	return fmt.Sprintf("TRUNCATE TABLE %s", tableID.FullyQualifiedName())
+	return sql.DefaultBuildTruncateTableQuery(tableID)
 }
 
 func getCSVOptions(fp string) string {

@@ -104,11 +104,11 @@ func (ClickhouseDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, temp
 }
 
 func (ClickhouseDialect) BuildDropTableQuery(tableID sql.TableIdentifier) string {
-	return fmt.Sprintf("DROP TABLE IF EXISTS %s", tableID.FullyQualifiedName())
+	return sql.DefaultBuildDropTableQuery(tableID)
 }
 
 func (ClickhouseDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) string {
-	return fmt.Sprintf("TRUNCATE TABLE %s", tableID.FullyQualifiedName())
+	return sql.DefaultBuildTruncateTableQuery(tableID)
 }
 
 func (ClickhouseDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (string, []any, error) {

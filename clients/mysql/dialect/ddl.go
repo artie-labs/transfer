@@ -41,11 +41,11 @@ func (MySQLDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (string
 }
 
 func (MySQLDialect) BuildAddColumnQuery(tableID sql.TableIdentifier, sqlPart string) string {
-	return fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s", tableID.FullyQualifiedName(), sqlPart)
+	return sql.DefaultBuildAddColumnQuery(tableID, sqlPart)
 }
 
 func (MySQLDialect) BuildDropColumnQuery(tableID sql.TableIdentifier, colName string) string {
-	return fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s", tableID.FullyQualifiedName(), colName)
+	return sql.DefaultBuildDropColumnQuery(tableID, colName)
 }
 
 func (MySQLDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, _ bool, _ config.Mode, colSQLParts []string) string {
@@ -55,9 +55,9 @@ func (MySQLDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, _ bool, _
 }
 
 func (MySQLDialect) BuildDropTableQuery(tableID sql.TableIdentifier) string {
-	return "DROP TABLE IF EXISTS " + tableID.FullyQualifiedName()
+	return sql.DefaultBuildDropTableQuery(tableID)
 }
 
 func (MySQLDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) string {
-	return "TRUNCATE TABLE " + tableID.FullyQualifiedName()
+	return sql.DefaultBuildTruncateTableQuery(tableID)
 }
