@@ -5,14 +5,11 @@ import (
 	"slices"
 	"strings"
 
-	jsoniter "github.com/json-iterator/go"
-
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/jsonutil"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
-
-var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 const (
 	stringPrefix = "Struct{"
@@ -103,7 +100,7 @@ func parsePartitionKeyStruct(keyBytes []byte, reservedColumns map[string]bool) (
 	}
 
 	var pkStruct map[string]any
-	if err := json.Unmarshal(keyBytes, &pkStruct); err != nil {
+	if err := jsonutil.Unmarshal(keyBytes, &pkStruct); err != nil {
 		return nil, fmt.Errorf("failed to json unmarshal into map[string]any: %w", err)
 	}
 
@@ -119,7 +116,7 @@ func parsePartitionKeyStruct(keyBytes []byte, reservedColumns map[string]bool) (
 
 	// If it does have a `payload` object, it should also have a schema object.
 	var primaryKeyPayload PrimaryKeyPayload
-	if err := json.Unmarshal(keyBytes, &primaryKeyPayload); err != nil {
+	if err := jsonutil.Unmarshal(keyBytes, &primaryKeyPayload); err != nil {
 		return nil, fmt.Errorf("failed to json unmarshal into PrimaryKeyPayload: %w", err)
 	}
 

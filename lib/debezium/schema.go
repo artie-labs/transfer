@@ -178,7 +178,12 @@ func (f Field) ToKindDetails(cfg config.SharedDestinationSettings) (typing.KindD
 		return typing.Struct, nil
 	case Int8, Int16, Int32, Int64:
 		return typing.Integer, nil
-	case String, Bytes:
+	case String:
+		return typing.String, nil
+	case Bytes:
+		if cfg.ColumnSettings.WriteRawBinaryValues {
+			return typing.Bytes, nil
+		}
 		return typing.String, nil
 	case Struct:
 		return typing.Struct, nil

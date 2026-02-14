@@ -68,6 +68,10 @@ var (
 		Kind: "string",
 	}
 
+	Bytes = KindDetails{
+		Kind: "bytes",
+	}
+
 	// Time data types
 	Date = KindDetails{
 		Kind: "date",
