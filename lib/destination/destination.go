@@ -7,6 +7,7 @@ import (
 	"log/slog"
 
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -63,30 +64,24 @@ func ExecContextStatements(ctx context.Context, dest SQLDestination, statements 
 		if err != nil {
 			return nil, fmt.Errorf("failed to start tx: %w", err)
 		}
-		var committed bool
-		defer func() {
-			if !committed {
-				if rollbackErr := tx.Rollback(); rollbackErr != nil {
-					slog.Warn("Unable to rollback", slog.Any("err", rollbackErr))
-				}
-			}
-		}()
 
 		var results []sql.Result
-		for _, statement := range statements {
-			slog.Debug("Executing...", slog.String("query", statement))
-			result, err := tx.ExecContext(ctx, statement)
-			if err != nil {
-				return nil, fmt.Errorf("failed to execute statement: %q, err: %w", statement, err)
+		if err := db.CommitOrRollback(tx, func(tx *sql.Tx) error {
+			for _, statement := range statements {
+				slog.Debug("Executing...", slog.String("query", statement))
+				result, err := tx.ExecContext(ctx, statement)
+				if err != nil {
+					return fmt.Errorf("failed to execute statement: %q, err: %w", statement, err)
+				}
+
+				results = append(results, result)
 			}
 
-			results = append(results, result)
+			return nil
+		}); err != nil {
+			return nil, err
 		}
 
-		if err = tx.Commit(); err != nil {
-			return nil, fmt.Errorf("failed to commit statements: %v, err: %w", statements, err)
-		}
-		committed = true
 		return results, nil
 	}
 }

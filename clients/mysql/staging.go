@@ -4,11 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log/slog"
 	"slices"
 	"strings"
 
 	"github.com/artie-labs/transfer/clients/shared"
+	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 	libsql "github.com/artie-labs/transfer/lib/sql"
@@ -39,35 +39,23 @@ func (s *Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.T
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 
-	var txCommitted bool
-	defer func() {
-		if !txCommitted {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				slog.Warn("Failed to rollback transaction", slog.Any("error", rollbackErr))
+	return db.CommitOrRollback(tx, func(tx *sql.Tx) error {
+		var rowsLoaded int64
+		for batch := range slices.Chunk(rows, batchSize) {
+			affected, err := s.executeBatchInsert(ctx, tx, tableID, cols, batch)
+			if err != nil {
+				return fmt.Errorf("failed to execute batch insert: %w", err)
 			}
-		}
-	}()
 
-	var rowsLoaded int64
-	for batch := range slices.Chunk(rows, batchSize) {
-		affected, err := s.executeBatchInsert(ctx, tx, tableID, cols, batch)
-		if err != nil {
-			return fmt.Errorf("failed to execute batch insert: %w", err)
+			rowsLoaded += affected
 		}
 
-		rowsLoaded += affected
-	}
+		if expectedRows := int64(tableData.NumberOfRows()); rowsLoaded != expectedRows {
+			return fmt.Errorf("expected %d rows to be loaded, but got %d", expectedRows, rowsLoaded)
+		}
 
-	if expectedRows := int64(tableData.NumberOfRows()); rowsLoaded != expectedRows {
-		return fmt.Errorf("expected %d rows to be loaded, but got %d", expectedRows, rowsLoaded)
-	}
-
-	if err = tx.Commit(); err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
-	}
-
-	txCommitted = true
-	return nil
+		return nil
+	})
 }
 
 // executeBatchInsert executes a batch INSERT statement for the given rows.
