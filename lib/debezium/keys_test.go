@@ -1,6 +1,7 @@
 package debezium
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -78,7 +79,7 @@ func TestParsePartitionKeyStruct(t *testing.T) {
 		// No schema.
 		keys, err := parsePartitionKeyStruct([]byte(`{"id": 47}`), nil)
 		assert.NoError(t, err)
-		assert.Equal(t, float64(47), keys["id"])
+		assert.Equal(t, json.Number("47"), keys["id"])
 
 		keys, err = parsePartitionKeyStruct([]byte(`{"uuid": "d4a5bc26-9ae6-4dd4-8894-39cbcd2d526c", "FOO": "bar"}`), nil)
 		assert.NoError(t, err)

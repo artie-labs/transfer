@@ -23,7 +23,7 @@ type SQLDestination interface {
 	SweepTemporaryTables(ctx context.Context, whClient *webhooksclient.Client) error
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
 	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
-	Begin() (*sql.Tx, error)
+	Begin(ctx context.Context) (*sql.Tx, error)
 
 	// Helper functions for merge
 	GetTableConfig(ctx context.Context, tableID sqllib.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error)
@@ -59,7 +59,7 @@ func ExecContextStatements(ctx context.Context, dest SQLDestination, statements 
 
 		return []sql.Result{result}, nil
 	default:
-		tx, err := dest.Begin()
+		tx, err := dest.Begin(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to start tx: %w", err)
 		}

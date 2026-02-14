@@ -49,7 +49,9 @@ func (s Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error
 }
 
 func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client) (bool, error) {
-	if err := shared.Merge(ctx, s, tableData, types.MergeOpts{}, whClient); err != nil {
+	if err := shared.Merge(ctx, s, tableData, types.MergeOpts{
+		ColumnSettings: s.cfg.SharedDestinationSettings.ColumnSettings,
+	}, whClient); err != nil {
 		return false, fmt.Errorf("failed to merge: %w", err)
 	}
 
@@ -57,7 +59,9 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whC
 }
 
 func (s Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, _ bool) error {
-	return shared.Append(ctx, s, tableData, whClient, types.AdditionalSettings{})
+	return shared.Append(ctx, s, tableData, whClient, types.AdditionalSettings{
+		ColumnSettings: s.cfg.SharedDestinationSettings.ColumnSettings,
+	})
 }
 
 func (s Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, table string) sql.TableIdentifier {
@@ -152,6 +156,14 @@ func (s Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.Ta
 		switch column.KindDetails.Kind {
 		case typing.Array.Kind:
 			ordinalColumn = fmt.Sprintf(`PARSE_JSON(%s)`, ordinalColumn)
+		case typing.Bytes.Kind:
+			// The column kind is typing.Bytes (destination column is BINARY), so we always need to decode
+			// the base64 transport encoding from the CSV staging file.
+			// However, TOAST placeholders are written as plain strings — we must preserve them as-is
+			// (cast to BINARY) so that BuildIsNotToastValueExpression can detect them via CAST(col AS STRING).
+			ordinalColumn = fmt.Sprintf(`IF(%s = '%s', CAST(%s AS BINARY), UNBASE64(%s))`,
+				ordinalColumn, constants.ToastUnavailableValuePlaceholder, ordinalColumn, ordinalColumn,
+			)
 		}
 
 		sourceColumns = append(sourceColumns, ordinalColumn)
@@ -253,7 +265,7 @@ func BuildDatabricksSQL(dbCfg config.Databricks) (*gosql.DB, error) {
 	return gosql.OpenDB(connector), nil
 }
 
-func LoadStore(cfg config.Config) (Store, error) {
+func LoadStore(_ context.Context, cfg config.Config) (Store, error) {
 	if err := cfg.Databricks.Validate(); err != nil {
 		return Store{}, fmt.Errorf("invalid Databricks config: %w", err)
 	}

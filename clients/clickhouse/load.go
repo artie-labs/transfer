@@ -2,6 +2,7 @@ package clickhouse
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -55,7 +56,7 @@ func (s Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.Ta
 		strings.Join(placeholders, ", "),
 	)
 
-	tx, err := s.Begin()
+	tx, err := s.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
@@ -193,6 +194,8 @@ func parseValue(value any, col columns.Column) (any, error) {
 			return int64(v), nil
 		case float32:
 			return int64(v), nil
+		case json.Number:
+			return v.Int64()
 		case string:
 			return v, nil // ClickHouse can parse strings to ints
 		default:
@@ -205,6 +208,8 @@ func parseValue(value any, col columns.Column) (any, error) {
 			return v, nil
 		case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
 			return v, nil
+		case json.Number:
+			return v.Float64()
 		case string:
 			return v, nil // ClickHouse can parse strings to floats
 		default:
@@ -219,6 +224,8 @@ func parseValue(value any, col columns.Column) (any, error) {
 		switch v := value.(type) {
 		case float64, float32, string:
 			return v, nil
+		case json.Number:
+			return v.String(), nil
 		default:
 			return fmt.Sprint(value), nil
 		}

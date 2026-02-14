@@ -42,11 +42,11 @@ func (RedshiftDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (str
 }
 
 func (RedshiftDialect) BuildAddColumnQuery(tableID sql.TableIdentifier, sqlPart string) string {
-	return fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s", tableID.FullyQualifiedName(), sqlPart)
+	return sql.DefaultBuildAddColumnQuery(tableID, sqlPart)
 }
 
 func (RedshiftDialect) BuildDropColumnQuery(tableID sql.TableIdentifier, colName string) string {
-	return fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s", tableID.FullyQualifiedName(), colName)
+	return sql.DefaultBuildDropColumnQuery(tableID, colName)
 }
 
 func (RedshiftDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, _ bool, _ config.Mode, colSQLParts []string) string {
@@ -55,9 +55,9 @@ func (RedshiftDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, _ bool
 }
 
 func (RedshiftDialect) BuildDropTableQuery(tableID sql.TableIdentifier) string {
-	return "DROP TABLE IF EXISTS " + tableID.FullyQualifiedName()
+	return sql.DefaultBuildDropTableQuery(tableID)
 }
 
 func (RedshiftDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) string {
-	return "TRUNCATE TABLE " + tableID.FullyQualifiedName()
+	return sql.DefaultBuildTruncateTableQuery(tableID)
 }
