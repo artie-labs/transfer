@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"maps"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -199,6 +200,10 @@ func NewClient(url string, config map[string]any, jars []string, heartbeatTimeou
 }
 
 func (c *Client) WithPriorityClient() *Client {
+	if strings.HasSuffix(c.sessionName, "-priority") {
+		return c
+	}
+
 	// Check if the current config has [SparkDriverSelector]
 	selectorValue, ok := c.sessionConf[SparkDriverSelector]
 	if !ok {
