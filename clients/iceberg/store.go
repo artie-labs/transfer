@@ -238,8 +238,9 @@ func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kaf
 	}
 
 	queries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt)
+	priorityClient := s.apacheLivyClient.WithPriorityClient()
 	for _, query := range queries {
-		if err := s.apacheLivyClient.ExecContext(ctx, query); err != nil {
+		if err := priorityClient.ExecContext(ctx, query); err != nil {
 			return fmt.Errorf("failed to execute dedupe query: %w", err)
 		}
 	}
@@ -281,7 +282,7 @@ func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {
 
 	switch {
 	case cfg.Iceberg.S3Tables != nil:
-		store, err = loadS3TablesStore(ctx, cfg)
+		store, err = loadS3TablesStore(cfg)
 	case cfg.Iceberg.RestCatalog != nil:
 		store, err = loadRestCatalogStore(ctx, cfg)
 	default:
@@ -307,9 +308,8 @@ func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {
 	return store, nil
 }
 
-func loadS3TablesStore(ctx context.Context, cfg config.Config) (Store, error) {
-	apacheLivyClient, err := apachelivy.NewClient(
-		ctx,
+func loadS3TablesStore(cfg config.Config) (Store, error) {
+	apacheLivyClient := apachelivy.NewClient(
 		cfg.Iceberg.ApacheLivyURL,
 		cfg.Iceberg.S3Tables.ApacheLivyConfig(),
 		cfg.Iceberg.S3Tables.SessionJars,
@@ -318,9 +318,6 @@ func loadS3TablesStore(ctx context.Context, cfg config.Config) (Store, error) {
 		cfg.Iceberg.SessionExecutorMemory,
 		cfg.Iceberg.SessionName,
 	)
-	if err != nil {
-		return Store{}, err
-	}
 
 	awsCfg := awslib.NewConfigWithCredentialsAndRegion(
 		credentials.NewStaticCredentialsProvider(cfg.Iceberg.S3Tables.AwsAccessKeyID, cfg.Iceberg.S3Tables.AwsSecretAccessKey, ""),
@@ -343,8 +340,7 @@ func loadRestCatalogStore(ctx context.Context, cfg config.Config) (Store, error)
 		return Store{}, fmt.Errorf("invalid rest catalog configuration: %w", err)
 	}
 
-	apacheLivyClient, err := apachelivy.NewClient(
-		ctx,
+	apacheLivyClient := apachelivy.NewClient(
 		cfg.Iceberg.ApacheLivyURL,
 		restCfg.ApacheLivyConfig(),
 		restCfg.SessionJars,
@@ -353,9 +349,6 @@ func loadRestCatalogStore(ctx context.Context, cfg config.Config) (Store, error)
 		cfg.Iceberg.SessionExecutorMemory,
 		cfg.Iceberg.SessionName,
 	)
-	if err != nil {
-		return Store{}, err
-	}
 
 	catalogCfg := icebergcatalog.Config{
 		URI:        restCfg.URI,
