@@ -7,7 +7,11 @@ import (
 	"strings"
 )
 
-const ErrTooManySessionsCreated = "Rejected, too many sessions are being created!"
+const (
+	ErrTooManySessionsCreated = "Rejected, too many sessions are being created!"
+	SparkDriverSelector       = "spark.kubernetes.driver.node.selector.capacity"
+	SparkExecutorSelector     = "spark.kubernetes.executor.node.selector.capacity"
+)
 
 // SessionKind - https://livy.incubator.apache.org/docs/latest/rest-api.html#session-kind
 type SessionKind string
