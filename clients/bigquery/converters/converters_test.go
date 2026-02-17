@@ -163,7 +163,7 @@ func TestInt64Converter_Convert(t *testing.T) {
 	{
 		// Invalid
 		_, err := converter.Convert("foo")
-		assert.ErrorContains(t, err, "expected int/int32/int64/float32/float64/json.Number/*decimal.Decimal received string with value foo")
+		assert.ErrorContains(t, err, "unexpected data type - received string with value foo")
 	}
 }
 
