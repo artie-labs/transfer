@@ -212,8 +212,8 @@ func (c *Client) WithPriorityClient() *Client {
 	}
 
 	// Now check if [SparkExecutorSelector] is also set
-	if _, ok = c.sessionConf[SparkExecutorSelector]; ok {
-		// If both selectors are already set, this is a priority client, so just return the same client.
+	if val := c.sessionConf[SparkExecutorSelector]; selectorValue == val {
+		// If both selectors are set to the same value, this is a priority client, so just return the same client.
 		return c
 	}
 
