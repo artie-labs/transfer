@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"errors"
 	"io"
 	"log/slog"
@@ -13,6 +14,7 @@ var retryableErrs = []error{
 	syscall.ECONNREFUSED,
 	io.EOF,
 	syscall.ETIMEDOUT,
+	context.DeadlineExceeded,
 }
 
 // IsRetryableError checks for common retryable errors. (example: network errors)
