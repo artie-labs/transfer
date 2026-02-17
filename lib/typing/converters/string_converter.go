@@ -353,9 +353,13 @@ func truncateDecimalString(s string, maxScale *int32) string {
 		return s
 	}
 
-	// Don't truncate scientific notation values.
+	// Convert scientific notation to fixed-point notation so we can truncate properly.
 	if strings.ContainsAny(s, "eE") {
-		return s
+		d, _, err := apd.NewFromString(s)
+		if err != nil {
+			return s
+		}
+		s = d.Text('f')
 	}
 
 	dotIdx := strings.IndexByte(s, '.')
