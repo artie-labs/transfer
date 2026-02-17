@@ -81,7 +81,7 @@ func (s Store) append(ctx context.Context, tableData *optimization.TableData, wh
 	}
 
 	tableID := s.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name())
-	tempTableID := shared.TempTableIDWithSuffix(s.IdentifierFor(tableData.TopicConfig().BuildStagingDatabaseAndSchemaPair(), tableData.Name()), tableData.TempTableSuffix())
+	tempTableID := shared.TempTableIDWithSuffix(s, s.IdentifierFor(tableData.TopicConfig().BuildStagingDatabaseAndSchemaPair(), tableData.Name()), tableData.TempTableSuffix())
 	tableConfig, err := s.GetTableConfig(ctx, tableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
 		return fmt.Errorf("failed to get table config: %w", err)
@@ -173,7 +173,7 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whC
 	}
 
 	tableID := s.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name())
-	temporaryTableID := shared.TempTableIDWithSuffix(s.IdentifierFor(tableData.TopicConfig().BuildStagingDatabaseAndSchemaPair(), tableData.Name()), tableData.TempTableSuffix())
+	temporaryTableID := shared.TempTableIDWithSuffix(s, s.IdentifierFor(tableData.TopicConfig().BuildStagingDatabaseAndSchemaPair(), tableData.Name()), tableData.TempTableSuffix())
 	tableConfig, err := s.GetTableConfig(ctx, tableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
 		return false, fmt.Errorf("failed to get table config: %w", err)

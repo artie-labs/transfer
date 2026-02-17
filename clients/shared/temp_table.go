@@ -18,7 +18,7 @@ import (
 )
 
 func TempTableID(dest destination.Destination, tableID sql.TableIdentifier) sql.TableIdentifier {
-	return TempTableIDWithSuffix(tableID, strings.ToLower(stringutil.Random(5)))
+	return TempTableIDWithSuffix(dest, tableID, strings.ToLower(stringutil.Random(5)))
 }
 
 func TempTableIDWithSuffix(dest destination.Destination, tableID sql.TableIdentifier, suffix string) sql.TableIdentifier {
