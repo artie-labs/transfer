@@ -36,6 +36,10 @@ type Store struct {
 	retryConfig retry.RetryConfig
 }
 
+func (s Store) Label() constants.DestinationKind {
+	return s.cfg.Output
+}
+
 func (s Store) GetConfig() config.Config {
 	return s.cfg
 }
