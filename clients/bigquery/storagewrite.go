@@ -185,7 +185,7 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 		case typing.EDecimal.Kind:
 			converter := libconverters.DecimalConverter{}
 			if config.SharedDestinationSettings.TruncateExceededValues {
-				if column.KindDetails.ExtendedDecimalDetails != nil {
+				if !column.KindDetails.DecimalDetailsNotSet() {
 					converter.MaxScale = typing.ToPtr(column.KindDetails.ExtendedDecimalDetails.Scale())
 				} else if config.SharedDestinationSettings.ColumnSettings.BigNumericForVariableNumeric {
 					// BIGNUMERIC max scale is 38.
