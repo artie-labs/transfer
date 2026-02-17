@@ -390,6 +390,30 @@ func TestDecimalConverter_Convert_MaxScale(t *testing.T) {
 		assert.Equal(t, "3.14159", val)
 	}
 	{
+		// *decimal.Decimal exceeding bigquery's BIGNUMERIC: 40 decimal places truncated to 38
+		val, err := DecimalConverter{MaxScale: typing.ToPtr[int32](38)}.Convert(decimal.NewDecimal(numbers.MustParseDecimal("0.6166544274804102263885518590124032368961")))
+		assert.NoError(t, err)
+		assert.Equal(t, "0.61665442748041022638855185901240323689", val)
+	}
+	{
+		// *decimal.Decimal with precision set (as Debezium would via NewDecimalWithPrecision)
+		val, err := DecimalConverter{MaxScale: typing.ToPtr[int32](38)}.Convert(decimal.NewDecimalWithPrecision(numbers.MustParseDecimal("0.6166544274804102263885518590124032368961"), 42))
+		assert.NoError(t, err)
+		assert.Equal(t, "0.61665442748041022638855185901240323689", val)
+	}
+	{
+		// *decimal.Decimal with scale already within limit - no truncation
+		val, err := DecimalConverter{MaxScale: typing.ToPtr[int32](38)}.Convert(decimal.NewDecimal(numbers.MustParseDecimal("123456.789")))
+		assert.NoError(t, err)
+		assert.Equal(t, "123456.789", val)
+	}
+	{
+		// *decimal.Decimal negative value with excess scale
+		val, err := DecimalConverter{MaxScale: typing.ToPtr[int32](38)}.Convert(decimal.NewDecimal(numbers.MustParseDecimal("-0.6166544274804102263885518590124032368961")))
+		assert.NoError(t, err)
+		assert.Equal(t, "-0.61665442748041022638855185901240323689", val)
+	}
+	{
 		// nil MaxScale means no truncation
 		val, err := DecimalConverter{MaxScale: nil}.Convert("1.1234567890123456789012345678901234567890")
 		assert.NoError(t, err)
