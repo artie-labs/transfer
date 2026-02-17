@@ -186,13 +186,13 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 			converter := libconverters.DecimalConverter{}
 			if config.SharedDestinationSettings.TruncateExceededValues {
 				if column.KindDetails.ExtendedDecimalDetails != nil {
-					converter.MaxScale = column.KindDetails.ExtendedDecimalDetails.Scale()
+					converter.MaxScale = typing.ToPtr(column.KindDetails.ExtendedDecimalDetails.Scale())
 				} else if config.SharedDestinationSettings.ColumnSettings.BigNumericForVariableNumeric {
 					// BIGNUMERIC max scale is 38.
-					converter.MaxScale = 38
+					converter.MaxScale = typing.ToPtr[int32](38)
 				} else {
 					// NUMERIC max scale is 9.
-					converter.MaxScale = 9
+					converter.MaxScale = typing.ToPtr[int32](9)
 				}
 			}
 

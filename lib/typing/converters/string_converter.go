@@ -308,9 +308,10 @@ func (FloatConverter) Convert(value any) (string, error) {
 }
 
 type DecimalConverter struct {
-	// MaxScale - If set to a positive value, the converted decimal string will be truncated to this many digits after
+	// MaxScale - If non-nil, the converted decimal string will be truncated to this many digits after
 	// the decimal point. This is useful when the destination has a maximum scale (e.g. BigQuery BIGNUMERIC max scale = 38).
-	MaxScale int32
+	// A nil value means no truncation; a pointer to 0 means truncate to zero decimal places.
+	MaxScale *int32
 }
 
 func (d DecimalConverter) Convert(value any) (string, error) {
@@ -346,9 +347,9 @@ func (d DecimalConverter) Convert(value any) (string, error) {
 }
 
 // truncateDecimalString truncates the decimal portion of a numeric string to the specified number of digits.
-// If maxScale is <= 0, no truncation is performed.
-func truncateDecimalString(s string, maxScale int32) string {
-	if maxScale <= 0 {
+// If maxScale is nil, no truncation is performed. A zero value truncates all decimal places.
+func truncateDecimalString(s string, maxScale *int32) string {
+	if maxScale == nil {
 		return s
 	}
 
@@ -363,11 +364,15 @@ func truncateDecimalString(s string, maxScale int32) string {
 	}
 
 	currentScale := int32(len(s) - dotIdx - 1)
-	if currentScale <= maxScale {
+	if currentScale <= *maxScale {
 		return s
 	}
 
-	return s[:dotIdx+1+int(maxScale)]
+	if *maxScale == 0 {
+		return s[:dotIdx]
+	}
+
+	return s[:dotIdx+1+int(*maxScale)]
 }
 
 type StructConverter struct{}

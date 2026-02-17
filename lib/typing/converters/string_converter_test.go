@@ -343,96 +343,105 @@ func TestDecimalConverter_Convert(t *testing.T) {
 func TestDecimalConverter_Convert_MaxScale(t *testing.T) {
 	{
 		// String with 40 decimal places truncated to 38 (BIGNUMERIC max)
-		val, err := DecimalConverter{MaxScale: 38}.Convert("1.1234567890123456789012345678901234567890")
+		val, err := DecimalConverter{MaxScale: typing.ToPtr[int32](38)}.Convert("1.1234567890123456789012345678901234567890")
 		assert.NoError(t, err)
 		assert.Equal(t, "1.12345678901234567890123456789012345678", val)
 	}
 	{
 		// Negative number with 40 decimal places truncated to 38
-		val, err := DecimalConverter{MaxScale: 38}.Convert("-1.1234567890123456789012345678901234567890")
+		val, err := DecimalConverter{MaxScale: typing.ToPtr[int32](38)}.Convert("-1.1234567890123456789012345678901234567890")
 		assert.NoError(t, err)
 		assert.Equal(t, "-1.12345678901234567890123456789012345678", val)
 	}
 	{
 		// No truncation needed - fewer decimal places than max
-		val, err := DecimalConverter{MaxScale: 38}.Convert("1.12345")
+		val, err := DecimalConverter{MaxScale: typing.ToPtr[int32](38)}.Convert("1.12345")
 		assert.NoError(t, err)
 		assert.Equal(t, "1.12345", val)
 	}
 	{
 		// No truncation needed - exactly at max
-		val, err := DecimalConverter{MaxScale: 5}.Convert("1.12345")
+		val, err := DecimalConverter{MaxScale: typing.ToPtr[int32](5)}.Convert("1.12345")
 		assert.NoError(t, err)
 		assert.Equal(t, "1.12345", val)
 	}
 	{
 		// Truncation to 5 decimal places
-		val, err := DecimalConverter{MaxScale: 5}.Convert("1.123456789")
+		val, err := DecimalConverter{MaxScale: typing.ToPtr[int32](5)}.Convert("1.123456789")
 		assert.NoError(t, err)
 		assert.Equal(t, "1.12345", val)
 	}
 	{
 		// Integer value - no decimal point, no truncation
-		val, err := DecimalConverter{MaxScale: 38}.Convert("12345")
+		val, err := DecimalConverter{MaxScale: typing.ToPtr[int32](38)}.Convert("12345")
 		assert.NoError(t, err)
 		assert.Equal(t, "12345", val)
 	}
 	{
 		// Scientific notation - not truncated
-		val, err := DecimalConverter{MaxScale: 2}.Convert("1.23e10")
+		val, err := DecimalConverter{MaxScale: typing.ToPtr[int32](2)}.Convert("1.23e10")
 		assert.NoError(t, err)
 		assert.Equal(t, "1.23e10", val)
 	}
 	{
 		// *decimal.Decimal with excess scale
-		val, err := DecimalConverter{MaxScale: 5}.Convert(decimal.NewDecimal(numbers.MustParseDecimal("3.14159265358979")))
+		val, err := DecimalConverter{MaxScale: typing.ToPtr[int32](5)}.Convert(decimal.NewDecimal(numbers.MustParseDecimal("3.14159265358979")))
 		assert.NoError(t, err)
 		assert.Equal(t, "3.14159", val)
 	}
 	{
-		// MaxScale of 0 means no truncation
-		val, err := DecimalConverter{MaxScale: 0}.Convert("1.1234567890123456789012345678901234567890")
+		// nil MaxScale means no truncation
+		val, err := DecimalConverter{MaxScale: nil}.Convert("1.1234567890123456789012345678901234567890")
 		assert.NoError(t, err)
 		assert.Equal(t, "1.1234567890123456789012345678901234567890", val)
+	}
+	{
+		// MaxScale of 0 means truncate all decimal places
+		val, err := DecimalConverter{MaxScale: typing.ToPtr[int32](0)}.Convert("1.5")
+		assert.NoError(t, err)
+		assert.Equal(t, "1", val)
 	}
 }
 
 func TestTruncateDecimalString(t *testing.T) {
 	{
-		// No truncation when maxScale <= 0
-		assert.Equal(t, "1.12345", truncateDecimalString("1.12345", 0))
-		assert.Equal(t, "1.12345", truncateDecimalString("1.12345", -1))
+		// No truncation when maxScale is nil
+		assert.Equal(t, "1.12345", truncateDecimalString("1.12345", nil))
+	}
+	{
+		// MaxScale of 0 truncates all decimal places
+		assert.Equal(t, "1", truncateDecimalString("1.12345", typing.ToPtr[int32](0)))
 	}
 	{
 		// No decimal point
-		assert.Equal(t, "12345", truncateDecimalString("12345", 3))
+		assert.Equal(t, "12345", truncateDecimalString("12345", typing.ToPtr[int32](3)))
 	}
 	{
 		// Fewer digits than max
-		assert.Equal(t, "1.12", truncateDecimalString("1.12", 5))
+		assert.Equal(t, "1.12", truncateDecimalString("1.12", typing.ToPtr[int32](5)))
 	}
 	{
 		// Exactly at max
-		assert.Equal(t, "1.12345", truncateDecimalString("1.12345", 5))
+		assert.Equal(t, "1.12345", truncateDecimalString("1.12345", typing.ToPtr[int32](5)))
 	}
 	{
 		// Truncation needed
-		assert.Equal(t, "1.12345", truncateDecimalString("1.123456789", 5))
+		assert.Equal(t, "1.12345", truncateDecimalString("1.123456789", typing.ToPtr[int32](5)))
 	}
 	{
 		// Negative number truncation
-		assert.Equal(t, "-1.12345", truncateDecimalString("-1.123456789", 5))
+		assert.Equal(t, "-1.12345", truncateDecimalString("-1.123456789", typing.ToPtr[int32](5)))
 	}
 	{
 		// Scientific notation not truncated
-		assert.Equal(t, "1.23e10", truncateDecimalString("1.23e10", 1))
-		assert.Equal(t, "1.23E10", truncateDecimalString("1.23E10", 1))
+		assert.Equal(t, "1.23e10", truncateDecimalString("1.23e10", typing.ToPtr[int32](1)))
+		assert.Equal(t, "1.23E10", truncateDecimalString("1.23E10", typing.ToPtr[int32](1)))
 	}
 	{
 		// Truncation to 38 (BIGNUMERIC max scale)
 		input := "1.1234567890123456789012345678901234567890"
 		expected := "1.12345678901234567890123456789012345678"
-		assert.Equal(t, expected, truncateDecimalString(input, 38))
+		assert.Equal(t, expected, truncateDecimalString(input, typing.ToPtr[int32](38)))
 	}
 }
 
