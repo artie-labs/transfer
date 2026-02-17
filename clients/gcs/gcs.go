@@ -29,6 +29,10 @@ type Store struct {
 	gcsClient gcslib.GCSClient
 }
 
+func (s Store) Label() constants.DestinationKind {
+	return s.config.Output
+}
+
 func (s Store) GetConfig() config.Config {
 	return s.config
 }

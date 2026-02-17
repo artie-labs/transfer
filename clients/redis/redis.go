@@ -29,6 +29,10 @@ type Store struct {
 	redisClient *redis.Client
 }
 
+func (s *Store) Label() constants.DestinationKind {
+	return s.config.Output
+}
+
 func (s *Store) GetConfig() config.Config {
 	return s.config
 }

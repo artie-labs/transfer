@@ -10,17 +10,28 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/csvwriter"
+	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-func TempTableID(tableID sql.TableIdentifier) sql.TableIdentifier {
+func TempTableID(dest destination.Destination, tableID sql.TableIdentifier) sql.TableIdentifier {
 	return TempTableIDWithSuffix(tableID, strings.ToLower(stringutil.Random(5)))
 }
 
-func TempTableIDWithSuffix(tableID sql.TableIdentifier, suffix string) sql.TableIdentifier {
+func TempTableIDWithSuffix(dest destination.Destination, tableID sql.TableIdentifier, suffix string) sql.TableIdentifier {
+	if dest.Label() == constants.MySQL {
+		tempTable := fmt.Sprintf(
+			"%s_%s_%d",
+			constants.ArtiePrefix,
+			suffix,
+			time.Now().Add(constants.TemporaryTableTTL).Unix(),
+		)
+		return tableID.WithTable(tempTable).WithTemporaryTable(true)
+	}
+
 	tempTable := fmt.Sprintf(
 		"%s_%s_%s_%d",
 		tableID.Table(),
