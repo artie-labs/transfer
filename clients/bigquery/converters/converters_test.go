@@ -161,9 +161,15 @@ func TestInt64Converter_Convert(t *testing.T) {
 		assert.Equal(t, int64(9223372036854775806), val)
 	}
 	{
+		// time.Time
+		val, err := converter.Convert(time.Date(2021, 1, 1, 9, 10, 12, 400_123_991, time.UTC))
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1_609_492_212_400), val)
+	}
+	{
 		// Invalid
 		_, err := converter.Convert("foo")
-		assert.ErrorContains(t, err, "expected int/int32/int64/float32/float64/json.Number/*decimal.Decimal received string with value foo")
+		assert.ErrorContains(t, err, "unexpected data type - received string with value foo")
 	}
 }
 
