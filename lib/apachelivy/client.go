@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"maps"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -184,8 +186,8 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body []byte
 	return doRequestResponse{body: out, httpStatus: resp.StatusCode}, nil
 }
 
-func NewClient(ctx context.Context, url string, config map[string]any, jars []string, heartbeatTimeoutInSecond int, driverMemory, executorMemory, sessionName string) (*Client, error) {
-	client := &Client{
+func NewClient(url string, config map[string]any, jars []string, heartbeatTimeoutInSecond int, driverMemory, executorMemory, sessionName string) *Client {
+	return &Client{
 		url:                             url,
 		httpClient:                      &http.Client{},
 		sessionConf:                     config,
@@ -195,6 +197,30 @@ func NewClient(ctx context.Context, url string, config map[string]any, jars []st
 		sessionExecutorMemory:           executorMemory,
 		sessionName:                     sessionName,
 	}
+}
 
-	return client, nil
+func (c *Client) WithPriorityClient() *Client {
+	if strings.HasSuffix(c.sessionName, "-priority") {
+		return c
+	}
+
+	// Check if the current config has [SparkDriverSelector]
+	selectorValue, ok := c.sessionConf[SparkDriverSelector]
+	if !ok {
+		// Return the same client since it doesn't have the priority selector
+		return c
+	}
+
+	// Now check if [SparkExecutorSelector] is also set
+	if val := c.sessionConf[SparkExecutorSelector]; selectorValue == val {
+		// If both selectors are set to the same value, this is a priority client, so just return the same client.
+		return c
+	}
+
+	// Clone, so we don't mutate the original configuration.
+	sessionConfig := maps.Clone(c.sessionConf)
+	sessionConfig[SparkExecutorSelector] = selectorValue
+
+	// If [SparkExecutorSelector] is not set, but [SparkDriverSelector] is set, then we need to create a new client with the priority selector.
+	return NewClient(c.url, sessionConfig, c.sessionJars, c.sessionHeartbeatTimeoutInSecond, c.sessionDriverMemory, c.sessionExecutorMemory, fmt.Sprintf("%s-priority", c.sessionName))
 }

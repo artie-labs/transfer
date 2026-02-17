@@ -24,7 +24,7 @@ func (SnowflakeDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, tempo
 }
 
 func (SnowflakeDialect) BuildDropTableQuery(tableID sql.TableIdentifier) string {
-	return "DROP TABLE IF EXISTS " + tableID.FullyQualifiedName()
+	return sql.DefaultBuildDropTableQuery(tableID)
 }
 
 func (SnowflakeDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) string {

@@ -139,11 +139,11 @@ func (DuckDBDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, temporar
 }
 
 func (DuckDBDialect) BuildDropTableQuery(tableID sql.TableIdentifier) string {
-	return fmt.Sprintf("DROP TABLE IF EXISTS %s", tableID.FullyQualifiedName())
+	return sql.DefaultBuildDropTableQuery(tableID)
 }
 
 func (DuckDBDialect) BuildTruncateTableQuery(tableID sql.TableIdentifier) string {
-	return fmt.Sprintf("TRUNCATE TABLE %s;", tableID.FullyQualifiedName())
+	return sql.DefaultBuildTruncateTableQuery(tableID)
 }
 
 func (d DuckDBDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string {

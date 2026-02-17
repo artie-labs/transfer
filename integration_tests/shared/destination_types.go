@@ -12,7 +12,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func RedshiftCreateTable(ctx context.Context, dest destination.Destination, tableID sql.TableIdentifier) error {
+func RedshiftCreateTable(ctx context.Context, dest destination.SQLDestination, tableID sql.TableIdentifier) error {
 	query := dest.Dialect().BuildCreateTableQuery(tableID, false, config.Replication, []string{
 		"c_int2 INT2",
 		"c_int4 INT4",
@@ -36,7 +36,7 @@ func RedshiftCreateTable(ctx context.Context, dest destination.Destination, tabl
 	return nil
 }
 
-func RedshiftAssertColumns(ctx context.Context, dest destination.Destination, tableID sql.TableIdentifier) error {
+func RedshiftAssertColumns(ctx context.Context, dest destination.SQLDestination, tableID sql.TableIdentifier) error {
 	query, args, err := dest.Dialect().BuildDescribeTableQuery(tableID)
 	if err != nil {
 		return fmt.Errorf("failed to build describe table query: %w", err)

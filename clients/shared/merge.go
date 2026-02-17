@@ -26,7 +26,7 @@ const (
 	heartbeatsInterval     = 2 * time.Minute
 )
 
-func Merge(ctx context.Context, dest destination.Destination, tableData *optimization.TableData, opts types.MergeOpts, whClient *webhooksclient.Client) error {
+func Merge(ctx context.Context, dest destination.SQLDestination, tableData *optimization.TableData, opts types.MergeOpts, whClient *webhooksclient.Client) error {
 	if tableData.ShouldSkipUpdate() {
 		return nil
 	}

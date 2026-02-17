@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
@@ -40,8 +41,10 @@ func (Int64Converter) Convert(value any) (any, error) {
 		return castedValue.Int64()
 	case *decimal.Decimal:
 		return castedValue.Value().Int64()
+	case time.Time:
+		return castedValue.UnixMilli(), nil
 	default:
-		return nil, fmt.Errorf("expected int/int32/int64/float32/float64/json.Number/*decimal.Decimal received %T with value %v", value, value)
+		return nil, fmt.Errorf("unexpected data type - received %T with value %v", value, value)
 	}
 }
 
