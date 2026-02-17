@@ -5,6 +5,7 @@ import (
 	"io"
 	"log/slog"
 	"net"
+	"slices"
 	"syscall"
 )
 
@@ -21,7 +22,7 @@ func IsRetryableError(err error, additionalRetryableErrs ...error) bool {
 		return false
 	}
 
-	for _, retryableErr := range append(retryableErrs, additionalRetryableErrs...) {
+	for _, retryableErr := range slices.Concat(retryableErrs, additionalRetryableErrs) {
 		if errors.Is(err, retryableErr) {
 			return true
 		}
