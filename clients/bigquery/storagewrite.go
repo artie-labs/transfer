@@ -183,7 +183,20 @@ func rowToMessage(row map[string]any, columns []columns.Column, messageDescripto
 
 			message.Set(field, protoreflect.ValueOfFloat64(castedVal))
 		case typing.EDecimal.Kind:
-			out, err := libconverters.DecimalConverter{}.Convert(value)
+			converter := libconverters.DecimalConverter{}
+			if config.SharedDestinationSettings.TruncateExceededValues {
+				if column.KindDetails.ExtendedDecimalDetails != nil {
+					converter.MaxScale = column.KindDetails.ExtendedDecimalDetails.Scale()
+				} else if config.SharedDestinationSettings.ColumnSettings.BigNumericForVariableNumeric {
+					// BIGNUMERIC max scale is 38.
+					converter.MaxScale = 38
+				} else {
+					// NUMERIC max scale is 9.
+					converter.MaxScale = 9
+				}
+			}
+
+			out, err := converter.Convert(value)
 			if err != nil {
 				return nil, fmt.Errorf("failed to convert value for column: %q, err: %w", column.Name(), err)
 			}
