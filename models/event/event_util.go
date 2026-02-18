@@ -65,6 +65,18 @@ func setHashedColumnTypes(tc kafkalib.TopicConfig, cols *columns.Columns) {
 	}
 }
 
+func updateSchemaForHashedColumns(tc kafkalib.TopicConfig, schema map[string]typing.KindDetails) {
+	if schema == nil {
+		return
+	}
+
+	for _, col := range tc.ColumnsToHash {
+		if _, ok := schema[col]; ok {
+			schema[col] = typing.String
+		}
+	}
+}
+
 func buildPrimaryKeys(tc kafkalib.TopicConfig, pkMap map[string]any, reservedColumns map[string]bool) []string {
 	var pks []string
 	if len(tc.PrimaryKeysOverride) > 0 {
