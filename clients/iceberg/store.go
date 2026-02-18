@@ -68,8 +68,7 @@ func (s Store) Dialect() dialect.IcebergDialect {
 }
 
 func (s Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, useTempTable bool) error {
-	client := s.clientPool.Next()
-	return s.append(ctx, client, tableData, whClient, useTempTable, 0)
+	return s.append(ctx, s.GetApacheLivyClient(), tableData, whClient, useTempTable, 0)
 }
 
 func (s Store) append(ctx context.Context, client *apachelivy.Client, tableData *optimization.TableData, whClient *webhooksclient.Client, useTempTable bool, retryCount int) error {
