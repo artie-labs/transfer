@@ -17,6 +17,7 @@ import (
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/stringutil"
+	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 )
 
 type DestinationTypes struct {
@@ -89,7 +90,7 @@ func main() {
 		logger.Fatal("Failed to load settings", slog.Any("err", err))
 	}
 
-	dest, err := utils.LoadSQLDestination(ctx, settings.Config)
+	dest, err := utils.LoadSQLDestination(ctx, settings.Config, metrics.NullMetricsProvider{})
 	if err != nil {
 		logger.Fatal("Failed to load destination", slog.Any("err", err))
 	}

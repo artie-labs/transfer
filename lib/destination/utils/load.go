@@ -21,11 +21,12 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
+	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 )
 
 // Load returns a [destination.Destination] for any supported output.
 // For SQL destinations, the returned value also implements [destination.SQLDestination].
-func Load(ctx context.Context, cfg config.Config) (destination.Destination, error) {
+func Load(ctx context.Context, cfg config.Config, metricsClient base.Client) (destination.Destination, error) {
 	switch cfg.Output {
 	// SQL destinations
 	case constants.Snowflake:
@@ -53,7 +54,7 @@ func Load(ctx context.Context, cfg config.Config) (destination.Destination, erro
 	case constants.GCS:
 		return gcs.LoadStore(ctx, cfg)
 	case constants.Iceberg:
-		store, err := iceberg.LoadStore(ctx, cfg)
+		store, err := iceberg.LoadStore(ctx, cfg, metricsClient)
 		if err != nil {
 			return nil, err
 		}
@@ -71,8 +72,8 @@ func Load(ctx context.Context, cfg config.Config) (destination.Destination, erro
 
 // LoadSQLDestination returns a [destination.SQLDestination] for SQL-based outputs only.
 // This is a convenience wrapper for callers that specifically need a SQL destination (e.g., integration tests).
-func LoadSQLDestination(ctx context.Context, cfg config.Config) (destination.SQLDestination, error) {
-	dest, err := Load(ctx, cfg)
+func LoadSQLDestination(ctx context.Context, cfg config.Config, metricsClient base.Client) (destination.SQLDestination, error) {
+	dest, err := Load(ctx, cfg, metricsClient)
 	if err != nil {
 		return nil, err
 	}

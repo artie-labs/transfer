@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/apachelivy"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/cryptography"
@@ -77,13 +78,17 @@ func main() {
 	)
 
 	metricsClient := metrics.LoadExporter(settings.Config)
-	dest, err := utils.Load(ctx, settings.Config)
+	dest, err := utils.Load(ctx, settings.Config, metricsClient)
 	if err != nil {
 		whClient.SendEvent(ctx, webhooksutil.ConnectionFailed, map[string]any{
 			"error":   "Unable to load destination",
 			"details": err.Error(),
 		})
 		logger.Fatal("Unable to load destination", slog.Any("err", err))
+	}
+
+	if livyDest, ok := dest.(interface{ GetApacheLivyClient() *apachelivy.Client }); ok {
+		livyDest.GetApacheLivyClient().SetMetricsClient(metricsClient)
 	}
 
 	if sqlDest, ok := dest.(destination.SQLDestination); ok {

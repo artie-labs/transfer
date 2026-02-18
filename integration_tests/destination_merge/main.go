@@ -14,6 +14,7 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/utils"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
+	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
@@ -163,7 +164,7 @@ func main() {
 		logger.Fatal("Failed to load settings", slog.Any("err", err))
 	}
 
-	dest, err := utils.LoadSQLDestination(ctx, settings.Config)
+	dest, err := utils.LoadSQLDestination(ctx, settings.Config, metrics.NullMetricsProvider{})
 	if err != nil {
 		logger.Fatal("Failed to load destination", slog.Any("err", err))
 	}

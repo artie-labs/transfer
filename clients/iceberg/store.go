@@ -21,6 +21,7 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
 )
@@ -281,15 +282,15 @@ func SweepTemporaryTables(ctx context.Context, catalog iceberg.IcebergCatalog, _
 	return nil
 }
 
-func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {
+func LoadStore(ctx context.Context, cfg config.Config, metricsClient base.Client) (Store, error) {
 	var store Store
 	var err error
 
 	switch {
 	case cfg.Iceberg.S3Tables != nil:
-		store, err = loadS3TablesStore(cfg)
+		store, err = loadS3TablesStore(cfg, metricsClient)
 	case cfg.Iceberg.RestCatalog != nil:
-		store, err = loadRestCatalogStore(ctx, cfg)
+		store, err = loadRestCatalogStore(ctx, cfg, metricsClient)
 	default:
 		return Store{}, fmt.Errorf("no catalog configuration provided (s3Tables or restCatalog)")
 	}
@@ -313,7 +314,7 @@ func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {
 	return store, nil
 }
 
-func loadS3TablesStore(cfg config.Config) (Store, error) {
+func loadS3TablesStore(cfg config.Config, metricsClient base.Client) (Store, error) {
 	apacheLivyClient := apachelivy.NewClient(
 		cfg.Iceberg.ApacheLivyURL,
 		cfg.Iceberg.S3Tables.ApacheLivyConfig(),
@@ -324,6 +325,7 @@ func loadS3TablesStore(cfg config.Config) (Store, error) {
 		cfg.Iceberg.SessionName,
 	)
 
+	apacheLivyClient.SetMetricsClient(metricsClient)
 	awsCfg := awslib.NewConfigWithCredentialsAndRegion(
 		credentials.NewStaticCredentialsProvider(cfg.Iceberg.S3Tables.AwsAccessKeyID, cfg.Iceberg.S3Tables.AwsSecretAccessKey, ""),
 		cfg.Iceberg.S3Tables.Region,
@@ -339,7 +341,7 @@ func loadS3TablesStore(cfg config.Config) (Store, error) {
 	}, nil
 }
 
-func loadRestCatalogStore(ctx context.Context, cfg config.Config) (Store, error) {
+func loadRestCatalogStore(ctx context.Context, cfg config.Config, metricsClient base.Client) (Store, error) {
 	restCfg := cfg.Iceberg.RestCatalog
 	if err := restCfg.Validate(); err != nil {
 		return Store{}, fmt.Errorf("invalid rest catalog configuration: %w", err)
@@ -355,6 +357,7 @@ func loadRestCatalogStore(ctx context.Context, cfg config.Config) (Store, error)
 		cfg.Iceberg.SessionName,
 	)
 
+	apacheLivyClient.SetMetricsClient(metricsClient)
 	catalogCfg := icebergcatalog.Config{
 		URI:        restCfg.URI,
 		Token:      restCfg.Token,

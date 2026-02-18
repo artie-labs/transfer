@@ -16,6 +16,7 @@ import (
 
 	"github.com/artie-labs/transfer/lib/jitter"
 	"github.com/artie-labs/transfer/lib/retry"
+	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
 )
 
 const (
@@ -36,6 +37,7 @@ type Client struct {
 	sessionDriverMemory             string
 	sessionExecutorMemory           string
 	sessionName                     string
+	metricsClient                   base.Client
 
 	lastChecked time.Time
 }
@@ -109,6 +111,10 @@ func (c *Client) ExecContext(ctx context.Context, query string) error {
 
 func (c *Client) waitForStatement(ctx context.Context, statementID int) (GetStatementResponse, error) {
 	var count int
+	var lastState string
+	var executingStartTime time.Time
+	startTime := time.Now()
+
 	for {
 		out, err := c.doRequest(ctx, "GET", fmt.Sprintf("/sessions/%d/statements/%d", c.sessionID, statementID), nil)
 		if err != nil {
@@ -121,17 +127,41 @@ func (c *Client) waitForStatement(ctx context.Context, statementID int) (GetStat
 		}
 
 		if resp.Completed > 0 {
-			// Response finished, so let's see if the response is an error or not.
 			if err := resp.Error(c.sessionID); err != nil {
 				return GetStatementResponse{}, err
+			}
+
+			if c.metricsClient != nil {
+				tags := map[string]string{"sessionName": c.sessionName}
+				if !executingStartTime.IsZero() {
+					c.metricsClient.Gauge("livy.statement.execution_ms", float64(time.Since(executingStartTime).Milliseconds()), tags)
+				}
+				c.metricsClient.Gauge("livy.statement.total_ms", float64(time.Since(startTime).Milliseconds()), tags)
 			}
 
 			return resp, nil
 		}
 
-		// It's not ready yet, so we're going to sleep a bit and check again.
+		if resp.State != lastState {
+			lastState = resp.State
+			if resp.State == "running" && executingStartTime.IsZero() {
+				if c.metricsClient != nil {
+					c.metricsClient.Gauge("livy.statement.queued_ms", float64(time.Since(startTime).Milliseconds()), map[string]string{"sessionName": c.sessionName})
+				}
+				executingStartTime = time.Now()
+			}
+		}
+
 		sleepTime := jitter.Jitter(sleepBaseMs, sleepMaxMs, count)
-		slog.Info("Statement is not ready yet, sleeping", slog.Duration("sleepTime", sleepTime))
+		switch resp.State {
+		case "waiting":
+			slog.Info("Statement is queued, waiting for execution", slog.Int("sessionID", c.sessionID), slog.Int("statementID", statementID), slog.Duration("sleepTime", sleepTime))
+		case "running":
+			slog.Info("Statement is executing", slog.Int("sessionID", c.sessionID), slog.Int("statementID", statementID), slog.Duration("sleepTime", sleepTime))
+		default:
+			slog.Info("Statement is not ready yet", slog.Int("sessionID", c.sessionID), slog.Int("statementID", statementID), slog.String("state", resp.State), slog.Duration("sleepTime", sleepTime))
+		}
+
 		time.Sleep(sleepTime)
 		count++
 	}
@@ -199,6 +229,10 @@ func NewClient(url string, config map[string]any, jars []string, heartbeatTimeou
 	}
 }
 
+func (c *Client) SetMetricsClient(metricsClient base.Client) {
+	c.metricsClient = metricsClient
+}
+
 func (c *Client) WithPriorityClient() *Client {
 	if strings.HasSuffix(c.sessionName, "-priority") {
 		return c
@@ -222,5 +256,7 @@ func (c *Client) WithPriorityClient() *Client {
 	sessionConfig[SparkExecutorSelector] = selectorValue
 
 	// If [SparkExecutorSelector] is not set, but [SparkDriverSelector] is set, then we need to create a new client with the priority selector.
-	return NewClient(c.url, sessionConfig, c.sessionJars, c.sessionHeartbeatTimeoutInSecond, c.sessionDriverMemory, c.sessionExecutorMemory, fmt.Sprintf("%s-priority", c.sessionName))
+	priorityClient := NewClient(c.url, sessionConfig, c.sessionJars, c.sessionHeartbeatTimeoutInSecond, c.sessionDriverMemory, c.sessionExecutorMemory, fmt.Sprintf("%s-priority", c.sessionName))
+	priorityClient.SetMetricsClient(c.metricsClient)
+	return priorityClient
 }
