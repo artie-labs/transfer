@@ -54,7 +54,7 @@ func Load(ctx context.Context, cfg config.Config, metricsClient base.Client) (de
 	case constants.GCS:
 		return gcs.LoadStore(ctx, cfg)
 	case constants.Iceberg:
-		store, err := iceberg.LoadStore(ctx, cfg)
+		store, err := iceberg.LoadStore(ctx, cfg, metricsClient)
 		if err != nil {
 			return nil, err
 		}
