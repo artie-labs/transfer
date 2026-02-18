@@ -3,6 +3,7 @@ package logger
 import (
 	"log/slog"
 	"os"
+	"runtime/debug"
 	"time"
 
 	"github.com/getsentry/sentry-go"
@@ -54,6 +55,14 @@ func Fatal(msg string, args ...any) {
 	slog.Error(msg, args...)
 	runHandlers()
 	os.Exit(1)
+}
+
+// RecoverFatal is intended for use in defer. If the function panicked, it logs the panic and stack then exits.
+// For goroutines that also need wg.Done(), use defer wg.Done() then defer RecoverFatal() so RecoverFatal runs first (LIFO).
+func RecoverFatal() {
+	if x := recover(); x != nil {
+		Fatal("Recovered from panic", slog.Any("err", x), slog.String("stack", string(debug.Stack())))
+	}
 }
 
 func Panic(msg string, args ...any) {
