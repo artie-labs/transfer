@@ -30,6 +30,7 @@ type Store struct {
 	s3Client         awslib.S3Client
 	catalog          iceberg.IcebergCatalog
 	apacheLivyClient *apachelivy.Client
+	clientPool       *apachelivy.ClientPool
 	config           config.Config
 	cm               *types.DestinationTableConfigMap
 }
@@ -47,7 +48,7 @@ func (s Store) IsOLTP() bool {
 }
 
 func (s Store) GetApacheLivyClient() *apachelivy.Client {
-	return s.apacheLivyClient
+	return s.clientPool.Next()
 }
 
 func (s Store) GetS3TablesAPI() (awslib.S3TablesAPIWrapper, error) {
@@ -68,6 +69,7 @@ func (s Store) Dialect() dialect.IcebergDialect {
 }
 
 func (s Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, useTempTable bool) error {
+	s.apacheLivyClient = s.clientPool.Next()
 	return s.append(ctx, tableData, whClient, useTempTable, 0)
 }
 
@@ -168,6 +170,7 @@ func (s Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier, 
 }
 
 func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client) (bool, error) {
+	s.apacheLivyClient = s.clientPool.Next()
 	if tableData.ShouldSkipUpdate() {
 		return false, nil
 	}
@@ -236,6 +239,7 @@ func (s Store) IsRetryableError(_ error) bool {
 }
 
 func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kafkalib.DatabaseAndSchemaPair, primaryKeys []string, includeArtieUpdatedAt bool) error {
+	s.apacheLivyClient = s.clientPool.Next()
 	stagingTableID := shared.BuildStagingTableID(s, pair, tableID)
 	castedStagingTableID, ok := stagingTableID.(dialect.TableIdentifier)
 	if !ok {
@@ -314,7 +318,7 @@ func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {
 }
 
 func loadS3TablesStore(cfg config.Config) (Store, error) {
-	apacheLivyClient := apachelivy.NewClient(
+	pool := apachelivy.NewClientPool(
 		cfg.Iceberg.ApacheLivyURL,
 		cfg.Iceberg.S3Tables.ApacheLivyConfig(),
 		cfg.Iceberg.S3Tables.SessionJars,
@@ -322,6 +326,7 @@ func loadS3TablesStore(cfg config.Config) (Store, error) {
 		cfg.Iceberg.SessionDriverMemory,
 		cfg.Iceberg.SessionExecutorMemory,
 		cfg.Iceberg.SessionName,
+		cfg.Iceberg.NumberOfSessions,
 	)
 
 	awsCfg := awslib.NewConfigWithCredentialsAndRegion(
@@ -332,7 +337,8 @@ func loadS3TablesStore(cfg config.Config) (Store, error) {
 	return Store{
 		catalogName:      cfg.Iceberg.S3Tables.CatalogName(),
 		config:           cfg,
-		apacheLivyClient: apacheLivyClient,
+		apacheLivyClient: pool.Next(),
+		clientPool:       pool,
 		cm:               &types.DestinationTableConfigMap{},
 		catalog:          awslib.NewS3TablesAPI(awsCfg, cfg.Iceberg.S3Tables.BucketARN),
 		s3Client:         awslib.NewS3Client(awsCfg),
@@ -345,7 +351,7 @@ func loadRestCatalogStore(ctx context.Context, cfg config.Config) (Store, error)
 		return Store{}, fmt.Errorf("invalid rest catalog configuration: %w", err)
 	}
 
-	apacheLivyClient := apachelivy.NewClient(
+	pool := apachelivy.NewClientPool(
 		cfg.Iceberg.ApacheLivyURL,
 		restCfg.ApacheLivyConfig(),
 		restCfg.SessionJars,
@@ -353,6 +359,7 @@ func loadRestCatalogStore(ctx context.Context, cfg config.Config) (Store, error)
 		cfg.Iceberg.SessionDriverMemory,
 		cfg.Iceberg.SessionExecutorMemory,
 		cfg.Iceberg.SessionName,
+		cfg.Iceberg.NumberOfSessions,
 	)
 
 	catalogCfg := icebergcatalog.Config{
@@ -381,7 +388,8 @@ func loadRestCatalogStore(ctx context.Context, cfg config.Config) (Store, error)
 	return Store{
 		catalogName:      restCfg.CatalogName(),
 		config:           cfg,
-		apacheLivyClient: apacheLivyClient,
+		apacheLivyClient: pool.Next(),
+		clientPool:       pool,
 		cm:               &types.DestinationTableConfigMap{},
 		catalog:          cat,
 		s3Client:         awslib.NewS3Client(awsCfg),
