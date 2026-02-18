@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	goSql "database/sql"
+	gosql "database/sql"
 
 	"github.com/artie-labs/ducktape/api/pkg/ducktape"
 	jsoniter "github.com/json-iterator/go"
@@ -12,6 +12,7 @@ import (
 	"github.com/artie-labs/transfer/clients/motherduck/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -32,7 +33,7 @@ type Store struct {
 	config    config.Config
 }
 
-func LoadStore(cfg config.Config) (*Store, error) {
+func LoadStore(_ context.Context, cfg config.Config) (*Store, error) {
 	return &Store{
 		dsn:       BuildDSN(cfg.MotherDuck.Token),
 		client:    ducktape.NewClient(cfg.MotherDuck.DucktapeURL),
@@ -49,6 +50,10 @@ func (s Store) Dialect() sql.Dialect {
 	return s.dialect()
 }
 
+func (s Store) Label() constants.DestinationKind {
+	return s.config.Output
+}
+
 func (s Store) GetConfig() config.Config {
 	return s.config
 }
@@ -57,7 +62,7 @@ func (s Store) IsOLTP() bool {
 	return false
 }
 
-func (s Store) Begin() (*goSql.Tx, error) {
+func (s Store) Begin(_ context.Context) (*gosql.Tx, error) {
 	return nil, fmt.Errorf("not implemented: Begin")
 }
 
@@ -82,13 +87,13 @@ func (s Store) QueryContextHttp(ctx context.Context, query string, args ...any) 
 	return response, nil
 }
 
-// QueryContext is a stub to satisfy the destination.Destination interface
+// QueryContext is a stub to satisfy the destination.SQLDestination interface
 // This should never be called since we override GetTableConfig with our custom implementation
-func (s Store) QueryContext(ctx context.Context, query string, args ...any) (*goSql.Rows, error) {
+func (s Store) QueryContext(ctx context.Context, query string, args ...any) (*gosql.Rows, error) {
 	return nil, fmt.Errorf("QueryContext is not implemented for MotherDuck - use QueryContextHttp methods instead")
 }
 
-func (s Store) ExecContext(ctx context.Context, query string, args ...any) (goSql.Result, error) {
+func (s Store) ExecContext(ctx context.Context, query string, args ...any) (gosql.Result, error) {
 	request := ducktape.ExecuteRequest{
 		Statements: []ducktape.ExecuteStatement{{Query: query, Args: args}},
 	}
@@ -97,7 +102,7 @@ func (s Store) ExecContext(ctx context.Context, query string, args ...any) (goSq
 	}, func(r []byte) (*ducktape.ExecuteResponse, error) {
 		var response ducktape.ExecuteResponse
 		if err := json.Unmarshal(r, &response); err != nil {
-			return nil, fmt.Errorf("failed to unmarshall execute response: %w", err)
+			return nil, fmt.Errorf("failed to unmarshal execute response: %w", err)
 		}
 		return &response, nil
 	})
@@ -130,7 +135,7 @@ func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kaf
 	}, func(r []byte) (*ducktape.ExecuteResponse, error) {
 		var response ducktape.ExecuteResponse
 		if err := json.Unmarshal(r, &response); err != nil {
-			return nil, fmt.Errorf("failed to unmarshall execute response: %w", err)
+			return nil, fmt.Errorf("failed to unmarshal execute response: %w", err)
 		}
 		return &response, nil
 	})
@@ -180,17 +185,7 @@ func (s Store) SweepTemporaryTables(ctx context.Context, _ *webhooksclient.Clien
 }
 
 func (s Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error {
-	if !tableID.TemporaryTable() {
-		return fmt.Errorf("table %q is not a temporary table, so it cannot be dropped", tableID.FullyQualifiedName())
-	}
-
-	if _, err := s.ExecContext(ctx, s.Dialect().BuildDropTableQuery(tableID)); err != nil {
-		return fmt.Errorf("failed to drop table: %w", err)
-	}
-
-	// We'll then clear it from our cache
-	s.configMap.RemoveTable(tableID)
-	return nil
+	return shared.DropTemporaryTable(ctx, &s, tableID, s.configMap)
 }
 
 func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client) (bool, error) {

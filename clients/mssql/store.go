@@ -10,6 +10,7 @@ import (
 	"github.com/artie-labs/transfer/clients/mssql/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
@@ -22,6 +23,10 @@ type Store struct {
 	configMap *types.DestinationTableConfigMap
 	config    config.Config
 	db.Store
+}
+
+func (s Store) Label() constants.DestinationKind {
+	return s.config.Output
 }
 
 func (s Store) GetConfig() config.Config {
@@ -42,17 +47,7 @@ func getSchema(schema string) string {
 }
 
 func (s *Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error {
-	if !tableID.TemporaryTable() {
-		return fmt.Errorf("table %q is not a temporary table, so it cannot be dropped", tableID.FullyQualifiedName())
-	}
-
-	if _, err := s.ExecContext(ctx, s.Dialect().BuildDropTableQuery(tableID)); err != nil {
-		return fmt.Errorf("failed to drop table: %w", err)
-	}
-
-	// We'll then clear it from our cache
-	s.configMap.RemoveTable(tableID)
-	return nil
+	return shared.DropTemporaryTable(ctx, s, tableID, s.configMap)
 }
 
 func (s *Store) Dialect() sql.Dialect {
@@ -105,7 +100,7 @@ func (s *Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier,
 	}.GetTableConfig(ctx)
 }
 
-func LoadStore(cfg config.Config) (*Store, error) {
+func LoadStore(_ context.Context, cfg config.Config) (*Store, error) {
 	store, err := db.Open("mssql", cfg.MSSQL.DSN())
 	if err != nil {
 		return nil, err

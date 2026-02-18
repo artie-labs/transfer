@@ -15,7 +15,7 @@ import (
 	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
 )
 
-func MultiStepMerge(ctx context.Context, dest destination.Destination, tableData *optimization.TableData, opts types.MergeOpts, _ *webhooksclient.Client) (bool, error) {
+func MultiStepMerge(ctx context.Context, dest destination.SQLDestination, tableData *optimization.TableData, opts types.MergeOpts, _ *webhooksclient.Client) (bool, error) {
 	if _, ok := dest.Dialect().(dialect.SnowflakeDialect); !ok {
 		return false, fmt.Errorf("multi-step merge is only supported on Snowflake")
 	}
@@ -100,7 +100,7 @@ func MultiStepMerge(ctx context.Context, dest destination.Destination, tableData
 		}
 	} else {
 		// Upon subsequent flushes, we'll want to load data into a staging table and then merge it into the MSM table.
-		temporaryTableID := TempTableIDWithSuffix(dest.IdentifierFor(tableData.TopicConfig().BuildStagingDatabaseAndSchemaPair(), tableData.Name()), tableData.TempTableSuffix())
+		temporaryTableID := TempTableIDWithSuffix(dest, dest.IdentifierFor(tableData.TopicConfig().BuildStagingDatabaseAndSchemaPair(), tableData.Name()), tableData.TempTableSuffix())
 		opts.UseBuildMergeQueryIntoStagingTable = true
 		opts.PrepareTemporaryTable = true
 		if err := merge(ctx, dest, tableData, msmTableConfig, temporaryTableID, msmTableID, opts); err != nil {
@@ -126,7 +126,7 @@ func MultiStepMerge(ctx context.Context, dest destination.Destination, tableData
 	return false, nil
 }
 
-func merge(ctx context.Context, dwh destination.Destination, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, temporaryTableID, targetTableID sql.TableIdentifier, opts types.MergeOpts) error {
+func merge(ctx context.Context, dwh destination.SQLDestination, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, temporaryTableID, targetTableID sql.TableIdentifier, opts types.MergeOpts) error {
 	defer func() {
 		if dropErr := ddl.DropTemporaryTable(ctx, dwh, temporaryTableID, false); dropErr != nil {
 			slog.Warn("Failed to drop temporary table", slog.Any("err", dropErr), slog.String("tableName", temporaryTableID.FullyQualifiedName()))

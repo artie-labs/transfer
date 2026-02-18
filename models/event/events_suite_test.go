@@ -16,7 +16,7 @@ type EventsTestSuite struct {
 	cfg          config.Config
 	db           *models.DatabaseData
 	fakeEvent    *mocks.FakeEvent
-	fakeBaseline *mocks.FakeBaseline
+	fakeBaseline *mocks.FakeDestination
 }
 
 func (e *EventsTestSuite) SetupTest() {
@@ -26,7 +26,7 @@ func (e *EventsTestSuite) SetupTest() {
 		BufferRows:           1000,
 	}
 	e.db = models.NewMemoryDB()
-	e.fakeBaseline = &mocks.FakeBaseline{}
+	e.fakeBaseline = &mocks.FakeDestination{}
 
 	fakeEvent := &mocks.FakeEvent{}
 	fakeEvent.GetDataReturns(map[string]any{constants.DeleteColumnMarker: false, constants.OnlySetDeleteColumnMarker: false}, nil)

@@ -12,7 +12,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func MSSQLCreateTable(ctx context.Context, dest destination.Destination, tableID sql.TableIdentifier) error {
+func MSSQLCreateTable(ctx context.Context, dest destination.SQLDestination, tableID sql.TableIdentifier) error {
 	query := dest.Dialect().BuildCreateTableQuery(tableID, false, config.Replication, []string{
 		"c_char CHAR",
 		"c_char_5 CHAR(5)",
@@ -45,7 +45,7 @@ func MSSQLCreateTable(ctx context.Context, dest destination.Destination, tableID
 	return nil
 }
 
-func MSSQLAssertColumns(ctx context.Context, dest destination.Destination, tableID sql.TableIdentifier) error {
+func MSSQLAssertColumns(ctx context.Context, dest destination.SQLDestination, tableID sql.TableIdentifier) error {
 	query, args, err := dest.Dialect().BuildDescribeTableQuery(tableID)
 	if err != nil {
 		return fmt.Errorf("failed to build describe table query: %w", err)

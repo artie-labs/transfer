@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	db      = "lemonade"
+	testDB  = "lemonade"
 	schema  = "public"
 	table   = "orders"
 	tableID = cdc.NewTableID(schema, table)
@@ -49,12 +49,12 @@ func TestProcessMessageFailures(t *testing.T) {
 		GroupID: "foo",
 	}
 
-	tableName, err := args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{})
+	tableName, err := args.process(ctx, cfg, memDB, &mocks.FakeDestination{}, metrics.NullMetricsProvider{})
 	assert.ErrorContains(t, err, "failed to process, topicConfig is nil", err.Error())
 	assert.Empty(t, tableName)
 
 	args.TopicToConfigFormatMap = NewTcFmtMap()
-	tableName, err = args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{})
+	tableName, err = args.process(ctx, cfg, memDB, &mocks.FakeDestination{}, metrics.NullMetricsProvider{})
 	assert.ErrorContains(t, err, "failed to get topic", err.Error())
 	assert.Equal(t, 0, len(memDB.TableData()))
 	assert.Empty(t, tableName)
@@ -63,7 +63,7 @@ func TestProcessMessageFailures(t *testing.T) {
 	tcFmtMap := NewTcFmtMap()
 	tcFmtMap.Add(msg.Topic(), NewTopicConfigFormatter(
 		kafkalib.TopicConfig{
-			Database:     db,
+			Database:     testDB,
 			TableName:    table,
 			Schema:       schema,
 			Topic:        msg.Topic(),
@@ -82,13 +82,13 @@ func TestProcessMessageFailures(t *testing.T) {
 	_, ok := tcFmtMap.GetTopicFmt(msg.Topic())
 	assert.True(t, ok)
 
-	tableName, err = args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{})
+	tableName, err = args.process(ctx, cfg, memDB, &mocks.FakeDestination{}, metrics.NullMetricsProvider{})
 	assert.ErrorContains(t, err, `cannot unmarshal key "": format:  is not supported`)
 	assert.Equal(t, 0, len(memDB.TableData()))
 	assert.Empty(t, tableName)
 
 	tc := kafkalib.TopicConfig{
-		Database:     db,
+		Database:     testDB,
 		TableName:    table,
 		Schema:       schema,
 		Topic:        msg.Topic(),
@@ -171,7 +171,7 @@ func TestProcessMessageFailures(t *testing.T) {
 		TopicToConfigFormatMap: tcFmtMap,
 	}
 
-	actualTableID, err := args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{})
+	actualTableID, err := args.process(ctx, cfg, memDB, &mocks.FakeDestination{}, metrics.NullMetricsProvider{})
 	assert.NoError(t, err)
 	assert.Equal(t, tableID, actualTableID)
 
@@ -201,7 +201,7 @@ func TestProcessMessageFailures(t *testing.T) {
 			TopicToConfigFormatMap: tcFmtMap,
 		}
 
-		tableName, err = args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{})
+		tableName, err = args.process(ctx, cfg, memDB, &mocks.FakeDestination{}, metrics.NullMetricsProvider{})
 		assert.Error(t, err)
 		assert.Empty(t, tableName)
 		assert.True(t, td.NumberOfRows() > 0)
@@ -343,7 +343,7 @@ func TestProcessMessageSkip(t *testing.T) {
 		td := memoryDB.GetOrCreateTableData(tableID, msg.Topic())
 		assert.Equal(t, 0, int(td.NumberOfRows()))
 
-		actualTableID, err := args.process(ctx, cfg, memDB, &mocks.FakeBaseline{}, metrics.NullMetricsProvider{})
+		actualTableID, err := args.process(ctx, cfg, memDB, &mocks.FakeDestination{}, metrics.NullMetricsProvider{})
 		assert.NoError(t, err)
 		assert.Equal(t, tableID, actualTableID)
 		// Because it got skipped.

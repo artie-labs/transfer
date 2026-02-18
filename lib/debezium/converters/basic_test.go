@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -18,7 +19,7 @@ func TestJSON_Convert(t *testing.T) {
 		// JSON with duplicate values
 		value, err := JSON{}.Convert(`{"a": 1, "a": 2}`)
 		assert.NoError(t, err)
-		assert.Equal(t, map[string]any{"a": float64(2)}, value)
+		assert.Equal(t, map[string]any{"a": json.Number("2")}, value)
 	}
 }
 
@@ -26,7 +27,7 @@ func TestInt64Passthrough_Convert(t *testing.T) {
 	{
 		// Wrong data type
 		_, err := Int64Passthrough{}.Convert("123")
-		assert.ErrorContains(t, err, "expected type int64, got string")
+		assert.ErrorContains(t, err, "expected int64 or json.Number, got string")
 	}
 	{
 		//	Valid data type

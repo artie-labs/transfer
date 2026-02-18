@@ -77,37 +77,27 @@ func main() {
 	)
 
 	metricsClient := metrics.LoadExporter(settings.Config)
-	var dest destination.Baseline
-	if utils.IsOutputBaseline(settings.Config) {
-		dest, err = utils.LoadBaseline(ctx, settings.Config)
-		if err != nil {
-			whClient.SendEvent(ctx, webhooksutil.ConnectionFailed, map[string]any{
-				"error":   "unable to connect to destination",
-				"details": err.Error(),
-			})
-			logger.Fatal("Unable to load baseline destination", slog.Any("err", err))
-		}
-	} else {
-		_dest, err := utils.LoadDestination(ctx, settings.Config, nil)
-		if err != nil {
-			whClient.SendEvent(ctx, webhooksutil.ConnectionFailed, map[string]any{
-				"error":   "Unable to load destination",
-				"details": err.Error(),
-			})
-			logger.Fatal("Unable to load destination", slog.Any("err", err))
-		}
+	dest, err := utils.Load(ctx, settings.Config)
+	if err != nil {
+		whClient.SendEvent(ctx, webhooksutil.ConnectionFailed, map[string]any{
+			"error":   "Unable to load destination",
+			"details": err.Error(),
+		})
+		logger.Fatal("Unable to load destination", slog.Any("err", err))
+	}
 
-		if err = _dest.SweepTemporaryTables(ctx, whClient); err != nil {
+	if sqlDest, ok := dest.(destination.SQLDestination); ok {
+		if err = sqlDest.SweepTemporaryTables(ctx, whClient); err != nil {
 			whClient.SendEvent(ctx, webhooksutil.ConnectionFailed, map[string]any{
 				"error":   "Failed to clean up temporary tables",
 				"details": err.Error(),
 			})
 			logger.Fatal("Failed to clean up temporary tables", slog.Any("err", err))
 		}
+
 		whClient.SendEvent(ctx, webhooksutil.ConnectionEstablished, map[string]any{
 			"mode": settings.Config.Mode,
 		})
-		dest = _dest
 	}
 
 	slog.Info("Starting...", slog.String("version", version))

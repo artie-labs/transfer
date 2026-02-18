@@ -22,7 +22,7 @@ type processArgs struct {
 	WhClient               *webhooksclient.Client
 }
 
-func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Baseline, metricsClient base.Client) (cdc.TableID, error) {
+func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client) (cdc.TableID, error) {
 	if p.TopicToConfigFormatMap == nil {
 		return cdc.TableID{}, fmt.Errorf("failed to process, topicConfig is nil")
 	}

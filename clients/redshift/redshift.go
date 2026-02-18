@@ -11,6 +11,7 @@ import (
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/awslib"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -32,6 +33,10 @@ type Store struct {
 	_awsCredentials *awslib.Credentials
 	_awsS3Client    awslib.S3Client
 	db.Store
+}
+
+func (s Store) Label() constants.DestinationKind {
+	return s.config.Output
 }
 
 func (s Store) GetConfig() config.Config {
@@ -56,17 +61,7 @@ func (s *Store) BuildCredentialsClause(ctx context.Context) (string, error) {
 }
 
 func (s *Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error {
-	if !tableID.TemporaryTable() {
-		return fmt.Errorf("table %q is not a temporary table, so it cannot be dropped", tableID.FullyQualifiedName())
-	}
-
-	if _, err := s.ExecContext(ctx, s.Dialect().BuildDropTableQuery(tableID)); err != nil {
-		return fmt.Errorf("failed to drop table: %w", err)
-	}
-
-	// We'll then clear it from our cache
-	s.configMap.RemoveTable(tableID)
-	return nil
+	return shared.DropTemporaryTable(ctx, s, tableID, s.configMap)
 }
 
 func (s *Store) TruncateTable(ctx context.Context, tableID sql.TableIdentifier) error {
@@ -140,7 +135,7 @@ func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair ka
 	return nil
 }
 
-func LoadRedshift(ctx context.Context, cfg config.Config, _store *db.Store) (*Store, error) {
+func LoadStore(ctx context.Context, cfg config.Config, _store *db.Store) (*Store, error) {
 	if _store != nil {
 		// Used for tests.
 		return &Store{

@@ -20,6 +20,7 @@ import (
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/batch"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
@@ -43,6 +44,10 @@ type Store struct {
 	db.Store
 }
 
+func (s Store) Label() constants.DestinationKind {
+	return s.config.Output
+}
+
 func (s Store) GetConfig() config.Config {
 	return s.config
 }
@@ -52,17 +57,7 @@ func (s Store) IsOLTP() bool {
 }
 
 func (s *Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error {
-	if !tableID.TemporaryTable() {
-		return fmt.Errorf("table %q is not a temporary table, so it cannot be dropped", tableID.FullyQualifiedName())
-	}
-
-	if _, err := s.ExecContext(ctx, s.Dialect().BuildDropTableQuery(tableID)); err != nil {
-		return fmt.Errorf("failed to drop table: %w", err)
-	}
-
-	// We'll then clear it from our cache
-	s.configMap.RemoveTable(tableID)
-	return nil
+	return shared.DropTemporaryTable(ctx, s, tableID, s.configMap)
 }
 
 func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, useTempTable bool) error {
@@ -76,7 +71,7 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, w
 	// See: https://cloud.google.com/bigquery/docs/write-api#use_data_manipulation_language_dml_with_recently_streamed_data
 	// For now, we'll need to append this to a temporary table and then append temporary table onto the target table
 	tableID := s.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name())
-	temporaryTableID := shared.TempTableID(tableID)
+	temporaryTableID := shared.TempTableID(s, tableID)
 
 	defer func() { _ = ddl.DropTemporaryTable(ctx, s, temporaryTableID, false) }()
 
@@ -279,7 +274,7 @@ func (s *Store) SweepTemporaryTables(_ context.Context, _ *webhooksclient.Client
 	return nil
 }
 
-func LoadBigQuery(ctx context.Context, cfg config.Config, _store *db.Store) (*Store, error) {
+func LoadStore(ctx context.Context, cfg config.Config, _store *db.Store) (*Store, error) {
 	if _store != nil {
 		// Used for tests.
 		return &Store{

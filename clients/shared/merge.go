@@ -26,7 +26,7 @@ const (
 	heartbeatsInterval     = 2 * time.Minute
 )
 
-func Merge(ctx context.Context, dest destination.Destination, tableData *optimization.TableData, opts types.MergeOpts, whClient *webhooksclient.Client) error {
+func Merge(ctx context.Context, dest destination.SQLDestination, tableData *optimization.TableData, opts types.MergeOpts, whClient *webhooksclient.Client) error {
 	if tableData.ShouldSkipUpdate() {
 		return nil
 	}
@@ -61,7 +61,7 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 		}
 	}
 
-	if err = AlterTableDropColumns(ctx, dest, tableConfig, tableID, srcKeysMissing, tableData.GetLatestTimestamp(), tableData.ContainOtherOperations()); err != nil {
+	if err = AlterTableDropColumns(ctx, dest, tableConfig, tableID, srcKeysMissing, tableData.GetLatestTimestamp(), tableData.ContainsOtherOperations()); err != nil {
 		return fmt.Errorf("failed to drop columns for table %q: %w", tableID.Table(), err)
 	}
 
@@ -69,7 +69,7 @@ func Merge(ctx context.Context, dest destination.Destination, tableData *optimiz
 		return fmt.Errorf("failed to merge columns from destination: %w for table %q", err, tableData.Name())
 	}
 
-	temporaryTableID := TempTableIDWithSuffix(dest.IdentifierFor(tableData.TopicConfig().BuildStagingDatabaseAndSchemaPair(), tableData.Name()), tableData.TempTableSuffix())
+	temporaryTableID := TempTableIDWithSuffix(dest, dest.IdentifierFor(tableData.TopicConfig().BuildStagingDatabaseAndSchemaPair(), tableData.Name()), tableData.TempTableSuffix())
 
 	config := dest.GetConfig()
 	var subQuery string

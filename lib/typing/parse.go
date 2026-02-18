@@ -1,6 +1,7 @@
 package typing
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"time"
@@ -29,7 +30,7 @@ func ParseValue(key string, optionalSchema map[string]KindDetails, val any) (Kin
 		return Invalid, nil
 	case uint, int, uint8, uint16, uint32, uint64, int8, int16, int32, int64:
 		return Integer, nil
-	case float32, float64:
+	case float32, float64, json.Number:
 		// Integers will be parsed as Floats if they come from JSON
 		// This is a limitation with JSON - https://github.com/golang/go/issues/56719
 		// UNLESS Transfer is provided with a schema object, and we deliberately typecast the value to an integer

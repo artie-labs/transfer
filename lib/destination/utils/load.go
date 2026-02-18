@@ -20,79 +20,67 @@ import (
 	"github.com/artie-labs/transfer/clients/sqs"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination"
 )
 
-func IsOutputBaseline(cfg config.Config) bool {
+// Load returns a [destination.Destination] for any supported output.
+// For SQL destinations, the returned value also implements [destination.SQLDestination].
+func Load(ctx context.Context, cfg config.Config) (destination.Destination, error) {
 	switch cfg.Output {
-	case constants.S3, constants.GCS, constants.Iceberg, constants.Redis, constants.SQS:
-		return true
-	default:
-		return false
-	}
-}
-
-func LoadBaseline(ctx context.Context, cfg config.Config) (destination.Baseline, error) {
-	switch cfg.Output {
-	case constants.S3:
-		store, err := s3.LoadStore(ctx, cfg)
-		if err != nil {
-			return nil, fmt.Errorf("failed to load S3: %w", err)
-		}
-
-		return store, nil
-	case constants.GCS:
-		store, err := gcs.LoadStore(ctx, cfg)
-		if err != nil {
-			return nil, fmt.Errorf("failed to load GCS: %w", err)
-		}
-
-		return store, nil
-	case constants.Iceberg:
-		store, err := iceberg.LoadStore(ctx, cfg)
-		if err != nil {
-			return nil, fmt.Errorf("failed to load Iceberg: %w", err)
-		}
-		return store, nil
-	case constants.Redis:
-		store, err := redis.LoadRedis(ctx, cfg, nil)
-		if err != nil {
-			return nil, fmt.Errorf("failed to load Redis: %w", err)
-		}
-		return store, nil
-	case constants.SQS:
-		store, err := sqs.LoadSQS(ctx, cfg)
-		if err != nil {
-			return nil, fmt.Errorf("failed to load SQS: %w", err)
-		}
-		return store, nil
-	}
-
-	return nil, fmt.Errorf("invalid baseline output source specified: %q", cfg.Output)
-}
-
-func LoadDestination(ctx context.Context, cfg config.Config, store *db.Store) (destination.Destination, error) {
-	switch cfg.Output {
+	// SQL destinations
 	case constants.Snowflake:
-		return snowflake.LoadSnowflake(ctx, cfg, store)
+		return snowflake.LoadStore(ctx, cfg, nil)
 	case constants.BigQuery:
-		return bigquery.LoadBigQuery(ctx, cfg, store)
+		return bigquery.LoadStore(ctx, cfg, nil)
 	case constants.Databricks:
-		return databricks.LoadStore(cfg)
+		return databricks.LoadStore(ctx, cfg)
 	case constants.MSSQL:
-		return mssql.LoadStore(cfg)
+		return mssql.LoadStore(ctx, cfg)
 	case constants.MySQL:
-		return mysql.LoadStore(cfg)
+		return mysql.LoadStore(ctx, cfg)
 	case constants.Postgres:
 		return postgres.LoadStore(ctx, cfg)
 	case constants.Redshift:
-		return redshift.LoadRedshift(ctx, cfg, store)
+		return redshift.LoadStore(ctx, cfg, nil)
 	case constants.MotherDuck:
-		return motherduck.LoadStore(cfg)
+		return motherduck.LoadStore(ctx, cfg)
 	case constants.Clickhouse:
-		return clickhouse.LoadClickhouse(ctx, cfg, store)
+		return clickhouse.LoadStore(ctx, cfg, nil)
+
+	// Object storage destinations
+	case constants.S3:
+		return s3.LoadStore(ctx, cfg)
+	case constants.GCS:
+		return gcs.LoadStore(ctx, cfg)
+	case constants.Iceberg:
+		store, err := iceberg.LoadStore(ctx, cfg)
+		if err != nil {
+			return nil, err
+		}
+		return store, nil
+
+	// Streaming destinations
+	case constants.Redis:
+		return redis.LoadStore(ctx, cfg)
+	case constants.SQS:
+		return sqs.LoadStore(ctx, cfg)
 	}
 
 	return nil, fmt.Errorf("invalid destination: %q", cfg.Output)
+}
+
+// LoadSQLDestination returns a [destination.SQLDestination] for SQL-based outputs only.
+// This is a convenience wrapper for callers that specifically need a SQL destination (e.g., integration tests).
+func LoadSQLDestination(ctx context.Context, cfg config.Config) (destination.SQLDestination, error) {
+	dest, err := Load(ctx, cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	sqlDest, ok := dest.(destination.SQLDestination)
+	if !ok {
+		return nil, fmt.Errorf("destination %q is not a SQL destination", cfg.Output)
+	}
+
+	return sqlDest, nil
 }

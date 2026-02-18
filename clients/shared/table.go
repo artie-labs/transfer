@@ -31,11 +31,11 @@ func getValidColumns(cols []columns.Column) []columns.Column {
 	return validCols
 }
 
-func CreateTempTable(ctx context.Context, dest destination.Destination, tableData *optimization.TableData, tc *types.DestinationTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier) error {
+func CreateTempTable(ctx context.Context, dest destination.SQLDestination, tableData *optimization.TableData, tc *types.DestinationTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier) error {
 	return CreateTable(ctx, dest, tableData.Mode(), tc, settings, tableID, true, tableData.ReadOnlyInMemoryCols().GetColumns())
 }
 
-func CreateTable(ctx context.Context, dest destination.Destination, mode config.Mode, tc *types.DestinationTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier, tempTable bool, cols []columns.Column) error {
+func CreateTable(ctx context.Context, dest destination.SQLDestination, mode config.Mode, tc *types.DestinationTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier, tempTable bool, cols []columns.Column) error {
 	cols = getValidColumns(cols)
 	if len(cols) == 0 {
 		return nil
@@ -56,7 +56,7 @@ func CreateTable(ctx context.Context, dest destination.Destination, mode config.
 	return nil
 }
 
-func addColumn(ctx context.Context, dest destination.Destination, sqlPart string, attempts int) error {
+func addColumn(ctx context.Context, dest destination.SQLDestination, sqlPart string, attempts int) error {
 	if attempts >= 100 {
 		return fmt.Errorf("failed to add column after 100 attempts")
 	}
@@ -87,7 +87,7 @@ func addColumn(ctx context.Context, dest destination.Destination, sqlPart string
 	return nil
 }
 
-func AlterTableAddColumns(ctx context.Context, dest destination.Destination, tc *types.DestinationTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier, cols []columns.Column) error {
+func AlterTableAddColumns(ctx context.Context, dest destination.SQLDestination, tc *types.DestinationTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier, cols []columns.Column) error {
 	cols = getValidColumns(cols)
 	if len(cols) == 0 {
 		return nil
@@ -108,14 +108,14 @@ func AlterTableAddColumns(ctx context.Context, dest destination.Destination, tc 
 	return nil
 }
 
-func AlterTableDropColumns(ctx context.Context, dest destination.Destination, tc *types.DestinationTableConfig, tableID sql.TableIdentifier, cols []columns.Column, cdcTime time.Time, containOtherOperations bool) error {
+func AlterTableDropColumns(ctx context.Context, dest destination.SQLDestination, tc *types.DestinationTableConfig, tableID sql.TableIdentifier, cols []columns.Column, cdcTime time.Time, containsOtherOperations bool) error {
 	if len(cols) == 0 {
 		return nil
 	}
 
 	var colsToDrop []columns.Column
 	for _, col := range cols {
-		if tc.ShouldDeleteColumn(col.Name(), cdcTime, containOtherOperations) {
+		if tc.ShouldDeleteColumn(col.Name(), cdcTime, containsOtherOperations) {
 			colsToDrop = append(colsToDrop, col)
 		}
 	}
@@ -140,10 +140,26 @@ func AlterTableDropColumns(ctx context.Context, dest destination.Destination, tc
 	return nil
 }
 
-func BuildStagingTableID(dest destination.Baseline, pair kafkalib.DatabaseAndSchemaPair, tableID sql.TableIdentifier) sql.TableIdentifier {
+func BuildStagingTableID(dest destination.Destination, pair kafkalib.DatabaseAndSchemaPair, tableID sql.TableIdentifier) sql.TableIdentifier {
 	if pair.IsValid() {
-		return TempTableID(dest.IdentifierFor(pair, tableID.Table()))
+		return TempTableID(dest, dest.IdentifierFor(pair, tableID.Table()))
 	}
 
-	return TempTableID(tableID)
+	return TempTableID(dest, tableID)
+}
+
+// DropTemporaryTable is a shared implementation of DropTable for SQL-based destinations.
+// It guards against dropping non-temporary tables, executes the DROP statement, and clears the table from the config cache.
+func DropTemporaryTable(ctx context.Context, dest destination.SQLDestination, tableID sql.TableIdentifier, configMap *types.DestinationTableConfigMap) error {
+	if !tableID.TemporaryTable() {
+		return fmt.Errorf("table %q is not a temporary table, so it cannot be dropped", tableID.FullyQualifiedName())
+	}
+
+	if _, err := dest.ExecContext(ctx, dest.Dialect().BuildDropTableQuery(tableID)); err != nil {
+		return fmt.Errorf("failed to drop table: %w", err)
+	}
+
+	// We'll then clear it from our cache
+	configMap.RemoveTable(tableID)
+	return nil
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/lib/config"
-	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 )
 
@@ -20,8 +19,7 @@ func TestStore_GetConfig(t *testing.T) {
 		},
 	}
 	store := &Store{
-		config:    cfg,
-		configMap: &types.DestinationTableConfigMap{},
+		config: cfg,
 	}
 
 	assert.Equal(t, cfg, store.GetConfig())
@@ -90,8 +88,7 @@ func TestStore_Validate(t *testing.T) {
 
 func TestStore_IdentifierFor(t *testing.T) {
 	store := &Store{
-		config:    config.Config{},
-		configMap: &types.DestinationTableConfigMap{},
+		config: config.Config{},
 	}
 
 	topicConfig := kafkalib.DatabaseAndSchemaPair{
@@ -107,70 +104,6 @@ func TestStore_IdentifierFor(t *testing.T) {
 	assert.Equal(t, "myschema", redisTableID.Schema())
 	assert.Equal(t, "mytable", redisTableID.Table())
 	assert.Equal(t, "mydb:myschema:mytable", redisTableID.FullyQualifiedName())
-}
-
-func TestStore_Dialect(t *testing.T) {
-	store := &Store{}
-	// Redis doesn't use SQL dialects
-	assert.Nil(t, store.Dialect())
-}
-
-func TestStore_Dedupe(t *testing.T) {
-	store := &Store{}
-	assert.ErrorContains(t, store.Dedupe(t.Context(), nil, kafkalib.DatabaseAndSchemaPair{}, nil, false), "dedupe is not supported for Redis")
-}
-
-func TestStore_SweepTemporaryTables(t *testing.T) {
-	store := &Store{}
-	// Should return nil as Redis doesn't have temp tables to sweep
-	assert.NoError(t, store.SweepTemporaryTables(t.Context(), nil))
-}
-
-func TestStore_ExecContext(t *testing.T) {
-	store := &Store{}
-	result, err := store.ExecContext(t.Context(), "SELECT 1")
-	assert.Nil(t, result)
-	assert.Error(t, err)
-	assert.ErrorContains(t, err, "ExecContext is not supported for Redis")
-}
-
-func TestStore_QueryContext(t *testing.T) {
-	store := &Store{}
-	rows, err := store.QueryContext(t.Context(), "SELECT 1")
-	assert.Nil(t, rows)
-	assert.Error(t, err)
-	assert.ErrorContains(t, err, "QueryContext is not supported for Redis")
-}
-
-func TestStore_Begin(t *testing.T) {
-	store := &Store{}
-	tx, err := store.Begin()
-	assert.Nil(t, tx)
-	assert.Error(t, err)
-	assert.ErrorContains(t, err, "transactions are not supported for Redis")
-}
-
-func TestStore_LoadDataIntoTable(t *testing.T) {
-	store := &Store{}
-	assert.ErrorContains(t, store.LoadDataIntoTable(t.Context(), nil, nil, nil, nil, types.AdditionalSettings{}, false), "LoadDataIntoTable is not supported for Redis")
-}
-
-func TestStore_GetTableConfig(t *testing.T) {
-	store := &Store{
-		configMap: &types.DestinationTableConfigMap{},
-	}
-
-	tableID := NewTableIdentifier("mydb", "myschema", "mytable")
-
-	// First call should create a new table config
-	tableConfig, err := store.GetTableConfig(t.Context(), tableID, false)
-	assert.NoError(t, err)
-	assert.NotNil(t, tableConfig)
-
-	// Second call should return the same config
-	tableConfig2, err := store.GetTableConfig(t.Context(), tableID, false)
-	assert.NoError(t, err)
-	assert.Equal(t, tableConfig, tableConfig2)
 }
 
 func TestIsRetryableError(t *testing.T) {

@@ -1,6 +1,7 @@
 package typing
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"testing"
@@ -51,6 +52,12 @@ func Test_ParseValue(t *testing.T) {
 		assert.Equal(t, MustParseValue("", nil, 9), Integer)
 		assert.Equal(t, MustParseValue("", nil, math.MaxInt), Integer)
 		assert.Equal(t, MustParseValue("", nil, -1*math.MaxInt), Integer)
+	}
+	{
+		// json.Number
+		for _, variant := range []json.Number{"42", "9223372036854775806", "-100", "3.14", "1e10", "2.5E3"} {
+			assert.Equal(t, Float, MustParseValue("", nil, variant))
+		}
 	}
 	{
 		// Boolean

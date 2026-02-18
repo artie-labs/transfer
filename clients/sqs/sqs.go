@@ -18,6 +18,7 @@ import (
 	"github.com/aws/smithy-go"
 
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -33,6 +34,10 @@ const (
 type Store struct {
 	config    config.Config
 	sqsClient *sqs.Client
+}
+
+func (s *Store) Label() constants.DestinationKind {
+	return s.config.Output
 }
 
 func (s *Store) GetConfig() config.Config {
@@ -199,7 +204,7 @@ func (s *Store) DropTable(ctx context.Context, tableID sqllib.TableIdentifier) e
 	return nil
 }
 
-func LoadSQS(ctx context.Context, cfg config.Config) (*Store, error) {
+func LoadStore(ctx context.Context, cfg config.Config) (*Store, error) {
 	if cfg.SQS == nil {
 		return nil, fmt.Errorf("sqs config is nil")
 	}

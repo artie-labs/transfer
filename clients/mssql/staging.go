@@ -2,12 +2,13 @@ package mssql
 
 import (
 	"context"
+	gosql "database/sql"
 	"fmt"
-	"log/slog"
 
 	mssql "github.com/microsoft/go-mssqldb"
 
 	"github.com/artie-labs/transfer/clients/shared"
+	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -21,63 +22,51 @@ func (s *Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.T
 		}
 	}
 
-	tx, err := s.Begin()
+	tx, err := s.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 
-	var txCommitted bool
-	defer func() {
-		if !txCommitted {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				slog.Warn("failed to rollback transaction", slog.Any("error", rollbackErr))
-			}
+	return db.CommitOrRollback(tx, func(tx *gosql.Tx) error {
+		cols := tableData.ReadOnlyInMemoryCols().ValidColumns()
+		stmt, err := tx.Prepare(mssql.CopyIn(tableID.FullyQualifiedName(), mssql.BulkOptions{}, columns.ColumnNames(cols)...))
+		if err != nil {
+			return fmt.Errorf("failed to prepare bulk insert: %w", err)
 		}
-	}()
 
-	cols := tableData.ReadOnlyInMemoryCols().ValidColumns()
-	stmt, err := tx.Prepare(mssql.CopyIn(tableID.FullyQualifiedName(), mssql.BulkOptions{}, columns.ColumnNames(cols)...))
-	if err != nil {
-		return fmt.Errorf("failed to prepare bulk insert: %w", err)
-	}
+		defer stmt.Close()
 
-	defer stmt.Close()
+		for _, row := range tableData.Rows() {
+			var parsedValues []any
+			for _, col := range cols {
+				value, _ := row.GetValue(col.Name())
+				parsedValue, err := shared.ParseValue(value, col)
+				if err != nil {
+					return fmt.Errorf("failed to parse value: %w", err)
+				}
 
-	for _, row := range tableData.Rows() {
-		var parsedValues []any
-		for _, col := range cols {
-			value, _ := row.GetValue(col.Name())
-			parsedValue, err := parseValue(value, col)
-			if err != nil {
-				return fmt.Errorf("failed to parse value: %w", err)
+				parsedValues = append(parsedValues, parsedValue)
 			}
 
-			parsedValues = append(parsedValues, parsedValue)
+			if _, err = stmt.ExecContext(ctx, parsedValues...); err != nil {
+				return fmt.Errorf("failed to copy row: %w", err)
+			}
 		}
 
-		if _, err = stmt.ExecContext(ctx, parsedValues...); err != nil {
-			return fmt.Errorf("failed to copy row: %w", err)
+		results, err := stmt.ExecContext(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to finalize bulk insert: %w", err)
 		}
-	}
 
-	results, err := stmt.ExecContext(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to finalize bulk insert: %w", err)
-	}
+		rowsLoaded, err := results.RowsAffected()
+		if err != nil {
+			return fmt.Errorf("failed to get rows affected: %w", err)
+		}
 
-	rowsLoaded, err := results.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("failed to get rows affected: %w", err)
-	}
+		if expectedRows := int64(tableData.NumberOfRows()); rowsLoaded != expectedRows {
+			return fmt.Errorf("expected %d rows to be loaded, but got %d", expectedRows, rowsLoaded)
+		}
 
-	if expectedRows := int64(tableData.NumberOfRows()); rowsLoaded != expectedRows {
-		return fmt.Errorf("expected %d rows to be loaded, but got %d", expectedRows, rowsLoaded)
-	}
-
-	if err = tx.Commit(); err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
-	}
-
-	txCommitted = true
-	return nil
+		return nil
+	})
 }

@@ -1,6 +1,7 @@
 package converters
 
 import (
+	"encoding/json"
 	"math"
 	"testing"
 	"time"
@@ -148,9 +149,27 @@ func TestInt64Converter_Convert(t *testing.T) {
 		assert.Equal(t, int64(100000000), val)
 	}
 	{
+		// json.Number
+		val, err := converter.Convert(json.Number("42"))
+		assert.NoError(t, err)
+		assert.Equal(t, int64(42), val)
+	}
+	{
+		// json.Number - large int
+		val, err := converter.Convert(json.Number("9223372036854775806"))
+		assert.NoError(t, err)
+		assert.Equal(t, int64(9223372036854775806), val)
+	}
+	{
+		// time.Time
+		val, err := converter.Convert(time.Date(2021, 1, 1, 9, 10, 12, 400_123_991, time.UTC))
+		assert.NoError(t, err)
+		assert.Equal(t, int64(1_609_492_212_400), val)
+	}
+	{
 		// Invalid
 		_, err := converter.Convert("foo")
-		assert.ErrorContains(t, err, "expected int/int32/int64/float32/float64/*decimal.Decimal received string with value foo")
+		assert.ErrorContains(t, err, "unexpected data type - received string with value foo")
 	}
 }
 
@@ -226,6 +245,18 @@ func TestFloat64Converter_Convert(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Nil(t, val)
 		}
+	}
+	{
+		// json.Number
+		val, err := converter.Convert(json.Number("123.45"))
+		assert.NoError(t, err)
+		assert.Equal(t, float64(123.45), val)
+	}
+	{
+		// json.Number - integer
+		val, err := converter.Convert(json.Number("42"))
+		assert.NoError(t, err)
+		assert.Equal(t, float64(42), val)
 	}
 	{
 		// Not supported type

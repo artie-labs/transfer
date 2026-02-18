@@ -20,7 +20,7 @@ type Store interface {
 	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
 	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 	Conn(ctx context.Context) (*sql.Conn, error)
-	Begin() (*sql.Tx, error)
+	Begin(ctx context.Context) (*sql.Tx, error)
 	IsRetryableError(err error) bool
 	GetDatabase() *sql.DB
 	Close() error
@@ -74,12 +74,36 @@ func (s *storeWrapper) QueryRowContext(ctx context.Context, query string, args .
 	return s.DB.QueryRowContext(ctx, query, args...)
 }
 
-func (s *storeWrapper) Begin() (*sql.Tx, error) {
-	return s.DB.Begin()
+func (s *storeWrapper) Begin(ctx context.Context) (*sql.Tx, error) {
+	return s.DB.BeginTx(ctx, nil)
 }
 
 func (s *storeWrapper) IsRetryableError(err error) bool {
 	return isRetryableError(err)
+}
+
+// CommitOrRollback executes fn within the scope of the given transaction.
+// If fn returns an error, the transaction is rolled back. Otherwise, it is committed.
+func CommitOrRollback(tx *sql.Tx, fn func(*sql.Tx) error) error {
+	var committed bool
+	defer func() {
+		if !committed {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				slog.Warn("Failed to rollback transaction", slog.Any("error", rollbackErr))
+			}
+		}
+	}()
+
+	if err := fn(tx); err != nil {
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	committed = true
+	return nil
 }
 
 func Open(driverName, dsn string) (Store, error) {
