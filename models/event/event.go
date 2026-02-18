@@ -3,6 +3,7 @@ package event
 import (
 	"cmp"
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"sort"
@@ -213,6 +214,15 @@ func (e *Event) PrimaryKeyValue() (string, error) {
 		value, ok := e.data[pk]
 		if !ok {
 			return "", fmt.Errorf("primary key %q not found in data: %v", pk, e.data)
+		}
+
+		// Normalize json.Number to float64 to ensure consistent formatting
+		// regardless of whether the value was processed through a Debezium schema converter.
+		// This value is only used as a dedupe key in the in-memory data; it's not written to the destination.
+		if num, ok := value.(json.Number); ok {
+			if floatVal, err := num.Float64(); err == nil {
+				value = floatVal
+			}
 		}
 
 		key += fmt.Sprintf("%s=%v", pk, value)

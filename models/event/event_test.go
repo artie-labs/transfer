@@ -1,6 +1,7 @@
 package event
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -246,6 +247,78 @@ func (e *EventsTestSuite) TestEventPrimaryKeys() {
 		pkValue, err := evt.PrimaryKeyValue()
 		assert.ErrorContains(e.T(), err, `primary key "id" not found in data: map[course_id:2]`)
 		assert.Equal(e.T(), "", pkValue)
+	}
+}
+
+func (e *EventsTestSuite) TestPrimaryKeyValue_JsonNumberConsistency() {
+	{
+		// Integer with trailing zeros: float64 would use scientific notation with %v
+		// (e.g., "1.7713596014e+12") while json.Number would use "1771359601400".
+		// Both should produce the same dedup key.
+		float64Evt := &Event{
+			primaryKeys: []string{"timestamp", "roomid"},
+			data: map[string]any{
+				"timestamp": float64(1771359601400),
+				"roomid":    "abc",
+			},
+		}
+		jsonNumEvt := &Event{
+			primaryKeys: []string{"timestamp", "roomid"},
+			data: map[string]any{
+				"timestamp": json.Number("1771359601400"),
+				"roomid":    "abc",
+			},
+		}
+
+		float64PK, err := float64Evt.PrimaryKeyValue()
+		assert.NoError(e.T(), err)
+		jsonNumPK, err := jsonNumEvt.PrimaryKeyValue()
+		assert.NoError(e.T(), err)
+		assert.Equal(e.T(), float64PK, jsonNumPK)
+	}
+	{
+		// Integer without trailing zeros: Go's %v still uses scientific notation for
+		// float64 (e.g., "1.771359601407e+12") while json.Number uses "1771359601407".
+		// The fix normalizes json.Number to float64 so both produce the same key.
+		float64Evt := &Event{
+			primaryKeys: []string{"timestamp"},
+			data: map[string]any{
+				"timestamp": float64(1771359601407),
+			},
+		}
+		jsonNumEvt := &Event{
+			primaryKeys: []string{"timestamp"},
+			data: map[string]any{
+				"timestamp": json.Number("1771359601407"),
+			},
+		}
+
+		float64PK, err := float64Evt.PrimaryKeyValue()
+		assert.NoError(e.T(), err)
+		jsonNumPK, err := jsonNumEvt.PrimaryKeyValue()
+		assert.NoError(e.T(), err)
+		assert.Equal(e.T(), float64PK, jsonNumPK)
+	}
+	{
+		// Round number where float64 shortest representation drops many digits
+		float64Evt := &Event{
+			primaryKeys: []string{"id"},
+			data: map[string]any{
+				"id": float64(1000000000000),
+			},
+		}
+		jsonNumEvt := &Event{
+			primaryKeys: []string{"id"},
+			data: map[string]any{
+				"id": json.Number("1000000000000"),
+			},
+		}
+
+		float64PK, err := float64Evt.PrimaryKeyValue()
+		assert.NoError(e.T(), err)
+		jsonNumPK, err := jsonNumEvt.PrimaryKeyValue()
+		assert.NoError(e.T(), err)
+		assert.Equal(e.T(), float64PK, jsonNumPK)
 	}
 }
 
