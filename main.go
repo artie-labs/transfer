@@ -78,7 +78,7 @@ func main() {
 	)
 
 	metricsClient := metrics.LoadExporter(settings.Config)
-	dest, err := utils.Load(ctx, settings.Config)
+	dest, err := utils.Load(ctx, settings.Config, metricsClient)
 	if err != nil {
 		whClient.SendEvent(ctx, webhooksutil.ConnectionFailed, map[string]any{
 			"error":   "Unable to load destination",

@@ -14,6 +14,7 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/utils"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
+	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 )
 
 type AppendTest struct {
@@ -79,7 +80,7 @@ func main() {
 	var _iceberg *iceberg.Store
 	var dest destination.SQLDestination
 	if settings.Config.Output == constants.Iceberg {
-		loaded, err := utils.Load(ctx, settings.Config)
+		loaded, err := utils.Load(ctx, settings.Config, metrics.NullMetricsProvider{})
 		if err != nil {
 			logger.Fatal("Failed to load destination", slog.Any("err", err))
 		}
@@ -91,7 +92,7 @@ func main() {
 
 		_iceberg = &_icebergStore
 	} else {
-		dest, err = utils.LoadSQLDestination(ctx, settings.Config)
+		dest, err = utils.LoadSQLDestination(ctx, settings.Config, metrics.NullMetricsProvider{})
 		if err != nil {
 			logger.Fatal("Failed to load destination", slog.Any("err", err))
 		}
