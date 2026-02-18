@@ -417,6 +417,6 @@ func TestTempTableIDWithSuffix(t *testing.T) {
 
 	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "db", Schema: "schema"}, "table")
 	tableID := (&Store{}).IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name())
-	tempTableName := shared.TempTableIDWithSuffix(tableID, "sUfFiX").FullyQualifiedName()
+	tempTableName := shared.TempTableIDWithSuffix(&Store{}, tableID, "sUfFiX").FullyQualifiedName()
 	assert.Equal(t, `"DB"."SCHEMA"."TABLE___ARTIE_SUFFIX"`, trimTTL(tempTableName))
 }

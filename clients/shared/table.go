@@ -142,10 +142,10 @@ func AlterTableDropColumns(ctx context.Context, dest destination.SQLDestination,
 
 func BuildStagingTableID(dest destination.Destination, pair kafkalib.DatabaseAndSchemaPair, tableID sql.TableIdentifier) sql.TableIdentifier {
 	if pair.IsValid() {
-		return TempTableID(dest.IdentifierFor(pair, tableID.Table()))
+		return TempTableID(dest, dest.IdentifierFor(pair, tableID.Table()))
 	}
 
-	return TempTableID(tableID)
+	return TempTableID(dest, tableID)
 }
 
 // DropTemporaryTable is a shared implementation of DropTable for SQL-based destinations.

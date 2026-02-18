@@ -16,7 +16,7 @@ func TestGenerateDedupeQueries(t *testing.T) {
 	{
 		// Dedupe with one primary key + no `__artie_updated_at` flag.
 		tableID := dialect.NewTableIdentifier("project12", "public", "customers")
-		stagingTableID := shared.TempTableID(tableID)
+		stagingTableID := shared.TempTableID(&Store{}, tableID)
 
 		parts := dialect.BigQueryDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"id"}, false)
 		assert.Len(t, parts, 3)
@@ -34,7 +34,7 @@ func TestGenerateDedupeQueries(t *testing.T) {
 	{
 		// Dedupe with one primary key + `__artie_updated_at` flag.
 		tableID := dialect.NewTableIdentifier("project12", "public", "customers")
-		stagingTableID := shared.TempTableID(tableID)
+		stagingTableID := shared.TempTableID(&Store{}, tableID)
 
 		parts := dialect.BigQueryDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"id"}, true)
 		assert.Len(t, parts, 3)
@@ -52,7 +52,7 @@ func TestGenerateDedupeQueries(t *testing.T) {
 	{
 		// Dedupe with composite keys + no `__artie_updated_at` flag.
 		tableID := dialect.NewTableIdentifier("project123", "public", "user_settings")
-		stagingTableID := shared.TempTableID(tableID)
+		stagingTableID := shared.TempTableID(&Store{}, tableID)
 
 		parts := dialect.BigQueryDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"user_id", "settings"}, false)
 		assert.Len(t, parts, 3)
@@ -70,7 +70,7 @@ func TestGenerateDedupeQueries(t *testing.T) {
 	{
 		// Dedupe with composite keys + `__artie_updated_at` flag.
 		tableID := dialect.NewTableIdentifier("project123", "public", "user_settings")
-		stagingTableID := shared.TempTableID(tableID)
+		stagingTableID := shared.TempTableID(&Store{}, tableID)
 
 		parts := dialect.BigQueryDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"user_id", "settings"}, true)
 		assert.Len(t, parts, 3)

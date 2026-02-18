@@ -13,6 +13,7 @@ import (
 
 	"github.com/artie-labs/transfer/clients/s3"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/gcslib"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -26,6 +27,10 @@ const GooglePathToCredentialsEnvKey = "GOOGLE_APPLICATION_CREDENTIALS"
 type Store struct {
 	config    config.Config
 	gcsClient gcslib.GCSClient
+}
+
+func (s Store) Label() constants.DestinationKind {
+	return s.config.Output
 }
 
 func (s Store) GetConfig() config.Config {

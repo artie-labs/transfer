@@ -12,6 +12,7 @@ import (
 	"github.com/artie-labs/transfer/clients/motherduck/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -47,6 +48,10 @@ func (s Store) dialect() dialect.DuckDBDialect {
 
 func (s Store) Dialect() sql.Dialect {
 	return s.dialect()
+}
+
+func (s Store) Label() constants.DestinationKind {
+	return s.config.Output
 }
 
 func (s Store) GetConfig() config.Config {
