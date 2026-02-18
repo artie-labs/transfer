@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/artie-labs/transfer/clients/shared"
+	"github.com/artie-labs/transfer/lib/apachelivy"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -104,7 +105,7 @@ func (s *Store) writeTemporaryTableFile(tableData *optimization.TableData, newTa
 	return file.FilePath, nil
 }
 
-func (s Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tableID sql.TableIdentifier) error {
+func (s Store) loadDataIntoTable(ctx context.Context, client *apachelivy.Client, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tableID sql.TableIdentifier) error {
 	fp, err := s.writeTemporaryTableFile(tableData, tableID)
 	if err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
@@ -129,7 +130,7 @@ func (s Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.Ta
 
 	// Load the data into a temporary view
 	command := s.Dialect().BuildCreateTemporaryView(tableID.EscapedTable(), colParts, s3URI)
-	if err := s.apacheLivyClient.ExecContext(ctx, command); err != nil {
+	if err := client.ExecContext(ctx, command); err != nil {
 		return fmt.Errorf("failed to load temporary table: %w", err)
 	}
 
