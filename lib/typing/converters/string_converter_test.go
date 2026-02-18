@@ -273,6 +273,13 @@ func TestIntegerConverter_Convert(t *testing.T) {
 		}
 	}
 	{
+		// Test decimal.Decimal with non-zero fractional digits
+		for _, input := range []string{"167155.50", "123.45", "0.1"} {
+			_, err := IntegerConverter{}.Convert(decimal.NewDecimal(numbers.MustParseDecimal(input)))
+			assert.ErrorContains(t, err, "unexpected value", "input: %s", input)
+		}
+	}
+	{
 		// Booleans
 		{
 			// True

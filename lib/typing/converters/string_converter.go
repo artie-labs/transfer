@@ -262,6 +262,9 @@ func (IntegerConverter) Convert(value any) (string, error) {
 		return fmt.Sprint(parsedVal), nil
 	case *decimal.Decimal:
 		reduced, _ := new(apd.Decimal).Reduce(parsedVal.Value())
+		if reduced.Exponent < 0 {
+			return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.UnexpectedValue)
+		}
 		return reduced.Text('f'), nil
 	case json.Number:
 		if _, err := strconv.ParseInt(parsedVal.String(), 10, 64); err != nil {
