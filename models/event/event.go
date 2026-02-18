@@ -126,6 +126,8 @@ func ToMemoryEvent(ctx context.Context, dest destination.Destination, event cdc.
 		return Event{}, fmt.Errorf("failed to get optional schema: %w", err)
 	}
 
+	updateSchemaForHashedColumns(tc, optionalSchema)
+
 	// Static columns cannot collide with the event data.
 	for _, staticColumn := range tc.StaticColumns {
 		if _, ok := data[staticColumn.Name]; ok {
