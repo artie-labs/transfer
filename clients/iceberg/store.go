@@ -13,6 +13,7 @@ import (
 	"github.com/artie-labs/transfer/lib/apachelivy"
 	"github.com/artie-labs/transfer/lib/awslib"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/iceberg"
@@ -31,6 +32,10 @@ type Store struct {
 	apacheLivyClient *apachelivy.Client
 	config           config.Config
 	cm               *types.DestinationTableConfigMap
+}
+
+func (s Store) Label() constants.DestinationKind {
+	return s.config.Output
 }
 
 func (s Store) GetConfig() config.Config {
@@ -76,7 +81,7 @@ func (s Store) append(ctx context.Context, tableData *optimization.TableData, wh
 	}
 
 	tableID := s.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name())
-	tempTableID := shared.TempTableIDWithSuffix(s.IdentifierFor(tableData.TopicConfig().BuildStagingDatabaseAndSchemaPair(), tableData.Name()), tableData.TempTableSuffix())
+	tempTableID := shared.TempTableIDWithSuffix(s, s.IdentifierFor(tableData.TopicConfig().BuildStagingDatabaseAndSchemaPair(), tableData.Name()), tableData.TempTableSuffix())
 	tableConfig, err := s.GetTableConfig(ctx, tableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
 		return fmt.Errorf("failed to get table config: %w", err)
@@ -168,7 +173,7 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whC
 	}
 
 	tableID := s.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name())
-	temporaryTableID := shared.TempTableIDWithSuffix(s.IdentifierFor(tableData.TopicConfig().BuildStagingDatabaseAndSchemaPair(), tableData.Name()), tableData.TempTableSuffix())
+	temporaryTableID := shared.TempTableIDWithSuffix(s, s.IdentifierFor(tableData.TopicConfig().BuildStagingDatabaseAndSchemaPair(), tableData.Name()), tableData.TempTableSuffix())
 	tableConfig, err := s.GetTableConfig(ctx, tableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
 		return false, fmt.Errorf("failed to get table config: %w", err)

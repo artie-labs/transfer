@@ -10,6 +10,7 @@ import (
 	"github.com/artie-labs/transfer/clients/mssql/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
@@ -22,6 +23,10 @@ type Store struct {
 	configMap *types.DestinationTableConfigMap
 	config    config.Config
 	db.Store
+}
+
+func (s Store) Label() constants.DestinationKind {
+	return s.config.Output
 }
 
 func (s Store) GetConfig() config.Config {

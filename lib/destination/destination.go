@@ -7,6 +7,7 @@ import (
 	"log/slog"
 
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
@@ -33,6 +34,7 @@ type SQLDestination interface {
 }
 
 type Destination interface {
+	Label() constants.DestinationKind
 	GetConfig() config.Config
 
 	Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client) (commitTransaction bool, err error)
