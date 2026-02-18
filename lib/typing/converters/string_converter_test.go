@@ -251,6 +251,28 @@ func TestIntegerConverter_Convert(t *testing.T) {
 		assert.Equal(t, "123", val)
 	}
 	{
+		// Test decimal.Decimal with trailing zeros (e.g. NUMERIC(10,2) value that is a whole number)
+		val, err := IntegerConverter{}.Convert(decimal.NewDecimal(numbers.MustParseDecimal("167155.00")))
+		assert.NoError(t, err)
+		assert.Equal(t, "167155", val)
+	}
+	{
+		// Test decimal.Decimal with various scales
+		for _, tc := range []struct {
+			input    string
+			expected string
+		}{
+			{"0.00", "0"},
+			{"-12345.00", "-12345"},
+			{"100.0", "100"},
+			{"99999999999999.000", "99999999999999"},
+		} {
+			val, err := IntegerConverter{}.Convert(decimal.NewDecimal(numbers.MustParseDecimal(tc.input)))
+			assert.NoError(t, err, "input: %s", tc.input)
+			assert.Equal(t, tc.expected, val, "input: %s", tc.input)
+		}
+	}
+	{
 		// Booleans
 		{
 			// True
