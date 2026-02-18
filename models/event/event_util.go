@@ -24,14 +24,19 @@ func normalizeNumericVal(value any) any {
 			return intVal
 		}
 		if floatVal, err := v.Float64(); err == nil {
-			return floatVal
+			return normalizeFloat(floatVal)
 		}
 	case float64:
-		if v == math.Trunc(v) && !math.IsInf(v, 0) && v >= -(1<<53) && v <= (1<<53) {
-			return int64(v)
-		}
+		return normalizeFloat(v)
 	}
 	return value
+}
+
+func normalizeFloat(v float64) any {
+	if v == math.Trunc(v) && !math.IsInf(v, 0) && v >= -(1<<53) && v <= (1<<53) {
+		return int64(v)
+	}
+	return v
 }
 
 func buildColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns map[string]bool) ([]columns.Column, error) {
