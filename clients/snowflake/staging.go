@@ -81,27 +81,31 @@ func (s *Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.T
 	}
 
 	if s.config.Snowflake.Streaming && s.snowpipeStreamingChannelManager != nil {
-		castedTempTableID, ok := tempTableID.(dialect.TableIdentifier)
-		if !ok {
-			return fmt.Errorf("failed to cast temp table ID to TableIdentifier")
+		if tableData.TopicConfig().DropDeletedColumns {
+			slog.Warn("Streaming is not supported when DropDeletedColumns is true, falling back to regular copy into table")
+		} else {
+			castedTempTableID, ok := tempTableID.(dialect.TableIdentifier)
+			if !ok {
+				return fmt.Errorf("failed to cast temp table ID to TableIdentifier")
+			}
+
+			// Create the pipe if it doesn't exist
+			pipeName := castedTempTableID.Table() + "_PIPE"
+			pipe := dialect.NewTableIdentifier(castedTempTableID.Database(), castedTempTableID.Schema(), pipeName)
+			columnNames := columns.ColumnNames(tableData.ReadOnlyInMemoryCols().ValidColumns())
+
+			createPipeQuery := s.dialect().BuildCreatePipeQuery(
+				pipe,
+				castedTempTableID,
+				columnNames,
+			)
+
+			if _, err := s.ExecContext(ctx, createPipeQuery); err != nil {
+				return fmt.Errorf("failed to create pipe for streaming: %w", err)
+			}
+
+			return s.snowpipeStreamingChannelManager.LoadData(ctx, castedTempTableID.Database(), castedTempTableID.Schema(), pipeName, time.Now(), *tableData)
 		}
-
-		// Create the pipe if it doesn't exist
-		pipeName := castedTempTableID.Table() + "_PIPE"
-		pipe := dialect.NewTableIdentifier(castedTempTableID.Database(), castedTempTableID.Schema(), pipeName)
-		columnNames := columns.ColumnNames(tableData.ReadOnlyInMemoryCols().ValidColumns())
-
-		createPipeQuery := s.dialect().BuildCreatePipeQuery(
-			pipe,
-			castedTempTableID,
-			columnNames,
-		)
-
-		if _, err := s.ExecContext(ctx, createPipeQuery); err != nil {
-			return fmt.Errorf("failed to create pipe for streaming: %w", err)
-		}
-
-		return s.snowpipeStreamingChannelManager.LoadData(ctx, castedTempTableID.Database(), castedTempTableID.Schema(), pipeName, time.Now(), *tableData)
 	}
 
 	// Write data into CSV
