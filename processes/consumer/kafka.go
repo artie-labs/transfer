@@ -3,7 +3,6 @@ package consumer
 import (
 	"context"
 	"log/slog"
-	"runtime/debug"
 	"sync"
 	"time"
 
@@ -36,12 +35,8 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 		time.Sleep(jitter.Jitter(100, 3000, num))
 		wg.Add(1)
 		go func(topic string) {
-			defer func() {
-				if x := recover(); x != nil {
-					logger.Fatal("Recovered from panic", slog.Any("err", x), slog.String("stack", string(debug.Stack())))
-				}
-				wg.Done()
-			}()
+			defer wg.Done()
+			defer logger.RecoverFatal()
 			kafkaConsumer, err := kafkalib.GetConsumerFromContext(ctx, topic)
 			if err != nil {
 				logger.Fatal("Failed to get consumer from context", slog.Any("err", err))
