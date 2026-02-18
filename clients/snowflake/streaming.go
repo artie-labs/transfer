@@ -27,8 +27,10 @@ import (
 )
 
 // https://docs.snowflake.com/en/user-guide/snowpipe-streaming/snowpipe-streaming-high-performance-limitations#channel-limits
-const maxChunkSize = 4 * 1024 * 1024 // 4MB
-const maxAppendAttempts = 3
+const (
+	maxChunkSize      = 4 * 1024 * 1024 // 4MB
+	maxAppendAttempts = 3
+)
 
 // Error codes that require channel reopening
 // https://docs.snowflake.com/en/user-guide/snowpipe-streaming/snowpipe-streaming-high-performance-error-handling#channel-errors-that-require-a-manual-reopen
