@@ -172,7 +172,7 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whC
 		return false, nil
 	}
 
-	client := s.clientPool.Next()
+	client := s.GetApacheLivyClient()
 	tableID := s.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name())
 	temporaryTableID := shared.TempTableIDWithSuffix(s, s.IdentifierFor(tableData.TopicConfig().BuildStagingDatabaseAndSchemaPair(), tableData.Name()), tableData.TempTableSuffix())
 	tableConfig, err := s.getTableConfig(ctx, client, tableID, tableData.TopicConfig().DropDeletedColumns)
@@ -237,7 +237,7 @@ func (s Store) IsRetryableError(_ error) bool {
 }
 
 func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kafkalib.DatabaseAndSchemaPair, primaryKeys []string, includeArtieUpdatedAt bool) error {
-	client := s.clientPool.Next()
+	client := s.GetApacheLivyClient()
 	stagingTableID := shared.BuildStagingTableID(s, pair, tableID)
 	castedStagingTableID, ok := stagingTableID.(dialect.TableIdentifier)
 	if !ok {
