@@ -11,6 +11,7 @@ import (
 	"github.com/redis/go-redis/v9"
 
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -26,6 +27,10 @@ const (
 type Store struct {
 	config      config.Config
 	redisClient *redis.Client
+}
+
+func (s *Store) Label() constants.DestinationKind {
+	return s.config.Output
 }
 
 func (s *Store) GetConfig() config.Config {

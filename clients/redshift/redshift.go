@@ -11,6 +11,7 @@ import (
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/awslib"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -32,6 +33,10 @@ type Store struct {
 	_awsCredentials *awslib.Credentials
 	_awsS3Client    awslib.S3Client
 	db.Store
+}
+
+func (s Store) Label() constants.DestinationKind {
+	return s.config.Output
 }
 
 func (s Store) GetConfig() config.Config {
