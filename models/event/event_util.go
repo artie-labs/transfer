@@ -39,14 +39,7 @@ func buildColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns map[
 			filteredColumns.AddColumn(columns.NewColumn(col.Name, typing.String))
 		}
 
-		for _, col := range tc.ColumnsToHash {
-			columnInfo, ok := cols.GetColumn(col)
-			if !ok {
-				continue
-			}
-			columnInfo.KindDetails = typing.String
-			filteredColumns.UpdateColumn(columnInfo)
-		}
+		alterHashColumnsType(tc, filteredColumns)
 
 		return filteredColumns.GetColumns(), nil
 	}
