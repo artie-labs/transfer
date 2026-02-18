@@ -250,68 +250,47 @@ func (e *EventsTestSuite) TestEventPrimaryKeys() {
 	}
 }
 
-func (e *EventsTestSuite) TestPrimaryKeyValue_JsonNumberConsistency() {
+func (e *EventsTestSuite) TestPrimaryKeyValue_NumericConsistency() {
 	{
-		// Integer with trailing zeros: float64 would use scientific notation with %v
-		// (e.g., "1.7713596014e+12") while json.Number would use "1771359601400".
-		// Both should produce the same dedup key.
-		float64Evt := &Event{
-			primaryKeys: []string{"timestamp", "roomid"},
-			data: map[string]any{
-				"timestamp": float64(1771359601400),
-				"roomid":    "abc",
-			},
-		}
-		jsonNumEvt := &Event{
-			primaryKeys: []string{"timestamp", "roomid"},
-			data: map[string]any{
-				"timestamp": json.Number("1771359601400"),
-				"roomid":    "abc",
-			},
-		}
+		// All three numeric types (json.Number, float64, int64) for the same integer
+		// value must produce identical dedup keys. This covers:
+		//   - float64: create event where Debezium schema says "float"
+		//   - int64: create event where Debezium schema says "int"
+		//   - json.Number: delete event with empty Debezium schema
+		for _, ts := range []int64{1771359601407, 1771359601400, 1000000000000} {
+			float64Evt := &Event{
+				primaryKeys: []string{"timestamp", "roomid"},
+				data:        map[string]any{"timestamp": float64(ts), "roomid": "abc"},
+			}
+			int64Evt := &Event{
+				primaryKeys: []string{"timestamp", "roomid"},
+				data:        map[string]any{"timestamp": ts, "roomid": "abc"},
+			}
+			jsonNumEvt := &Event{
+				primaryKeys: []string{"timestamp", "roomid"},
+				data:        map[string]any{"timestamp": json.Number(fmt.Sprint(ts)), "roomid": "abc"},
+			}
 
-		float64PK, err := float64Evt.PrimaryKeyValue()
-		assert.NoError(e.T(), err)
-		jsonNumPK, err := jsonNumEvt.PrimaryKeyValue()
-		assert.NoError(e.T(), err)
-		assert.Equal(e.T(), float64PK, jsonNumPK)
+			float64PK, err := float64Evt.PrimaryKeyValue()
+			assert.NoError(e.T(), err)
+			int64PK, err := int64Evt.PrimaryKeyValue()
+			assert.NoError(e.T(), err)
+			jsonNumPK, err := jsonNumEvt.PrimaryKeyValue()
+			assert.NoError(e.T(), err)
+
+			assert.Equal(e.T(), int64PK, float64PK, "int64 vs float64 mismatch for %d", ts)
+			assert.Equal(e.T(), int64PK, jsonNumPK, "int64 vs json.Number mismatch for %d", ts)
+		}
 	}
 	{
-		// Integer without trailing zeros: Go's %v still uses scientific notation for
-		// float64 (e.g., "1.771359601407e+12") while json.Number uses "1771359601407".
-		// The fix normalizes json.Number to float64 so both produce the same key.
+		// Non-integer float values: json.Number and float64 should still match.
 		float64Evt := &Event{
-			primaryKeys: []string{"timestamp"},
-			data: map[string]any{
-				"timestamp": float64(1771359601407),
-			},
+			primaryKeys: []string{"score"},
+			data:        map[string]any{"score": float64(3.14)},
 		}
 		jsonNumEvt := &Event{
-			primaryKeys: []string{"timestamp"},
-			data: map[string]any{
-				"timestamp": json.Number("1771359601407"),
-			},
-		}
-
-		float64PK, err := float64Evt.PrimaryKeyValue()
-		assert.NoError(e.T(), err)
-		jsonNumPK, err := jsonNumEvt.PrimaryKeyValue()
-		assert.NoError(e.T(), err)
-		assert.Equal(e.T(), float64PK, jsonNumPK)
-	}
-	{
-		// Round number where float64 shortest representation drops many digits
-		float64Evt := &Event{
-			primaryKeys: []string{"id"},
-			data: map[string]any{
-				"id": float64(1000000000000),
-			},
-		}
-		jsonNumEvt := &Event{
-			primaryKeys: []string{"id"},
-			data: map[string]any{
-				"id": json.Number("1000000000000"),
-			},
+			primaryKeys: []string{"score"},
+			data:        map[string]any{"score": json.Number("3.14")},
 		}
 
 		float64PK, err := float64Evt.PrimaryKeyValue()

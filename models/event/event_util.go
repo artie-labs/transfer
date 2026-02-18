@@ -1,6 +1,9 @@
 package event
 
 import (
+	"encoding/json"
+	"math"
+
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/cryptography"
@@ -8,6 +11,28 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
+
+// normalizeNumericVal ensures that json.Number, float64, and int64 representing the same
+// logical integer produce the same output from fmt.Sprintf("%v", ...). Without this, Go's
+// %v formats json.Number via its String() method (e.g. "1771359601407") but float64 via
+// strconv.FormatFloat with 'g' format (e.g. "1.771359601407e+12"), causing identical values
+// to generate different in-memory dedup keys when one event has a Debezium schema and another doesn't.
+func normalizeNumericVal(value any) any {
+	switch v := value.(type) {
+	case json.Number:
+		if intVal, err := v.Int64(); err == nil {
+			return intVal
+		}
+		if floatVal, err := v.Float64(); err == nil {
+			return floatVal
+		}
+	case float64:
+		if v == math.Trunc(v) && !math.IsInf(v, 0) && v >= -(1<<53) && v <= (1<<53) {
+			return int64(v)
+		}
+	}
+	return value
+}
 
 func buildColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns map[string]bool) ([]columns.Column, error) {
 	eventCols, err := event.GetColumns(reservedColumns)
