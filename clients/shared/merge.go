@@ -69,7 +69,7 @@ func Merge(ctx context.Context, dest destination.SQLDestination, tableData *opti
 		return fmt.Errorf("failed to merge columns from destination: %w for table %q", err, tableData.Name())
 	}
 
-	temporaryTableID := TempTableIDWithSuffix(dest.IdentifierFor(tableData.TopicConfig().BuildStagingDatabaseAndSchemaPair(), tableData.Name()), tableData.TempTableSuffix())
+	temporaryTableID := TempTableIDWithSuffix(dest, dest.IdentifierFor(tableData.TopicConfig().BuildStagingDatabaseAndSchemaPair(), tableData.Name()), tableData.TempTableSuffix())
 
 	config := dest.GetConfig()
 	var subQuery string

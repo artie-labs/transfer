@@ -126,6 +126,8 @@ func ToMemoryEvent(ctx context.Context, dest destination.Destination, event cdc.
 		return Event{}, fmt.Errorf("failed to get optional schema: %w", err)
 	}
 
+	updateSchemaForHashedColumns(tc, optionalSchema)
+
 	// Static columns cannot collide with the event data.
 	for _, staticColumn := range tc.StaticColumns {
 		if _, ok := data[staticColumn.Name]; ok {
@@ -215,7 +217,7 @@ func (e *Event) PrimaryKeyValue() (string, error) {
 			return "", fmt.Errorf("primary key %q not found in data: %v", pk, e.data)
 		}
 
-		key += fmt.Sprintf("%s=%v", pk, value)
+		key += fmt.Sprintf("%s=%v", pk, normalizeNumericVal(value))
 	}
 
 	return key, nil

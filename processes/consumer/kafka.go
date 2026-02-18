@@ -2,7 +2,6 @@ package consumer
 
 import (
 	"context"
-	"errors"
 	"log/slog"
 	"sync"
 	"time"
@@ -11,6 +10,7 @@ import (
 	"github.com/artie-labs/transfer/lib/artie/metrics"
 	"github.com/artie-labs/transfer/lib/cdc/format"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/jitter"
 	"github.com/artie-labs/transfer/lib/kafkalib"
@@ -36,6 +36,7 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 		wg.Add(1)
 		go func(topic string) {
 			defer wg.Done()
+			defer logger.RecoverFatal()
 			kafkaConsumer, err := kafkalib.GetConsumerFromContext(ctx, topic)
 			if err != nil {
 				logger.Fatal("Failed to get consumer from context", slog.Any("err", err))
@@ -77,8 +78,12 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 					return nil
 				})
 				if err != nil {
-					if fetchErr, ok := kafkalib.IsFetchMessageError(err); ok && errors.Is(fetchErr.Err, context.DeadlineExceeded) {
-						slog.Debug("Failed to read kafka message", slog.Any("err", err), slog.String("topic", topic), slog.Duration("timeout", kafkalib.FetchMessageTimeout))
+					if fetchErr, ok := kafkalib.IsFetchMessageError(err); ok && db.IsRetryableError(fetchErr.Err, context.DeadlineExceeded) {
+						slog.Warn("Failed to read kafka message, will retry",
+							slog.Any("err", err),
+							slog.String("topic", topic),
+							slog.Duration("timeout", kafkalib.FetchMessageTimeout),
+						)
 						time.Sleep(500 * time.Millisecond)
 						continue
 					} else {

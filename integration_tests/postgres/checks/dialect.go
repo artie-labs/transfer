@@ -238,7 +238,7 @@ func testSweep(ctx context.Context, store *postgres.Store, pgDialect dialect.Pos
 	// Create 5 staging tables.
 	var expectedNames []string
 	for range 5 {
-		tableID := shared.TempTableID(dialect.NewTableIdentifier("public", "test_sweep"))
+		tableID := shared.TempTableID(store, dialect.NewTableIdentifier("public", "test_sweep"))
 		expectedNames = append(expectedNames, tableID.FullyQualifiedName())
 		if _, err := store.ExecContext(ctx, pgDialect.BuildCreateTableQuery(tableID, true, config.Replication, []string{"pk int PRIMARY KEY"})); err != nil {
 			return fmt.Errorf("failed to create table: %w", err)

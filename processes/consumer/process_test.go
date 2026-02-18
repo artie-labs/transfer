@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	db      = "lemonade"
+	testDB  = "lemonade"
 	schema  = "public"
 	table   = "orders"
 	tableID = cdc.NewTableID(schema, table)
@@ -63,7 +63,7 @@ func TestProcessMessageFailures(t *testing.T) {
 	tcFmtMap := NewTcFmtMap()
 	tcFmtMap.Add(msg.Topic(), NewTopicConfigFormatter(
 		kafkalib.TopicConfig{
-			Database:     db,
+			Database:     testDB,
 			TableName:    table,
 			Schema:       schema,
 			Topic:        msg.Topic(),
@@ -88,7 +88,7 @@ func TestProcessMessageFailures(t *testing.T) {
 	assert.Empty(t, tableName)
 
 	tc := kafkalib.TopicConfig{
-		Database:     db,
+		Database:     testDB,
 		TableName:    table,
 		Schema:       schema,
 		Topic:        msg.Topic(),

@@ -20,6 +20,7 @@ import (
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/batch"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
@@ -41,6 +42,10 @@ type Store struct {
 	bqClient            *bigquery.Client
 
 	db.Store
+}
+
+func (s Store) Label() constants.DestinationKind {
+	return s.config.Output
 }
 
 func (s Store) GetConfig() config.Config {
@@ -66,7 +71,7 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, w
 	// See: https://cloud.google.com/bigquery/docs/write-api#use_data_manipulation_language_dml_with_recently_streamed_data
 	// For now, we'll need to append this to a temporary table and then append temporary table onto the target table
 	tableID := s.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name())
-	temporaryTableID := shared.TempTableID(tableID)
+	temporaryTableID := shared.TempTableID(s, tableID)
 
 	defer func() { _ = ddl.DropTemporaryTable(ctx, s, temporaryTableID, false) }()
 
