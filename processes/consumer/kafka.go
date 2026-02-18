@@ -36,6 +36,7 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 		wg.Add(1)
 		go func(topic string) {
 			defer wg.Done()
+			defer logger.RecoverFatal()
 			kafkaConsumer, err := kafkalib.GetConsumerFromContext(ctx, topic)
 			if err != nil {
 				logger.Fatal("Failed to get consumer from context", slog.Any("err", err))
