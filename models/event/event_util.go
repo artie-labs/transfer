@@ -39,7 +39,7 @@ func buildColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns map[
 			filteredColumns.AddColumn(columns.NewColumn(col.Name, typing.String))
 		}
 
-		setHashedColumnTypes(tc, filteredColumns)
+		SetHashedColumnTypes(tc, filteredColumns)
 
 		return filteredColumns.GetColumns(), nil
 	}
@@ -49,12 +49,12 @@ func buildColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns map[
 		cols.AddColumn(columns.NewColumn(col.Name, typing.String))
 	}
 
-	setHashedColumnTypes(tc, cols)
+	SetHashedColumnTypes(tc, cols)
 
 	return cols.GetColumns(), nil
 }
 
-func setHashedColumnTypes(tc kafkalib.TopicConfig, cols *columns.Columns) {
+func SetHashedColumnTypes(tc kafkalib.TopicConfig, cols *columns.Columns) {
 	for _, col := range tc.ColumnsToHash {
 		columnInfo, ok := cols.GetColumn(col)
 		if !ok {
