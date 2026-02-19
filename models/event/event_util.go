@@ -47,7 +47,7 @@ func buildColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns map[
 
 	cols := columns.NewColumns(eventCols)
 	for _, col := range tc.ColumnsToExclude {
-		cols.DeleteColumn(col)
+		cols.DeleteColumn(columns.EscapeName(col, reservedColumns))
 	}
 
 	if len(tc.ColumnsToInclude) > 0 {
