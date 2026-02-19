@@ -95,7 +95,7 @@ func (s Store) append(ctx context.Context, client *apachelivy.Client, tableData 
 	)
 
 	if tableConfig.CreateTable() {
-		if err = s.createTable(ctx, client, tableID, tableConfig, targetKeysMissing); err != nil {
+		if err = s.CreateTable(ctx, client, tableID, tableConfig, targetKeysMissing); err != nil {
 			return fmt.Errorf("failed to create table: %w", err)
 		}
 	} else {
@@ -187,7 +187,7 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whC
 	)
 
 	if tableConfig.CreateTable() {
-		if err := s.createTable(ctx, client, tableID, tableConfig, targetKeysMissing); err != nil {
+		if err := s.CreateTable(ctx, client, tableID, tableConfig, targetKeysMissing); err != nil {
 			return false, fmt.Errorf("failed to create table: %w", err)
 		}
 	} else {

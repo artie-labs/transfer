@@ -50,7 +50,7 @@ func (s Store) describeTable(ctx context.Context, client *apachelivy.Client, tab
 	return cols, nil
 }
 
-func (s Store) createTable(ctx context.Context, client *apachelivy.Client, tableID sql.TableIdentifier, tableConfig *types.DestinationTableConfig, cols []columns.Column) error {
+func (s Store) CreateTable(ctx context.Context, client *apachelivy.Client, tableID sql.TableIdentifier, tableConfig *types.DestinationTableConfig, cols []columns.Column) error {
 	colParts, err := s.buildColumnParts(cols)
 	if err != nil {
 		return fmt.Errorf("failed to build column parts: %w", err)
