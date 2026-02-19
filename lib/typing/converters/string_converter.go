@@ -261,7 +261,11 @@ func (IntegerConverter) Convert(value any) (string, error) {
 	case int, int8, int16, int32, int64:
 		return fmt.Sprint(parsedVal), nil
 	case *decimal.Decimal:
-		return parsedVal.String(), nil
+		reduced, _ := new(apd.Decimal).Reduce(parsedVal.Value())
+		if reduced.Exponent < 0 {
+			return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.UnexpectedValue)
+		}
+		return reduced.Text('f'), nil
 	case json.Number:
 		if _, err := strconv.ParseInt(parsedVal.String(), 10, 64); err != nil {
 			return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.UnexpectedValue)
