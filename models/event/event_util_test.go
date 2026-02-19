@@ -16,7 +16,7 @@ func (e *EventsTestSuite) TestSetHashedColumnTypes() {
 			columns.NewColumn("id", typing.Integer),
 			columns.NewColumn("name", typing.String),
 		})
-		setHashedColumnTypes(kafkalib.TopicConfig{}, cols)
+		SetHashedColumnTypes(kafkalib.TopicConfig{}, cols)
 		idCol, _ := cols.GetColumn("id")
 		assert.Equal(e.T(), typing.Integer, idCol.KindDetails)
 		nameCol, _ := cols.GetColumn("name")
@@ -27,7 +27,7 @@ func (e *EventsTestSuite) TestSetHashedColumnTypes() {
 		cols := columns.NewColumns([]columns.Column{
 			columns.NewColumn("id", typing.Integer),
 		})
-		setHashedColumnTypes(kafkalib.TopicConfig{ColumnsToHash: []string{"email"}}, cols)
+		SetHashedColumnTypes(kafkalib.TopicConfig{ColumnsToHash: []string{"email"}}, cols)
 		idCol, _ := cols.GetColumn("id")
 		assert.Equal(e.T(), typing.Integer, idCol.KindDetails)
 	}
@@ -37,7 +37,7 @@ func (e *EventsTestSuite) TestSetHashedColumnTypes() {
 			columns.NewColumn("id", typing.Integer),
 			columns.NewColumn("email", typing.String),
 		})
-		setHashedColumnTypes(kafkalib.TopicConfig{ColumnsToHash: []string{"id"}}, cols)
+		SetHashedColumnTypes(kafkalib.TopicConfig{ColumnsToHash: []string{"id"}}, cols)
 		idCol, _ := cols.GetColumn("id")
 		assert.Equal(e.T(), typing.String, idCol.KindDetails)
 		// Unhashed column is unchanged
@@ -52,7 +52,7 @@ func (e *EventsTestSuite) TestSetHashedColumnTypes() {
 			columns.NewColumn("active", typing.Boolean),
 			columns.NewColumn("name", typing.String),
 		})
-		setHashedColumnTypes(kafkalib.TopicConfig{ColumnsToHash: []string{"id", "score"}}, cols)
+		SetHashedColumnTypes(kafkalib.TopicConfig{ColumnsToHash: []string{"id", "score"}}, cols)
 		idCol, _ := cols.GetColumn("id")
 		assert.Equal(e.T(), typing.String, idCol.KindDetails)
 		scoreCol, _ := cols.GetColumn("score")

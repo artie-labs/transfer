@@ -251,6 +251,35 @@ func TestIntegerConverter_Convert(t *testing.T) {
 		assert.Equal(t, "123", val)
 	}
 	{
+		// Test decimal.Decimal with trailing zeros (e.g. NUMERIC(10,2) value that is a whole number)
+		val, err := IntegerConverter{}.Convert(decimal.NewDecimal(numbers.MustParseDecimal("167155.00")))
+		assert.NoError(t, err)
+		assert.Equal(t, "167155", val)
+	}
+	{
+		// Test decimal.Decimal with various scales
+		for _, tc := range []struct {
+			input    string
+			expected string
+		}{
+			{"0.00", "0"},
+			{"-12345.00", "-12345"},
+			{"100.0", "100"},
+			{"99999999999999.000", "99999999999999"},
+		} {
+			val, err := IntegerConverter{}.Convert(decimal.NewDecimal(numbers.MustParseDecimal(tc.input)))
+			assert.NoError(t, err, "input: %s", tc.input)
+			assert.Equal(t, tc.expected, val, "input: %s", tc.input)
+		}
+	}
+	{
+		// Test decimal.Decimal with non-zero fractional digits
+		for _, input := range []string{"167155.50", "123.45", "0.1"} {
+			_, err := IntegerConverter{}.Convert(decimal.NewDecimal(numbers.MustParseDecimal(input)))
+			assert.ErrorContains(t, err, "unexpected value", "input: %s", input)
+		}
+	}
+	{
 		// Booleans
 		{
 			// True
@@ -337,6 +366,156 @@ func TestDecimalConverter_Convert(t *testing.T) {
 		parseError, ok := typing.BuildParseError(err)
 		assert.True(t, ok)
 		assert.Equal(t, typing.UnexpectedValue, parseError.GetKind())
+	}
+}
+
+func TestDecimalConverter_Convert_MaxScale(t *testing.T) {
+	{
+		// String with 40 decimal places truncated to 38 (BIGNUMERIC max)
+		val, err := DecimalConverter{MaxScale: typing.ToPtr[int32](38)}.Convert("1.1234567890123456789012345678901234567890")
+		assert.NoError(t, err)
+		assert.Equal(t, "1.12345678901234567890123456789012345678", val)
+	}
+	{
+		// Negative number with 40 decimal places truncated to 38
+		val, err := DecimalConverter{MaxScale: typing.ToPtr[int32](38)}.Convert("-1.1234567890123456789012345678901234567890")
+		assert.NoError(t, err)
+		assert.Equal(t, "-1.12345678901234567890123456789012345678", val)
+	}
+	{
+		// No truncation needed - fewer decimal places than max
+		val, err := DecimalConverter{MaxScale: typing.ToPtr[int32](38)}.Convert("1.12345")
+		assert.NoError(t, err)
+		assert.Equal(t, "1.12345", val)
+	}
+	{
+		// No truncation needed - exactly at max
+		val, err := DecimalConverter{MaxScale: typing.ToPtr[int32](5)}.Convert("1.12345")
+		assert.NoError(t, err)
+		assert.Equal(t, "1.12345", val)
+	}
+	{
+		// Truncation to 5 decimal places
+		val, err := DecimalConverter{MaxScale: typing.ToPtr[int32](5)}.Convert("1.123456789")
+		assert.NoError(t, err)
+		assert.Equal(t, "1.12345", val)
+	}
+	{
+		// Integer value - no decimal point, no truncation
+		val, err := DecimalConverter{MaxScale: typing.ToPtr[int32](38)}.Convert("12345")
+		assert.NoError(t, err)
+		assert.Equal(t, "12345", val)
+	}
+	{
+		// Scientific notation (positive exponent) - expanded
+		val, err := DecimalConverter{MaxScale: typing.ToPtr[int32](2)}.Convert("1.23e10")
+		assert.NoError(t, err)
+		assert.Equal(t, "12300000000", val)
+	}
+	{
+		// Scientific notation (negative exponent) - expanded and truncated
+		val, err := DecimalConverter{MaxScale: typing.ToPtr[int32](5)}.Convert("1.23e-10")
+		assert.NoError(t, err)
+		assert.Equal(t, "0.00000", val)
+	}
+	{
+		// Scientific notation (negative exponent) - expanded, scale within limit
+		val, err := DecimalConverter{MaxScale: typing.ToPtr[int32](38)}.Convert("1.23e-10")
+		assert.NoError(t, err)
+		assert.Equal(t, "0.000000000123", val)
+	}
+	{
+		// *decimal.Decimal with excess scale
+		val, err := DecimalConverter{MaxScale: typing.ToPtr[int32](5)}.Convert(decimal.NewDecimal(numbers.MustParseDecimal("3.14159265358979")))
+		assert.NoError(t, err)
+		assert.Equal(t, "3.14159", val)
+	}
+	{
+		// *decimal.Decimal exceeding bigquery's BIGNUMERIC: 40 decimal places truncated to 38
+		val, err := DecimalConverter{MaxScale: typing.ToPtr[int32](38)}.Convert(decimal.NewDecimal(numbers.MustParseDecimal("0.6166544274804102263885518590124032368961")))
+		assert.NoError(t, err)
+		assert.Equal(t, "0.61665442748041022638855185901240323689", val)
+	}
+	{
+		// *decimal.Decimal with precision set (as Debezium would via NewDecimalWithPrecision)
+		val, err := DecimalConverter{MaxScale: typing.ToPtr[int32](38)}.Convert(decimal.NewDecimalWithPrecision(numbers.MustParseDecimal("0.6166544274804102263885518590124032368961"), 42))
+		assert.NoError(t, err)
+		assert.Equal(t, "0.61665442748041022638855185901240323689", val)
+	}
+	{
+		// *decimal.Decimal with scale already within limit - no truncation
+		val, err := DecimalConverter{MaxScale: typing.ToPtr[int32](38)}.Convert(decimal.NewDecimal(numbers.MustParseDecimal("123456.789")))
+		assert.NoError(t, err)
+		assert.Equal(t, "123456.789", val)
+	}
+	{
+		// *decimal.Decimal negative value with excess scale
+		val, err := DecimalConverter{MaxScale: typing.ToPtr[int32](38)}.Convert(decimal.NewDecimal(numbers.MustParseDecimal("-0.6166544274804102263885518590124032368961")))
+		assert.NoError(t, err)
+		assert.Equal(t, "-0.61665442748041022638855185901240323689", val)
+	}
+	{
+		// nil MaxScale means no truncation
+		val, err := DecimalConverter{MaxScale: nil}.Convert("1.1234567890123456789012345678901234567890")
+		assert.NoError(t, err)
+		assert.Equal(t, "1.1234567890123456789012345678901234567890", val)
+	}
+	{
+		// MaxScale of 0 means truncate all decimal places
+		val, err := DecimalConverter{MaxScale: typing.ToPtr[int32](0)}.Convert("1.5")
+		assert.NoError(t, err)
+		assert.Equal(t, "1", val)
+	}
+}
+
+func TestTruncateDecimalString(t *testing.T) {
+	{
+		// No truncation when maxScale is nil
+		assert.Equal(t, "1.12345", truncateDecimalString("1.12345", nil))
+	}
+	{
+		// MaxScale of 0 truncates all decimal places
+		assert.Equal(t, "1", truncateDecimalString("1.12345", typing.ToPtr[int32](0)))
+	}
+	{
+		// No decimal point
+		assert.Equal(t, "12345", truncateDecimalString("12345", typing.ToPtr[int32](3)))
+	}
+	{
+		// Fewer digits than max
+		assert.Equal(t, "1.12", truncateDecimalString("1.12", typing.ToPtr[int32](5)))
+	}
+	{
+		// Exactly at max
+		assert.Equal(t, "1.12345", truncateDecimalString("1.12345", typing.ToPtr[int32](5)))
+	}
+	{
+		// Truncation needed
+		assert.Equal(t, "1.12345", truncateDecimalString("1.123456789", typing.ToPtr[int32](5)))
+	}
+	{
+		// Negative number truncation
+		assert.Equal(t, "-1.12345", truncateDecimalString("-1.123456789", typing.ToPtr[int32](5)))
+	}
+	{
+		// Scientific notation (positive exponent) - expanded, no decimal places to truncate
+		assert.Equal(t, "12300000000", truncateDecimalString("1.23e10", typing.ToPtr[int32](1)))
+		assert.Equal(t, "12300000000", truncateDecimalString("1.23E10", typing.ToPtr[int32](1)))
+	}
+	{
+		// Scientific notation (negative exponent) - expanded and truncated
+		assert.Equal(t, "0.0", truncateDecimalString("1.23e-10", typing.ToPtr[int32](1)))
+		assert.Equal(t, "0.000000000123", truncateDecimalString("1.23e-10", typing.ToPtr[int32](38)))
+	}
+	{
+		// Scientific notation - nil maxScale, no truncation, returned as-is
+		assert.Equal(t, "1.23e10", truncateDecimalString("1.23e10", nil))
+	}
+	{
+		// Truncation to 38 (BIGNUMERIC max scale)
+		input := "1.1234567890123456789012345678901234567890"
+		expected := "1.12345678901234567890123456789012345678"
+		assert.Equal(t, expected, truncateDecimalString(input, typing.ToPtr[int32](38)))
 	}
 }
 
