@@ -186,6 +186,7 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whC
 		tableData.BuildColumnsToKeep(),
 	)
 
+	targetKeysMissing = columns.RemoveInvalidColumns(targetKeysMissing)
 	if tableConfig.CreateTable() {
 		if err := s.CreateTable(ctx, client, tableID, tableConfig, targetKeysMissing); err != nil {
 			return false, fmt.Errorf("failed to create table: %w", err)

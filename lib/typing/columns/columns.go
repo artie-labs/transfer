@@ -335,6 +335,10 @@ func RemoveOnlySetDeleteColumnMarker(cols []Column) ([]Column, error) {
 	return cols, nil
 }
 
+func RemoveInvalidColumns(cols []Column) []Column {
+	return slices.DeleteFunc(slices.Clone(cols), func(col Column) bool { return col.KindDetails == typing.Invalid })
+}
+
 // ColumnNames takes a slice of [Column] and returns the names as a slice of strings.
 func ColumnNames(cols []Column) []string {
 	result := make([]string, len(cols))
