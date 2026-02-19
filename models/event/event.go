@@ -217,7 +217,7 @@ func (e *Event) PrimaryKeyValue() (string, error) {
 			return "", fmt.Errorf("primary key %q not found in data: %v", pk, e.data)
 		}
 
-		key += fmt.Sprintf("%s=%v", pk, value)
+		key += fmt.Sprintf("%s=%v", pk, normalizeNumericVal(value))
 	}
 
 	return key, nil

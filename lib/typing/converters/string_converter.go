@@ -261,7 +261,11 @@ func (IntegerConverter) Convert(value any) (string, error) {
 	case int, int8, int16, int32, int64:
 		return fmt.Sprint(parsedVal), nil
 	case *decimal.Decimal:
-		return parsedVal.String(), nil
+		reduced, _ := new(apd.Decimal).Reduce(parsedVal.Value())
+		if reduced.Exponent < 0 {
+			return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.UnexpectedValue)
+		}
+		return reduced.Text('f'), nil
 	case json.Number:
 		if _, err := strconv.ParseInt(parsedVal.String(), 10, 64); err != nil {
 			return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.UnexpectedValue)
@@ -307,21 +311,27 @@ func (FloatConverter) Convert(value any) (string, error) {
 	}
 }
 
-type DecimalConverter struct{}
+type DecimalConverter struct {
+	// MaxScale - If non-nil, the converted decimal string will be truncated to this many digits after
+	// the decimal point. This is useful when the destination has a maximum scale (e.g. BigQuery BIGNUMERIC max scale = 38).
+	// A nil value means no truncation; a pointer to 0 means truncate to zero decimal places.
+	MaxScale *int32
+}
 
-func (DecimalConverter) Convert(value any) (string, error) {
+func (d DecimalConverter) Convert(value any) (string, error) {
+	var result string
 	switch castedColVal := value.(type) {
 	case float32:
-		return Float32ToString(castedColVal), nil
+		result = Float32ToString(castedColVal)
 	case float64:
-		return Float64ToString(castedColVal), nil
+		result = Float64ToString(castedColVal)
 	case int, int8, int16, int32, int64:
-		return fmt.Sprint(castedColVal), nil
+		result = fmt.Sprint(castedColVal)
 	case json.Number:
 		if _, _, err := apd.NewFromString(castedColVal.String()); err != nil {
 			return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.UnexpectedValue)
 		}
-		return castedColVal.String(), nil
+		result = castedColVal.String()
 	case string:
 		// If it's a string, verify it can be parsed as a number.
 		// We use apd.NewFromString instead of strconv.ParseFloat because ParseFloat
@@ -330,12 +340,47 @@ func (DecimalConverter) Convert(value any) (string, error) {
 		if _, _, err := apd.NewFromString(castedColVal); err != nil {
 			return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.UnexpectedValue)
 		}
-		return castedColVal, nil
+		result = castedColVal
 	case *decimal.Decimal:
-		return castedColVal.String(), nil
+		result = castedColVal.String()
 	default:
 		return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.UnexpectedValue)
 	}
+
+	return truncateDecimalString(result, d.MaxScale), nil
+}
+
+// truncateDecimalString truncates the decimal portion of a numeric string to the specified number of digits.
+// If maxScale is nil, no truncation is performed. A zero value truncates all decimal places.
+func truncateDecimalString(s string, maxScale *int32) string {
+	if maxScale == nil {
+		return s
+	}
+
+	// Convert scientific notation to fixed-point notation so we can truncate properly.
+	if strings.ContainsAny(s, "eE") {
+		d, _, err := apd.NewFromString(s)
+		if err != nil {
+			return s
+		}
+		s = d.Text('f')
+	}
+
+	dotIdx := strings.IndexByte(s, '.')
+	if dotIdx < 0 {
+		return s
+	}
+
+	currentScale := int32(len(s) - dotIdx - 1)
+	if currentScale <= *maxScale {
+		return s
+	}
+
+	if *maxScale == 0 {
+		return s[:dotIdx]
+	}
+
+	return s[:dotIdx+1+int(*maxScale)]
 }
 
 type StructConverter struct{}

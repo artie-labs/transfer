@@ -248,6 +248,111 @@ func TestRowToMessage_EmptyStringFloat(t *testing.T) {
 	assert.Empty(t, result) // Field should not be set when value is empty string
 }
 
+func TestRowToMessage_TruncateExceededDecimal(t *testing.T) {
+	details := decimal.NewDetails(76, 38)
+	cols := []columns.Column{
+		columns.NewColumn("c_numeric", typing.KindDetails{
+			Kind:                   typing.EDecimal.Kind,
+			ExtendedDecimalDetails: &details,
+		}),
+	}
+
+	desc, err := columnsToMessageDescriptor(cols)
+	assert.NoError(t, err)
+
+	{
+		// Without TruncateExceededValues - value is passed through as-is
+		message, err := rowToMessage(
+			map[string]any{"c_numeric": "1.1234567890123456789012345678901234567890"},
+			cols, *desc, config.Config{},
+		)
+		assert.NoError(t, err)
+
+		bytes, err := protojson.Marshal(message)
+		assert.NoError(t, err)
+
+		var result map[string]any
+		assert.NoError(t, json.Unmarshal(bytes, &result))
+		assert.Equal(t, "1.1234567890123456789012345678901234567890", result["cNumeric"])
+	}
+	{
+		// With TruncateExceededValues - value is truncated to column's scale (38)
+		message, err := rowToMessage(
+			map[string]any{"c_numeric": "1.1234567890123456789012345678901234567890"},
+			cols, *desc, config.Config{
+				SharedDestinationSettings: config.SharedDestinationSettings{
+					TruncateExceededValues: true,
+				},
+			},
+		)
+		assert.NoError(t, err)
+
+		bytes, err := protojson.Marshal(message)
+		assert.NoError(t, err)
+
+		var result map[string]any
+		assert.NoError(t, json.Unmarshal(bytes, &result))
+		assert.Equal(t, "1.12345678901234567890123456789012345678", result["cNumeric"])
+	}
+}
+
+func TestRowToMessage_TruncateExceededDecimal_UnspecifiedPrecision(t *testing.T) {
+	// When ExtendedDecimalDetails has PrecisionNotSpecified (e.g., Postgres bare NUMERIC),
+	// the code should fall through to the BQ-type-based max scale rather than using DefaultScale (5).
+	notSetDetails := decimal.NewDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale)
+	cols := []columns.Column{
+		columns.NewColumn("c_numeric", typing.KindDetails{
+			Kind:                   typing.EDecimal.Kind,
+			ExtendedDecimalDetails: &notSetDetails,
+		}),
+	}
+
+	desc, err := columnsToMessageDescriptor(cols)
+	assert.NoError(t, err)
+
+	{
+		// With TruncateExceededValues + BigNumericForVariableNumeric - should truncate to 38 (BIGNUMERIC max), not 5
+		message, err := rowToMessage(
+			map[string]any{"c_numeric": "1.1234567890123456789012345678901234567890"},
+			cols, *desc, config.Config{
+				SharedDestinationSettings: config.SharedDestinationSettings{
+					TruncateExceededValues: true,
+					ColumnSettings: config.SharedDestinationColumnSettings{
+						BigNumericForVariableNumeric: true,
+					},
+				},
+			},
+		)
+		assert.NoError(t, err)
+
+		bytes, err := protojson.Marshal(message)
+		assert.NoError(t, err)
+
+		var result map[string]any
+		assert.NoError(t, json.Unmarshal(bytes, &result))
+		assert.Equal(t, "1.12345678901234567890123456789012345678", result["cNumeric"])
+	}
+	{
+		// With TruncateExceededValues without BigNumericForVariableNumeric - should truncate to 9 (NUMERIC max), not 5
+		message, err := rowToMessage(
+			map[string]any{"c_numeric": "1.1234567890123456789012345678901234567890"},
+			cols, *desc, config.Config{
+				SharedDestinationSettings: config.SharedDestinationSettings{
+					TruncateExceededValues: true,
+				},
+			},
+		)
+		assert.NoError(t, err)
+
+		bytes, err := protojson.Marshal(message)
+		assert.NoError(t, err)
+
+		var result map[string]any
+		assert.NoError(t, json.Unmarshal(bytes, &result))
+		assert.Equal(t, "1.123456789", result["cNumeric"])
+	}
+}
+
 func TestEncodeStructToJSONString(t *testing.T) {
 	{
 		// Empty string:

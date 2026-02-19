@@ -26,12 +26,12 @@ import (
 )
 
 type Store struct {
-	catalogName      string
-	s3Client         awslib.S3Client
-	catalog          iceberg.IcebergCatalog
-	apacheLivyClient *apachelivy.Client
-	config           config.Config
-	cm               *types.DestinationTableConfigMap
+	catalogName string
+	s3Client    awslib.S3Client
+	catalog     iceberg.IcebergCatalog
+	clientPool  *apachelivy.ClientPool
+	config      config.Config
+	cm          *types.DestinationTableConfigMap
 }
 
 func (s Store) Label() constants.DestinationKind {
@@ -47,7 +47,7 @@ func (s Store) IsOLTP() bool {
 }
 
 func (s Store) GetApacheLivyClient() *apachelivy.Client {
-	return s.apacheLivyClient
+	return s.clientPool.Next()
 }
 
 func (s Store) GetS3TablesAPI() (awslib.S3TablesAPIWrapper, error) {
@@ -68,10 +68,10 @@ func (s Store) Dialect() dialect.IcebergDialect {
 }
 
 func (s Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, useTempTable bool) error {
-	return s.append(ctx, tableData, whClient, useTempTable, 0)
+	return s.append(ctx, s.GetApacheLivyClient(), tableData, whClient, useTempTable, 0)
 }
 
-func (s Store) append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, useTempTable bool, retryCount int) error {
+func (s Store) append(ctx context.Context, client *apachelivy.Client, tableData *optimization.TableData, whClient *webhooksclient.Client, useTempTable bool, retryCount int) error {
 	if tableData.ShouldSkipUpdate() {
 		return nil
 	}
@@ -82,7 +82,7 @@ func (s Store) append(ctx context.Context, tableData *optimization.TableData, wh
 
 	tableID := s.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name())
 	tempTableID := shared.TempTableIDWithSuffix(s, s.IdentifierFor(tableData.TopicConfig().BuildStagingDatabaseAndSchemaPair(), tableData.Name()), tableData.TempTableSuffix())
-	tableConfig, err := s.GetTableConfig(ctx, tableID, tableData.TopicConfig().DropDeletedColumns)
+	tableConfig, err := s.getTableConfig(ctx, client, tableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
 		return fmt.Errorf("failed to get table config: %w", err)
 	}
@@ -95,11 +95,11 @@ func (s Store) append(ctx context.Context, tableData *optimization.TableData, wh
 	)
 
 	if tableConfig.CreateTable() {
-		if err = s.CreateTable(ctx, tableID, tableConfig, targetKeysMissing); err != nil {
+		if err = s.createTable(ctx, client, tableID, tableConfig, targetKeysMissing); err != nil {
 			return fmt.Errorf("failed to create table: %w", err)
 		}
 	} else {
-		if err = s.AlterTableAddColumns(ctx, tableID, tableConfig, targetKeysMissing); err != nil {
+		if err = s.alterTableAddColumns(ctx, client, tableID, tableConfig, targetKeysMissing); err != nil {
 			return fmt.Errorf("failed to alter table: %w", err)
 		}
 	}
@@ -109,7 +109,7 @@ func (s Store) append(ctx context.Context, tableData *optimization.TableData, wh
 	}
 
 	// Load the data into a temporary view
-	if err = s.LoadDataIntoTable(ctx, tableData, tableConfig, tempTableID); err != nil {
+	if err = s.loadDataIntoTable(ctx, client, tableData, tableConfig, tempTableID); err != nil {
 		return fmt.Errorf("failed to prepare temporary table: %w", err)
 	}
 
@@ -121,11 +121,11 @@ func (s Store) append(ctx context.Context, tableData *optimization.TableData, wh
 
 	// Then append the view into the target table
 	query := s.Dialect().BuildAppendToTable(tableID, tempTableID.EscapedTable(), validColumnNames)
-	if err = s.apacheLivyClient.ExecContext(ctx, query); err != nil {
+	if err = client.ExecContext(ctx, query); err != nil {
 		if s.Dialect().IsTableDoesNotExistErr(err) {
 			s.cm.RemoveTable(tableID)
 			tableConfig.SetCreateTable(true)
-			return s.append(ctx, tableData, whClient, useTempTable, retryCount+1)
+			return s.append(ctx, client, tableData, whClient, useTempTable, retryCount+1)
 		}
 
 		return fmt.Errorf("failed to append to table: %w, query: %s", err, query)
@@ -146,12 +146,12 @@ func (s Store) EnsureNamespaceExists(ctx context.Context, namespace string) erro
 	return nil
 }
 
-func (s Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
+func (s Store) getTableConfig(ctx context.Context, client *apachelivy.Client, tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
 	if tableCfg := s.cm.GetTableConfig(tableID); tableCfg != nil {
 		return tableCfg, nil
 	}
 
-	cols, err := s.describeTable(ctx, tableID)
+	cols, err := s.describeTable(ctx, client, tableID)
 	if err != nil {
 		if s.Dialect().IsTableDoesNotExistErr(err) {
 			tableCfg := types.NewDestinationTableConfig([]columns.Column{}, dropDeletedColumns)
@@ -172,9 +172,10 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whC
 		return false, nil
 	}
 
+	client := s.GetApacheLivyClient()
 	tableID := s.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name())
 	temporaryTableID := shared.TempTableIDWithSuffix(s, s.IdentifierFor(tableData.TopicConfig().BuildStagingDatabaseAndSchemaPair(), tableData.Name()), tableData.TempTableSuffix())
-	tableConfig, err := s.GetTableConfig(ctx, tableID, tableData.TopicConfig().DropDeletedColumns)
+	tableConfig, err := s.getTableConfig(ctx, client, tableID, tableData.TopicConfig().DropDeletedColumns)
 	if err != nil {
 		return false, fmt.Errorf("failed to get table config: %w", err)
 	}
@@ -186,15 +187,15 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whC
 	)
 
 	if tableConfig.CreateTable() {
-		if err := s.CreateTable(ctx, tableID, tableConfig, targetKeysMissing); err != nil {
+		if err := s.createTable(ctx, client, tableID, tableConfig, targetKeysMissing); err != nil {
 			return false, fmt.Errorf("failed to create table: %w", err)
 		}
 	} else {
-		if err := s.AlterTableAddColumns(ctx, tableID, tableConfig, targetKeysMissing); err != nil {
+		if err := s.alterTableAddColumns(ctx, client, tableID, tableConfig, targetKeysMissing); err != nil {
 			return false, fmt.Errorf("failed to alter table: %w", err)
 		}
 
-		if err := s.AlterTableDropColumns(ctx, tableID, tableConfig, srcKeysMissing, tableData.GetLatestTimestamp(), tableData.ContainsOtherOperations()); err != nil {
+		if err := s.alterTableDropColumns(ctx, client, tableID, tableConfig, srcKeysMissing, tableData.GetLatestTimestamp(), tableData.ContainsOtherOperations()); err != nil {
 			return false, fmt.Errorf("failed to drop columns: %w", err)
 		}
 	}
@@ -203,7 +204,7 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whC
 		return false, fmt.Errorf("failed to merge columns from destination: %w for table %q", err, tableData.Name())
 	}
 
-	if err = s.LoadDataIntoTable(ctx, tableData, tableConfig, temporaryTableID); err != nil {
+	if err = s.loadDataIntoTable(ctx, client, tableData, tableConfig, temporaryTableID); err != nil {
 		return false, fmt.Errorf("failed to prepare temporary table: %w", err)
 	}
 
@@ -224,7 +225,7 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whC
 		return false, fmt.Errorf("expected 1 merge query, got %d", len(queries))
 	}
 
-	if err := s.apacheLivyClient.ExecContext(ctx, queries[0]); err != nil {
+	if err := client.ExecContext(ctx, queries[0]); err != nil {
 		return false, fmt.Errorf("failed to execute merge query: %w", err)
 	}
 
@@ -236,6 +237,7 @@ func (s Store) IsRetryableError(_ error) bool {
 }
 
 func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kafkalib.DatabaseAndSchemaPair, primaryKeys []string, includeArtieUpdatedAt bool) error {
+	client := s.GetApacheLivyClient()
 	stagingTableID := shared.BuildStagingTableID(s, pair, tableID)
 	castedStagingTableID, ok := stagingTableID.(dialect.TableIdentifier)
 	if !ok {
@@ -243,7 +245,7 @@ func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kaf
 	}
 
 	queries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt)
-	priorityClient := s.apacheLivyClient.WithPriorityClient()
+	priorityClient := client.WithPriorityClient()
 	for _, query := range queries {
 		if err := priorityClient.ExecContext(ctx, query); err != nil {
 			return fmt.Errorf("failed to execute dedupe query: %w", err)
@@ -314,7 +316,7 @@ func LoadStore(ctx context.Context, cfg config.Config) (Store, error) {
 }
 
 func loadS3TablesStore(cfg config.Config) (Store, error) {
-	apacheLivyClient := apachelivy.NewClient(
+	pool := apachelivy.NewClientPool(
 		cfg.Iceberg.ApacheLivyURL,
 		cfg.Iceberg.S3Tables.ApacheLivyConfig(),
 		cfg.Iceberg.S3Tables.SessionJars,
@@ -322,6 +324,7 @@ func loadS3TablesStore(cfg config.Config) (Store, error) {
 		cfg.Iceberg.SessionDriverMemory,
 		cfg.Iceberg.SessionExecutorMemory,
 		cfg.Iceberg.SessionName,
+		cfg.Iceberg.NumberOfSessions,
 	)
 
 	awsCfg := awslib.NewConfigWithCredentialsAndRegion(
@@ -330,12 +333,12 @@ func loadS3TablesStore(cfg config.Config) (Store, error) {
 	)
 
 	return Store{
-		catalogName:      cfg.Iceberg.S3Tables.CatalogName(),
-		config:           cfg,
-		apacheLivyClient: apacheLivyClient,
-		cm:               &types.DestinationTableConfigMap{},
-		catalog:          awslib.NewS3TablesAPI(awsCfg, cfg.Iceberg.S3Tables.BucketARN),
-		s3Client:         awslib.NewS3Client(awsCfg),
+		catalogName: cfg.Iceberg.S3Tables.CatalogName(),
+		config:      cfg,
+		clientPool:  pool,
+		cm:          &types.DestinationTableConfigMap{},
+		catalog:     awslib.NewS3TablesAPI(awsCfg, cfg.Iceberg.S3Tables.BucketARN),
+		s3Client:    awslib.NewS3Client(awsCfg),
 	}, nil
 }
 
@@ -345,7 +348,7 @@ func loadRestCatalogStore(ctx context.Context, cfg config.Config) (Store, error)
 		return Store{}, fmt.Errorf("invalid rest catalog configuration: %w", err)
 	}
 
-	apacheLivyClient := apachelivy.NewClient(
+	pool := apachelivy.NewClientPool(
 		cfg.Iceberg.ApacheLivyURL,
 		restCfg.ApacheLivyConfig(),
 		restCfg.SessionJars,
@@ -353,6 +356,7 @@ func loadRestCatalogStore(ctx context.Context, cfg config.Config) (Store, error)
 		cfg.Iceberg.SessionDriverMemory,
 		cfg.Iceberg.SessionExecutorMemory,
 		cfg.Iceberg.SessionName,
+		cfg.Iceberg.NumberOfSessions,
 	)
 
 	catalogCfg := icebergcatalog.Config{
@@ -379,11 +383,11 @@ func loadRestCatalogStore(ctx context.Context, cfg config.Config) (Store, error)
 		credentials.NewStaticCredentialsProvider(restCfg.AwsAccessKeyID, restCfg.AwsSecretAccessKey, ""), region,
 	)
 	return Store{
-		catalogName:      restCfg.CatalogName(),
-		config:           cfg,
-		apacheLivyClient: apacheLivyClient,
-		cm:               &types.DestinationTableConfigMap{},
-		catalog:          cat,
-		s3Client:         awslib.NewS3Client(awsCfg),
+		catalogName: restCfg.CatalogName(),
+		config:      cfg,
+		clientPool:  pool,
+		cm:          &types.DestinationTableConfigMap{},
+		catalog:     cat,
+		s3Client:    awslib.NewS3Client(awsCfg),
 	}, nil
 }

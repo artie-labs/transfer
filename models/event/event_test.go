@@ -1,6 +1,7 @@
 package event
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -246,6 +247,57 @@ func (e *EventsTestSuite) TestEventPrimaryKeys() {
 		pkValue, err := evt.PrimaryKeyValue()
 		assert.ErrorContains(e.T(), err, `primary key "id" not found in data: map[course_id:2]`)
 		assert.Equal(e.T(), "", pkValue)
+	}
+}
+
+func (e *EventsTestSuite) TestPrimaryKeyValue_NumericConsistency() {
+	{
+		// All three numeric types (json.Number, float64, int64) for the same integer
+		// value must produce identical dedup keys. This covers:
+		//   - float64: create event where Debezium schema says "float"
+		//   - int64: create event where Debezium schema says "int"
+		//   - json.Number: delete event with empty Debezium schema
+		for _, ts := range []int64{1771359601407, 1771359601400, 1000000000000} {
+			float64Evt := &Event{
+				primaryKeys: []string{"timestamp", "roomid"},
+				data:        map[string]any{"timestamp": float64(ts), "roomid": "abc"},
+			}
+			int64Evt := &Event{
+				primaryKeys: []string{"timestamp", "roomid"},
+				data:        map[string]any{"timestamp": ts, "roomid": "abc"},
+			}
+			jsonNumEvt := &Event{
+				primaryKeys: []string{"timestamp", "roomid"},
+				data:        map[string]any{"timestamp": json.Number(fmt.Sprint(ts)), "roomid": "abc"},
+			}
+
+			float64PK, err := float64Evt.PrimaryKeyValue()
+			assert.NoError(e.T(), err)
+			int64PK, err := int64Evt.PrimaryKeyValue()
+			assert.NoError(e.T(), err)
+			jsonNumPK, err := jsonNumEvt.PrimaryKeyValue()
+			assert.NoError(e.T(), err)
+
+			assert.Equal(e.T(), int64PK, float64PK, "int64 vs float64 mismatch for %d", ts)
+			assert.Equal(e.T(), int64PK, jsonNumPK, "int64 vs json.Number mismatch for %d", ts)
+		}
+	}
+	{
+		// Non-integer float values: json.Number and float64 should still match.
+		float64Evt := &Event{
+			primaryKeys: []string{"score"},
+			data:        map[string]any{"score": float64(3.14)},
+		}
+		jsonNumEvt := &Event{
+			primaryKeys: []string{"score"},
+			data:        map[string]any{"score": json.Number("3.14")},
+		}
+
+		float64PK, err := float64Evt.PrimaryKeyValue()
+		assert.NoError(e.T(), err)
+		jsonNumPK, err := jsonNumEvt.PrimaryKeyValue()
+		assert.NoError(e.T(), err)
+		assert.Equal(e.T(), float64PK, jsonNumPK)
 	}
 }
 
