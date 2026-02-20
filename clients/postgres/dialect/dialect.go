@@ -366,7 +366,6 @@ func (p PostgresDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, setti
 	default:
 		return "", fmt.Errorf("unsupported kind: %q", kd.Kind)
 	}
-
 }
 
 var dataTypeMap = map[string]typing.KindDetails{
