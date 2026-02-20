@@ -324,7 +324,7 @@ var kindDetailsMap = map[typing.KindDetails]string{
 	typing.TimestampTZ:     "timestamp with time zone",
 }
 
-func (PostgresDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, settings config.SharedDestinationColumnSettings) (string, error) {
+func (p PostgresDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, settings config.SharedDestinationColumnSettings) (string, error) {
 	if kind, ok := kindDetailsMap[kd]; ok {
 		return kind, nil
 	}
@@ -352,9 +352,21 @@ func (PostgresDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, setting
 			return "", fmt.Errorf("expected extended decimal details to be set for %q", kd.Kind)
 		}
 		return kd.ExtendedDecimalDetails.PostgresKind(), nil
+	case typing.Array.Kind:
+		if kd.OptionalArrayKind == nil {
+			return "jsonb[]", nil
+		}
+
+		elementType, err := p.DataTypeForKind(*kd.OptionalArrayKind, isPk, settings)
+		if err != nil {
+			return "", err
+		}
+
+		return fmt.Sprintf("%s[]", elementType), nil
 	default:
 		return "", fmt.Errorf("unsupported kind: %q", kd.Kind)
 	}
+
 }
 
 var dataTypeMap = map[string]typing.KindDetails{
