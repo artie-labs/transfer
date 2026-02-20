@@ -7,7 +7,6 @@ import (
 type scrubRule struct {
 	pattern     *regexp.Regexp
 	replacement string
-	replaceFn   func(string) string
 }
 
 // URI with embedded credentials: scheme://user:password@host
@@ -21,8 +20,8 @@ var unquotedKeyValuePattern = regexp.MustCompile(`(?i)((?:password|passwd|secret
 
 var scrubRules = []scrubRule{
 	{
-		pattern:   uriPasswordPattern,
-		replaceFn: scrubURIPassword,
+		pattern:     uriPasswordPattern,
+		replacement: `${1}:[REDACTED]@`,
 	},
 	{
 		pattern:     quotedKeyValuePattern,
@@ -61,15 +60,7 @@ var scrubRules = []scrubRule{
 // ScrubString redacts credentials, secrets, and PII/PHI patterns from a string.
 func ScrubString(msg string) string {
 	for _, rule := range scrubRules {
-		if rule.replaceFn != nil {
-			msg = rule.pattern.ReplaceAllStringFunc(msg, rule.replaceFn)
-		} else {
-			msg = rule.pattern.ReplaceAllString(msg, rule.replacement)
-		}
+		msg = rule.pattern.ReplaceAllString(msg, rule.replacement)
 	}
 	return msg
-}
-
-func scrubURIPassword(match string) string {
-	return uriPasswordPattern.ReplaceAllString(match, `${1}:[REDACTED]@`)
 }
