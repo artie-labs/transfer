@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestScrubErrorMessage(t *testing.T) {
+func TestScrubString(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    string
@@ -156,7 +156,7 @@ func TestScrubErrorMessage(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			actual := ScrubErrorMessage(tc.input)
+			actual := ScrubString(tc.input)
 			assert.Equal(t, tc.expected, actual)
 		})
 	}

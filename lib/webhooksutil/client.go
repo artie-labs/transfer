@@ -53,7 +53,7 @@ func (w WebhooksClient) BuildProperties(eventType EventType, additionalPropertie
 
 	for key, value := range props {
 		if strVal, ok := value.(string); ok {
-			props[key] = redact.ScrubErrorMessage(strVal)
+			props[key] = redact.ScrubString(strVal)
 		}
 	}
 

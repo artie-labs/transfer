@@ -58,8 +58,8 @@ var scrubRules = []scrubRule{
 	},
 }
 
-// ScrubErrorMessage redacts credentials, secrets, and PII/PHI patterns from an error message string.
-func ScrubErrorMessage(msg string) string {
+// ScrubString redacts credentials, secrets, and PII/PHI patterns from a string.
+func ScrubString(msg string) string {
 	for _, rule := range scrubRules {
 		if rule.replaceFn != nil {
 			msg = rule.pattern.ReplaceAllStringFunc(msg, rule.replaceFn)
