@@ -379,7 +379,25 @@ var dataTypeMap = map[string]typing.KindDetails{
 }
 
 func (PostgresDialect) KindForDataType(_type string) (typing.KindDetails, error) {
+	return kindForDataType(_type, nil)
+}
+
+func kindForDataType(_type string, optionalParentType *typing.KindDetails) (typing.KindDetails, error) {
 	dataType := strings.ToLower(_type)
+
+	if strings.HasSuffix(dataType, "[]") {
+		elementType := strings.TrimSuffix(dataType, "[]")
+		elementKind, err := kindForDataType(elementType, nil)
+		if err != nil {
+			return typing.Invalid, fmt.Errorf("failed to resolve array element type %q: %w", elementType, err)
+		}
+
+		return typing.KindDetails{
+			Kind:              typing.Array.Kind,
+			OptionalArrayKind: &elementKind,
+		}, nil
+	}
+
 	if strings.HasPrefix(dataType, "timestamp") {
 		dataType, _ = StripPrecision(dataType)
 	}
@@ -389,14 +407,12 @@ func (PostgresDialect) KindForDataType(_type string) (typing.KindDetails, error)
 		return typing.Invalid, err
 	}
 
-	// Check the lookup table first.
 	if kind, ok := dataTypeMap[dataType]; ok {
 		return kind, nil
 	}
 
 	switch dataType {
 	case "numeric":
-		// This means that this is a variable numeric type.
 		if len(parameters) == 0 {
 			return typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale)), nil
 		}
