@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"strings"
 	"sync"
@@ -18,6 +19,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/snowflakedb/gosnowflake"
+	"golang.org/x/sync/errgroup"
 	"golang.org/x/time/rate"
 
 	"github.com/artie-labs/transfer/lib/batch"
@@ -25,7 +27,10 @@ import (
 )
 
 // https://docs.snowflake.com/en/user-guide/snowpipe-streaming/snowpipe-streaming-high-performance-limitations#channel-limits
-const maxChunkSize = 4 * 1024 * 1024 // 4MB
+const (
+	maxChunkSize      = 4 * 1024 * 1024 // 4MB
+	maxAppendAttempts = 3
+)
 
 // Error codes that require channel reopening
 // https://docs.snowflake.com/en/user-guide/snowpipe-streaming/snowpipe-streaming-high-performance-error-handling#channel-errors-that-require-a-manual-reopen
@@ -36,6 +41,7 @@ var channelReopenErrorCodes = map[string]bool{
 	"ERR_CHANNEL_MUST_BE_REOPENED_DUE_TO_ROW_SEQ_GAP": true,
 	"ERR_CHANNEL_DOES_NOT_EXIST_OR_IS_NOT_AUTHORIZED": true,
 	"STALE_PIPE_CACHE":                                true,
+	"STALE_CONTINUATION_TOKEN_SEQUENCER":              true,
 }
 
 type ErrorResponse struct {
@@ -204,72 +210,133 @@ func (s *SnowpipeStreamingChannelManager) LoadData(ctx context.Context, db, sche
 		}
 	}
 
-	channelName := fmt.Sprintf("%s-%d", data.Name(), 0)
+	rows := data.Rows()
+	numChannels := s.maxChannels
+	if len(rows) < numChannels {
+		numChannels = 1
+	}
 
-	// Get or create channel and open it if needed
-	channel, err := s.openChannel(ctx, db, schema, pipe, channelName, false)
-	if err != nil {
+	if numChannels == 0 {
+		return fmt.Errorf("maxChannels is zero, number of rows: %d", len(rows))
+	}
+
+	// Calculate chunk size for splitting rows across channels
+	chunkSize := (len(rows) + numChannels - 1) / numChannels
+
+	// Use a plain errgroup so one channel failure doesn't cancel in-flight requests on other channels.
+	var group errgroup.Group
+	var channelNames []string
+	for i := range numChannels {
+		channelIdx := i
+		channelName := fmt.Sprintf("%s-%d", data.Name(), channelIdx)
+		channelNames = append(channelNames, channelName)
+
+		start := channelIdx * chunkSize
+		end := start + chunkSize
+		if end > len(rows) {
+			end = len(rows)
+		}
+
+		if start >= len(rows) {
+			continue // No more rows for this channel
+		}
+
+		channelRows := rows[start:end]
+
+		group.Go(func() error {
+			// Get or create channel and open it if needed
+			channel, err := s.openChannel(ctx, db, schema, pipe, channelName, false)
+			if err != nil {
+				return err
+			}
+
+			_, err = batch.BySize(
+				channelRows,
+				maxChunkSize,
+				true,
+				func(row optimization.Row) ([]byte, error) {
+					rowBytes, err := jsoniter.Marshal(_dialect.NormalizeColumnNames(row).GetData())
+					if err != nil {
+						return nil, err
+					}
+					// Include newline in the encoded bytes - NDJSON
+					return append(rowBytes, '\n'), nil
+				},
+				func(encodedBytes [][]byte, rows []optimization.Row) error {
+					if err := channel.RateLimiter.Wait(ctx); err != nil {
+						return fmt.Errorf("rate limiter error for channel %q: %w", channelName, err)
+					}
+
+					for attempt := range maxAppendAttempts {
+						readers := make([]io.Reader, len(encodedBytes))
+						for i, b := range encodedBytes {
+							readers[i] = bytes.NewReader(b)
+						}
+
+						appendResp, appendErr := AppendRows(ctx, s.scopedToken, s.ingestHost, db, schema, pipe, channelName, channel.GetContinuationToken(), io.MultiReader(readers...))
+						if appendErr == nil {
+							channel.UpdateContinuationToken(appendResp.NextContinuationToken)
+							return nil
+						}
+
+						var errResp ErrorResponse
+						if !errors.As(appendErr, &errResp) {
+							return fmt.Errorf("failed to append rows for snowpipe streaming channel %q: %w", channelName, appendErr)
+						}
+
+						// DUPLICATE_ROWSET means the rows were already committed by a previous attempt.
+						// Reopen the channel to get a fresh continuation token and treat as success.
+						if errResp.Code == "DUPLICATE_ROWSET" {
+							slog.Info("Rows already committed, reopening channel to refresh continuation token",
+								slog.String("channel", channelName),
+								slog.Int("attempt", attempt+1),
+							)
+							reopenedChannel, reopenErr := s.openChannel(ctx, db, schema, pipe, channelName, true)
+							if reopenErr != nil {
+								return fmt.Errorf("failed to reopen channel %q after DUPLICATE_ROWSET: %w", channelName, reopenErr)
+							}
+							channel = reopenedChannel
+							return nil
+						}
+
+						if errResp.IsChannelReopenError() {
+							slog.Warn("Channel error, reopening and retrying",
+								slog.String("channel", channelName),
+								slog.String("errorCode", errResp.Code),
+								slog.Int("attempt", attempt+1),
+								slog.Int("maxAttempts", maxAppendAttempts),
+							)
+							reopenedChannel, reopenErr := s.openChannel(ctx, db, schema, pipe, channelName, true)
+							if reopenErr != nil {
+								return fmt.Errorf("failed to reopen channel %q after %q: %w", channelName, errResp.Code, reopenErr)
+							}
+							channel = reopenedChannel
+							continue
+						}
+
+						return fmt.Errorf("failed to append rows for snowpipe streaming channel %q: %w", channelName, appendErr)
+					}
+
+					return fmt.Errorf("failed to append rows for snowpipe streaming channel %q: exhausted %d attempts", channelName, maxAppendAttempts)
+				},
+			)
+			return err
+		})
+	}
+
+	// On failure, invalidate all channel tokens so the outer retry gets fresh state via reopen.
+	if err := group.Wait(); err != nil {
+		s.mu.Lock()
+		for _, name := range channelNames {
+			if ch, ok := s.channelNameToChannel[name]; ok {
+				ch.InvalidateChannel()
+			}
+		}
+		s.mu.Unlock()
 		return err
 	}
 
-	_, err = batch.BySize(
-		data.Rows(),
-		maxChunkSize,
-		true,
-		func(row optimization.Row) ([]byte, error) {
-			rowBytes, err := jsoniter.Marshal(_dialect.NormalizeColumnNames(row).GetData())
-			if err != nil {
-				return nil, err
-			}
-			// Include newline in the encoded bytes - NDJSON
-			return append(rowBytes, '\n'), nil
-		},
-		func(encodedBytes [][]byte, rows []optimization.Row) error {
-			if err := channel.RateLimiter.Wait(ctx); err != nil {
-				return fmt.Errorf("rate limiter error for channel %q: %w", channelName, err)
-			}
-
-			readers := make([]io.Reader, len(encodedBytes))
-			for i, b := range encodedBytes {
-				readers[i] = bytes.NewReader(b)
-			}
-			reader := io.MultiReader(readers...)
-
-			appendResp, err := AppendRows(ctx, s.scopedToken, s.ingestHost, db, schema, pipe, channelName, channel.GetContinuationToken(), reader)
-			if err == nil {
-				channel.UpdateContinuationToken(appendResp.NextContinuationToken)
-				return nil
-			}
-
-			// Check if this is a reopenable error
-			var appendErr ErrorResponse
-			if errors.As(err, &appendErr) && appendErr.IsChannelReopenError() {
-				// Reopen the channel and retry once
-				channel, retryErr := s.openChannel(ctx, db, schema, pipe, channelName, true)
-				if retryErr != nil {
-					return fmt.Errorf("failed to reopen channel %q after error %q: %w", channelName, appendErr.Code, retryErr)
-				}
-
-				// Rebuild the reader since it was consumed
-				retryReaders := make([]io.Reader, len(encodedBytes))
-				for i, b := range encodedBytes {
-					retryReaders[i] = bytes.NewReader(b)
-				}
-				retryReader := io.MultiReader(retryReaders...)
-				appendResp, err = AppendRows(ctx, s.scopedToken, s.ingestHost, db, schema, pipe, channelName, channel.GetContinuationToken(), retryReader)
-				if err != nil {
-					return fmt.Errorf("failed to append rows for snowpipe streaming channel %q after reopen: %w", channelName, err)
-				}
-
-				channel.UpdateContinuationToken(appendResp.NextContinuationToken)
-				return nil
-			}
-
-			return fmt.Errorf("failed to append rows for snowpipe streaming channel %q: %w", channelName, err)
-		},
-	)
-
-	return err
+	return nil
 }
 
 // copied from https://github.com/snowflakedb/gosnowflake/blob/v1.17.1/auth.go#L646
