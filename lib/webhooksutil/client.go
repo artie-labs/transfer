@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/redact"
 	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
@@ -49,6 +50,13 @@ func (w WebhooksClient) BuildProperties(eventType EventType, additionalPropertie
 	}
 	maps.Copy(props, w.properties)
 	maps.Copy(props, additionalProperties)
+
+	for key, value := range props {
+		if strVal, ok := value.(string); ok {
+			props[key] = redact.ScrubErrorMessage(strVal)
+		}
+	}
+
 	return props
 }
 
