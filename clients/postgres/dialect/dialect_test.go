@@ -231,6 +231,21 @@ func TestDataTypeForKind(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name:     "typed array (text)",
+			kd:       typing.KindDetails{Kind: typing.Array.Kind, OptionalArrayKind: &typing.String},
+			expected: "text[]",
+		},
+		{
+			name:     "typed array (integer)",
+			kd:       typing.KindDetails{Kind: typing.Array.Kind, OptionalArrayKind: &typing.Boolean},
+			expected: "boolean[]",
+		},
+		{
+			name:    "nested array rejected",
+			kd:      typing.KindDetails{Kind: typing.Array.Kind, OptionalArrayKind: &typing.Array},
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {

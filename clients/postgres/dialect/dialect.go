@@ -357,6 +357,10 @@ func (p PostgresDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, setti
 			return "jsonb[]", nil
 		}
 
+		if kd.OptionalArrayKind.Kind == typing.Array.Kind {
+			return "", fmt.Errorf("nested array types are not supported")
+		}
+
 		elementType, err := p.DataTypeForKind(*kd.OptionalArrayKind, isPk, settings)
 		if err != nil {
 			return "", err
@@ -390,17 +394,15 @@ var dataTypeMap = map[string]typing.KindDetails{
 }
 
 func (PostgresDialect) KindForDataType(_type string) (typing.KindDetails, error) {
-	return kindForDataType(_type, nil)
+	return kindForDataType(_type)
 }
 
-func kindForDataType(_type string, optionalParentType *typing.KindDetails) (typing.KindDetails, error) {
+func kindForDataType(_type string) (typing.KindDetails, error) {
 	dataType := strings.ToLower(_type)
-
 	if strings.HasSuffix(dataType, "[]") {
-		elementType := strings.TrimSuffix(dataType, "[]")
-		elementKind, err := kindForDataType(elementType, nil)
+		elementKind, err := kindForDataType(strings.TrimSuffix(dataType, "[]"))
 		if err != nil {
-			return typing.Invalid, fmt.Errorf("failed to resolve array element type %q: %w", elementType, err)
+			return typing.Invalid, fmt.Errorf("failed to resolve array element type %q: %w", _type, err)
 		}
 
 		return typing.KindDetails{
