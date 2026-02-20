@@ -2,11 +2,14 @@ package bigquery
 
 import (
 	"fmt"
+	"testing"
 
 	bigqueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib/partition"
+	"github.com/artie-labs/transfer/lib/sql"
 
 	"github.com/stretchr/testify/assert"
 
@@ -70,6 +73,40 @@ func (b *BigQueryTestSuite) TestBackfillColumn() {
 
 		_, commentSQL, _ := b.fakeStore.ExecContextArgsForCall(5)
 		assert.Equal(b.T(), "ALTER TABLE `db`.`public`.`tableName` ALTER COLUMN `foo3` SET OPTIONS (description=`{\"backfilled\": true}`);", commentSQL)
+	}
+}
+
+func TestBuildReservationPrefixStatement(t *testing.T) {
+	{
+		// No reservation configured
+		cfg := config.Config{
+			BigQuery: &config.BigQuery{
+				ProjectID: "artie",
+			},
+		}
+
+		var prefixStatements []string
+		if cfg.BigQuery.Reservation != "" {
+			prefixStatements = append(prefixStatements, fmt.Sprintf("SET @@reservation = %s", sql.QuoteLiteral(cfg.BigQuery.Reservation)))
+		}
+
+		assert.Empty(t, prefixStatements)
+	}
+	{
+		// Reservation configured
+		cfg := config.Config{
+			BigQuery: &config.BigQuery{
+				ProjectID:   "artie",
+				Reservation: "projects/bq-admin-project-473214/locations/US/reservations/pump-bq-batch",
+			},
+		}
+
+		var prefixStatements []string
+		if cfg.BigQuery.Reservation != "" {
+			prefixStatements = append(prefixStatements, fmt.Sprintf("SET @@reservation = %s", sql.QuoteLiteral(cfg.BigQuery.Reservation)))
+		}
+
+		assert.Equal(t, []string{"SET @@reservation = 'projects/bq-admin-project-473214/locations/US/reservations/pump-bq-batch'"}, prefixStatements)
 	}
 }
 

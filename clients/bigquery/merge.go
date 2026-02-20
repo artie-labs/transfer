@@ -43,11 +43,17 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData, wh
 		additionalEqualityStrings = append(additionalEqualityStrings, predicates...)
 	}
 
+	var prefixStatements []string
+	if s.config.BigQuery.Reservation != "" {
+		prefixStatements = append(prefixStatements, fmt.Sprintf("SET @@reservation = %s", sql.QuoteLiteral(s.config.BigQuery.Reservation)))
+	}
+
 	err := shared.Merge(ctx, s, tableData, types.MergeOpts{
 		AdditionalEqualityStrings: additionalEqualityStrings,
 		ColumnSettings:            s.config.SharedDestinationSettings.ColumnSettings,
 		// BigQuery has DDL quotas.
 		RetryColBackfill: true,
+		PrefixStatements: prefixStatements,
 	}, whClient)
 	if err != nil {
 		return false, fmt.Errorf("failed to merge: %w", err)
