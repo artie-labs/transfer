@@ -17,7 +17,7 @@ var uriPasswordPattern = regexp.MustCompile(`([a-zA-Z][a-zA-Z0-9+\-.]*://[^:@/\s
 var quotedKeyValuePattern = regexp.MustCompile(`(?i)("(?:password|passwd|secret|token|api_key|apikey|access_key|auth|credential|private_key)")\s*:\s*"([^"]+)"`)
 
 // Key-value patterns: key=value or key: value (unquoted)
-var unquotedKeyValuePattern = regexp.MustCompile(`(?i)((?:password|passwd|secret|token|api_key|apikey|access_key|auth|credential|private_key)\s*[:=]\s*)((?:Bearer\s+)?[^\s,;&}"]+)`)
+var unquotedKeyValuePattern = regexp.MustCompile(`(?i)((?:password|passwd|secret|token|api_key|apikey|access_key|auth|credential|private_key)\s*[:=]\s*)((?:Bearer\s+)?[^\s,;&}"\[\]]+)`)
 
 var scrubRules = []scrubRule{
 	{

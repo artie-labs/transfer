@@ -148,6 +148,21 @@ func TestScrubString(t *testing.T) {
 			expected: "token=[REDACTED]",
 		},
 		{
+			name:     "URI with sensitive keyword as username (token)",
+			input:    "postgres://token:s3cret@db.example.com:5432/mydb",
+			expected: "postgres://token:[REDACTED]@db.example.com:5432/mydb",
+		},
+		{
+			name:     "URI with sensitive keyword as username (auth)",
+			input:    "https://auth:password123@api.example.com/v1",
+			expected: "https://auth:[REDACTED]@api.example.com/v1",
+		},
+		{
+			name:     "URI with sensitive keyword as username (credential)",
+			input:    "mysql://credential:hunter2@db.internal:3306/app",
+			expected: "mysql://credential:[REDACTED]@db.internal:3306/app",
+		},
+		{
 			name:     "UUIDs are not redacted",
 			input:    "failed to process row for pipeline 550e8400-e29b-41d4-a716-446655440000 in table users",
 			expected: "failed to process row for pipeline 550e8400-e29b-41d4-a716-446655440000 in table users",
