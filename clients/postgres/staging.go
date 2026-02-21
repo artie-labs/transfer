@@ -135,6 +135,13 @@ func parseValue(value any, col columns.Column) (any, error) {
 		}
 
 		return base64.StdEncoding.DecodeString(castedValue)
+	case typing.Interval.Kind:
+		castedValue, err := typing.AssertType[string](value)
+		if err != nil {
+			return nil, err
+		}
+
+		return castedValue, nil
 	case typing.Struct.Kind:
 		// If it's the toast placeholder value, wrap it in quotes so it's valid json
 		if value == constants.ToastUnavailableValuePlaceholder {

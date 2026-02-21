@@ -45,6 +45,8 @@ func (BigQueryDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, s
 		}
 
 		return kindDetails.ExtendedDecimalDetails.BigQueryKind(settings.BigNumericForVariableNumeric), nil
+	case typing.Interval.Kind:
+		return "string", nil
 	}
 
 	return kindDetails.Kind, nil

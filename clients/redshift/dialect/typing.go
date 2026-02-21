@@ -55,6 +55,8 @@ func (RedshiftDialect) DataTypeForKind(kd typing.KindDetails, _ bool, _ config.S
 		return "TIMESTAMP WITH TIME ZONE", nil
 	case typing.EDecimal.Kind:
 		return kd.ExtendedDecimalDetails.RedshiftKind(), nil
+	case typing.Interval.Kind:
+		return "VARCHAR(MAX)", nil
 	}
 
 	return kd.Kind, nil

@@ -18,6 +18,7 @@ func (IcebergDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, _ 
 		typing.Array.Kind,
 		typing.Struct.Kind,
 		typing.String.Kind,
+		typing.Interval.Kind,
 		typing.TimeKindDetails.Kind:
 		return "STRING", nil
 	case typing.Float.Kind:

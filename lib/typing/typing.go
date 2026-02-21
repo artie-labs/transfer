@@ -95,6 +95,11 @@ var (
 	UUID = KindDetails{
 		Kind: "uuid",
 	}
+
+	// [Interval] - This is only populated for Postgres for now.
+	Interval = KindDetails{
+		Kind: "interval",
+	}
 )
 
 func NewDecimalDetailsFromTemplate(details KindDetails, decimalDetails decimal.Details) KindDetails {

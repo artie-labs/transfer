@@ -40,6 +40,12 @@ func TestMSSQLDialect_DataTypeForKind(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, tc.expectedIsPk, actual, idx)
 	}
+	{
+		// Interval
+		actual, err := MSSQLDialect{}.DataTypeForKind(typing.Interval, false, config.SharedDestinationColumnSettings{})
+		assert.NoError(t, err)
+		assert.Equal(t, "NVARCHAR(MAX)", actual)
+	}
 }
 
 func TestMSSQLDialect_KindForDataType(t *testing.T) {

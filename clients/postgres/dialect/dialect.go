@@ -314,6 +314,7 @@ func (pd PostgresDialect) buildNoMergeDeleteQuery(tableID sql.TableIdentifier, s
 
 var kindDetailsMap = map[string]string{
 	typing.UUID.Kind:            "uuid",
+	typing.Interval.Kind:        "interval",
 	typing.Float.Kind:           "double precision",
 	typing.Boolean.Kind:         "boolean",
 	typing.Struct.Kind:          "jsonb",
@@ -392,8 +393,9 @@ var dataTypeMap = map[string]typing.KindDetails{
 	// Other data types:
 	"json":  typing.Struct,
 	"jsonb": typing.Struct,
-	"uuid":  typing.UUID,
-	"bytea": typing.Bytes,
+	"uuid":     typing.UUID,
+	"interval": typing.Interval,
+	"bytea":    typing.Bytes,
 }
 
 func (PostgresDialect) KindForDataType(_type string) (typing.KindDetails, error) {
@@ -416,6 +418,10 @@ func kindForDataType(_type string) (typing.KindDetails, error) {
 
 	if strings.HasPrefix(dataType, "timestamp") {
 		dataType, _ = StripPrecision(dataType)
+	}
+
+	if strings.HasPrefix(dataType, "interval") {
+		return typing.Interval, nil
 	}
 
 	dataType, parameters, err := sql.ParseDataTypeDefinition(dataType)

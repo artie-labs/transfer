@@ -88,8 +88,10 @@ func (f Field) GetScaleAndPrecision() (int32, *int32, error) {
 func (f Field) ToValueConverter() (converters.ValueConverter, error) {
 	switch f.DebeziumType {
 	// Passthrough converters
-	case UUID, LTree, Enum, EnumSet, Interval, XML:
+	case UUID, LTree, Enum, EnumSet, XML:
 		return converters.StringPassthrough{}, nil
+	case Interval:
+		return converters.Interval{}, nil
 	case Year, MicroDuration:
 		return &converters.Int64Passthrough{}, nil
 	case Bits:

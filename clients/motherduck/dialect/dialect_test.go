@@ -309,6 +309,13 @@ func TestDataTypeForKind(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "timestamp with time zone", result)
 	}
+
+	// Interval
+	{
+		result, err := dd.DataTypeForKind(typing.Interval, false, config.SharedDestinationColumnSettings{})
+		assert.NoError(t, err)
+		assert.Equal(t, "interval", result)
+	}
 }
 
 func TestRoundTripConversion(t *testing.T) {

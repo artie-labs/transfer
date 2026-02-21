@@ -81,6 +81,11 @@ func TestMySQLDialect_DataTypeForKind(t *testing.T) {
 			expected:     "JSON",
 			expectedIsPk: "JSON",
 		},
+		{
+			kd:           typing.Interval,
+			expected:     "TEXT",
+			expectedIsPk: "TEXT",
+		},
 	}
 
 	for _, tc := range tcs {

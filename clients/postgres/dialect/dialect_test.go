@@ -38,6 +38,10 @@ func TestKindForDataType(t *testing.T) {
 		"timestamp(5) with time zone":    typing.TimestampTZ,
 		"timestamp without time zone":    typing.TimestampNTZ,
 		"timestamp(4) without time zone": typing.TimestampNTZ,
+		// Interval data types:
+		"interval":                typing.Interval,
+		"interval(6)":            typing.Interval,
+		"interval day to second": typing.Interval,
 		// Other data types:
 		"json":  typing.Struct,
 		"bytea": typing.Bytes,
@@ -240,6 +244,11 @@ func TestDataTypeForKind(t *testing.T) {
 			name:     "bytes",
 			kd:       typing.Bytes,
 			expected: "bytea",
+		},
+		{
+			name:     "interval",
+			kd:       typing.Interval,
+			expected: "interval",
 		},
 		{
 			name:     "typed array (text)",

@@ -10,6 +10,28 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
+func TestParseValue_Interval(t *testing.T) {
+	col := columns.NewColumn("duration", typing.Interval)
+
+	{
+		// nil value
+		result, err := parseValue(nil, col)
+		assert.NoError(t, err)
+		assert.Nil(t, result)
+	}
+	{
+		// Valid interval string
+		result, err := parseValue("P1Y2M3DT4H5M6.7S", col)
+		assert.NoError(t, err)
+		assert.Equal(t, "P1Y2M3DT4H5M6.7S", result)
+	}
+	{
+		// Wrong type (not a string)
+		_, err := parseValue(12345, col)
+		assert.ErrorContains(t, err, "expected type string")
+	}
+}
+
 func TestParseValue_Bytes(t *testing.T) {
 	col := columns.NewColumn("data", typing.Bytes)
 
