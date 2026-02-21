@@ -368,5 +368,10 @@ func mergeColumn(inMemoryCol, destCol columns.Column) columns.Column {
 		inMemoryCol.KindDetails.ExtendedDecimalDetails = nil
 	}
 
+	// If the destination column has optional array kind, we should copy it over to the in-memory column
+	if destCol.KindDetails.OptionalArrayKind != nil {
+		inMemoryCol.KindDetails.OptionalArrayKind = destCol.KindDetails.OptionalArrayKind
+	}
+
 	return inMemoryCol
 }
