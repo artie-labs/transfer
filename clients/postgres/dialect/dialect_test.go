@@ -255,7 +255,7 @@ func TestDataTypeForKind(t *testing.T) {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, got)
+				assert.Equal(t, tt.expected, got, tt.name)
 			}
 		})
 	}

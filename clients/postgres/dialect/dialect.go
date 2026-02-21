@@ -316,7 +316,6 @@ var kindDetailsMap = map[string]string{
 	typing.Float.Kind:           "double precision",
 	typing.Boolean.Kind:         "boolean",
 	typing.Struct.Kind:          "jsonb",
-	typing.Array.Kind:           "jsonb",
 	typing.String.Kind:          "text",
 	typing.Date.Kind:            "date",
 	typing.TimeKindDetails.Kind: "time",
