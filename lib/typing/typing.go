@@ -90,6 +90,11 @@ var (
 	TimestampTZ = KindDetails{
 		Kind: "timestamp_tz",
 	}
+
+	// [UUID] - This is only populated for Postgres for now.
+	UUID = KindDetails{
+		Kind: "uuid",
+	}
 )
 
 func NewDecimalDetailsFromTemplate(details KindDetails, decimalDetails decimal.Details) KindDetails {

@@ -313,6 +313,7 @@ func (pd PostgresDialect) buildNoMergeDeleteQuery(tableID sql.TableIdentifier, s
 }
 
 var kindDetailsMap = map[string]string{
+	typing.UUID.Kind:            "uuid",
 	typing.Float.Kind:           "double precision",
 	typing.Boolean.Kind:         "boolean",
 	typing.Struct.Kind:          "jsonb",
@@ -390,6 +391,7 @@ var dataTypeMap = map[string]typing.KindDetails{
 	// Other data types:
 	"json":  typing.Struct,
 	"jsonb": typing.Struct,
+	"uuid":  typing.UUID,
 }
 
 func (PostgresDialect) KindForDataType(_type string) (typing.KindDetails, error) {
