@@ -49,6 +49,45 @@ func TestKindForDataType(t *testing.T) {
 	}
 }
 
+func TestKindForDataType_Arrays(t *testing.T) {
+	intKind := typing.BuildIntegerKind(typing.IntegerKind)
+	bigintKind := typing.BuildIntegerKind(typing.BigIntegerKind)
+
+	tests := []struct {
+		dataType string
+		expected typing.KindDetails
+	}{
+		{
+			dataType: "integer[]",
+			expected: typing.KindDetails{Kind: typing.Array.Kind, OptionalArrayKind: &intKind},
+		},
+		{
+			dataType: "bigint[]",
+			expected: typing.KindDetails{Kind: typing.Array.Kind, OptionalArrayKind: &bigintKind},
+		},
+		{
+			dataType: "boolean[]",
+			expected: typing.KindDetails{Kind: typing.Array.Kind, OptionalArrayKind: &typing.Boolean},
+		},
+		{
+			dataType: "text[]",
+			expected: typing.KindDetails{Kind: typing.Array.Kind, OptionalArrayKind: &typing.String},
+		},
+		{
+			dataType: "double precision[]",
+			expected: typing.KindDetails{Kind: typing.Array.Kind, OptionalArrayKind: &typing.Float},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.dataType, func(t *testing.T) {
+			kind, err := PostgresDialect{}.KindForDataType(tt.dataType)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expected, kind)
+		})
+	}
+}
+
 func TestStripPrecision(t *testing.T) {
 	{
 		// Test with a string that has a precision
@@ -115,7 +154,7 @@ func TestDataTypeForKind(t *testing.T) {
 		{
 			name:     "array",
 			kd:       typing.Array,
-			expected: "jsonb",
+			expected: "text[]",
 		},
 		{
 			name:     "string",
@@ -192,6 +231,21 @@ func TestDataTypeForKind(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name:     "typed array (text)",
+			kd:       typing.KindDetails{Kind: typing.Array.Kind, OptionalArrayKind: &typing.String},
+			expected: "text[]",
+		},
+		{
+			name:     "typed array (integer)",
+			kd:       typing.KindDetails{Kind: typing.Array.Kind, OptionalArrayKind: &typing.Boolean},
+			expected: "boolean[]",
+		},
+		{
+			name:    "nested array rejected",
+			kd:      typing.KindDetails{Kind: typing.Array.Kind, OptionalArrayKind: &typing.Array},
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -201,7 +255,7 @@ func TestDataTypeForKind(t *testing.T) {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, tt.expected, got)
+				assert.Equal(t, tt.expected, got, tt.name)
 			}
 		})
 	}

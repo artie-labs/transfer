@@ -312,20 +312,19 @@ func (pd PostgresDialect) buildNoMergeDeleteQuery(tableID sql.TableIdentifier, s
 	)
 }
 
-var kindDetailsMap = map[typing.KindDetails]string{
-	typing.Float:           "double precision",
-	typing.Boolean:         "boolean",
-	typing.Struct:          "jsonb",
-	typing.Array:           "jsonb",
-	typing.String:          "text",
-	typing.Date:            "date",
-	typing.TimeKindDetails: "time",
-	typing.TimestampNTZ:    "timestamp without time zone",
-	typing.TimestampTZ:     "timestamp with time zone",
+var kindDetailsMap = map[string]string{
+	typing.Float.Kind:           "double precision",
+	typing.Boolean.Kind:         "boolean",
+	typing.Struct.Kind:          "jsonb",
+	typing.String.Kind:          "text",
+	typing.Date.Kind:            "date",
+	typing.TimeKindDetails.Kind: "time",
+	typing.TimestampNTZ.Kind:    "timestamp without time zone",
+	typing.TimestampTZ.Kind:     "timestamp with time zone",
 }
 
-func (PostgresDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, settings config.SharedDestinationColumnSettings) (string, error) {
-	if kind, ok := kindDetailsMap[kd]; ok {
+func (p PostgresDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, settings config.SharedDestinationColumnSettings) (string, error) {
+	if kind, ok := kindDetailsMap[kd.Kind]; ok {
 		return kind, nil
 	}
 
@@ -352,6 +351,21 @@ func (PostgresDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, setting
 			return "", fmt.Errorf("expected extended decimal details to be set for %q", kd.Kind)
 		}
 		return kd.ExtendedDecimalDetails.PostgresKind(), nil
+	case typing.Array.Kind:
+		if kd.OptionalArrayKind == nil {
+			return "text[]", nil
+		}
+
+		if kd.OptionalArrayKind.Kind == typing.Array.Kind {
+			return "", fmt.Errorf("nested array types are not supported")
+		}
+
+		elementType, err := p.DataTypeForKind(*kd.OptionalArrayKind, isPk, settings)
+		if err != nil {
+			return "", err
+		}
+
+		return fmt.Sprintf("%s[]", elementType), nil
 	default:
 		return "", fmt.Errorf("unsupported kind: %q", kd.Kind)
 	}
@@ -379,7 +393,23 @@ var dataTypeMap = map[string]typing.KindDetails{
 }
 
 func (PostgresDialect) KindForDataType(_type string) (typing.KindDetails, error) {
+	return kindForDataType(_type)
+}
+
+func kindForDataType(_type string) (typing.KindDetails, error) {
 	dataType := strings.ToLower(_type)
+	if strings.HasSuffix(dataType, "[]") {
+		elementKind, err := kindForDataType(strings.TrimSuffix(dataType, "[]"))
+		if err != nil {
+			return typing.Invalid, fmt.Errorf("failed to resolve array element type %q: %w", _type, err)
+		}
+
+		return typing.KindDetails{
+			Kind:              typing.Array.Kind,
+			OptionalArrayKind: &elementKind,
+		}, nil
+	}
+
 	if strings.HasPrefix(dataType, "timestamp") {
 		dataType, _ = StripPrecision(dataType)
 	}
@@ -389,14 +419,12 @@ func (PostgresDialect) KindForDataType(_type string) (typing.KindDetails, error)
 		return typing.Invalid, err
 	}
 
-	// Check the lookup table first.
 	if kind, ok := dataTypeMap[dataType]; ok {
 		return kind, nil
 	}
 
 	switch dataType {
 	case "numeric":
-		// This means that this is a variable numeric type.
 		if len(parameters) == 0 {
 			return typing.NewDecimalDetailsFromTemplate(typing.EDecimal, decimal.NewDetails(decimal.PrecisionNotSpecified, decimal.DefaultScale)), nil
 		}

@@ -21,6 +21,8 @@ type KindDetails struct {
 	// Optional kind details metadata
 	OptionalStringPrecision *int32
 	OptionalIntegerKind     *OptionalIntegerKind
+	// [OptionalArrayKind] - This is only populated for Postgres.
+	OptionalArrayKind *KindDetails
 }
 
 func (k KindDetails) DecimalDetailsNotSet() bool {
