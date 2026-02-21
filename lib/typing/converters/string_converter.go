@@ -34,7 +34,7 @@ func GetStringConverter(kd typing.KindDetails, opts GetStringConverterOpts) (Con
 	// Base types
 	case typing.Boolean.Kind:
 		return BooleanConverter{}, nil
-	case typing.String.Kind:
+	case typing.String.Kind, typing.Interval.Kind:
 		return StringConverter{
 			useNewMethod: opts.UseNewStringMethod,
 		}, nil
