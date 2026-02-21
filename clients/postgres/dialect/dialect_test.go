@@ -154,7 +154,7 @@ func TestDataTypeForKind(t *testing.T) {
 		{
 			name:     "array",
 			kd:       typing.Array,
-			expected: "jsonb",
+			expected: "text[]",
 		},
 		{
 			name:     "string",
