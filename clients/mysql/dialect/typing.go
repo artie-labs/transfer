@@ -50,6 +50,8 @@ func (MySQLDialect) DataTypeForKind(kindDetails typing.KindDetails, isPk bool, _
 		return "DATETIME(6)", nil
 	case typing.EDecimal.Kind:
 		return kindDetails.ExtendedDecimalDetails.MySQLKind(), nil
+	case typing.Interval.Kind:
+		return "TEXT", nil
 	}
 
 	return kindDetails.Kind, nil

@@ -41,6 +41,8 @@ func (DatabricksDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool,
 		return "TIMESTAMP", nil
 	case typing.EDecimal.Kind:
 		return kindDetails.ExtendedDecimalDetails.DatabricksKind(), nil
+	case typing.Interval.Kind:
+		return "STRING", nil
 	}
 
 	return kindDetails.Kind, nil

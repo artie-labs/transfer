@@ -22,6 +22,7 @@ func TestSnowflakeDialect_DataTypeForKind(t *testing.T) {
 		typing.Date:            "date",
 		typing.TimeKindDetails: "time",
 		typing.TimestampTZ:     "timestamp_tz",
+		typing.Interval:        "string",
 	}
 
 	for kd, expected := range expectedKindDetailsToValueMap {

@@ -29,6 +29,7 @@ func TestRedshiftDialect_DataTypeForKind(t *testing.T) {
 		// Timestamps:
 		typing.TimestampTZ:  "TIMESTAMP WITH TIME ZONE",
 		typing.TimestampNTZ: "TIMESTAMP WITHOUT TIME ZONE",
+		typing.Interval:     "VARCHAR(MAX)",
 	}
 
 	for kd, expected := range expectedKindDetailsToValueMap {

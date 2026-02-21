@@ -90,8 +90,8 @@ func (PostgresDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (str
 func (p PostgresDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
 	quotedColumn := sql.QuoteTableAliasColumn(tableAlias, column, p)
 
-	// For JSONB columns, we need to cast to text before using NOT LIKE
-	if column.KindDetails.Kind == typing.Struct.Kind || column.KindDetails.Kind == typing.Array.Kind {
+	// Non-text types (JSONB, arrays, bytea) need a ::text cast for NOT LIKE to work.
+	if column.KindDetails.Kind == typing.Struct.Kind || column.KindDetails.Kind == typing.Array.Kind || column.KindDetails.Kind == typing.Bytes.Kind {
 		return fmt.Sprintf("COALESCE(%s::text, '') NOT LIKE '%s'", quotedColumn, "%"+constants.ToastUnavailableValuePlaceholder+"%")
 	}
 
@@ -314,10 +314,12 @@ func (pd PostgresDialect) buildNoMergeDeleteQuery(tableID sql.TableIdentifier, s
 
 var kindDetailsMap = map[string]string{
 	typing.UUID.Kind:            "uuid",
+	typing.Interval.Kind:        "interval",
 	typing.Float.Kind:           "double precision",
 	typing.Boolean.Kind:         "boolean",
 	typing.Struct.Kind:          "jsonb",
 	typing.String.Kind:          "text",
+	typing.Bytes.Kind:           "bytea",
 	typing.Date.Kind:            "date",
 	typing.TimeKindDetails.Kind: "time",
 	typing.TimestampNTZ.Kind:    "timestamp without time zone",
@@ -389,9 +391,11 @@ var dataTypeMap = map[string]typing.KindDetails{
 	"timestamp with time zone":    typing.TimestampTZ,
 	"timestamp without time zone": typing.TimestampNTZ,
 	// Other data types:
-	"json":  typing.Struct,
-	"jsonb": typing.Struct,
-	"uuid":  typing.UUID,
+	"json":     typing.Struct,
+	"jsonb":    typing.Struct,
+	"uuid":     typing.UUID,
+	"interval": typing.Interval,
+	"bytea":    typing.Bytes,
 }
 
 func (PostgresDialect) KindForDataType(_type string) (typing.KindDetails, error) {
@@ -414,6 +418,10 @@ func kindForDataType(_type string) (typing.KindDetails, error) {
 
 	if strings.HasPrefix(dataType, "timestamp") {
 		dataType, _ = StripPrecision(dataType)
+	}
+
+	if strings.HasPrefix(dataType, "interval") {
+		return typing.Interval, nil
 	}
 
 	dataType, parameters, err := sql.ParseDataTypeDefinition(dataType)
