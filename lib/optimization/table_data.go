@@ -373,5 +373,10 @@ func mergeColumn(inMemoryCol, destCol columns.Column) columns.Column {
 		inMemoryCol.KindDetails.OptionalArrayKind = destCol.KindDetails.OptionalArrayKind
 	}
 
+	// If the destination column is a UUID, we should copy it over to the in-memory column
+	if destCol.KindDetails.Kind == typing.UUID.Kind {
+		inMemoryCol.KindDetails.Kind = typing.UUID.Kind
+	}
+
 	return inMemoryCol
 }
