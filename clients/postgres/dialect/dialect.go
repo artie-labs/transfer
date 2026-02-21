@@ -312,20 +312,20 @@ func (pd PostgresDialect) buildNoMergeDeleteQuery(tableID sql.TableIdentifier, s
 	)
 }
 
-var kindDetailsMap = map[typing.KindDetails]string{
-	typing.Float:           "double precision",
-	typing.Boolean:         "boolean",
-	typing.Struct:          "jsonb",
-	typing.Array:           "jsonb",
-	typing.String:          "text",
-	typing.Date:            "date",
-	typing.TimeKindDetails: "time",
-	typing.TimestampNTZ:    "timestamp without time zone",
-	typing.TimestampTZ:     "timestamp with time zone",
+var kindDetailsMap = map[string]string{
+	typing.Float.Kind:           "double precision",
+	typing.Boolean.Kind:         "boolean",
+	typing.Struct.Kind:          "jsonb",
+	typing.Array.Kind:           "jsonb",
+	typing.String.Kind:          "text",
+	typing.Date.Kind:            "date",
+	typing.TimeKindDetails.Kind: "time",
+	typing.TimestampNTZ.Kind:    "timestamp without time zone",
+	typing.TimestampTZ.Kind:     "timestamp with time zone",
 }
 
 func (p PostgresDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, settings config.SharedDestinationColumnSettings) (string, error) {
-	if kind, ok := kindDetailsMap[kd]; ok {
+	if kind, ok := kindDetailsMap[kd.Kind]; ok {
 		return kind, nil
 	}
 
