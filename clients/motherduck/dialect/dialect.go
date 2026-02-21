@@ -119,6 +119,8 @@ func (DuckDBDialect) KindForDataType(_type string) (typing.KindDetails, error) {
 		return typing.TimestampNTZ, nil
 	case "timestamp with time zone", "timestamptz":
 		return typing.TimestampTZ, nil
+	case "interval":
+		return typing.Interval, nil
 	}
 	return typing.Invalid, fmt.Errorf("unsupported data type: %s", dataType)
 }

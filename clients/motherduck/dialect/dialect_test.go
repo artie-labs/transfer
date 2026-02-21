@@ -176,6 +176,13 @@ func TestKindForDataType(t *testing.T) {
 		assert.Equal(t, typing.TimestampTZ, kind)
 	}
 
+	// Interval
+	{
+		kind, err := dd.KindForDataType("interval")
+		assert.NoError(t, err)
+		assert.Equal(t, typing.Interval, kind)
+	}
+
 	// Array types with [] notation
 	{
 		kind, err := dd.KindForDataType("text[]")
