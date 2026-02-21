@@ -391,8 +391,8 @@ var dataTypeMap = map[string]typing.KindDetails{
 	"timestamp with time zone":    typing.TimestampTZ,
 	"timestamp without time zone": typing.TimestampNTZ,
 	// Other data types:
-	"json":  typing.Struct,
-	"jsonb": typing.Struct,
+	"json":     typing.Struct,
+	"jsonb":    typing.Struct,
 	"uuid":     typing.UUID,
 	"interval": typing.Interval,
 	"bytea":    typing.Bytes,

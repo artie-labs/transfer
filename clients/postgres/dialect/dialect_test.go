@@ -39,7 +39,7 @@ func TestKindForDataType(t *testing.T) {
 		"timestamp without time zone":    typing.TimestampNTZ,
 		"timestamp(4) without time zone": typing.TimestampNTZ,
 		// Interval data types:
-		"interval":                typing.Interval,
+		"interval":               typing.Interval,
 		"interval(6)":            typing.Interval,
 		"interval day to second": typing.Interval,
 		// Other data types:
