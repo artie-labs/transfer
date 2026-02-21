@@ -35,8 +35,20 @@ func TestClientPool_Next_SingleClient(t *testing.T) {
 
 func TestClientPool_Next_RoundRobin(t *testing.T) {
 	pool := NewClientPool("http://localhost:8998", nil, nil, 0, "", "", "test-session", 3)
-	for i := 0; i < 9; i++ {
-		expected := pool.clients[i%3]
+
+	// The starting offset is randomized, so get the first client to determine where we are.
+	first := pool.Next()
+	var startIdx int
+	for i, c := range pool.clients {
+		if c == first {
+			startIdx = i
+			break
+		}
+	}
+
+	// Subsequent calls should cycle through clients in order.
+	for i := 1; i < 9; i++ {
+		expected := pool.clients[(startIdx+i)%3]
 		assert.Same(t, expected, pool.Next())
 	}
 }
