@@ -2,6 +2,7 @@ package apachelivy
 
 import (
 	"fmt"
+	"math/rand/v2"
 	"sync/atomic"
 )
 
@@ -24,7 +25,12 @@ func NewClientPool(url string, config map[string]any, jars []string, heartbeatTi
 		clients[i] = NewClient(url, config, jars, heartbeatTimeoutInSecond, driverMemory, executorMemory, name)
 	}
 
-	return &ClientPool{clients: clients}
+	pool := &ClientPool{clients: clients}
+	if numberOfSessions > 1 {
+		// Randomize the starting offset so that multiple pods don't all round-robin in lockstep.
+		pool.counter.Store(uint64(rand.IntN(numberOfSessions)))
+	}
+	return pool
 }
 
 func (p *ClientPool) Next() *Client {
