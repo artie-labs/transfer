@@ -2,9 +2,11 @@ package bigquery
 
 import (
 	"fmt"
+	"testing"
 
 	bigqueryDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib/partition"
 
@@ -70,6 +72,25 @@ func (b *BigQueryTestSuite) TestBackfillColumn() {
 
 		_, commentSQL, _ := b.fakeStore.ExecContextArgsForCall(5)
 		assert.Equal(b.T(), "ALTER TABLE `db`.`public`.`tableName` ALTER COLUMN `foo3` SET OPTIONS (description=`{\"backfilled\": true}`);", commentSQL)
+	}
+}
+
+func TestBuildPrefixStatements(t *testing.T) {
+	{
+		// No reservation configured
+		store := &Store{config: config.Config{BigQuery: &config.BigQuery{ProjectID: "artie"}}}
+		assert.Empty(t, store.buildPrefixStatements())
+	}
+	{
+		// Reservation configured
+		store := &Store{config: config.Config{BigQuery: &config.BigQuery{
+			ProjectID:   "artie",
+			Reservation: "projects/bq-admin-project-473214/locations/US/reservations/pump-bq-batch",
+		}}}
+		assert.Equal(t,
+			[]string{"SET @@reservation = 'projects/bq-admin-project-473214/locations/US/reservations/pump-bq-batch'"},
+			store.buildPrefixStatements(),
+		)
 	}
 }
 

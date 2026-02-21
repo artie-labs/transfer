@@ -52,6 +52,8 @@ type MergeOpts struct {
 	AdditionalEqualityStrings []string
 	ColumnSettings            config.SharedDestinationColumnSettings
 	RetryColBackfill          bool
+	// PrefixStatements are SQL statements that will be executed before the merge queries (e.g. SET @@reservation for BigQuery).
+	PrefixStatements []string
 
 	// Multi-step merge settings
 	PrepareTemporaryTable              bool
