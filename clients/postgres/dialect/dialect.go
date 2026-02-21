@@ -354,7 +354,7 @@ func (p PostgresDialect) DataTypeForKind(kd typing.KindDetails, isPk bool, setti
 		return kd.ExtendedDecimalDetails.PostgresKind(), nil
 	case typing.Array.Kind:
 		if kd.OptionalArrayKind == nil {
-			return "jsonb[]", nil
+			return "text[]", nil
 		}
 
 		if kd.OptionalArrayKind.Kind == typing.Array.Kind {
