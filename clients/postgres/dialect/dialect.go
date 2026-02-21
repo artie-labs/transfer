@@ -318,6 +318,7 @@ var kindDetailsMap = map[string]string{
 	typing.Boolean.Kind:         "boolean",
 	typing.Struct.Kind:          "jsonb",
 	typing.String.Kind:          "text",
+	typing.Bytes.Kind:           "bytea",
 	typing.Date.Kind:            "date",
 	typing.TimeKindDetails.Kind: "time",
 	typing.TimestampNTZ.Kind:    "timestamp without time zone",
@@ -392,6 +393,7 @@ var dataTypeMap = map[string]typing.KindDetails{
 	"json":  typing.Struct,
 	"jsonb": typing.Struct,
 	"uuid":  typing.UUID,
+	"bytea": typing.Bytes,
 }
 
 func (PostgresDialect) KindForDataType(_type string) (typing.KindDetails, error) {

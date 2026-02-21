@@ -39,7 +39,8 @@ func TestKindForDataType(t *testing.T) {
 		"timestamp without time zone":    typing.TimestampNTZ,
 		"timestamp(4) without time zone": typing.TimestampNTZ,
 		// Other data types:
-		"json": typing.Struct,
+		"json":  typing.Struct,
+		"bytea": typing.Bytes,
 	}
 
 	for dataType, expectedKind := range expectedTypeToKindMap {
@@ -76,6 +77,10 @@ func TestKindForDataType_Arrays(t *testing.T) {
 		{
 			dataType: "double precision[]",
 			expected: typing.KindDetails{Kind: typing.Array.Kind, OptionalArrayKind: &typing.Float},
+		},
+		{
+			dataType: "bytea[]",
+			expected: typing.KindDetails{Kind: typing.Array.Kind, OptionalArrayKind: &typing.Bytes},
 		},
 	}
 
@@ -230,6 +235,11 @@ func TestDataTypeForKind(t *testing.T) {
 				Kind: "unsupported_kind",
 			},
 			wantErr: true,
+		},
+		{
+			name:     "bytes",
+			kd:       typing.Bytes,
+			expected: "bytea",
 		},
 		{
 			name:     "typed array (text)",

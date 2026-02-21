@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
@@ -127,6 +128,13 @@ func parseValue(value any, col columns.Column) (any, error) {
 		return converters.Int64Converter{}.Convert(value)
 	case typing.Boolean.Kind:
 		return converters.BooleanConverter{}.Convert(value)
+	case typing.Bytes.Kind:
+		castedValue, err := typing.AssertType[string](value)
+		if err != nil {
+			return nil, err
+		}
+
+		return base64.StdEncoding.DecodeString(castedValue)
 	case typing.Struct.Kind:
 		// If it's the toast placeholder value, wrap it in quotes so it's valid json
 		if value == constants.ToastUnavailableValuePlaceholder {
