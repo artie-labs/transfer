@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
@@ -48,6 +49,12 @@ func TestParseValue_Bytes(t *testing.T) {
 		result, err := parseValue(encoded, col)
 		assert.NoError(t, err)
 		assert.Equal(t, rawBytes, result)
+	}
+	{
+		// TOAST placeholder should pass through without base64 decoding
+		result, err := parseValue(constants.ToastUnavailableValuePlaceholder, col)
+		assert.NoError(t, err)
+		assert.Equal(t, constants.ToastUnavailableValuePlaceholder, result)
 	}
 	{
 		// Invalid base64 string

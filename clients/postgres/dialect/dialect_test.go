@@ -6,9 +6,39 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
+
+func TestBuildIsNotToastValueExpression(t *testing.T) {
+	pd := PostgresDialect{}
+	{
+		// String column — no cast needed
+		col := columns.NewColumn("name", typing.String)
+		result := pd.BuildIsNotToastValueExpression(constants.StagingAlias, col)
+		assert.Equal(t, `COALESCE(stg."name", '') NOT LIKE '%__debezium_unavailable_value%'`, result)
+	}
+	{
+		// Struct (JSONB) column — needs ::text cast
+		col := columns.NewColumn("metadata", typing.Struct)
+		result := pd.BuildIsNotToastValueExpression(constants.StagingAlias, col)
+		assert.Equal(t, `COALESCE(stg."metadata"::text, '') NOT LIKE '%__debezium_unavailable_value%'`, result)
+	}
+	{
+		// Array column — needs ::text cast
+		col := columns.NewColumn("tags", typing.Array)
+		result := pd.BuildIsNotToastValueExpression(constants.StagingAlias, col)
+		assert.Equal(t, `COALESCE(stg."tags"::text, '') NOT LIKE '%__debezium_unavailable_value%'`, result)
+	}
+	{
+		// Bytes (bytea) column — needs ::text cast
+		col := columns.NewColumn("data", typing.Bytes)
+		result := pd.BuildIsNotToastValueExpression(constants.StagingAlias, col)
+		assert.Equal(t, `COALESCE(stg."data"::text, '') NOT LIKE '%__debezium_unavailable_value%'`, result)
+	}
+}
 
 func TestKindForDataType(t *testing.T) {
 	expectedTypeToKindMap := map[string]typing.KindDetails{

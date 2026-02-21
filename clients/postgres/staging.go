@@ -134,6 +134,10 @@ func parseValue(value any, col columns.Column) (any, error) {
 			return nil, err
 		}
 
+		if castedValue == constants.ToastUnavailableValuePlaceholder {
+			return castedValue, nil
+		}
+
 		return base64.StdEncoding.DecodeString(castedValue)
 	case typing.Interval.Kind:
 		castedValue, err := typing.AssertType[string](value)
