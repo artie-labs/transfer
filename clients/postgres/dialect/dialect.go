@@ -391,11 +391,10 @@ var dataTypeMap = map[string]typing.KindDetails{
 	"timestamp with time zone":    typing.TimestampTZ,
 	"timestamp without time zone": typing.TimestampNTZ,
 	// Other data types:
-	"json":     typing.Struct,
-	"jsonb":    typing.Struct,
-	"uuid":     typing.UUID,
-	"interval": typing.Interval,
-	"bytea":    typing.Bytes,
+	"json":  typing.Struct,
+	"jsonb": typing.Struct,
+	"uuid":  typing.UUID,
+	"bytea": typing.Bytes,
 }
 
 func (PostgresDialect) KindForDataType(_type string) (typing.KindDetails, error) {
