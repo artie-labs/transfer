@@ -162,7 +162,7 @@ type Iceberg struct {
 	SessionExecutorMemory           string `yaml:"sessionExecutorMemory"`
 	SessionName                     string `yaml:"sessionName"`
 	NumberOfSessions                int    `yaml:"numberOfSessions"`
-	NumExecutors                    int    `yaml:"numExecutors"`
+	NumExecutors                    int    `yaml:"numExecutors,omitempty"`
 
 	// These are the supported catalog types for Iceberg:
 	S3Tables    *S3Tables    `yaml:"s3Tables,omitempty"`
