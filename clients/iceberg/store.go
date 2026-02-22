@@ -350,7 +350,7 @@ func loadRestCatalogStore(ctx context.Context, cfg config.Config) (Store, error)
 
 	pool := apachelivy.NewClientPool(
 		cfg.Iceberg.ApacheLivyURL,
-		restCfg.ApacheLivyConfig(),
+		restCfg.ApacheLivyConfig(restCfg.Bucket),
 		restCfg.SessionJars,
 		cfg.Iceberg.SessionHeartbeatTimeoutInSecond,
 		cfg.Iceberg.SessionDriverMemory,
