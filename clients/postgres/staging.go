@@ -135,7 +135,7 @@ func parseValue(value any, col columns.Column) (any, error) {
 		}
 
 		if castedValue == constants.ToastUnavailableValuePlaceholder {
-			return castedValue, nil
+			return []byte(castedValue), nil
 		}
 
 		return base64.StdEncoding.DecodeString(castedValue)

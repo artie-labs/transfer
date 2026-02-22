@@ -90,8 +90,14 @@ func (PostgresDialect) BuildDescribeTableQuery(tableID sql.TableIdentifier) (str
 func (p PostgresDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
 	quotedColumn := sql.QuoteTableAliasColumn(tableAlias, column, p)
 
-	// Non-text types (JSONB, arrays, bytea) need a ::text cast for NOT LIKE to work.
-	if column.KindDetails.Kind == typing.Struct.Kind || column.KindDetails.Kind == typing.Array.Kind || column.KindDetails.Kind == typing.Bytes.Kind {
+	// bytea::text produces hex-encoded output (e.g. \xDEAD…), so use encode(…, 'escape')
+	// which preserves printable ASCII bytes as-is, allowing the LIKE check to match.
+	if column.KindDetails.Kind == typing.Bytes.Kind {
+		return fmt.Sprintf("COALESCE(encode(%s, 'escape'), '') NOT LIKE '%s'", quotedColumn, "%"+constants.ToastUnavailableValuePlaceholder+"%")
+	}
+
+	// Non-text types (JSONB, arrays) need a ::text cast for NOT LIKE to work.
+	if column.KindDetails.Kind == typing.Struct.Kind || column.KindDetails.Kind == typing.Array.Kind {
 		return fmt.Sprintf("COALESCE(%s::text, '') NOT LIKE '%s'", quotedColumn, "%"+constants.ToastUnavailableValuePlaceholder+"%")
 	}
 

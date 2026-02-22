@@ -51,10 +51,10 @@ func TestParseValue_Bytes(t *testing.T) {
 		assert.Equal(t, rawBytes, result)
 	}
 	{
-		// TOAST placeholder should pass through without base64 decoding
+		// TOAST placeholder should be returned as []byte so pgx can encode it as bytea
 		result, err := parseValue(constants.ToastUnavailableValuePlaceholder, col)
 		assert.NoError(t, err)
-		assert.Equal(t, constants.ToastUnavailableValuePlaceholder, result)
+		assert.Equal(t, []byte(constants.ToastUnavailableValuePlaceholder), result)
 	}
 	{
 		// Invalid base64 string

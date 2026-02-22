@@ -33,10 +33,10 @@ func TestBuildIsNotToastValueExpression(t *testing.T) {
 		assert.Equal(t, `COALESCE(stg."tags"::text, '') NOT LIKE '%__debezium_unavailable_value%'`, result)
 	}
 	{
-		// Bytes (bytea) column — needs ::text cast
+		// Bytes (bytea) column — needs encode(..., 'escape') to avoid hex output from ::text
 		col := columns.NewColumn("data", typing.Bytes)
 		result := pd.BuildIsNotToastValueExpression(constants.StagingAlias, col)
-		assert.Equal(t, `COALESCE(stg."data"::text, '') NOT LIKE '%__debezium_unavailable_value%'`, result)
+		assert.Equal(t, `COALESCE(encode(stg."data", 'escape'), '') NOT LIKE '%__debezium_unavailable_value%'`, result)
 	}
 }
 
