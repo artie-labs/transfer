@@ -325,6 +325,7 @@ func loadS3TablesStore(cfg config.Config) (Store, error) {
 		cfg.Iceberg.SessionExecutorMemory,
 		cfg.Iceberg.SessionName,
 		cfg.Iceberg.NumberOfSessions,
+		cfg.Iceberg.NumExecutors,
 	)
 
 	awsCfg := awslib.NewConfigWithCredentialsAndRegion(
@@ -357,6 +358,7 @@ func loadRestCatalogStore(ctx context.Context, cfg config.Config) (Store, error)
 		cfg.Iceberg.SessionExecutorMemory,
 		cfg.Iceberg.SessionName,
 		cfg.Iceberg.NumberOfSessions,
+		cfg.Iceberg.NumExecutors,
 	)
 
 	catalogCfg := icebergcatalog.Config{

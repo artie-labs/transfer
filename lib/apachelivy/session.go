@@ -89,6 +89,10 @@ func (c *Client) newSession(ctx context.Context, kind SessionKind, blockUntilRea
 		Name:                     c.sessionName,
 	}
 
+	if c.numExecutors > 0 {
+		request.NumExecutors = c.numExecutors
+	}
+
 	body, err := json.Marshal(request)
 	if err != nil {
 		return err

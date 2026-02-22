@@ -11,7 +11,7 @@ type ClientPool struct {
 	counter atomic.Uint64
 }
 
-func NewClientPool(url string, config map[string]any, jars []string, heartbeatTimeoutInSecond int, driverMemory, executorMemory, sessionName string, numberOfSessions int) *ClientPool {
+func NewClientPool(url string, config map[string]any, jars []string, heartbeatTimeoutInSecond int, driverMemory, executorMemory, sessionName string, numberOfSessions int, numExecutors int) *ClientPool {
 	if numberOfSessions <= 1 {
 		numberOfSessions = 1
 	}
@@ -22,7 +22,7 @@ func NewClientPool(url string, config map[string]any, jars []string, heartbeatTi
 		if numberOfSessions > 1 {
 			name = fmt.Sprintf("%s-%d", sessionName, i)
 		}
-		clients[i] = NewClient(url, config, jars, heartbeatTimeoutInSecond, driverMemory, executorMemory, name)
+		clients[i] = NewClient(url, config, jars, heartbeatTimeoutInSecond, driverMemory, executorMemory, name, numExecutors)
 	}
 
 	pool := &ClientPool{clients: clients}

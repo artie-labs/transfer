@@ -36,8 +36,8 @@ type Client struct {
 	sessionDriverMemory             string
 	sessionExecutorMemory           string
 	sessionName                     string
-
-	lastChecked time.Time
+	numExecutors                    int
+	lastChecked                     time.Time
 }
 
 func (c *Client) buildRetryConfig() (retry.RetryConfig, error) {
@@ -186,7 +186,7 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body []byte
 	return doRequestResponse{body: out, httpStatus: resp.StatusCode}, nil
 }
 
-func NewClient(url string, config map[string]any, jars []string, heartbeatTimeoutInSecond int, driverMemory, executorMemory, sessionName string) *Client {
+func NewClient(url string, config map[string]any, jars []string, heartbeatTimeoutInSecond int, driverMemory, executorMemory, sessionName string, numExecutors int) *Client {
 	return &Client{
 		url:                             url,
 		httpClient:                      &http.Client{},
@@ -196,6 +196,7 @@ func NewClient(url string, config map[string]any, jars []string, heartbeatTimeou
 		sessionDriverMemory:             driverMemory,
 		sessionExecutorMemory:           executorMemory,
 		sessionName:                     sessionName,
+		numExecutors:                    numExecutors,
 	}
 }
 
@@ -222,5 +223,5 @@ func (c *Client) WithPriorityClient() *Client {
 	sessionConfig[SparkExecutorSelector] = selectorValue
 
 	// If [SparkExecutorSelector] is not set, but [SparkDriverSelector] is set, then we need to create a new client with the priority selector.
-	return NewClient(c.url, sessionConfig, c.sessionJars, c.sessionHeartbeatTimeoutInSecond, c.sessionDriverMemory, c.sessionExecutorMemory, fmt.Sprintf("%s-priority", c.sessionName))
+	return NewClient(c.url, sessionConfig, c.sessionJars, c.sessionHeartbeatTimeoutInSecond, c.sessionDriverMemory, c.sessionExecutorMemory, fmt.Sprintf("%s-priority", c.sessionName), c.numExecutors)
 }
