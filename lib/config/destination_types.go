@@ -239,7 +239,7 @@ func (r RestCatalog) GetRuntimePackage() string {
 
 // [ApacheLivyConfig] - This is building the catalog configuration to use Iceberg with REST catalog.
 // Ref: https://iceberg.apache.org/docs/latest/spark-configuration/#catalog-configuration
-func (r RestCatalog) ApacheLivyConfig() map[string]any {
+func (r RestCatalog) ApacheLivyConfig(bucket string) map[string]any {
 	config := map[string]any{
 		// Required for Iceberg Spark runtime:
 		"spark.jars.packages": r.GetRuntimePackage(),
@@ -252,8 +252,11 @@ func (r RestCatalog) ApacheLivyConfig() map[string]any {
 		fmt.Sprintf("spark.sql.catalog.%s.warehouse", r.Warehouse): r.Warehouse,
 
 		// S3 credentials for Hadoop
-		"spark.hadoop.fs.s3a.access.key": r.AwsAccessKeyID,
-		"spark.hadoop.fs.s3a.secret.key": r.AwsSecretAccessKey,
+		// Scoped only to your ephemeral bucket:
+		fmt.Sprintf("spark.hadoop.fs.s3a.bucket.%s.access.key", bucket): r.AwsAccessKeyID,
+		fmt.Sprintf("spark.hadoop.fs.s3a.bucket.%s.secret.key", bucket): r.AwsSecretAccessKey,
+		// "spark.hadoop.fs.s3a.access.key": r.AwsAccessKeyID,
+		// "spark.hadoop.fs.s3a.secret.key": r.AwsSecretAccessKey,
 	}
 
 	if r.Token != "" {
