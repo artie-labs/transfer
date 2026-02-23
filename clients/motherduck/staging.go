@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql/driver"
 	"fmt"
+	"strconv"
 
 	"github.com/artie-labs/ducktape/api/pkg/ducktape"
 
@@ -141,9 +142,28 @@ func convertValue(value any, kd typing.KindDetails) (driver.Value, error) {
 			return nil, fmt.Errorf("failed to convert array: %w", err)
 		}
 		return arrayStr, nil
-	case typing.Integer.Kind, typing.Float.Kind:
-		// Return as-is, DuckDB appender will handle conversion
-		return value, nil
+	case typing.Integer.Kind:
+		switch v := value.(type) {
+		case string:
+			parsed, err := strconv.ParseInt(v, 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("failed to convert string %q to int64: %w", v, err)
+			}
+			return parsed, nil
+		default:
+			return value, nil
+		}
+	case typing.Float.Kind:
+		switch v := value.(type) {
+		case string:
+			parsed, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return nil, fmt.Errorf("failed to convert string %q to float64: %w", v, err)
+			}
+			return parsed, nil
+		default:
+			return value, nil
+		}
 	case typing.EDecimal.Kind:
 		// Convert decimal to string for DuckDB
 		str, err := values.ToString(value, kd)
