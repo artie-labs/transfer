@@ -7,7 +7,6 @@ import (
 
 	"github.com/artie-labs/ducktape/api/pkg/ducktape"
 
-	"github.com/artie-labs/transfer/clients/bigquery/converters"
 	"github.com/artie-labs/transfer/clients/motherduck/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/array"
@@ -16,6 +15,7 @@ import (
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/artie-labs/transfer/lib/typing/converters/primitives"
 	"github.com/artie-labs/transfer/lib/typing/values"
 )
 
@@ -145,7 +145,7 @@ func convertValue(value any, kd typing.KindDetails) (driver.Value, error) {
 	case typing.Integer.Kind:
 		switch v := value.(type) {
 		case string:
-			parsed, err := converters.Int64Converter{}.Convert(v)
+			parsed, err := primitives.Int64Converter{}.Convert(v)
 			if err != nil {
 				return nil, fmt.Errorf("failed to convert string %q to int64: %w", v, err)
 			}
@@ -156,7 +156,7 @@ func convertValue(value any, kd typing.KindDetails) (driver.Value, error) {
 	case typing.Float.Kind:
 		switch v := value.(type) {
 		case string:
-			parsed, err := converters.Float64Converter{}.Convert(v)
+			parsed, err := primitives.Float32Converter{}.Convert(v)
 			if err != nil {
 				return nil, fmt.Errorf("failed to convert string %q to float64: %w", v, err)
 			}
