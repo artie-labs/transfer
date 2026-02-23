@@ -181,7 +181,7 @@ func TestField_ToKindDetails(t *testing.T) {
 			// Interval
 			kd, err := Field{DebeziumType: Interval, Type: String}.ToKindDetails(config.SharedDestinationSettings{})
 			assert.NoError(t, err)
-			assert.Equal(t, typing.String, kd)
+			assert.Equal(t, typing.Interval, kd)
 		}
 		{
 			// XML

@@ -31,6 +31,7 @@ func TestDatabricksDialect_DataTypeForKind(t *testing.T) {
 		typing.TimestampTZ:     "TIMESTAMP",
 		typing.TimestampNTZ:    "TIMESTAMP_NTZ",
 		typing.TimeKindDetails: "STRING",
+		typing.Interval:        "STRING",
 	}
 
 	for kind, expected := range kindDetailsToExpectedMap {

@@ -41,6 +41,7 @@ func TestIcebergDialect_DataTypeForKind(t *testing.T) {
 		typing.Date:         "DATE",
 		typing.TimestampNTZ: "TIMESTAMP_NTZ",
 		typing.TimestampTZ:  "TIMESTAMP",
+		typing.Interval:     "STRING",
 	}
 
 	for kd, expected := range kindDetailsToValueMap {
