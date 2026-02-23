@@ -4,10 +4,10 @@ import (
 	"context"
 	"database/sql/driver"
 	"fmt"
-	"strconv"
 
 	"github.com/artie-labs/ducktape/api/pkg/ducktape"
 
+	"github.com/artie-labs/transfer/clients/bigquery/converters"
 	"github.com/artie-labs/transfer/clients/motherduck/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/array"
@@ -145,7 +145,7 @@ func convertValue(value any, kd typing.KindDetails) (driver.Value, error) {
 	case typing.Integer.Kind:
 		switch v := value.(type) {
 		case string:
-			parsed, err := strconv.ParseInt(v, 10, 64)
+			parsed, err := converters.Int64Converter{}.Convert(v)
 			if err != nil {
 				return nil, fmt.Errorf("failed to convert string %q to int64: %w", v, err)
 			}
@@ -156,7 +156,7 @@ func convertValue(value any, kd typing.KindDetails) (driver.Value, error) {
 	case typing.Float.Kind:
 		switch v := value.(type) {
 		case string:
-			parsed, err := strconv.ParseFloat(v, 64)
+			parsed, err := converters.Float64Converter{}.Convert(v)
 			if err != nil {
 				return nil, fmt.Errorf("failed to convert string %q to float64: %w", v, err)
 			}
