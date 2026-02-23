@@ -143,15 +143,15 @@ func convertValue(value any, kd typing.KindDetails) (driver.Value, error) {
 		}
 		return arrayStr, nil
 	case typing.Integer.Kind:
-		parsed, err := primitives.Int64Converter{}.Convert(v)
+		parsed, err := primitives.Int64Converter{}.Convert(value)
 		if err != nil {
-			return nil, fmt.Errorf("failed to convert string %q to int64: %w", v, err)
+			return nil, fmt.Errorf("failed to convert value %q to integer: %w", value, err)
 		}
 		return parsed, nil
 	case typing.Float.Kind:
 		parsed, err := primitives.Float32Converter{}.Convert(value)
 		if err != nil {
-			return nil, fmt.Errorf("failed to convert float: %w", err)
+			return nil, fmt.Errorf("failed to convert value %q to float: %w", value, err)
 		}
 		return parsed, nil
 	case typing.EDecimal.Kind:
