@@ -143,27 +143,17 @@ func convertValue(value any, kd typing.KindDetails) (driver.Value, error) {
 		}
 		return arrayStr, nil
 	case typing.Integer.Kind:
-		switch v := value.(type) {
-		case string:
-			parsed, err := primitives.Int64Converter{}.Convert(v)
-			if err != nil {
-				return nil, fmt.Errorf("failed to convert string %q to int64: %w", v, err)
-			}
-			return parsed, nil
-		default:
-			return value, nil
+		parsed, err := primitives.Int64Converter{}.Convert(v)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert string %q to int64: %w", v, err)
 		}
+		return parsed, nil
 	case typing.Float.Kind:
-		switch v := value.(type) {
-		case string:
-			parsed, err := primitives.Float32Converter{}.Convert(v)
-			if err != nil {
-				return nil, fmt.Errorf("failed to convert string %q to float64: %w", v, err)
-			}
-			return parsed, nil
-		default:
-			return value, nil
+		parsed, err := primitives.Float32Converter{}.Convert(value)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert float: %w", err)
 		}
+		return parsed, nil
 	case typing.EDecimal.Kind:
 		// Convert decimal to string for DuckDB
 		str, err := values.ToString(value, kd)
