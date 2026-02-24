@@ -57,7 +57,7 @@ func TestConvertValue(t *testing.T) {
 	{
 		result, err := convertValue(42, typing.BuildIntegerKind(typing.IntegerKind))
 		assert.NoError(t, err)
-		assert.Equal(t, 42, result)
+		assert.Equal(t, int64(42), result)
 	}
 	{
 		result, err := convertValue(int64(9223372036854775807), typing.BuildIntegerKind(typing.BigIntegerKind))
@@ -69,7 +69,7 @@ func TestConvertValue(t *testing.T) {
 	{
 		result, err := convertValue(3.14, typing.Float)
 		assert.NoError(t, err)
-		assert.Equal(t, 3.14, result)
+		assert.Equal(t, float32(3.14), result)
 	}
 	{
 		result, err := convertValue(float32(2.5), typing.Float)
