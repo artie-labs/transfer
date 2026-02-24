@@ -18,6 +18,7 @@ import (
 	"github.com/artie-labs/transfer/lib/environ"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/retry"
 	"github.com/artie-labs/transfer/lib/sql"
 	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
 )
@@ -28,6 +29,7 @@ type Store struct {
 	optionalS3Prefix  string
 	configMap         *types.DestinationTableConfigMap
 	config            config.Config
+	retryCfg          retry.RetryConfig
 
 	// Generated:
 	_awsCredentials *awslib.Credentials
@@ -136,11 +138,17 @@ func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair ka
 }
 
 func LoadStore(ctx context.Context, cfg config.Config, _store *db.Store) (*Store, error) {
+	retryCfg, err := retry.NewJitterRetryConfig(1_000, 30_000, 10, retry.AlwaysRetryNonCancelled)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create retry config: %w", err)
+	}
+
 	if _store != nil {
 		// Used for tests.
 		return &Store{
 			configMap: &types.DestinationTableConfigMap{},
 			config:    cfg,
+			retryCfg:  retryCfg,
 
 			Store: *_store,
 		}, nil
@@ -161,6 +169,7 @@ func LoadStore(ctx context.Context, cfg config.Config, _store *db.Store) (*Store
 		optionalS3Prefix:  cfg.Redshift.OptionalS3Prefix,
 		configMap:         &types.DestinationTableConfigMap{},
 		config:            cfg,
+		retryCfg:          retryCfg,
 		Store:             store,
 	}
 

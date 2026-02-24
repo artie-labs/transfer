@@ -10,6 +10,7 @@ import (
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/retry"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -66,8 +67,20 @@ func (s *Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.T
 	}
 
 	copyStmt := s.dialect().BuildCopyStatement(tableID, cols, s3Uri, credentialsClause)
-	if _, err = s.ExecContext(ctx, copyStmt); err != nil {
-		return fmt.Errorf("failed to run COPY for temporary table: %w", err)
+	if err = retry.WithRetries(s.retryCfg, func(attempt int, _ error) error {
+		if attempt > 0 {
+			// clear the table before retrying.
+			if _, truncateErr := s.ExecContext(ctx, s.Dialect().BuildTruncateTableQuery(tableID)); truncateErr != nil {
+				return fmt.Errorf("failed to truncate table before retrying COPY: %w", truncateErr)
+			}
+		}
+
+		if _, err := s.ExecContext(ctx, copyStmt); err != nil {
+			return fmt.Errorf("failed to run COPY for temporary table: %w", err)
+		}
+		return nil
+	}); err != nil {
+		return err
 	}
 
 	// Ref: https://docs.aws.amazon.com/redshift/latest/dg/PG_LAST_COPY_COUNT.html
