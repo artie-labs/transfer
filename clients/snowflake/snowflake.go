@@ -18,6 +18,7 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/environ"
 	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/lib/retry"
 	"github.com/artie-labs/transfer/lib/sql"
 	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
 )
@@ -33,7 +34,7 @@ type Store struct {
 	db.Store
 	configMap *types.DestinationTableConfigMap
 	config    config.Config
-
+	retryCfg  retry.RetryConfig
 	// Only set if we're using an external stage:
 	_awsS3Client awslib.S3Client
 
@@ -106,12 +107,17 @@ func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair ka
 }
 
 func LoadStore(ctx context.Context, cfg config.Config, _store *db.Store) (*Store, error) {
+	retryConfig, err := retry.NewJitterRetryConfig(1_000, 30_000, 10, retry.AlwaysRetryNonCancelled)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create retry config: %w", err)
+	}
 	if _store != nil {
 		// Used for tests.
 		return &Store{
 			configMap: &types.DestinationTableConfigMap{},
 			config:    cfg,
 			Store:     *_store,
+			retryCfg:  retryConfig,
 		}, nil
 	}
 
@@ -134,6 +140,7 @@ func LoadStore(ctx context.Context, cfg config.Config, _store *db.Store) (*Store
 		configMap: &types.DestinationTableConfigMap{},
 		config:    cfg,
 		Store:     store,
+		retryCfg:  retryConfig,
 	}
 
 	if err = s.ensureExternalStageExists(ctx); err != nil {

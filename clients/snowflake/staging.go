@@ -15,6 +15,7 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/maputil"
 	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/retry"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -144,9 +145,15 @@ func (s *Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.T
 	} else {
 		// Upload the CSV file to Snowflake internal stage
 		putQuery := fmt.Sprintf("PUT 'file://%s' @%s", file.FilePath, tableStageName)
-		if _, err = s.ExecContext(ctx, putQuery); err != nil {
-			return fmt.Errorf("failed to run PUT for temporary table: %w", err)
+		if err = retry.WithRetries(s.retryCfg, func(_ int, _ error) error {
+			if _, err := s.ExecContext(ctx, putQuery); err != nil {
+				return fmt.Errorf("failed to run PUT for temporary table: %w", err)
+			}
+			return nil
+		}); err != nil {
+			return err
 		}
+
 	}
 
 	copyCommand := s.dialect().BuildCopyIntoTableQuery(tempTableID, tableData.ReadOnlyInMemoryCols().ValidColumns(), tableStageName, file.FileName)
