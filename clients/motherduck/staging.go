@@ -78,10 +78,8 @@ func appendRows(ctx context.Context, store Store, tableData *optimization.TableD
 			}
 		}
 	}
-	var resp *ducktape.AppendResponse
-	if err := retry.WithRetries(store.retryConfig, func(_ int, _ error) error {
-		var err error
-		resp, err = store.client.Append(
+	resp, err := retry.WithRetriesAndResult(store.retryConfig, func(_ int, _ error) (*ducktape.AppendResponse, error) {
+		return store.client.Append(
 			ctx,
 			store.dsn,
 			castedTableID.Database(),
@@ -99,8 +97,8 @@ func appendRows(ctx context.Context, store Store, tableData *optimization.TableD
 				return &appendResp, nil
 			},
 		)
-		return err
-	}); err != nil {
+	})
+	if err != nil {
 		return fmt.Errorf("failure on client side to append rows: %w", err)
 	}
 
