@@ -227,7 +227,7 @@ func Merge(ctx context.Context, dest destination.SQLDestination, tableData *opti
 
 	if dest.GetConfig().SharedDestinationSettings.EnableMergeAssertion {
 		var totalRowsAffected int64
-		for _, result := range results {
+		for _, result := range results[len(opts.PrefixStatements):] {
 			rowsAffected, err := result.RowsAffected()
 			if err != nil {
 				return fmt.Errorf("failed to get rows affected: %w", err)
