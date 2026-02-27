@@ -21,6 +21,8 @@ import (
 	"github.com/artie-labs/transfer/models"
 )
 
+const maxFetchRetries = 10
+
 func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client, whClient *webhooksclient.Client) {
 	tcFmtMap := NewTcFmtMap()
 	var topics []string
@@ -79,7 +81,7 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 					return nil
 				})
 				if err != nil {
-					if fetchErr, ok := kafkalib.IsFetchMessageError(err); ok && db.IsRetryableError(fetchErr.Err, context.DeadlineExceeded) {
+					if fetchErr, ok := kafkalib.IsFetchMessageError(err); ok && db.IsRetryableError(fetchErr.Err, context.DeadlineExceeded) && fetchRetries < maxFetchRetries {
 						sleepDuration := jitter.Jitter(500, jitter.DefaultMaxMs, fetchRetries)
 						slog.Warn("Retryable fetch error, backing off",
 							slog.Any("err", err),
