@@ -288,8 +288,8 @@ type S3Tables struct {
 	BucketARN          string `yaml:"bucketARN"`
 	Region             string `yaml:"region"`
 	// Bucket - This is where all the ephemeral delta files will be stored.
-	Bucket string `yaml:"bucket"`
-	SessionJars            []string `yaml:"sessionJars,omitempty"`
+	Bucket      string   `yaml:"bucket"`
+	SessionJars []string `yaml:"sessionJars,omitempty"`
 
 	// [SessionConfig] - Additional session configurations that we will specify when creating a new Livy session.
 	SessionConfig map[string]string `yaml:"sessionConfig,omitempty"`
