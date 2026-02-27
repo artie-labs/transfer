@@ -52,8 +52,9 @@ type MergeOpts struct {
 	AdditionalEqualityStrings []string
 	ColumnSettings            config.SharedDestinationColumnSettings
 	RetryColBackfill          bool
-	// PrefixStatements are SQL statements that will be executed before the merge queries (e.g. SET @@reservation for BigQuery).
-	PrefixStatements []string
+	// ScriptPreamble, if set, is prepended to the first merge statement so that it runs in the same script/job.
+	// Used for session-level settings like SET @@reservation for BigQuery.
+	ScriptPreamble string
 
 	// Multi-step merge settings
 	PrepareTemporaryTable              bool

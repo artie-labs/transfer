@@ -75,11 +75,11 @@ func (b *BigQueryTestSuite) TestBackfillColumn() {
 	}
 }
 
-func TestBuildPrefixStatements(t *testing.T) {
+func TestBuildScriptPreamble(t *testing.T) {
 	{
 		// No reservation configured
 		store := &Store{config: config.Config{BigQuery: &config.BigQuery{ProjectID: "artie"}}}
-		assert.Empty(t, store.buildPrefixStatements())
+		assert.Empty(t, store.buildScriptPreamble())
 	}
 	{
 		// Reservation configured
@@ -88,8 +88,8 @@ func TestBuildPrefixStatements(t *testing.T) {
 			Reservation: "projects/bq-admin-project-473214/locations/US/reservations/pump-bq-batch",
 		}}}
 		assert.Equal(t,
-			[]string{"SET @@reservation = 'projects/bq-admin-project-473214/locations/US/reservations/pump-bq-batch'"},
-			store.buildPrefixStatements(),
+			`EXECUTE IMMEDIATE 'SET @@reservation = \'projects/bq-admin-project-473214/locations/US/reservations/pump-bq-batch\'';`,
+			store.buildScriptPreamble(),
 		)
 	}
 }

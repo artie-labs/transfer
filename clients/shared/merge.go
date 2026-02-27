@@ -216,8 +216,8 @@ func Merge(ctx context.Context, dest destination.SQLDestination, tableData *opti
 		return fmt.Errorf("failed to generate merge statements: %w", err)
 	}
 
-	if len(opts.PrefixStatements) > 0 {
-		mergeStatements = append(opts.PrefixStatements, mergeStatements...)
+	if opts.ScriptPreamble != "" {
+		mergeStatements[0] = opts.ScriptPreamble + "\n" + mergeStatements[0]
 	}
 
 	results, err := destination.ExecContextStatements(ctx, dest, mergeStatements)
@@ -227,7 +227,7 @@ func Merge(ctx context.Context, dest destination.SQLDestination, tableData *opti
 
 	if dest.GetConfig().SharedDestinationSettings.EnableMergeAssertion {
 		var totalRowsAffected int64
-		for _, result := range results[len(opts.PrefixStatements):] {
+		for _, result := range results {
 			rowsAffected, err := result.RowsAffected()
 			if err != nil {
 				return fmt.Errorf("failed to get rows affected: %w", err)
