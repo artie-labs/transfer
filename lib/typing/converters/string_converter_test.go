@@ -88,6 +88,12 @@ func TestGetStringConverter(t *testing.T) {
 		assert.IsType(t, BytesConverter{}, converter)
 	}
 	{
+		// Interval
+		converter, err := GetStringConverter(typing.Interval, GetStringConverterOpts{})
+		assert.NoError(t, err)
+		assert.IsType(t, StringConverter{}, converter)
+	}
+	{
 		// Invalid
 		converter, err := GetStringConverter(typing.Invalid, GetStringConverterOpts{})
 		assert.ErrorContains(t, err, `unsupported type: "invalid"`)

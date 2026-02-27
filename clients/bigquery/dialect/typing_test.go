@@ -27,6 +27,12 @@ func TestBigQueryDialect_DataTypeForKind(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "numeric", actual)
 	}
+	{
+		// Interval
+		actual, err := BigQueryDialect{}.DataTypeForKind(typing.Interval, false, config.SharedDestinationColumnSettings{})
+		assert.NoError(t, err)
+		assert.Equal(t, "string", actual)
+	}
 }
 
 func TestBigQueryDialect_KindForDataType_NoDataLoss(t *testing.T) {

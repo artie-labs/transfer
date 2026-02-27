@@ -50,6 +50,8 @@ func (MSSQLDialect) DataTypeForKind(kindDetails typing.KindDetails, isPk bool, _
 		return "datetimeoffset", nil
 	case typing.EDecimal.Kind:
 		return kindDetails.ExtendedDecimalDetails.MsSQLKind(), nil
+	case typing.Interval.Kind:
+		return "NVARCHAR(MAX)", nil
 	}
 
 	return kindDetails.Kind, nil

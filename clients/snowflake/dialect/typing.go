@@ -28,6 +28,8 @@ func (SnowflakeDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, 
 		return "timestamp_tz", nil
 	case typing.EDecimal.Kind:
 		return kindDetails.ExtendedDecimalDetails.SnowflakeKind(), nil
+	case typing.Interval.Kind:
+		return "string", nil
 	}
 
 	return kindDetails.Kind, nil
