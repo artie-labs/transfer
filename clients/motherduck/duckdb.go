@@ -16,6 +16,7 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/retry"
 	"github.com/artie-labs/transfer/lib/sql"
 	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
 )
@@ -27,18 +28,24 @@ func BuildDSN(token string) string {
 }
 
 type Store struct {
-	dsn       string
-	client    *ducktape.Client
-	configMap *types.DestinationTableConfigMap
-	config    config.Config
+	dsn         string
+	client      *ducktape.Client
+	configMap   *types.DestinationTableConfigMap
+	config      config.Config
+	retryConfig retry.RetryConfig
 }
 
 func LoadStore(_ context.Context, cfg config.Config) (*Store, error) {
+	retryConf, err := retry.NewJitterRetryConfig(1_000, 30_000, 10, retry.AlwaysRetryNonCancelled)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create retry config: %w", err)
+	}
 	return &Store{
-		dsn:       BuildDSN(cfg.MotherDuck.Token),
-		client:    ducktape.NewClient(cfg.MotherDuck.DucktapeURL),
-		configMap: &types.DestinationTableConfigMap{},
-		config:    cfg,
+		dsn:         BuildDSN(cfg.MotherDuck.Token),
+		client:      ducktape.NewClient(cfg.MotherDuck.DucktapeURL),
+		configMap:   &types.DestinationTableConfigMap{},
+		config:      cfg,
+		retryConfig: retryConf,
 	}, nil
 }
 
