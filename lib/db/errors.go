@@ -28,7 +28,8 @@ func IsRetryableError(err error, additionalRetryableErrs ...error) bool {
 		}
 	}
 
-	if netErr, ok := err.(net.Error); ok {
+	var netErr net.Error
+	if errors.As(err, &netErr) {
 		if netErr.Timeout() {
 			slog.Warn("caught a net.Error in isRetryableError", slog.Any("err", err))
 			return true
