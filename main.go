@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"os/signal"
 	"strconv"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config"
@@ -27,8 +29,9 @@ import (
 var version = "dev" // this will be set by the goreleaser configuration to appropriate value for the compiled binary.
 
 func main() {
-	// Parse args into settings
-	ctx := context.Background()
+	// Cancel the context on SIGTERM/SIGINT so in-progress work (e.g. Livy statements) can be cleaned up.
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
+	defer stop()
 	settings, err := config.LoadSettings(os.Args, true)
 	var webhookSettings *config.WebhookSettings
 	if settings != nil {
