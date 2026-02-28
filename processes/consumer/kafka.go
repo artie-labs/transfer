@@ -48,8 +48,13 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 				}
 			}
 
-			for {
-				err = kafkaConsumer.FetchMessageAndProcess(ctx, func(msg artie.Message) error {
+		for {
+			if ctx.Err() != nil {
+				slog.Info("Kafka consumer stopping due to context cancellation", slog.String("topic", topic))
+				return
+			}
+
+			err = kafkaConsumer.FetchMessageAndProcess(ctx, func(msg artie.Message) error {
 					if len(msg.Value()) == 0 {
 						slog.Debug("Found a tombstone message, skipping...", artie.BuildLogFields(msg)...)
 						return nil

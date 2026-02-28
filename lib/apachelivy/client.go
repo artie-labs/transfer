@@ -23,6 +23,7 @@ const (
 	sleepMaxMs                      = 3_000
 	defaultHeartbeatTimeoutInSecond = 300
 	maxSessionRetries               = 500
+	cancelStatementTimeout          = 5 * time.Second
 )
 
 type Client struct {
@@ -61,6 +62,7 @@ func (c *Client) queryContext(ctx context.Context, query string, attempt int) (G
 
 	response, err := c.waitForStatement(ctx, statementID)
 	if err != nil {
+		c.cancelStatement(statementID)
 		return GetStatementResponse{}, err
 	}
 
@@ -90,6 +92,7 @@ func (c *Client) execContext(ctx context.Context, query string, attempt int) err
 
 	resp, err := c.waitForStatement(ctx, statementID)
 	if err != nil {
+		c.cancelStatement(statementID)
 		return err
 	}
 
@@ -132,7 +135,11 @@ func (c *Client) waitForStatement(ctx context.Context, statementID int) (GetStat
 		// It's not ready yet, so we're going to sleep a bit and check again.
 		sleepTime := jitter.Jitter(sleepBaseMs, sleepMaxMs, count)
 		slog.Info("Statement is not ready yet, sleeping", slog.Duration("sleepTime", sleepTime))
-		time.Sleep(sleepTime)
+		select {
+		case <-ctx.Done():
+			return GetStatementResponse{}, ctx.Err()
+		case <-time.After(sleepTime):
+		}
 		count++
 	}
 }
@@ -154,6 +161,19 @@ func (c *Client) submitLivyStatement(ctx context.Context, code string) (int, err
 	}
 
 	return resp.ID, nil
+}
+
+// cancelStatement issues a best-effort cancel to Livy for a running statement.
+// It uses a fresh background context since the caller's context may already be cancelled.
+func (c *Client) cancelStatement(statementID int) {
+	ctx, cancel := context.WithTimeout(context.Background(), cancelStatementTimeout)
+	defer cancel()
+
+	if _, err := c.doRequest(ctx, "POST", fmt.Sprintf("/sessions/%d/statements/%d/cancel", c.sessionID, statementID), nil); err != nil {
+		slog.Warn("Failed to cancel Livy statement", slog.Int("sessionID", c.sessionID), slog.Int("statementID", statementID), slog.Any("err", err))
+	} else {
+		slog.Info("Cancelled Livy statement", slog.Int("sessionID", c.sessionID), slog.Int("statementID", statementID))
+	}
 }
 
 type doRequestResponse struct {
