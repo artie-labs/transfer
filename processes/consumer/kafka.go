@@ -22,6 +22,8 @@ import (
 	"github.com/artie-labs/transfer/models"
 )
 
+const maxFetchRetries = 10
+
 func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client, whClient *webhooksclient.Client) {
 	var encryptionKey []byte
 	if cfg.SharedDestinationSettings.EncryptionPassphrase != "" {
@@ -58,6 +60,7 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 				}
 			}
 
+			var fetchRetries int
 			for {
 				err = kafkaConsumer.FetchMessageAndProcess(ctx, func(msg artie.Message) error {
 					if len(msg.Value()) == 0 {
@@ -89,13 +92,24 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 					return nil
 				})
 				if err != nil {
-					if fetchErr, ok := kafkalib.IsFetchMessageError(err); ok && db.IsRetryableError(fetchErr.Err, context.DeadlineExceeded) {
-						time.Sleep(500 * time.Millisecond)
+					_, isFetchErr := kafkalib.AsFetchMessageError(err)
+					if isFetchErr && db.IsRetryableError(err, context.DeadlineExceeded) && fetchRetries < maxFetchRetries {
+						sleepDuration := jitter.Jitter(500, jitter.DefaultMaxMs, fetchRetries)
+						slog.Warn("Retryable fetch error, backing off",
+							slog.Any("err", err),
+							slog.String("topic", topic),
+							slog.Duration("sleep", sleepDuration),
+							slog.Int("attempt", fetchRetries),
+						)
+						time.Sleep(sleepDuration)
+						fetchRetries++
 						continue
-					} else {
-						logger.Fatal("Failed to process message", slog.Any("err", err), slog.String("topic", topic))
 					}
+
+					logger.Fatal("Failed to process message", slog.Any("err", err), slog.String("topic", topic))
 				}
+
+				fetchRetries = 0
 			}
 		}(topic)
 	}

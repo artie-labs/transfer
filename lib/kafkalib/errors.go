@@ -1,6 +1,9 @@
 package kafkalib
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 type FetchMessageError struct {
 	Err error
@@ -16,7 +19,12 @@ func (e FetchMessageError) Error() string {
 	return fmt.Sprintf("failed to fetch message: %v", e.Err)
 }
 
-func IsFetchMessageError(err error) (FetchMessageError, bool) {
-	fetchMessageError, ok := err.(FetchMessageError)
-	return fetchMessageError, ok
+func (e FetchMessageError) Unwrap() error {
+	return e.Err
+}
+
+func AsFetchMessageError(err error) (FetchMessageError, bool) {
+	var fetchErr FetchMessageError
+	ok := errors.As(err, &fetchErr)
+	return fetchErr, ok
 }
