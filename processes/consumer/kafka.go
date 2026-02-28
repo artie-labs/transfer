@@ -81,7 +81,8 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 					return nil
 				})
 				if err != nil {
-					if fetchErr, ok := kafkalib.IsFetchMessageError(err); ok && db.IsRetryableError(fetchErr.Err, context.DeadlineExceeded) && fetchRetries < maxFetchRetries {
+					_, isFetchErr := kafkalib.AsFetchMessageError(err)
+					if isFetchErr && db.IsRetryableError(err, context.DeadlineExceeded) && fetchRetries < maxFetchRetries {
 						sleepDuration := jitter.Jitter(500, jitter.DefaultMaxMs, fetchRetries)
 						slog.Warn("Retryable fetch error, backing off",
 							slog.Any("err", err),
@@ -92,9 +93,9 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 						time.Sleep(sleepDuration)
 						fetchRetries++
 						continue
-					} else {
-						logger.Fatal("Failed to process message", slog.Any("err", err), slog.String("topic", topic))
 					}
+
+					logger.Fatal("Failed to process message", slog.Any("err", err), slog.String("topic", topic))
 				}
 
 				fetchRetries = 0
