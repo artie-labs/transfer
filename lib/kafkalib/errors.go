@@ -25,5 +25,6 @@ func (e FetchMessageError) Unwrap() error {
 
 func AsFetchMessageError(err error) (FetchMessageError, bool) {
 	var fetchErr FetchMessageError
-	return fetchErr, errors.As(err, &fetchErr)
+	ok := errors.As(err, &fetchErr)
+	return fetchErr, ok
 }
