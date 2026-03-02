@@ -26,15 +26,16 @@ func main() {
 
 	tc := settings.Config.TopicConfigs()
 	if len(tc) != 1 {
-		logger.Fatal("Expected 1 topic config, got %d", len(tc))
+		logger.Fatal("Expected 1 topic config", slog.Int("received", len(tc)))
 	}
 
 	tableID := dest.IdentifierFor(tc[0].BuildDatabaseAndSchemaPair(), tc[0].TableName)
 
 	query := fmt.Sprintf("SELECT * FROM %s LIMIT 50", tableID.FullyQualifiedName())
+	slog.Info("Running query", slog.String("query", query))
 	rows, err := dest.QueryContext(ctx, query)
 	if err != nil {
-		logger.Fatal("Failed to dedupe", slog.Any("err", err))
+		logger.Fatal("Failed to query", slog.Any("err", err))
 	}
 
 	objects, err := sql.RowsToObjects(rows)
