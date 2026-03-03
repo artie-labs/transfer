@@ -116,8 +116,7 @@ func (s Store) IsRetryableError(err error) bool {
 }
 
 func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client) (bool, error) {
-	err := shared.Append(ctx, s, tableData, whClient, types.AdditionalSettings{})
-	if err != nil {
+	if err := shared.Append(ctx, s, tableData, whClient, types.AdditionalSettings{}); err != nil {
 		return false, fmt.Errorf("failed to merge: %w", err)
 	}
 
