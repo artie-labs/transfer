@@ -24,7 +24,14 @@ type Args struct {
 	// [coolDown] - Is used to skip the flush if the table has been recently flushed.
 	CoolDown *time.Duration
 	// [reason] - Is used to track the reason for the flush.
-	Reason string
+	Reason                string
+	ReportDBExecutionTime bool
+	// [EventExecutionTime] - The execution time of the event that triggered this flush, used for pipeline lag metrics.
+	EventExecutionTime *time.Time
+}
+
+func (a Args) GetExecutionTime() *time.Time {
+	return a.EventExecutionTime
 }
 
 func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client, whClient *webhooksclient.Client, topics []string, args Args) error {
@@ -87,7 +94,6 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 				if table.Mode() == config.History || table.TopicConfig().AppendOnly {
 					action = "append"
 				}
-
 				start := time.Now()
 				tags := map[string]string{
 					"mode":     table.Mode().String(),
@@ -99,11 +105,17 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 
 				result, err := retry.WithRetriesAndResult(retryCfg, func(_ int, _ error) (flushResult, error) {
 					slog.Info("Flushing table", slog.String("tableID", table.GetTableID().String()), slog.String("reason", args.Reason))
-					return flush(ctx, dest, table, whClient)
+					r, err := flush(ctx, dest, table, whClient)
+					if args.ReportDBExecutionTime && args.GetExecutionTime() != nil {
+						r.Duration = time.Since(*args.GetExecutionTime())
+					} else {
+						r.Duration = time.Since(start)
+					}
+					return r, err
 				})
 				if err != nil {
 					tags["what"] = result.What
-					metricsClient.Timing("flush", time.Since(start), tags)
+					metricsClient.Timing("flush", result.Duration, tags)
 					return fmt.Errorf("failed to %s for %q: %w", action, table.GetTableID().String(), err)
 				}
 
@@ -111,7 +123,7 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 				// This is because MSM is only supported for a single table / topic.
 				commitOffset.Store(result.CommitOffset)
 				tags["what"] = result.What
-				metricsClient.Timing("flush", time.Since(start), tags)
+				metricsClient.Timing("flush", result.Duration, tags)
 				return nil
 			})
 		}
@@ -144,6 +156,7 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 type flushResult struct {
 	What         string
 	CommitOffset bool
+	Duration     time.Duration
 }
 
 func flush(ctx context.Context, dest destination.Destination, _tableData *models.TableData, whClient *webhooksclient.Client) (flushResult, error) {
