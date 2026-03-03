@@ -10,8 +10,10 @@ import (
 	"github.com/artie-labs/transfer/lib/logger"
 )
 
-var primaryKeys = []string{}
-var includeArtieUpdatedAt *bool
+var (
+	primaryKeys           = []string{}
+	includeArtieUpdatedAt *bool
+)
 
 func main() {
 	if len(primaryKeys) == 0 {
