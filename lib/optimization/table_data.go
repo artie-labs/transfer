@@ -37,6 +37,18 @@ type MultiStepMergeSettings struct {
 	TotalFlushCount int
 }
 
+type SnapshotSettings struct {
+	IsLastFlush bool
+}
+
+func (s SnapshotSettings) CheckIfLastFlush() bool {
+	return s.IsLastFlush
+}
+
+func (s SnapshotSettings) SetLastFlush() {
+	s.IsLastFlush = true
+}
+
 type TableData struct {
 	mode            config.Mode
 	inMemoryColumns *columns.Columns // list of columns
@@ -65,6 +77,8 @@ type TableData struct {
 	// Multi-step merge settings
 	multiStepMergeSettings MultiStepMergeSettings
 
+	// Snapshot merge settings
+	snapshotSettings SnapshotSettings
 	// Name of the table in the destination
 	name string
 }
@@ -157,6 +171,12 @@ func NewTableData(inMemoryColumns *columns.Columns, mode config.Mode, primaryKey
 		td.multiStepMergeSettings = MultiStepMergeSettings{
 			Enabled:         multiStepMergeSettings.Enabled,
 			TotalFlushCount: multiStepMergeSettings.FlushCount,
+		}
+	}
+
+	if snapshotSettings := topicConfig.SnapshotSettings; snapshotSettings != nil {
+		td.snapshotSettings = SnapshotSettings{
+			IsLastFlush: false,
 		}
 	}
 

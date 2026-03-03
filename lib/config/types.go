@@ -11,10 +11,11 @@ type Mode string
 const (
 	History     Mode = "history"
 	Replication Mode = "replication"
+	Snapshot    Mode = "snapshot"
 )
 
 func (m Mode) IsValid() bool {
-	return m == History || m == Replication
+	return m == History || m == Replication || m == Snapshot
 }
 
 type KafkaClient string

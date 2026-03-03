@@ -69,6 +69,10 @@ func (m MultiStepMergeSettings) Validate() error {
 	return nil
 }
 
+type SnapshotSettings struct {
+	Enabled bool `yaml:"enabled"`
+}
+
 type StaticColumn struct {
 	Name  string `yaml:"name"`
 	Value string `yaml:"value"`
@@ -181,7 +185,7 @@ type TopicConfig struct {
 	// An example of this could be to include the full source table name.
 	IncludePrimaryKeys     []string                `yaml:"includePrimaryKeys,omitempty"`
 	MultiStepMergeSettings *MultiStepMergeSettings `yaml:"multiStepMergeSettings,omitempty"`
-
+	SnapshotSettings       *SnapshotSettings       `yaml:"snapshotSettings,omitempty"`
 	// [StaticColumns] can be used to specify static columns that should be written to the destination.
 	// This is useful for cases where you want to add additional columns to provide metadata, etc in the destination.
 	StaticColumns []StaticColumn `yaml:"staticColumns,omitempty"`

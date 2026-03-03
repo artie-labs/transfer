@@ -25,6 +25,13 @@ func GenerateMSMTableName(optionalPrefix, baseTableName string) string {
 	return fmt.Sprintf("%s_%s_msm", constants.ArtiePrefix, baseTableName)
 }
 
+func GenerateSnapshotStagingTableName(optionalPrefix, baseTableName string) string {
+	if optionalPrefix != "" {
+		return fmt.Sprintf("%s_%s_%s_snapshot", constants.ArtiePrefix, optionalPrefix, baseTableName)
+	}
+	return fmt.Sprintf("%s_%s_snapshot", constants.ArtiePrefix, baseTableName)
+}
+
 type ReusableStagingTableManager interface {
 	PrepareReusableStagingTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, stagingTableID, parentTableID sql.TableIdentifier, opts types.AdditionalSettings) error
 
