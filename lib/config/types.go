@@ -69,8 +69,9 @@ type StagingTableReuseConfig struct {
 }
 
 type Reporting struct {
-	Sentry            *Sentry `yaml:"sentry"`
-	EmitExecutionTime bool    `yaml:"emitExecutionTime"`
+	Sentry              *Sentry `yaml:"sentry"`
+	EmitExecutionTime   bool    `yaml:"emitExecutionTime"`
+	EmitDBExecutionTime bool    `yaml:"emitDBExecutionTime"`
 }
 
 type Config struct {

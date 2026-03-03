@@ -122,7 +122,7 @@ func main() {
 	go func() {
 		defer wg.Done()
 		defer logger.RecoverFatal()
-		pool.StartPool(ctx, inMemDB, dest, metricsClient, whClient, settings.Config.Kafka.Topics(), time.Duration(settings.Config.FlushIntervalSeconds)*time.Second)
+		pool.StartPool(ctx, inMemDB, dest, metricsClient, whClient, settings.Config.Kafka.Topics(), time.Duration(settings.Config.FlushIntervalSeconds)*time.Second, settings.Config)
 	}()
 
 	wg.Add(1)

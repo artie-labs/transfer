@@ -87,7 +87,7 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 	}
 
 	if shouldFlush {
-		err = FlushSingleTopic(ctx, inMemDB, dest, metricsClient, p.WhClient, Args{Reason: flushReason}, topicConfig.tc.Topic, false)
+		err = FlushSingleTopic(ctx, inMemDB, dest, metricsClient, p.WhClient, Args{Reason: flushReason, ReportDBExecutionTime: cfg.Reporting.EmitDBExecutionTime}, topicConfig.tc.Topic, false)
 		if err != nil {
 			tags["what"] = "flush_fail"
 		}
