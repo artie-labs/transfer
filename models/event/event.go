@@ -164,6 +164,10 @@ func (e *Event) SetData(key string, value any) {
 	e.data[key] = value
 }
 
+func (e *Event) GetExecutionTime() time.Time {
+	return e.executionTime
+}
+
 // EmitExecutionTimeLag - This will check against the current time and the event execution time and emit the lag.
 func (e *Event) EmitExecutionTimeLag(metricsClient base.Client) {
 	metricsClient.GaugeWithSample(

@@ -26,6 +26,12 @@ type Args struct {
 	// [reason] - Is used to track the reason for the flush.
 	Reason                string
 	ReportDBExecutionTime bool
+	// [EventExecutionTime] - The execution time of the event that triggered this flush, used for pipeline lag metrics.
+	EventExecutionTime *time.Time
+}
+
+func (a Args) GetExecutionTime() *time.Time {
+	return a.EventExecutionTime
 }
 
 func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client, whClient *webhooksclient.Client, topics []string, args Args) error {
@@ -88,10 +94,7 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 				if table.Mode() == config.History || table.TopicConfig().AppendOnly {
 					action = "append"
 				}
-				var start time.Time
-				if !args.ReportDBExecutionTime {
-					start = time.Now()
-				}
+				start := time.Now()
 				tags := map[string]string{
 					"mode":     table.Mode().String(),
 					"table":    table.GetTableID().Table,
@@ -102,11 +105,12 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 
 				result, err := retry.WithRetriesAndResult(retryCfg, func(_ int, _ error) (flushResult, error) {
 					slog.Info("Flushing table", slog.String("tableID", table.GetTableID().String()), slog.String("reason", args.Reason))
-					if args.ReportDBExecutionTime {
-						start = time.Now()
-					}
 					r, err := flush(ctx, dest, table, whClient)
-					r.Duration = time.Since(start)
+					if args.ReportDBExecutionTime && args.GetExecutionTime() != nil {
+						r.Duration = time.Since(*args.GetExecutionTime())
+					} else {
+						r.Duration = time.Since(start)
+					}
 					return r, err
 				})
 				if err != nil {
