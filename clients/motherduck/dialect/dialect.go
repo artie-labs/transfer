@@ -139,6 +139,7 @@ func (DuckDBDialect) IsTableDoesNotExistErr(err error) bool {
 func (DuckDBDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, temporary bool, _ config.Mode, colSQLParts []string) string {
 	// Don't create any primary keys to avoid errors like:
 	// "failed to flush appender: database/sql/driver: could not flush appender: Failed to append: Duplicate key "id: 1880224217" violates primary key constraint.: appended and not yet flushed data has been invalidated due to error"
+	// Can't drop primary keys after the table is created. https://duckdb.org/docs/stable/sql/statements/alter_table#add--drop-constraint
 	finalColSQLParts := make([]string, 0, len(colSQLParts))
 	for _, colSQLPart := range colSQLParts {
 		if !strings.Contains(colSQLPart, "PRIMARY KEY") {
