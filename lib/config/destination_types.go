@@ -288,17 +288,11 @@ type S3Tables struct {
 	BucketARN          string `yaml:"bucketARN"`
 	Region             string `yaml:"region"`
 	// Bucket - This is where all the ephemeral delta files will be stored.
-	Bucket string `yaml:"bucket"`
-	// Sourced from: https://mvnrepository.com/artifact/software.amazon.s3tables/s3-tables-catalog-for-iceberg-runtime
-	RuntimePackageOverride string   `yaml:"runtimePackageOverride,omitempty"`
-	SessionJars            []string `yaml:"sessionJars,omitempty"`
+	Bucket      string   `yaml:"bucket"`
+	SessionJars []string `yaml:"sessionJars,omitempty"`
 
 	// [SessionConfig] - Additional session configurations that we will specify when creating a new Livy session.
 	SessionConfig map[string]string `yaml:"sessionConfig,omitempty"`
-}
-
-func (s S3Tables) GetRuntimePackage() string {
-	return cmp.Or(s.RuntimePackageOverride, constants.DefaultS3TablesPackage)
 }
 
 func (s S3Tables) ApacheLivyConfig() map[string]any {
@@ -310,7 +304,6 @@ func (s S3Tables) ApacheLivyConfig() map[string]any {
 		"spark.driver.extraJavaOptions":   fmt.Sprintf("-Daws.accessKeyId=%s -Daws.secretAccessKey=%s", s.AwsAccessKeyID, s.AwsSecretAccessKey),
 		"spark.executor.extraJavaOptions": fmt.Sprintf("-Daws.accessKeyId=%s -Daws.secretAccessKey=%s", s.AwsAccessKeyID, s.AwsSecretAccessKey),
 		// These annotations are needed to work with S3 Tables, sourced from: https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-tables-integrating-open-source-spark.html
-		"spark.jars.packages":                            s.GetRuntimePackage(),
 		"spark.sql.extensions":                           "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions",
 		"spark.sql.catalog.s3tablesbucket":               "org.apache.iceberg.spark.SparkCatalog",
 		"spark.sql.catalog.s3tablesbucket.catalog-impl":  "software.amazon.s3tables.iceberg.S3TablesCatalog",
