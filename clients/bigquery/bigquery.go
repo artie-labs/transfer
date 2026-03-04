@@ -109,6 +109,7 @@ func (s *Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.T
 	if err != nil {
 		return err
 	}
+
 	if err = s.putTable(ctx, bqTempTableID, tableData); err != nil {
 		return fmt.Errorf("failed to put table: %w", err)
 	}
@@ -185,40 +186,55 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 	}
 	defer managedStream.Close()
 
-	skipped, err := batch.BySize(tableData.Rows(), s.maxRequestBytesSize, false, func(row optimization.Row) ([]byte, error) {
+	encoder := func(row optimization.Row) ([]byte, error) {
 		message, err := rowToMessage(row.GetData(), columns, *messageDescriptor, s.config)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert row to message: %w", err)
 		}
-		b, err := proto.Marshal(message)
+
+		bytes, err := proto.Marshal(message)
 		if err != nil {
 			return nil, fmt.Errorf("failed to marshal message: %w", err)
 		}
-		return b, nil
-	}, func(chunk [][]byte, _ []optimization.Row) error {
+
+		return bytes, nil
+	}
+
+	skipped, err := batch.BySize(tableData.Rows(), s.maxRequestBytesSize, false, encoder, func(chunk [][]byte, _ []optimization.Row) error {
 		result, err := managedStream.AppendRows(ctx, chunk)
 		if err != nil {
 			return fmt.Errorf("failed to append rows: %w", err)
 		}
+
 		resp, err := result.FullResponse(ctx)
 		if err != nil {
 			if resp != nil {
 				if rowErrs := resp.GetRowErrors(); len(rowErrs) > 0 {
-					var errs []any
+					// Just log the first few errors
+					var errors []any
 					for i, rowErr := range rowErrs {
 						if i > 5 {
 							break
 						}
-						errs = append(errs, rowErr)
+
+						errors = append(errors, rowErr)
 					}
-					return fmt.Errorf("failed to append rows, encountered %d errors: %v", len(rowErrs), errs)
+
+					return fmt.Errorf("failed to append rows, encountered %d errors: %v", len(rowErrs), errors)
 				}
 			}
+
 			return fmt.Errorf("failed to get response: %w", err)
 		}
+
 		if status := resp.GetError(); status != nil {
 			return fmt.Errorf("failed to append rows: %s", status.String())
 		}
+
+		if rowErrs := resp.GetRowErrors(); len(rowErrs) > 0 {
+			return fmt.Errorf("failed to append rows, encountered %d errors", len(rowErrs))
+		}
+
 		return nil
 	})
 	if err != nil {
@@ -317,4 +333,3 @@ func LoadStore(ctx context.Context, cfg config.Config, _store *db.Store) (*Store
 		maxRequestBytesSize: maxRequestByteSize,
 	}, nil
 }
-
