@@ -141,6 +141,18 @@ func (t *TableData) TopicConfig() kafkalib.TopicConfig {
 	return t.topicConfig
 }
 
+func (t *TableData) UseStreamingAppend(destination constants.DestinationKind) bool {
+	if t.Mode() != config.History || len(t.Rows()) == 0 {
+		return false
+	}
+	switch destination { // add other destinations when ready.
+	case constants.BigQuery:
+		return true
+	default:
+		return false
+	}
+}
+
 func NewTableData(inMemoryColumns *columns.Columns, mode config.Mode, primaryKeys []string, topicConfig kafkalib.TopicConfig, name string) *TableData {
 	td := TableData{
 		mode:            mode,
@@ -264,7 +276,7 @@ func (t *TableData) TempTableSuffix() string {
 // ShouldFlush will return whether Transfer should flush
 // If so, what is the reason?
 func (t *TableData) ShouldFlush(cfg config.Config) (bool, string) {
-	if t.NumberOfRows() > 0 && t.Mode() == config.History && cfg.Output == constants.BigQuery { // ignore flush rules for BQ history
+	if t.UseStreamingAppend(cfg.Output) { // ignore flush rules for BQ history
 		return true, "history"
 	}
 	if t.NumberOfRows() > cfg.BufferRows {
