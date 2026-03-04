@@ -40,6 +40,7 @@ type Store struct {
 	configMap           *types.DestinationTableConfigMap
 	config              config.Config
 	bqClient            *bigquery.Client
+	streamManager       *StreamManager
 
 	db.Store
 }
@@ -108,6 +109,10 @@ func (s *Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.T
 	bqTempTableID, err := typing.AssertType[dialect.TableIdentifier](tableID)
 	if err != nil {
 		return err
+	}
+	``
+	if tableData.Mode() == config.History {
+		return s.putTableStreaming(ctx, bqTempTableID, tableData)
 	}
 
 	if err = s.putTable(ctx, bqTempTableID, tableData); err != nil {
@@ -332,4 +337,66 @@ func LoadStore(ctx context.Context, cfg config.Config, _store *db.Store) (*Store
 		Store:               store,
 		maxRequestBytesSize: maxRequestByteSize,
 	}, nil
+}
+
+func (s *Store) putTableStreaming(ctx context.Context, bqTableID dialect.TableIdentifier, tableData *optimization.TableData) error {
+	streamEntry, err := s.streamManager.getOrCreateStream(ctx, bqTableID, tableData.ReadOnlyInMemoryCols().ValidColumns())
+	if err != nil {
+		return fmt.Errorf("failed to fetch stream for table:%s. error: %w", bqTableID.FullyQualifiedName(), err)
+	}
+	encoder := func(row optimization.Row) ([]byte, error) {
+		message, err := rowToMessage(row.GetData(), tableData.ReadOnlyInMemoryCols().ValidColumns(), *streamEntry.messageDescriptor, s.config)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert row to message: %w", err)
+		}
+
+		bytes, err := proto.Marshal(message)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal message: %w", err)
+		}
+
+		return bytes, nil
+	}
+	_, err = batch.BySize(tableData.Rows(), s.maxRequestBytesSize, false, encoder, func(chunk [][]byte, _ []optimization.Row) error {
+		result, err := streamEntry.stream.AppendRows(ctx, chunk)
+		if err != nil {
+			return fmt.Errorf("failed to append rows: %w", err)
+		}
+
+		resp, err := result.FullResponse(ctx)
+		if err != nil {
+			if resp != nil {
+				if rowErrs := resp.GetRowErrors(); len(rowErrs) > 0 {
+					// Just log the first few errors
+					var errors []any
+					for i, rowErr := range rowErrs {
+						if i > 5 {
+							break
+						}
+
+						errors = append(errors, rowErr)
+					}
+
+					return fmt.Errorf("failed to append rows, encountered %d errors: %v", len(rowErrs), errors)
+				}
+			}
+
+			return fmt.Errorf("failed to get response: %w", err)
+		}
+
+		if status := resp.GetError(); status != nil {
+			return fmt.Errorf("failed to append rows: %s", status.String())
+		}
+
+		if rowErrs := resp.GetRowErrors(); len(rowErrs) > 0 {
+			return fmt.Errorf("failed to append rows, encountered %d errors", len(rowErrs))
+		}
+
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to write rows: %w", err)
+	}
+
+	return nil
 }
