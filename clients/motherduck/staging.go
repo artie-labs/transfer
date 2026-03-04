@@ -122,7 +122,11 @@ func convertValue(value any, kd typing.KindDetails) (driver.Value, error) {
 	case typing.String.Kind:
 		castedValue, err := typing.AssertType[string](value)
 		if err != nil {
-			return "", err
+			str, err := values.ToString(value, kd)
+			if err != nil {
+				return nil, err
+			}
+			return str, nil
 		}
 		return castedValue, nil
 	case typing.Boolean.Kind:
