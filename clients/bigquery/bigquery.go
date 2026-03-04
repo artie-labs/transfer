@@ -14,7 +14,6 @@ import (
 	"cloud.google.com/go/bigquery/storage/managedwriter/adapt"
 	_ "github.com/viant/bigquery"
 	"google.golang.org/api/option"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/artie-labs/transfer/clients/bigquery/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
@@ -190,56 +189,13 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 	}
 	defer managedStream.Close()
 
-	encoder := func(row optimization.Row) ([]byte, error) {
-		message, err := rowToMessage(row.GetData(), columns, *messageDescriptor, s.config)
-		if err != nil {
-			return nil, fmt.Errorf("failed to convert row to message: %w", err)
-		}
-
-		bytes, err := proto.Marshal(message)
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal message: %w", err)
-		}
-
-		return bytes, nil
-	}
-
+	encoder := buildEncoder(columns, *messageDescriptor, s.config)
 	skipped, err := batch.BySize(tableData.Rows(), s.maxRequestBytesSize, false, encoder, func(chunk [][]byte, _ []optimization.Row) error {
 		result, err := managedStream.AppendRows(ctx, chunk)
 		if err != nil {
 			return fmt.Errorf("failed to append rows: %w", err)
 		}
-
-		resp, err := result.FullResponse(ctx)
-		if err != nil {
-			if resp != nil {
-				if rowErrs := resp.GetRowErrors(); len(rowErrs) > 0 {
-					// Just log the first few errors
-					var errors []any
-					for i, rowErr := range rowErrs {
-						if i > 5 {
-							break
-						}
-
-						errors = append(errors, rowErr)
-					}
-
-					return fmt.Errorf("failed to append rows, encountered %d errors: %v", len(rowErrs), errors)
-				}
-			}
-
-			return fmt.Errorf("failed to get response: %w", err)
-		}
-
-		if status := resp.GetError(); status != nil {
-			return fmt.Errorf("failed to append rows: %s", status.String())
-		}
-
-		if rowErrs := resp.GetRowErrors(); len(rowErrs) > 0 {
-			return fmt.Errorf("failed to append rows, encountered %d errors", len(rowErrs))
-		}
-
-		return nil
+		return checkAppendResponse(ctx, result)
 	})
 	if err != nil {
 		return fmt.Errorf("failed to write rows: %w", err)
@@ -343,57 +299,17 @@ func (s *Store) putTableStreaming(ctx context.Context, bqTableID dialect.TableId
 	if err != nil {
 		return fmt.Errorf("failed to fetch stream for table:%s. error: %w", bqTableID.FullyQualifiedName(), err)
 	}
-	encoder := func(row optimization.Row) ([]byte, error) {
-		message, err := rowToMessage(row.GetData(), tableData.ReadOnlyInMemoryCols().ValidColumns(), *streamEntry.messageDescriptor, s.config)
-		if err != nil {
-			return nil, fmt.Errorf("failed to convert row to message: %w", err)
-		}
-
-		bytes, err := proto.Marshal(message)
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal message: %w", err)
-		}
-
-		return bytes, nil
-	}
+	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
+	encoder := buildEncoder(columns, *streamEntry.messageDescriptor, s.config)
 	skipped, err := batch.BySize(tableData.Rows(), s.maxRequestBytesSize, false, encoder, func(chunk [][]byte, rows []optimization.Row) error {
-		streamEntry.mu.Lock()
-		currentOffset := streamEntry.offset
-		streamEntry.mu.Unlock()
-		result, err := streamEntry.stream.AppendRows(ctx, chunk, managedwriter.WithOffset(currentOffset))
+		result, err := streamEntry.stream.AppendRows(ctx, chunk, managedwriter.WithOffset(streamEntry.CurrentOffset()))
 		if err != nil {
 			return fmt.Errorf("failed to append rows: %w", err)
 		}
-
-		resp, err := result.FullResponse(ctx)
-		if err != nil {
-			if resp != nil {
-				if rowErrs := resp.GetRowErrors(); len(rowErrs) > 0 {
-					// Just log the first few errors
-					var errors []any
-					for i, rowErr := range rowErrs {
-						if i > 5 {
-							break
-						}
-
-						errors = append(errors, rowErr)
-					}
-
-					return fmt.Errorf("failed to append rows, encountered %d errors: %v", len(rowErrs), errors)
-				}
-			}
-
-			return fmt.Errorf("failed to get response: %w", err)
+		if err := checkAppendResponse(ctx, result); err != nil {
+			return err
 		}
-
-		if status := resp.GetError(); status != nil {
-			return fmt.Errorf("failed to append rows: %s", status.String())
-		}
-
-		streamEntry.mu.Lock()
-		streamEntry.offset += int64(len(rows))
-		streamEntry.mu.Unlock()
-
+		streamEntry.AdvanceOffset(int64(len(rows)))
 		return nil
 	})
 	if err != nil {

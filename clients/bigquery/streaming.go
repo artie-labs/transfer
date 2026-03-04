@@ -21,6 +21,18 @@ type streamEntry struct {
 	offset            int64
 }
 
+func (e *streamEntry) CurrentOffset() int64 {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	return e.offset
+}
+
+func (e *streamEntry) AdvanceOffset(n int64) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.offset += n
+}
+
 func NewStreamEntry(ctx context.Context, client *managedwriter.Client, cols []columns.Column, tableID dialect.TableIdentifier) (*streamEntry, error) {
 	messageDescriptor, err := columnsToMessageDescriptor(cols)
 	if err != nil {
