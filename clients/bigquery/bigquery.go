@@ -39,7 +39,6 @@ type Store struct {
 	configMap           *types.DestinationTableConfigMap
 	config              config.Config
 	bqClient            *bigquery.Client
-	streamManager       *StreamManager
 
 	db.Store
 }
@@ -109,10 +108,6 @@ func (s *Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.T
 	if err != nil {
 		return err
 	}
-	if tableData.Mode() == config.History {
-		return s.putTableStreaming(ctx, bqTempTableID, tableData)
-	}
-
 	if err = s.putTable(ctx, bqTempTableID, tableData); err != nil {
 		return fmt.Errorf("failed to put table: %w", err)
 	}
@@ -294,30 +289,3 @@ func LoadStore(ctx context.Context, cfg config.Config, _store *db.Store) (*Store
 	}, nil
 }
 
-func (s *Store) putTableStreaming(ctx context.Context, bqTableID dialect.TableIdentifier, tableData *optimization.TableData) error {
-	streamEntry, err := s.streamManager.getOrCreateStream(ctx, bqTableID, tableData.ReadOnlyInMemoryCols().ValidColumns())
-	if err != nil {
-		return fmt.Errorf("failed to fetch stream for table:%s. error: %w", bqTableID.FullyQualifiedName(), err)
-	}
-	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
-	encoder := buildEncoder(columns, *streamEntry.messageDescriptor, s.config)
-	skipped, err := batch.BySize(tableData.Rows(), s.maxRequestBytesSize, false, encoder, func(chunk [][]byte, rows []optimization.Row) error {
-		result, err := streamEntry.stream.AppendRows(ctx, chunk, managedwriter.WithOffset(streamEntry.CurrentOffset()))
-		if err != nil {
-			return fmt.Errorf("failed to append rows: %w", err)
-		}
-		if err := checkAppendResponse(ctx, result); err != nil {
-			return err
-		}
-		streamEntry.AdvanceOffset(int64(len(rows)))
-		return nil
-	})
-	if err != nil {
-		return fmt.Errorf("failed to write rows: %w", err)
-	}
-	if skipped > 0 {
-		slog.Warn("Skipped rows during streaming append", slog.String("table", bqTableID.FullyQualifiedName()), slog.Int("skipped", skipped))
-	}
-
-	return nil
-}
