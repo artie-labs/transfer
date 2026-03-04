@@ -15,8 +15,10 @@ import (
 )
 
 type streamEntry struct {
+	mu                sync.Mutex
 	stream            *managedwriter.ManagedStream
 	messageDescriptor *protoreflect.MessageDescriptor
+	offset            int64
 }
 
 func NewStreamEntry(ctx context.Context, client *managedwriter.Client, cols []columns.Column, tableID dialect.TableIdentifier) (*streamEntry, error) {
@@ -34,7 +36,7 @@ func NewStreamEntry(ctx context.Context, client *managedwriter.Client, cols []co
 		managedwriter.WithDestinationTable(
 			managedwriter.TableParentFromParts(tableID.ProjectID(), tableID.Dataset(), tableID.Table()),
 		),
-		managedwriter.WithType(managedwriter.DefaultStream),
+		managedwriter.WithType(managedwriter.CommittedStream),
 		managedwriter.WithSchemaDescriptor(schemaDescriptor),
 		managedwriter.EnableWriteRetries(true),
 	)

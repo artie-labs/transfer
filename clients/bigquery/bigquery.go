@@ -356,8 +356,11 @@ func (s *Store) putTableStreaming(ctx context.Context, bqTableID dialect.TableId
 
 		return bytes, nil
 	}
-	_, err = batch.BySize(tableData.Rows(), s.maxRequestBytesSize, false, encoder, func(chunk [][]byte, _ []optimization.Row) error {
-		result, err := streamEntry.stream.AppendRows(ctx, chunk)
+	skipped, err := batch.BySize(tableData.Rows(), s.maxRequestBytesSize, false, encoder, func(chunk [][]byte, rows []optimization.Row) error {
+		streamEntry.mu.Lock()
+		currentOffset := streamEntry.offset
+		streamEntry.mu.Unlock()
+		result, err := streamEntry.stream.AppendRows(ctx, chunk, managedwriter.WithOffset(currentOffset))
 		if err != nil {
 			return fmt.Errorf("failed to append rows: %w", err)
 		}
@@ -387,14 +390,18 @@ func (s *Store) putTableStreaming(ctx context.Context, bqTableID dialect.TableId
 			return fmt.Errorf("failed to append rows: %s", status.String())
 		}
 
-		if rowErrs := resp.GetRowErrors(); len(rowErrs) > 0 {
-			return fmt.Errorf("failed to append rows, encountered %d errors", len(rowErrs))
-		}
+		streamEntry.mu.Lock()
+		streamEntry.offset += int64(len(rows))
+		streamEntry.mu.Unlock()
 
 		return nil
 	})
 	if err != nil {
 		return fmt.Errorf("failed to write rows: %w", err)
+	}
+	if skipped > 0 {
+		slog.Warn("Skipped rows during streaming append", slog.String("table", bqTableID.FullyQualifiedName()), slog.Int("skipped", skipped))
+
 	}
 
 	return nil
