@@ -10,6 +10,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
@@ -65,6 +66,7 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 
 	var grp errgroup.Group
 	var commitOffset atomic.Bool
+	var clearMemory atomic.Bool
 	err = consumer.LockAndProcess(ctx, shouldLock, func() error {
 		// If there are more tables, let's ensure that ALL tables in this topic are flushable.
 		// If not, let's hold off and wait for the next flush cycle. This is to avoid a situation where we flush a fraction of the tables in this topic
@@ -122,6 +124,7 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 				// It's okay that this will get overwritten by other tables
 				// This is because MSM is only supported for a single table / topic.
 				commitOffset.Store(result.CommitOffset)
+				clearMemory.Store(result.ClearMemory)
 				tags["what"] = result.What
 				metricsClient.Timing("flush", result.Duration, tags)
 				return nil
@@ -140,10 +143,22 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 			if err := consumer.CommitMessage(ctx); err != nil {
 				return fmt.Errorf("failed to commit message: %w", err)
 			}
-
 			for _, table := range tables {
 				slog.Info("Flush success, clearing memory...", slog.String("tableID", table.GetTableID().String()))
 				inMemDB.ClearTableConfig(table.GetTableID())
+			}
+		}
+
+		if clearMemory.Load() && !commitOffset.Load() {
+			for _, table := range tables {
+				slog.Info("Flush success", slog.String("tableID", table.GetTableID().String()))
+				inMemDB.ClearTableConfig(table.GetTableID())
+			}
+		}
+
+		if args.Reason == "time" && !commitOffset.Load() && dest.Label() == constants.BigQuery {
+			if err := consumer.CommitMessage(ctx); err != nil {
+				return fmt.Errorf("failed to commit message: %w", err)
 			}
 		}
 
@@ -156,6 +171,7 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 type flushResult struct {
 	What         string
 	CommitOffset bool
+	ClearMemory  bool
 	Duration     time.Duration
 }
 
@@ -174,7 +190,9 @@ func flush(ctx context.Context, dest destination.Destination, _tableData *models
 			return flushResult{What: "merge_fail"}, fmt.Errorf("failed to append: %w", err)
 		}
 
-		return flushResult{What: "success", CommitOffset: true}, nil
+		isBQStreaming := dest.Label() == constants.BigQuery && mode == config.History
+
+		return flushResult{What: "success", CommitOffset: !isBQStreaming, ClearMemory: true}, nil
 	} else {
 		commitTransaction, err := dest.Merge(ctx, _tableData.TableData, whClient)
 		if err != nil {

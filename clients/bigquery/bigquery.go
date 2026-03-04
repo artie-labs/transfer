@@ -317,7 +317,6 @@ func (s *Store) putTableStreaming(ctx context.Context, bqTableID dialect.TableId
 	}
 	if skipped > 0 {
 		slog.Warn("Skipped rows during streaming append", slog.String("table", bqTableID.FullyQualifiedName()), slog.Int("skipped", skipped))
-
 	}
 
 	return nil
