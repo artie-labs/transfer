@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	bqDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
+	duckDBDialect "github.com/artie-labs/transfer/clients/motherduck/dialect"
 	"github.com/artie-labs/transfer/clients/redshift/dialect"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -86,6 +87,51 @@ func TestBuildCreateTableSQL(t *testing.T) {
 				})
 				assert.NoError(t, err)
 				assert.Equal(t, `CREATE TABLE IF NOT EXISTS schema."table" ("pk1" VARCHAR(MAX),"pk2" VARCHAR(MAX),"bar" VARCHAR(MAX),PRIMARY KEY ("pk1", "pk2"));`, sql)
+			}
+		}
+		{
+			// DuckDB
+			{
+				// No primary key
+				sql, err := BuildCreateTableSQL(config.SharedDestinationColumnSettings{}, duckDBDialect.DuckDBDialect{}, duckDBDialect.NewTableIdentifier("db", "schema", "table"), false, config.Replication, []columns.Column{
+					columns.NewColumn("foo", typing.String),
+					columns.NewColumn("bar", typing.String),
+				})
+				assert.NoError(t, err)
+				assert.Equal(t, `CREATE TABLE "db"."schema"."table" ("foo" text,"bar" text);`, sql)
+			}
+			{
+				// With primary key - should be stripped
+				pk := columns.NewColumn("pk", typing.String)
+				pk.SetPrimaryKeyForTest(true)
+				sql, err := BuildCreateTableSQL(config.SharedDestinationColumnSettings{}, duckDBDialect.DuckDBDialect{}, duckDBDialect.NewTableIdentifier("db", "schema", "table"), false, config.Replication, []columns.Column{
+					pk,
+					columns.NewColumn("bar", typing.String),
+				})
+				assert.NoError(t, err)
+				assert.Equal(t, `CREATE TABLE "db"."schema"."table" ("pk" text,"bar" text);`, sql)
+			}
+			{
+				// With multiple primary keys - should all be stripped
+				pk1 := columns.NewColumn("pk1", typing.String)
+				pk1.SetPrimaryKeyForTest(true)
+				pk2 := columns.NewColumn("pk2", typing.String)
+				pk2.SetPrimaryKeyForTest(true)
+				sql, err := BuildCreateTableSQL(config.SharedDestinationColumnSettings{}, duckDBDialect.DuckDBDialect{}, duckDBDialect.NewTableIdentifier("db", "schema", "table"), false, config.Replication, []columns.Column{
+					pk1,
+					pk2,
+					columns.NewColumn("bar", typing.String),
+				})
+				assert.NoError(t, err)
+				assert.Equal(t, `CREATE TABLE "db"."schema"."table" ("pk1" text,"pk2" text,"bar" text);`, sql)
+			}
+			{
+				// Temporary table flag is ignored - always creates a regular table
+				sql, err := BuildCreateTableSQL(config.SharedDestinationColumnSettings{}, duckDBDialect.DuckDBDialect{}, duckDBDialect.NewTableIdentifier("db", "schema", "table"), true, config.Replication, []columns.Column{
+					columns.NewColumn("foo", typing.String),
+				})
+				assert.NoError(t, err)
+				assert.Equal(t, `CREATE TABLE "db"."schema"."table" ("foo" text);`, sql)
 			}
 		}
 		{
