@@ -264,6 +264,9 @@ func (t *TableData) TempTableSuffix() string {
 // ShouldFlush will return whether Transfer should flush
 // If so, what is the reason?
 func (t *TableData) ShouldFlush(cfg config.Config) (bool, string) {
+	if cfg.Mode == config.History && cfg.Output == constants.Snowflake { // ignore flush rules for snowflake history
+		return true, "history"
+	}
 	if t.NumberOfRows() > cfg.BufferRows {
 		return true, "rows"
 	}
