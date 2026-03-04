@@ -110,7 +110,6 @@ func (s *Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.T
 	if err != nil {
 		return err
 	}
-	``
 	if tableData.Mode() == config.History {
 		return s.putTableStreaming(ctx, bqTempTableID, tableData)
 	}
