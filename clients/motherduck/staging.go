@@ -16,6 +16,7 @@ import (
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/artie-labs/transfer/lib/typing/converters"
 	"github.com/artie-labs/transfer/lib/typing/values"
 )
 
@@ -120,7 +121,9 @@ func convertValue(value any, kd typing.KindDetails) (driver.Value, error) {
 
 	switch kd.Kind {
 	case typing.String.Kind:
-		str, err := values.ToString(value, kd)
+		str, err := values.ToStringOpts(value, kd, converters.GetStringConverterOpts{
+			UseNewStringMethod: true,
+		})
 		if err != nil {
 			return nil, err
 		}
