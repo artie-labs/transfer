@@ -1,7 +1,6 @@
 package bigquery
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -9,9 +8,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery/storage/apiv1/storagepb"
-	"cloud.google.com/go/bigquery/storage/managedwriter"
 	"cloud.google.com/go/bigquery/storage/managedwriter/adapt"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/dynamicpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -20,7 +17,6 @@ import (
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	libconverters "github.com/artie-labs/transfer/lib/typing/converters"
@@ -89,43 +85,6 @@ func columnsToMessageDescriptor(cols []columns.Column) (*protoreflect.MessageDes
 	}
 
 	return &messageDescriptor, nil
-}
-
-func buildEncoder(cols []columns.Column, messageDescriptor protoreflect.MessageDescriptor, cfg config.Config) func(optimization.Row) ([]byte, error) {
-	return func(row optimization.Row) ([]byte, error) {
-		message, err := rowToMessage(row.GetData(), cols, messageDescriptor, cfg)
-		if err != nil {
-			return nil, fmt.Errorf("failed to convert row to message: %w", err)
-		}
-		b, err := proto.Marshal(message)
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal message: %w", err)
-		}
-		return b, nil
-	}
-}
-
-func checkAppendResponse(ctx context.Context, result *managedwriter.AppendResult) error {
-	resp, err := result.FullResponse(ctx)
-	if err != nil {
-		if resp != nil {
-			if rowErrs := resp.GetRowErrors(); len(rowErrs) > 0 {
-				var errs []any
-				for i, rowErr := range rowErrs {
-					if i > 5 {
-						break
-					}
-					errs = append(errs, rowErr)
-				}
-				return fmt.Errorf("failed to append rows, encountered %d errors: %v", len(rowErrs), errs)
-			}
-		}
-		return fmt.Errorf("failed to get response: %w", err)
-	}
-	if status := resp.GetError(); status != nil {
-		return fmt.Errorf("failed to append rows: %s", status.String())
-	}
-	return nil
 }
 
 const (

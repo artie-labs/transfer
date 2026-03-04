@@ -14,6 +14,7 @@ import (
 	"cloud.google.com/go/bigquery/storage/managedwriter/adapt"
 	_ "github.com/viant/bigquery"
 	"google.golang.org/api/option"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/artie-labs/transfer/clients/bigquery/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
@@ -184,13 +185,41 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 	}
 	defer managedStream.Close()
 
-	encoder := buildEncoder(columns, *messageDescriptor, s.config)
-	skipped, err := batch.BySize(tableData.Rows(), s.maxRequestBytesSize, false, encoder, func(chunk [][]byte, _ []optimization.Row) error {
+	skipped, err := batch.BySize(tableData.Rows(), s.maxRequestBytesSize, false, func(row optimization.Row) ([]byte, error) {
+		message, err := rowToMessage(row.GetData(), columns, *messageDescriptor, s.config)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert row to message: %w", err)
+		}
+		b, err := proto.Marshal(message)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal message: %w", err)
+		}
+		return b, nil
+	}, func(chunk [][]byte, _ []optimization.Row) error {
 		result, err := managedStream.AppendRows(ctx, chunk)
 		if err != nil {
 			return fmt.Errorf("failed to append rows: %w", err)
 		}
-		return checkAppendResponse(ctx, result)
+		resp, err := result.FullResponse(ctx)
+		if err != nil {
+			if resp != nil {
+				if rowErrs := resp.GetRowErrors(); len(rowErrs) > 0 {
+					var errs []any
+					for i, rowErr := range rowErrs {
+						if i > 5 {
+							break
+						}
+						errs = append(errs, rowErr)
+					}
+					return fmt.Errorf("failed to append rows, encountered %d errors: %v", len(rowErrs), errs)
+				}
+			}
+			return fmt.Errorf("failed to get response: %w", err)
+		}
+		if status := resp.GetError(); status != nil {
+			return fmt.Errorf("failed to append rows: %s", status.String())
+		}
+		return nil
 	})
 	if err != nil {
 		return fmt.Errorf("failed to write rows: %w", err)
