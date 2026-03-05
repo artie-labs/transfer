@@ -1,12 +1,15 @@
 package dialect
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
 
@@ -448,5 +451,73 @@ func TestBuildDedupeQueries(t *testing.T) {
 		assert.Equal(t, `DELETE FROM "test_db"."public"."orders" t1 WHERE EXISTS (SELECT 1 FROM "test_db"."public"."orders_staging" t2 WHERE t1."order_id" = t2."order_id" AND t1."line_item_id" = t2."line_item_id")`, queries[1])
 		assert.Equal(t, `INSERT INTO "test_db"."public"."orders" SELECT * FROM "test_db"."public"."orders_staging"`, queries[2])
 		assert.Equal(t, `DROP TABLE IF EXISTS "test_db"."public"."orders_staging"`, queries[3])
+	}
+}
+
+func buildColumns(colTypesMap map[string]typing.KindDetails) *columns.Columns {
+	var colNames []string
+	for colName := range colTypesMap {
+		colNames = append(colNames, colName)
+	}
+	slices.Sort(colNames)
+
+	cols := columns.NewColumns(nil)
+	for _, colName := range colNames {
+		cols.AddColumn(columns.NewColumn(colName, colTypesMap[colName]))
+	}
+
+	return cols
+}
+
+func TestDuckDBDialect_BuildMergeQueryIntoStagingTable(t *testing.T) {
+	tableID := NewTableIdentifier("test_db", "public", "table")
+	{
+		_cols := buildColumns(map[string]typing.KindDetails{
+			"id":                                typing.String,
+			"bar":                               typing.String,
+			"updated_at":                        typing.TimestampNTZ,
+			constants.DeleteColumnMarker:        typing.Boolean,
+			constants.OnlySetDeleteColumnMarker: typing.Boolean,
+		})
+
+		statements := DuckDBDialect{}.BuildMergeQueryIntoStagingTable(
+			tableID,
+			`"test_db"."public"."table"`,
+			[]columns.Column{columns.NewColumn("id", typing.Invalid)},
+			nil,
+			_cols.ValidColumns(),
+		)
+
+		assert.Len(t, statements, 1)
+		assert.Equal(t, `MERGE INTO "test_db"."public"."table" AS tgt USING (SELECT * FROM "test_db"."public"."table") AS stg ON tgt."id" = stg."id"
+WHEN MATCHED THEN UPDATE SET "__artie_delete"=stg."__artie_delete","__artie_only_set_delete"=stg."__artie_only_set_delete","bar"=stg."bar","id"=stg."id","updated_at"=stg."updated_at"
+WHEN NOT MATCHED THEN INSERT ("__artie_delete","__artie_only_set_delete","bar","id","updated_at") VALUES (stg."__artie_delete",stg."__artie_only_set_delete",stg."bar",stg."id",stg."updated_at")`, statements[0])
+	}
+	{
+		// Toasted column
+		_cols := buildColumns(map[string]typing.KindDetails{
+			"id":                                typing.String,
+			"bar":                               typing.String,
+			"updated_at":                        typing.TimestampNTZ,
+			constants.DeleteColumnMarker:        typing.Boolean,
+			constants.OnlySetDeleteColumnMarker: typing.Boolean,
+		})
+
+		assert.NoError(t, _cols.UpsertColumn("bar", columns.UpsertColumnArg{
+			ToastCol: typing.ToPtr(true),
+		}))
+
+		statements := DuckDBDialect{}.BuildMergeQueryIntoStagingTable(
+			tableID,
+			`"test_db"."public"."table"`,
+			[]columns.Column{columns.NewColumn("id", typing.Invalid)},
+			nil,
+			_cols.ValidColumns(),
+		)
+
+		assert.Len(t, statements, 1)
+		assert.Equal(t, `MERGE INTO "test_db"."public"."table" AS tgt USING (SELECT * FROM "test_db"."public"."table") AS stg ON tgt."id" = stg."id"
+WHEN MATCHED THEN UPDATE SET "__artie_delete"=stg."__artie_delete","__artie_only_set_delete"=stg."__artie_only_set_delete","bar"= CASE WHEN COALESCE(stg."bar" NOT LIKE '%__debezium_unavailable_value%', TRUE) THEN stg."bar" ELSE tgt."bar" END,"id"=stg."id","updated_at"=stg."updated_at"
+WHEN NOT MATCHED THEN INSERT ("__artie_delete","__artie_only_set_delete","bar","id","updated_at") VALUES (stg."__artie_delete",stg."__artie_only_set_delete",stg."bar",stg."id",stg."updated_at")`, statements[0])
 	}
 }

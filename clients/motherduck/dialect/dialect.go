@@ -245,8 +245,28 @@ func (d DuckDBDialect) BuildIsNotToastValueExpression(tableAlias constants.Table
 	return fmt.Sprintf("COALESCE(%s NOT LIKE '%s', TRUE)", colName, toastedValue)
 }
 
-func (DuckDBDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string {
-	panic("not implemented")
+func (d DuckDBDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string {
+	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, d)
+	if len(additionalEqualityStrings) > 0 {
+		equalitySQLParts = append(equalitySQLParts, additionalEqualityStrings...)
+	}
+
+	source := subQuery
+	if !strings.Contains(strings.ToUpper(subQuery), "SELECT") {
+		source = fmt.Sprintf("SELECT * FROM %s", subQuery)
+	}
+
+	baseQuery := fmt.Sprintf(`MERGE INTO %s AS %s USING (%s) AS %s ON %s`,
+		tableID.FullyQualifiedName(), constants.TargetAlias, source, constants.StagingAlias, strings.Join(equalitySQLParts, " AND "),
+	)
+
+	return []string{baseQuery + fmt.Sprintf(`
+WHEN MATCHED THEN UPDATE SET %s
+WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s)`,
+		sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, d),
+		strings.Join(sql.QuoteColumns(cols, d), ","),
+		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, d), ","),
+	)}
 }
 
 // buildSoftDeleteMergeQuery builds a single MERGE query for soft delete operations
