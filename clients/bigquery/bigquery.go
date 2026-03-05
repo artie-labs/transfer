@@ -325,6 +325,14 @@ func LoadStore(ctx context.Context, cfg config.Config, _store *db.Store) (*Store
 		slog.Int("maxPayloadBytes", maxRequestByteSize),
 		slog.Int("overheadBytes", bigQueryMaxRequestSize-maxRequestByteSize),
 	)
+
+	if bqReservation := cfg.BigQuery.Reservation; bqReservation != "" {
+		_, err := store.ExecContext(ctx, fmt.Sprintf("SET @@reservation = 'projects/%s/locations/%s/reservations/%s'", cfg.BigQuery.ProjectID, cfg.BigQuery.Location, bqReservation))
+		if err != nil {
+			slog.Warn("Failed to set reservation for pipeline", slog.Any("err", err))
+		}
+	}
+
 	return &Store{
 		bqClient:            bqClient,
 		configMap:           &types.DestinationTableConfigMap{},
