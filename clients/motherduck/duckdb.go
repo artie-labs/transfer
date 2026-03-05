@@ -196,6 +196,10 @@ func (s Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error
 }
 
 func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client) (bool, error) {
+	if tableData.MultiStepMergeSettings().Enabled {
+		return shared.MultiStepMerge(ctx, s, tableData, types.MergeOpts{}, whClient)
+	}
+
 	if err := shared.Merge(ctx, s, tableData, types.MergeOpts{}, whClient); err != nil {
 		return false, fmt.Errorf("failed to merge: %w", err)
 	}

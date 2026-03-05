@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
@@ -16,10 +15,6 @@ import (
 )
 
 func MultiStepMerge(ctx context.Context, dest destination.SQLDestination, tableData *optimization.TableData, opts types.MergeOpts, _ *webhooksclient.Client) (bool, error) {
-	if _, ok := dest.Dialect().(dialect.SnowflakeDialect); !ok {
-		return false, fmt.Errorf("multi-step merge is only supported on Snowflake")
-	}
-
 	msmSettings := tableData.MultiStepMergeSettings()
 	if !msmSettings.Enabled {
 		return false, fmt.Errorf("multi-step merge is not enabled")
