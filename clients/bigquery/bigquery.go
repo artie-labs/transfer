@@ -333,6 +333,8 @@ func LoadStore(ctx context.Context, cfg config.Config, _store *db.Store) (*Store
 		_, err := store.ExecContext(ctx, reservationQuery, "something")
 		if err != nil {
 			slog.Warn("Failed to set reservation for pipeline", slog.String("query", reservationQuery), slog.Any("err", err))
+		} else {
+			slog.Info("Set reservation for pipeline", slog.String("query", reservationQuery))
 		}
 	}
 
