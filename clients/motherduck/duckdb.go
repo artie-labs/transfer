@@ -160,7 +160,6 @@ func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kaf
 func (s Store) SweepTemporaryTables(ctx context.Context, _ *webhooksclient.Client) error {
 	for _, dbAndSchema := range kafkalib.GetUniqueStagingDatabaseAndSchemaPairs(s.config.TopicConfigs()) {
 		query, args := s.dialect().BuildSweepQuery(dbAndSchema.Database, dbAndSchema.Schema)
-
 		response, err := s.QueryContextHttp(ctx, query, args...)
 		if err != nil {
 			return fmt.Errorf("failed to query temporary tables: %w", err)
