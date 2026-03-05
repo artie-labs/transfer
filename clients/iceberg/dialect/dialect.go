@@ -222,6 +222,28 @@ func (id IcebergDialect) BuildAppendToTable(tableID sql.TableIdentifier, viewNam
 	return fmt.Sprintf("INSERT INTO %s (%s) SELECT %s FROM %s", tableID.FullyQualifiedName(), strings.Join(columns, ", "), strings.Join(columns, ", "), viewName)
 }
 
-func (IcebergDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string {
-	panic("not implemented")
+func (id IcebergDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string {
+	var equalitySQLParts []string
+	for _, pk := range primaryKeys {
+		equalitySQLParts = append(equalitySQLParts, sql.BuildColumnComparison(pk, constants.TargetAlias, constants.StagingAlias, sql.Equal, id))
+	}
+
+	if len(additionalEqualityStrings) > 0 {
+		equalitySQLParts = append(equalitySQLParts, additionalEqualityStrings...)
+	}
+
+	baseQuery := fmt.Sprintf("MERGE INTO %s AS %s USING %s AS %s ON %s",
+		tableID.FullyQualifiedName(), constants.TargetAlias,
+		subQuery, constants.StagingAlias,
+		strings.Join(equalitySQLParts, " AND "),
+	)
+
+	return []string{fmt.Sprintf(`%s
+WHEN MATCHED THEN UPDATE SET %s
+WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s)`,
+		baseQuery,
+		sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, id),
+		strings.Join(sql.QuoteColumns(cols, id), ","),
+		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, id), ","),
+	)}
 }

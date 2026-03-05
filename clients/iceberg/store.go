@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/aws/aws-sdk-go-v2/credentials"
@@ -168,6 +169,10 @@ func (s Store) getTableConfig(ctx context.Context, client *apachelivy.Client, ta
 }
 
 func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client) (bool, error) {
+	if tableData.MultiStepMergeSettings().Enabled {
+		return s.multiStepMerge(ctx, tableData)
+	}
+
 	if tableData.ShouldSkipUpdate() {
 		return false, nil
 	}
@@ -230,6 +235,140 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whC
 	}
 
 	return true, nil
+}
+
+func (s Store) multiStepMerge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
+	if tableData.ShouldSkipUpdate() {
+		return false, nil
+	}
+
+	client := s.GetApacheLivyClient()
+	msmSettings := tableData.MultiStepMergeSettings()
+
+	msmTableName := shared.GenerateMSMTableName(tableData.TopicConfig().ReusableStagingTableNamePrefix(), tableData.Name())
+	msmTableID := s.IdentifierFor(tableData.TopicConfig().BuildStagingDatabaseAndSchemaPair(), msmTableName)
+	targetTableID := s.IdentifierFor(tableData.TopicConfig().BuildDatabaseAndSchemaPair(), tableData.Name())
+
+	targetTableConfig, err := s.getTableConfig(ctx, client, targetTableID, tableData.TopicConfig().DropDeletedColumns)
+	if err != nil {
+		return false, fmt.Errorf("failed to get target table config: %w", err)
+	}
+
+	if msmSettings.IsFirstFlush() {
+		// Drop the MSM table from a previous run and clear its cached config.
+		s.cm.RemoveTable(msmTableID)
+		if err := s.DropTable(ctx, msmTableID); err != nil {
+			slog.Warn("Failed to drop MSM table on first flush (may not exist)", slog.Any("err", err))
+		}
+
+		if err = tableData.MergeColumnsFromDestination(targetTableConfig.GetColumns()...); err != nil {
+			return false, fmt.Errorf("failed to merge columns from destination: %w for table %q", err, tableData.Name())
+		}
+	}
+
+	msmTableConfig, err := s.getTableConfig(ctx, client, msmTableID, tableData.TopicConfig().DropDeletedColumns)
+	if err != nil {
+		return false, fmt.Errorf("failed to get MSM table config: %w", err)
+	}
+
+	{
+		// Schema evolution for the MSM table
+		resp := columns.Diff(
+			tableData.ReadOnlyInMemoryCols().GetColumns(),
+			msmTableConfig.GetColumns(),
+		)
+
+		if msmTableConfig.CreateTable() {
+			if err = s.CreateTable(ctx, client, msmTableID, msmTableConfig, resp.TargetColumnsMissing); err != nil {
+				return false, fmt.Errorf("failed to create MSM table: %w", err)
+			}
+		} else {
+			if err = s.alterTableAddColumns(ctx, client, msmTableID, msmTableConfig, resp.TargetColumnsMissing); err != nil {
+				return false, fmt.Errorf("failed to add columns for MSM table %q: %w", msmTableID.Table(), err)
+			}
+		}
+	}
+	{
+		// Schema evolution for the target table
+		_, targetKeysMissing := columns.DiffAndFilter(
+			tableData.ReadOnlyInMemoryCols().GetColumns(),
+			targetTableConfig.GetColumns(),
+			tableData.BuildColumnsToKeep(),
+		)
+
+		if targetTableConfig.CreateTable() {
+			if err = s.CreateTable(ctx, client, targetTableID, targetTableConfig, targetKeysMissing); err != nil {
+				return false, fmt.Errorf("failed to create target table: %w", err)
+			}
+		} else {
+			if err = s.alterTableAddColumns(ctx, client, targetTableID, targetTableConfig, targetKeysMissing); err != nil {
+				return false, fmt.Errorf("failed to add columns for target table %q: %w", targetTableID.Table(), err)
+			}
+		}
+	}
+
+	cols := tableData.ReadOnlyInMemoryCols().ValidColumns()
+	var primaryKeys []columns.Column
+	for _, col := range cols {
+		if col.PrimaryKey() {
+			primaryKeys = append(primaryKeys, col)
+		}
+	}
+
+	tempViewID := shared.TempTableIDWithSuffix(s, s.IdentifierFor(tableData.TopicConfig().BuildStagingDatabaseAndSchemaPair(), tableData.Name()), tableData.TempTableSuffix())
+	if err = s.loadDataIntoTable(ctx, client, tableData, msmTableConfig, tempViewID); err != nil {
+		return false, fmt.Errorf("failed to load data into temporary view: %w", err)
+	}
+
+	if msmSettings.IsFirstFlush() {
+		// On first flush, append from the temp view directly into the MSM table.
+		validColumnNames := make([]string, len(cols))
+		for i, col := range cols {
+			validColumnNames[i] = col.Name()
+		}
+
+		query := s.Dialect().BuildAppendToTable(msmTableID, tempViewID.EscapedTable(), validColumnNames)
+		if err = client.ExecContext(ctx, query); err != nil {
+			return false, fmt.Errorf("failed to append to MSM table: %w", err)
+		}
+	} else {
+		// On subsequent flushes, merge from the temp view into the MSM table.
+		queries := s.Dialect().BuildMergeQueryIntoStagingTable(msmTableID, tempViewID.EscapedTable(), primaryKeys, nil, cols)
+		for _, query := range queries {
+			if err := client.ExecContext(ctx, query); err != nil {
+				return false, fmt.Errorf("failed to merge into MSM table: %w", err)
+			}
+		}
+
+		if msmSettings.IsLastFlush() {
+			// On the last flush, merge the MSM table into the target table.
+			mergeQueries, err := s.Dialect().BuildMergeQueries(
+				targetTableID,
+				msmTableID.FullyQualifiedName(),
+				primaryKeys,
+				nil,
+				cols,
+				tableData.TopicConfig().SoftDelete,
+				tableData.ContainsHardDeletes(),
+			)
+			if err != nil {
+				return false, fmt.Errorf("failed to build merge queries for target table: %w", err)
+			}
+
+			for _, query := range mergeQueries {
+				if err := client.ExecContext(ctx, query); err != nil {
+					return false, fmt.Errorf("failed to merge MSM table into target table: %w", err)
+				}
+			}
+
+			return true, nil
+		}
+	}
+
+	tableData.WipeData()
+	tableData.IncrementMultiStepMergeFlushCount()
+	slog.Info("Multi-step merge completed, updated the flush count and wiped our in-memory database", slog.Int("flushCount", tableData.MultiStepMergeSettings().FlushCount()))
+	return false, nil
 }
 
 func (s Store) IsRetryableError(_ error) bool {
