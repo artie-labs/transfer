@@ -327,7 +327,7 @@ func LoadStore(ctx context.Context, cfg config.Config, _store *db.Store) (*Store
 	)
 
 	if bqReservation := cfg.BigQuery.Reservation; bqReservation != "" {
-		reservationQuery := fmt.Sprintf("SET @@reservation = 'projects/%s/locations/%s/reservations/%s'", cfg.BigQuery.ProjectID, cfg.BigQuery.LocationOrDefault(), bqReservation)
+		reservationQuery := fmt.Sprintf("SET @@reservation = '%s'", bqReservation)
 
 		// jank(carol): instead of properly building exclusion for the placeholder params, the driver doesn't seem to support named parameters anyway so we pass in some garbage and it works.
 		_, err := store.ExecContext(ctx, reservationQuery, "something")
