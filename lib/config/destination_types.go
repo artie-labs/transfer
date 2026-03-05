@@ -20,6 +20,14 @@ type BigQuery struct {
 	Reservation string `yaml:"reservation,omitempty"`
 }
 
+func (b BigQuery) LocationOrDefault() string {
+	if b.Location != "" {
+		return b.Location
+	}
+
+	return "US"
+}
+
 type Databricks struct {
 	Host     string `yaml:"host" json:"host"`
 	HttpPath string `yaml:"httpPath" json:"httpPath"`
