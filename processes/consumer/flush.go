@@ -140,7 +140,6 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 			if err := consumer.CommitMessage(ctx); err != nil {
 				return fmt.Errorf("failed to commit message: %w", err)
 			}
-
 			for _, table := range tables {
 				slog.Info("Flush success, clearing memory...", slog.String("tableID", table.GetTableID().String()))
 				inMemDB.ClearTableConfig(table.GetTableID())

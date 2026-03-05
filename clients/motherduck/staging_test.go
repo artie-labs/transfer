@@ -31,9 +31,16 @@ func TestConvertValue(t *testing.T) {
 		assert.Equal(t, "hello world", result)
 	}
 	{
-		// Non-string value for string type should fail
-		_, err := convertValue(123, typing.String)
-		assert.Error(t, err)
+		// Non-string value for string type should be converted to string
+		result, err := convertValue(123, typing.String)
+		assert.NoError(t, err)
+		assert.Equal(t, "123", result)
+	}
+	{
+		// map[string]interface{} for string type should be JSON-marshaled
+		result, err := convertValue(map[string]interface{}{"key": "value"}, typing.String)
+		assert.NoError(t, err)
+		assert.Equal(t, `{"key":"value"}`, result)
 	}
 
 	// Boolean type
