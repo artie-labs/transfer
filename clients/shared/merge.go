@@ -216,6 +216,10 @@ func Merge(ctx context.Context, dest destination.SQLDestination, tableData *opti
 		return fmt.Errorf("failed to generate merge statements: %w", err)
 	}
 
+	if opts.ScriptPreamble != "" {
+		mergeStatements[0] = opts.ScriptPreamble + "\n" + mergeStatements[0]
+	}
+
 	results, err := destination.ExecContextStatements(ctx, dest, mergeStatements)
 	if err != nil {
 		return fmt.Errorf("failed to execute merge statements: %w", err)

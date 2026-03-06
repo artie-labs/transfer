@@ -16,6 +16,9 @@ type BigQuery struct {
 	Location          string `yaml:"location"`
 	// [Priority] - This is used to specify the priority of the BigQuery job. By default, it'll be set to "INTERACTIVE".
 	Priority string `yaml:"priority,omitempty"`
+	// [Reservation] - If specified, we'll submit SET @@reservation = '<value>'; before merge queries
+	// to route them to a specific slot reservation. Format: projects/{project_id}/locations/{location}/reservations/{reservation_name}
+	Reservation string `yaml:"reservation,omitempty"`
 }
 
 type Databricks struct {

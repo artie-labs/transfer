@@ -48,6 +48,7 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData, wh
 		ColumnSettings:            s.config.SharedDestinationSettings.ColumnSettings,
 		// BigQuery has DDL quotas.
 		RetryColBackfill: true,
+		ScriptPreamble: s.buildScriptPreamble(),
 	}, whClient)
 	if err != nil {
 		return false, fmt.Errorf("failed to merge: %w", err)
@@ -80,4 +81,21 @@ func generateMergeString(bqSettings *partition.BigQuerySettings, dialect sql.Dia
 	}
 
 	return "", fmt.Errorf("unexpected partitionType: %s and/or partitionBy: %s", bqSettings.PartitionType, bqSettings.PartitionBy)
+}
+
+func (s *Store) buildScriptPreamble() string {
+	var parts []string
+	if s.config.BigQuery.Reservation != "" {
+		// We use EXECUTE IMMEDIATE to prevent the viant BigQuery database/sql driver from
+		// misinterpreting @@reservation as a named query parameter (the driver's checkQueryParameters
+		// function counts '@@var' as having a @var named parameter). Wrapping the SET statement
+		// inside a string literal hides it from the driver's parameter parser.
+		escaped := strings.ReplaceAll(strings.ReplaceAll(s.config.BigQuery.Reservation, `\`, `\\`), `'`, `\'`)
+		parts = append(parts, fmt.Sprintf(`EXECUTE IMMEDIATE 'SET @@reservation = \'%s\''`, escaped))
+	}
+
+	if len(parts) == 0 {
+		return ""
+	}
+	return strings.Join(parts, ";\n") + ";"
 }
