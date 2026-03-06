@@ -219,15 +219,15 @@ func Merge(ctx context.Context, dest destination.SQLDestination, tableData *opti
 
 	var results []sql.Result
 	if len(opts.StatementPreamble) > 0 {
-		mergeSqlStatements := make([]destination.SQLStatement, len(mergeStatements)+len(opts.StatementPreamble))
+		mergeSqlStatements := make([]types.SQLStatement, len(mergeStatements)+len(opts.StatementPreamble))
 		for i, statement := range opts.StatementPreamble {
-			mergeSqlStatements[i] = destination.SQLStatement{
+			mergeSqlStatements[i] = types.SQLStatement{
 				Query: statement.Query,
 				Args:  statement.Args,
 			}
 		}
 		for i, statement := range mergeStatements {
-			mergeSqlStatements[i+len(opts.StatementPreamble)] = destination.SQLStatement{
+			mergeSqlStatements[i+len(opts.StatementPreamble)] = types.SQLStatement{
 				Query: statement,
 				Args:  nil,
 			}

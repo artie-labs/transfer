@@ -7,7 +7,6 @@ import (
 
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config/constants"
-	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib/partition"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -60,12 +59,12 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData, wh
 
 // jank(carol): because the viant bigquery driver recognizes @@reservation as a placeholder variable, but doesn't actually
 // do any substitution, we can just pass in a placeholder variable and it will be fine.
-func (s *Store) buildStatementPreamble() []destination.SQLStatement {
+func (s *Store) buildStatementPreamble() []types.SQLStatement {
 	if s.config.BigQuery.Reservation == "" {
-		return []destination.SQLStatement{}
+		return []types.SQLStatement{}
 	}
 
-	return []destination.SQLStatement{
+	return []types.SQLStatement{
 		{
 			Query: fmt.Sprintf("SET @@reservation = '%s';", strings.ReplaceAll(s.config.BigQuery.Reservation, "'", "")),
 			Args:  []any{"placeholder"},

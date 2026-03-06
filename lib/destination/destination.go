@@ -47,17 +47,12 @@ type Destination interface {
 	IsOLTP() bool
 }
 
-type SQLStatement struct {
-	Query string
-	Args  []any
-}
-
 // ExecContextStatements executes one or more statements against a [SQLDestination].
 // If there is more than one statement, the statements will be executed inside of a transaction.
 func ExecContextStatements(ctx context.Context, dest SQLDestination, statements []string) ([]sql.Result, error) {
-	sqlStatements := make([]SQLStatement, len(statements))
+	sqlStatements := make([]types.SQLStatement, len(statements))
 	for i, statement := range statements {
-		sqlStatements[i] = SQLStatement{
+		sqlStatements[i] = types.SQLStatement{
 			Query: statement,
 			Args:  nil,
 		}
@@ -68,11 +63,11 @@ func ExecContextStatements(ctx context.Context, dest SQLDestination, statements 
 
 // ExecContextStatementsWithArgs executes one or more statements with args for preparation against a [SQLDestination].
 // If there is more than one statement, the statements will be executed inside of a transaction.
-func ExecContextStatementsWithArgs(ctx context.Context, dest SQLDestination, statements []SQLStatement) ([]sql.Result, error) {
+func ExecContextStatementsWithArgs(ctx context.Context, dest SQLDestination, statements []types.SQLStatement) ([]sql.Result, error) {
 	return execContextStatements(ctx, dest, statements)
 }
 
-func execContextStatements(ctx context.Context, dest SQLDestination, statements []SQLStatement) ([]sql.Result, error) {
+func execContextStatements(ctx context.Context, dest SQLDestination, statements []types.SQLStatement) ([]sql.Result, error) {
 	switch len(statements) {
 	case 0:
 		return nil, fmt.Errorf("statements is empty")

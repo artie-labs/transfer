@@ -4,7 +4,6 @@ import (
 	"sync"
 
 	"github.com/artie-labs/transfer/lib/config"
-	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/sql"
 )
 
@@ -53,7 +52,7 @@ type MergeOpts struct {
 	AdditionalEqualityStrings []string
 	ColumnSettings            config.SharedDestinationColumnSettings
 	RetryColBackfill          bool
-	StatementPreamble         []destination.SQLStatement
+	StatementPreamble         []SQLStatement
 
 	// Multi-step merge settings
 	PrepareTemporaryTable              bool
@@ -67,4 +66,9 @@ type AdditionalSettings struct {
 	// These settings are used for the `Append` method.
 	UseTempTable bool
 	TempTableID  sql.TableIdentifier
+}
+
+type SQLStatement struct {
+	Query string
+	Args  []any
 }
