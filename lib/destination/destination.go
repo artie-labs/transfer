@@ -50,15 +50,7 @@ type Destination interface {
 // ExecContextStatements executes one or more statements against a [SQLDestination].
 // If there is more than one statement, the statements will be executed inside of a transaction.
 func ExecContextStatements(ctx context.Context, dest SQLDestination, statements []string) ([]sql.Result, error) {
-	sqlStatements := make([]types.SQLStatement, len(statements))
-	for i, statement := range statements {
-		sqlStatements[i] = types.SQLStatement{
-			Query: statement,
-			Args:  nil,
-		}
-	}
-
-	return execContextStatements(ctx, dest, sqlStatements)
+	return execContextStatements(ctx, dest, types.ToSQLStatements(statements))
 }
 
 // ExecContextStatementsWithArgs executes one or more statements with args for preparation against a [SQLDestination].

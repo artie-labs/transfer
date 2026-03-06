@@ -72,3 +72,14 @@ type SQLStatement struct {
 	Query string
 	Args  []any
 }
+
+func ToSQLStatements(statements []string) []SQLStatement {
+	sqlStatements := make([]SQLStatement, len(statements))
+	for i, statement := range statements {
+		sqlStatements[i] = SQLStatement{
+			Query: statement,
+			Args:  nil,
+		}
+	}
+	return sqlStatements
+}
