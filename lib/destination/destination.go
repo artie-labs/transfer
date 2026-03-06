@@ -47,15 +47,38 @@ type Destination interface {
 	IsOLTP() bool
 }
 
+type SQLStatement struct {
+	Query string
+	Args  []any
+}
+
 // ExecContextStatements executes one or more statements against a [SQLDestination].
 // If there is more than one statement, the statements will be executed inside of a transaction.
 func ExecContextStatements(ctx context.Context, dest SQLDestination, statements []string) ([]sql.Result, error) {
+	sqlStatements := make([]SQLStatement, len(statements))
+	for i, statement := range statements {
+		sqlStatements[i] = SQLStatement{
+			Query: statement,
+			Args:  nil,
+		}
+	}
+
+	return execContextStatements(ctx, dest, sqlStatements)
+}
+
+// ExecContextStatementsWithArgs executes one or more statements with args for preparation against a [SQLDestination].
+// If there is more than one statement, the statements will be executed inside of a transaction.
+func ExecContextStatementsWithArgs(ctx context.Context, dest SQLDestination, statements []SQLStatement) ([]sql.Result, error) {
+	return execContextStatements(ctx, dest, statements)
+}
+
+func execContextStatements(ctx context.Context, dest SQLDestination, statements []SQLStatement) ([]sql.Result, error) {
 	switch len(statements) {
 	case 0:
 		return nil, fmt.Errorf("statements is empty")
 	case 1:
-		slog.Debug("Executing...", slog.String("query", statements[0]))
-		result, err := dest.ExecContext(ctx, statements[0])
+		slog.Debug("Executing...", slog.String("query", statements[0].Query))
+		result, err := dest.ExecContext(ctx, statements[0].Query, statements[0].Args...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to execute statement: %w", err)
 		}
@@ -70,10 +93,10 @@ func ExecContextStatements(ctx context.Context, dest SQLDestination, statements 
 		var results []sql.Result
 		if err := db.CommitOrRollback(tx, func(tx *sql.Tx) error {
 			for _, statement := range statements {
-				slog.Debug("Executing...", slog.String("query", statement))
-				result, err := tx.ExecContext(ctx, statement)
+				slog.Debug("Executing...", slog.String("query", statement.Query))
+				result, err := tx.ExecContext(ctx, statement.Query, statement.Args...)
 				if err != nil {
-					return fmt.Errorf("failed to execute statement: %q, err: %w", statement, err)
+					return fmt.Errorf("failed to execute statement: %q, err: %w", statement.Query, err)
 				}
 
 				results = append(results, result)

@@ -2,6 +2,7 @@ package shared
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log/slog"
 	"slices"
@@ -216,9 +217,31 @@ func Merge(ctx context.Context, dest destination.SQLDestination, tableData *opti
 		return fmt.Errorf("failed to generate merge statements: %w", err)
 	}
 
-	results, err := destination.ExecContextStatements(ctx, dest, mergeStatements)
-	if err != nil {
-		return fmt.Errorf("failed to execute merge statements: %w", err)
+	var results []sql.Result
+	if len(opts.StatementPreamble) > 0 {
+		mergeSqlStatements := make([]destination.SQLStatement, len(mergeStatements)+len(opts.StatementPreamble))
+		for i, statement := range opts.StatementPreamble {
+			mergeSqlStatements[i] = destination.SQLStatement{
+				Query: statement.Query,
+				Args:  statement.Args,
+			}
+		}
+		for i, statement := range mergeStatements {
+			mergeSqlStatements[i+len(opts.StatementPreamble)] = destination.SQLStatement{
+				Query: statement,
+				Args:  nil,
+			}
+		}
+		results, err = destination.ExecContextStatementsWithArgs(ctx, dest, mergeSqlStatements)
+		if err != nil {
+			return fmt.Errorf("failed to execute merge statements: %w", err)
+		}
+	} else {
+		results, err = destination.ExecContextStatements(ctx, dest, mergeStatements)
+		if err != nil {
+			return fmt.Errorf("failed to execute merge statements: %w", err)
+		}
+
 	}
 
 	if dest.GetConfig().SharedDestinationSettings.EnableMergeAssertion {
