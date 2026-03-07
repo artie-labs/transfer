@@ -52,6 +52,7 @@ type MergeOpts struct {
 	AdditionalEqualityStrings []string
 	ColumnSettings            config.SharedDestinationColumnSettings
 	RetryColBackfill          bool
+	StatementPreamble         []SQLStatement
 
 	// Multi-step merge settings
 	PrepareTemporaryTable              bool
@@ -65,4 +66,20 @@ type AdditionalSettings struct {
 	// These settings are used for the `Append` method.
 	UseTempTable bool
 	TempTableID  sql.TableIdentifier
+}
+
+type SQLStatement struct {
+	Query string
+	Args  []any
+}
+
+func ToSQLStatements(statements []string) []SQLStatement {
+	sqlStatements := make([]SQLStatement, len(statements))
+	for i, statement := range statements {
+		sqlStatements[i] = SQLStatement{
+			Query: statement,
+			Args:  nil,
+		}
+	}
+	return sqlStatements
 }
