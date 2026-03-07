@@ -66,8 +66,8 @@ func (s *Store) buildStatementPreamble() []types.SQLStatement {
 
 	return []types.SQLStatement{
 		{
-			Query: fmt.Sprintf("SET @@reservation = '%s';", strings.ReplaceAll(s.config.BigQuery.Reservation, "'", "")),
-			Args:  []any{"placeholder"},
+			Query: fmt.Sprintf("SET @queryparam = '%s';", strings.ReplaceAll(s.config.BigQuery.Reservation, "'", "")),
+			Args:  []any{"@@reservation"},
 		},
 	}
 }
