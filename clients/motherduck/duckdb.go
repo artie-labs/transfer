@@ -170,6 +170,11 @@ func (s Store) SweepTemporaryTables(ctx context.Context, _ *webhooksclient.Clien
 		}
 
 		for _, row := range response.Rows {
+			tableCatalog, ok := row["table_catalog"].(string)
+			if !ok {
+				continue
+			}
+
 			tableName, ok := row["table_name"].(string)
 			if !ok {
 				continue
@@ -180,7 +185,7 @@ func (s Store) SweepTemporaryTables(ctx context.Context, _ *webhooksclient.Clien
 				continue
 			}
 
-			tableID := dialect.NewTableIdentifier(dbAndSchema.Database, tableSchema, tableName)
+			tableID := dialect.NewTableIdentifier(tableCatalog, tableSchema, tableName)
 			if _, err := s.ExecContext(ctx, s.Dialect().BuildDropTableQuery(tableID)); err != nil {
 				return fmt.Errorf("failed to drop table %s: %w", tableID.FullyQualifiedName(), err)
 			}

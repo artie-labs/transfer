@@ -146,12 +146,22 @@ func (DuckDBDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, temporar
 			finalColSQLParts = append(finalColSQLParts, colSQLPart)
 		}
 	}
-	// We will create temporary tables in DuckDB the exact same way as we do for permanent tables.
-	// This is because temporary tables are session scoped and this will not work for us as we leverage connection pooling.
-	return fmt.Sprintf("CREATE TABLE %s (%s);", tableID.FullyQualifiedName(), strings.Join(finalColSQLParts, ","))
+	motherduckTableID, err := typing.AssertType[TableIdentifier](tableID)
+	if err != nil {
+		return fmt.Sprintf("CREATE TABLE %s (%s);", tableID.FullyQualifiedName(), strings.Join(finalColSQLParts, ","))
+	}
+	var finalTableID TableIdentifier = motherduckTableID
+	// create temporary table in its own database
+	if temporary {
+		finalTableID = NewTableIdentifier(motherduckTableID.Table(), motherduckTableID.Schema(), motherduckTableID.Table())
+	}
+	return fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s; CREATE TABLE %s (%s);", finalTableID.Database(), finalTableID.FullyQualifiedName(), strings.Join(finalColSQLParts, ","))
 }
 
 func (DuckDBDialect) BuildDropTableQuery(tableID sql.TableIdentifier) string {
+	if castedTableID, err := typing.AssertType[TableIdentifier](tableID); err == nil && strings.HasPrefix(castedTableID.Database(), constants.ArtiePrefix) {
+		return fmt.Sprintf("DROP TABLE IF EXISTS %s; DROP DATABASE IF EXISTS %s;", castedTableID.FullyQualifiedName(), castedTableID.Database())
+	}
 	return sql.DefaultBuildDropTableQuery(tableID)
 }
 
@@ -386,5 +396,5 @@ func (DuckDBDialect) GetDefaultValueStrategy() sql.DefaultValueStrategy {
 }
 
 func (DuckDBDialect) BuildSweepQuery(dbName, schema string) (string, []any) {
-	return "SELECT table_schema, table_name FROM information_schema.tables WHERE table_catalog = $1 AND table_schema = $2 AND table_name LIKE $3;", []any{dbName, schema, "%" + constants.ArtiePrefix + "%"}
+	return "SELECT table_catalog, table_schema, table_name FROM information_schema.tables WHERE table_catalog LIKE $2 AND table_schema = $1 AND table_name LIKE $2;", []any{schema, "%" + constants.ArtiePrefix + "%"}
 }
