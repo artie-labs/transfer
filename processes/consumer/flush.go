@@ -139,26 +139,21 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 			return fmt.Errorf("failed to flush table: %w", err)
 		}
 
-		if commitOffset.Load() {
+		shouldCommit := commitOffset.Load()
+		if oc, ok := dest.(destination.OffsetCommitter); ok {
+			shouldCommit = oc.ShouldCommitOffset(args.Reason, commitOffset.Load())
+		}
+
+		if shouldCommit {
 			if err := consumer.CommitMessage(ctx); err != nil {
 				return fmt.Errorf("failed to commit message: %w", err)
 			}
+		}
+
+		if clearMemory.Load() || commitOffset.Load() {
 			for _, table := range tables {
 				slog.Info("Flush success, clearing memory...", slog.String("tableID", table.GetTableID().String()))
 				inMemDB.ClearTableConfig(table.GetTableID())
-			}
-		}
-
-		if clearMemory.Load() && !commitOffset.Load() {
-			for _, table := range tables {
-				slog.Info("Flush success", slog.String("tableID", table.GetTableID().String()))
-				inMemDB.ClearTableConfig(table.GetTableID())
-			}
-		}
-
-		if args.Reason == "time" && !commitOffset.Load() && dest.Label() == constants.BigQuery {
-			if err := consumer.CommitMessage(ctx); err != nil {
-				return fmt.Errorf("failed to commit message: %w", err)
 			}
 		}
 

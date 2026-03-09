@@ -56,6 +56,10 @@ func (s Store) IsOLTP() bool {
 	return false
 }
 
+func (s Store) ShouldCommitOffset(reason string, commitOffset bool) bool {
+	return commitOffset || reason == "time"
+}
+
 func (s *Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error {
 	return shared.DropTemporaryTable(ctx, s, tableID, s.configMap)
 }
