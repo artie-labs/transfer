@@ -277,7 +277,7 @@ func (t *TableData) TempTableSuffix() string {
 // If so, what is the reason?
 func (t *TableData) ShouldFlush(cfg config.Config) (bool, string) {
 	if t.UseStreamingAppend(cfg.Output) { // ignore flush rules for BQ history
-		return true, "history"
+		return true, "streaming"
 	}
 	if t.NumberOfRows() > cfg.BufferRows {
 		return true, "rows"
