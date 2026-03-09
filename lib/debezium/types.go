@@ -162,7 +162,7 @@ func (f Field) ParseValue(value any) (any, error) {
 				if err != nil {
 					return nil, fmt.Errorf("failed to decompress value: %w", err)
 				}
-				value = _value
+				value = string(_value)
 			}
 		case []byte:
 			_value, err := stringutil.GZipDecompress(castedValue)
