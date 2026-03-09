@@ -34,7 +34,9 @@ type FieldsObject struct {
 	Fields []Field `json:"fields"`
 
 	// Whether this block for "after", "before", exists
-	Optional   bool           `json:"optional"`
+	Optional bool `json:"optional"`
+	// [Compressed] - This is only populated if the incoming data is compressed and we need to decompress it before parsing.
+	Compressed bool           `json:"compressed"`
 	FieldLabel FieldLabelKind `json:"field"`
 }
 
@@ -56,8 +58,10 @@ const (
 )
 
 type Field struct {
-	Type         FieldType             `json:"type"`
-	Optional     bool                  `json:"optional"`
+	Type     FieldType `json:"type"`
+	Optional bool      `json:"optional"`
+	// [Compressed] - This is only populated if the field is compressed and we need to decompress it before parsing.
+	Compressed   bool                  `json:"compressed"`
 	Default      any                   `json:"default"`
 	FieldName    string                `json:"field"`
 	DebeziumType SupportedDebeziumType `json:"name"`

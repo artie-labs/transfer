@@ -10,6 +10,8 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/artie-labs/transfer/lib/debezium/converters"
+	"github.com/artie-labs/transfer/lib/stringutil"
+	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
@@ -150,6 +152,21 @@ func (f Field) ParseValue(value any) (any, error) {
 			return nil, fmt.Errorf("failed to convert to bytes: %w", err)
 		}
 	}
+
+	if f.Compressed {
+		castedValue, err := typing.AssertType[[]byte](value)
+		if err != nil {
+			return nil, err
+		}
+
+		_value, err := stringutil.GZipDecompress(castedValue)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decompress value: %w", err)
+		}
+
+		value = _value
+	}
+	// End of preprocessing logic.
 
 	converter, err := f.ToValueConverter()
 	if err != nil {
