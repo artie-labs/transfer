@@ -54,6 +54,7 @@ var AllEventTypes = []EventType{
 	ReplicationStarted,
 	ReplicationFailed,
 	UnableToReplicate,
+	RowSkipped,
 	TableStarted,
 	TableCompleted,
 	TableFailed,
