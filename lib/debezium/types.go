@@ -154,24 +154,27 @@ func (f Field) ParseValue(value any) (any, error) {
 	}
 
 	if f.Compressed {
-		switch castedValue := value.(type) {
-		case string:
-			// Leave the TOAST placeholder value as-is.
-			if castedValue != constants.ToastUnavailableValuePlaceholder {
-				_value, err := stringutil.GZipDecompress([]byte(castedValue))
+		// Only check this if the value is not null.
+		if value != nil {
+			switch castedValue := value.(type) {
+			case string:
+				// Leave the TOAST placeholder value as-is.
+				if castedValue != constants.ToastUnavailableValuePlaceholder {
+					_value, err := stringutil.GZipDecompress([]byte(castedValue))
+					if err != nil {
+						return nil, fmt.Errorf("failed to decompress value: %w", err)
+					}
+					value = string(_value)
+				}
+			case []byte:
+				_value, err := stringutil.GZipDecompress(castedValue)
 				if err != nil {
 					return nil, fmt.Errorf("failed to decompress value: %w", err)
 				}
-				value = string(_value)
+				value = _value
+			default:
+				return nil, fmt.Errorf("expected string or []byte, got %T", value)
 			}
-		case []byte:
-			_value, err := stringutil.GZipDecompress(castedValue)
-			if err != nil {
-				return nil, fmt.Errorf("failed to decompress value: %w", err)
-			}
-			value = _value
-		default:
-			return nil, fmt.Errorf("expected string or []byte, got %T", value)
 		}
 	}
 	// End of preprocessing logic.
