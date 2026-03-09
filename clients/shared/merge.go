@@ -218,28 +218,14 @@ func Merge(ctx context.Context, dest destination.SQLDestination, tableData *opti
 	}
 
 	var results []sql.Result
-	if len(opts.StatementPreamble) > 0 {
-		mergeSqlStatements := append(opts.StatementPreamble, types.ToSQLStatements(mergeStatements)...)
-		results, err = destination.ExecContextStatementsWithArgs(ctx, dest, mergeSqlStatements)
-		if err != nil {
-			return fmt.Errorf("failed to execute merge statements: %w", err)
-		}
-	} else {
-		results, err = destination.ExecContextStatements(ctx, dest, mergeStatements)
-		if err != nil {
-			return fmt.Errorf("failed to execute merge statements: %w", err)
-		}
-
+	results, err = destination.ExecContextStatements(ctx, dest, mergeStatements)
+	if err != nil {
+		return fmt.Errorf("failed to execute merge statements: %w", err)
 	}
 
 	if dest.GetConfig().SharedDestinationSettings.EnableMergeAssertion {
 		var totalRowsAffected int64
-		for i, result := range results {
-			// Skip results from statement preamble for row count validation.
-			if i < len(opts.StatementPreamble) {
-				continue
-			}
-
+		for _, result := range results {
 			rowsAffected, err := result.RowsAffected()
 			if err != nil {
 				return fmt.Errorf("failed to get rows affected: %w", err)

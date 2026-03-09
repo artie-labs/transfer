@@ -47,29 +47,13 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData, wh
 		AdditionalEqualityStrings: additionalEqualityStrings,
 		ColumnSettings:            s.config.SharedDestinationSettings.ColumnSettings,
 		// BigQuery has DDL quotas.
-		RetryColBackfill:  true,
-		StatementPreamble: s.buildStatementPreamble(),
+		RetryColBackfill: true,
 	}, whClient)
 	if err != nil {
 		return false, fmt.Errorf("failed to merge: %w", err)
 	}
 
 	return true, nil
-}
-
-// jank(carol): because the viant bigquery driver recognizes @@reservation as a placeholder variable, but doesn't actually
-// do any substitution, we can just pass in a placeholder variable and it will be fine.
-func (s *Store) buildStatementPreamble() []types.SQLStatement {
-	if s.config.BigQuery.Reservation == "" {
-		return []types.SQLStatement{}
-	}
-
-	return []types.SQLStatement{
-		{
-			Query: fmt.Sprintf("SET @queryparam = '%s';", strings.ReplaceAll(s.config.BigQuery.Reservation, "'", "")),
-			Args:  []any{"@@reservation"},
-		},
-	}
 }
 
 func generateMergeString(bqSettings *partition.BigQuerySettings, dialect sql.Dialect, values []string) (string, error) {
