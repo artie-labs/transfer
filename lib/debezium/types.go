@@ -160,7 +160,12 @@ func (f Field) ParseValue(value any) (any, error) {
 			case string:
 				// Leave the TOAST placeholder value as-is.
 				if castedValue != constants.ToastUnavailableValuePlaceholder {
-					_value, err := stringutil.GZipDecompress([]byte(castedValue))
+					compressedBytes, err := base64.StdEncoding.DecodeString(castedValue)
+					if err != nil {
+						return nil, fmt.Errorf("failed to base64 decode compressed value: %w", err)
+					}
+
+					_value, err := stringutil.GZipDecompress(compressedBytes)
 					if err != nil {
 						return nil, fmt.Errorf("failed to decompress value: %w", err)
 					}
