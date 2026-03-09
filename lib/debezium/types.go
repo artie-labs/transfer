@@ -9,9 +9,9 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/debezium/converters"
 	"github.com/artie-labs/transfer/lib/stringutil"
-	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
@@ -154,17 +154,24 @@ func (f Field) ParseValue(value any) (any, error) {
 	}
 
 	if f.Compressed {
-		castedValue, err := typing.AssertType[[]byte](value)
-		if err != nil {
-			return nil, err
+		switch castedValue := value.(type) {
+		case string:
+			if castedValue != constants.ToastUnavailableValuePlaceholder {
+				_value, err := stringutil.GZipDecompress([]byte(castedValue))
+				if err != nil {
+					return nil, fmt.Errorf("failed to decompress value: %w", err)
+				}
+				value = _value
+			}
+		case []byte:
+			_value, err := stringutil.GZipDecompress(castedValue)
+			if err != nil {
+				return nil, fmt.Errorf("failed to decompress value: %w", err)
+			}
+			value = _value
+		default:
+			return nil, fmt.Errorf("expected string or []byte, got %T", value)
 		}
-
-		_value, err := stringutil.GZipDecompress(castedValue)
-		if err != nil {
-			return nil, fmt.Errorf("failed to decompress value: %w", err)
-		}
-
-		value = _value
 	}
 	// End of preprocessing logic.
 
