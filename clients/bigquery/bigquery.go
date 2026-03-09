@@ -285,11 +285,18 @@ func LoadStore(ctx context.Context, cfg config.Config, _store *db.Store) (*Store
 		slog.Int("maxPayloadBytes", maxRequestByteSize),
 		slog.Int("overheadBytes", bigQueryMaxRequestSize-maxRequestByteSize),
 	)
+
+	// Stream Manager init:
+	streamManager, err := NewStreamManager(ctx, bqClient.Project())
+	if err != nil {
+		return nil, fmt.Errorf("failed to init stream manager for BQ:  %w", err)
+	}
 	return &Store{
 		bqClient:            bqClient,
 		configMap:           &types.DestinationTableConfigMap{},
 		config:              cfg,
 		Store:               store,
+		streamManager:       streamManager,
 		maxRequestBytesSize: maxRequestByteSize,
 	}, nil
 }
@@ -313,6 +320,7 @@ func (s *Store) putTableStreaming(ctx context.Context, bqTableID dialect.TableId
 		return nil
 	})
 	if err != nil {
+		s.streamManager.EvictStream(bqTableID)
 		return fmt.Errorf("failed to write rows: %w", err)
 	}
 	if skipped > 0 {

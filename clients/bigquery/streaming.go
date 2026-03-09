@@ -19,6 +19,7 @@ type streamEntry struct {
 	stream            *managedwriter.ManagedStream
 	messageDescriptor *protoreflect.MessageDescriptor
 	offset            int64
+	columns           []columns.Column
 }
 
 func (e *streamEntry) CurrentOffset() int64 {
@@ -55,7 +56,7 @@ func NewStreamEntry(ctx context.Context, client *managedwriter.Client, cols []co
 	if err != nil {
 		return nil, fmt.Errorf("failed to create managed stream: %w", err)
 	}
-	return &streamEntry{stream: stream, messageDescriptor: messageDescriptor}, nil
+	return &streamEntry{stream: stream, messageDescriptor: messageDescriptor, columns: cols}, nil
 }
 
 type StreamManager struct {
@@ -67,7 +68,7 @@ type StreamManager struct {
 func NewStreamManager(ctx context.Context, projectID string) (*StreamManager, error) {
 	client, err := managedwriter.NewClient(ctx, projectID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create stream manager cleint: %w", err)
+		return nil, fmt.Errorf("failed to create stream manager client: %w", err)
 	}
 	manager := StreamManager{
 		mu:      sync.Mutex{},
@@ -77,12 +78,29 @@ func NewStreamManager(ctx context.Context, projectID string) (*StreamManager, er
 	return &manager, nil
 }
 
+func columnsMatch(a, b []columns.Column) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i].Name() != b[i].Name() || a[i].KindDetails.Kind != b[i].KindDetails.Kind {
+			return false
+		}
+	}
+	return true
+}
+
 func (sm *StreamManager) getOrCreateStream(ctx context.Context, tableID dialect.TableIdentifier, cols []columns.Column) (*streamEntry, error) {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 	key := tableID.FullyQualifiedName()
 	if entry, ok := sm.streams[key]; ok {
-		return entry, nil
+		if !columnsMatch(entry.columns, cols) {
+			_ = entry.stream.Close()
+			delete(sm.streams, key)
+		} else {
+			return entry, nil
+		}
 	}
 
 	entry, err := NewStreamEntry(ctx, sm.client, cols, tableID)
@@ -103,5 +121,15 @@ func (sm *StreamManager) Close() {
 	}
 	if err := sm.client.Close(); err != nil {
 		slog.Warn("failed to close managed writer client", slog.Any("err", err))
+	}
+}
+
+func (sm *StreamManager) EvictStream(tableID dialect.TableIdentifier) {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+	key := tableID.FullyQualifiedName()
+	if entry, ok := sm.streams[key]; ok {
+		_ = entry.stream.Close()
+		delete(sm.streams, key)
 	}
 }
