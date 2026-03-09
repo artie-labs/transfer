@@ -34,9 +34,7 @@ type FieldsObject struct {
 	Fields []Field `json:"fields"`
 
 	// Whether this block for "after", "before", exists
-	Optional bool `json:"optional"`
-	// [Compressed] - This is only populated if the incoming data is compressed and we need to decompress it before parsing.
-	Compressed bool           `json:"compressed"`
+	Optional   bool           `json:"optional"`
 	FieldLabel FieldLabelKind `json:"field"`
 }
 
