@@ -2,7 +2,6 @@ package shared
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log/slog"
 	"slices"

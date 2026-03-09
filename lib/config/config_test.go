@@ -34,7 +34,6 @@ func TestBigQuery_DSN(t *testing.T) {
 		DefaultDataset: "dataset",
 		ProjectID:      "project",
 	}
-
 	{
 		assert.Equal(t, "bigquery://project/dataset", b.DSN())
 		_, err := bigquery.ParseDSN(b.DSN())
