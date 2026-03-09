@@ -125,6 +125,16 @@ func checkAppendResponse(ctx context.Context, result *managedwriter.AppendResult
 	if status := resp.GetError(); status != nil {
 		return fmt.Errorf("failed to append rows: %s", status.String())
 	}
+	if rowErrs := resp.GetRowErrors(); len(rowErrs) > 0 {
+		var errs []any
+		for i, rowErr := range rowErrs {
+			if i > 5 {
+				break
+			}
+			errs = append(errs, rowErr)
+		}
+		return fmt.Errorf("failed to append rows, encountered %d row errors: %v", len(rowErrs), errs)
+	}
 	return nil
 }
 
