@@ -156,6 +156,7 @@ func (f Field) ParseValue(value any) (any, error) {
 	if f.Compressed {
 		switch castedValue := value.(type) {
 		case string:
+			// Leave the TOAST placeholder value as-is.
 			if castedValue != constants.ToastUnavailableValuePlaceholder {
 				_value, err := stringutil.GZipDecompress([]byte(castedValue))
 				if err != nil {
