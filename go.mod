@@ -57,6 +57,10 @@ require (
 // https://github.com/maxbrunsfeld/counterfeiter/issues/344
 replace golang.org/x/tools => golang.org/x/tools v0.37.0
 
+// Temporary replacement to support setting reservations on BQ jobs.
+// Once https://github.com/viant/bigquery/pull/14 is merged, we can remove this.
+replace github.com/viant/bigquery => github.com/artie-labs/bigquery v0.0.0-20260309220101-0761b734f74b
+
 require (
 	atomicgo.dev/cursor v0.2.0 // indirect
 	atomicgo.dev/keyboard v0.2.9 // indirect
