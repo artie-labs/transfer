@@ -66,6 +66,7 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 	var grp errgroup.Group
 	var commitOffset atomic.Bool
 	var clearMemory atomic.Bool
+	var isAppend atomic.Bool
 	err = consumer.LockAndProcess(ctx, shouldLock, func() error {
 		// If there are more tables, let's ensure that ALL tables in this topic are flushable.
 		// If not, let's hold off and wait for the next flush cycle. This is to avoid a situation where we flush a fraction of the tables in this topic
@@ -124,6 +125,7 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 				// This is because MSM is only supported for a single table / topic.
 				commitOffset.Store(result.CommitOffset)
 				clearMemory.Store(result.ClearMemory)
+				isAppend.Store(result.IsAppend)
 				tags["what"] = result.What
 				metricsClient.Timing("flush", result.Duration, tags)
 				return nil
@@ -139,8 +141,10 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 		}
 
 		shouldCommit := commitOffset.Load()
-		if oc, ok := dest.(destination.OffsetCommitter); ok {
-			shouldCommit = oc.ShouldCommitOffset(args.Reason, commitOffset.Load())
+		if isAppend.Load() {
+			if oc, ok := dest.(destination.OffsetCommitter); ok {
+				shouldCommit = oc.ShouldCommitOffset(args.Reason, commitOffset.Load())
+			}
 		}
 
 		if shouldCommit {
@@ -166,6 +170,7 @@ type flushResult struct {
 	What         string
 	CommitOffset bool
 	ClearMemory  bool
+	IsAppend     bool
 	Duration     time.Duration
 }
 
@@ -184,7 +189,7 @@ func flush(ctx context.Context, dest destination.Destination, _tableData *models
 			return flushResult{What: "merge_fail"}, fmt.Errorf("failed to append: %w", err)
 		}
 
-		return flushResult{What: "success", CommitOffset: commitOffset, ClearMemory: true}, nil
+		return flushResult{What: "success", CommitOffset: commitOffset, ClearMemory: true, IsAppend: true}, nil
 	} else {
 		commitTransaction, err := dest.Merge(ctx, _tableData.TableData, whClient)
 		if err != nil {
