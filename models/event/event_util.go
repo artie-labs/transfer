@@ -1,7 +1,9 @@
 package event
 
 import (
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"math"
 
 	"github.com/artie-labs/transfer/lib/cdc"
@@ -10,6 +12,7 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/artie-labs/transfer/lib/typing/converters/primitives"
 )
 
 // normalizeNumericVal ensures that json.Number, float64, and int64 representing the same
@@ -70,6 +73,7 @@ func buildColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns map[
 		}
 
 		SetHashedColumnTypes(tc, filteredColumns)
+		SetEncryptedColumnTypes(tc, filteredColumns)
 
 		return filteredColumns.GetColumns(), nil
 	}
@@ -80,6 +84,7 @@ func buildColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns map[
 	}
 
 	SetHashedColumnTypes(tc, cols)
+	SetEncryptedColumnTypes(tc, cols)
 
 	return cols.GetColumns(), nil
 }
@@ -95,12 +100,35 @@ func SetHashedColumnTypes(tc kafkalib.TopicConfig, cols *columns.Columns) {
 	}
 }
 
+func SetEncryptedColumnTypes(tc kafkalib.TopicConfig, cols *columns.Columns) {
+	for _, col := range tc.ColumnsToEncrypt {
+		columnInfo, ok := cols.GetColumn(col)
+		if !ok {
+			continue
+		}
+		columnInfo.KindDetails = typing.String
+		cols.UpdateColumn(columnInfo)
+	}
+}
+
 func updateSchemaForHashedColumns(tc kafkalib.TopicConfig, schema map[string]typing.KindDetails) {
 	if schema == nil {
 		return
 	}
 
 	for _, col := range tc.ColumnsToHash {
+		if _, ok := schema[col]; ok {
+			schema[col] = typing.String
+		}
+	}
+}
+
+func updateSchemaForEncryptedColumns(tc kafkalib.TopicConfig, schema map[string]typing.KindDetails) {
+	if schema == nil {
+		return
+	}
+
+	for _, col := range tc.ColumnsToEncrypt {
 		if _, ok := schema[col]; ok {
 			schema[col] = typing.String
 		}
@@ -132,10 +160,26 @@ func buildPrimaryKeys(tc kafkalib.TopicConfig, pkMap map[string]any, reservedCol
 	return pks
 }
 
-func transformData(data map[string]any, tc kafkalib.TopicConfig) map[string]any {
+func transformData(data map[string]any, tc kafkalib.TopicConfig, encryptionPassphrase string) (map[string]any, error) {
 	for _, columnToHash := range tc.ColumnsToHash {
 		if value, ok := data[columnToHash]; ok {
 			data[columnToHash] = cryptography.HashValue(value)
+		}
+	}
+
+	for _, columnToEncrypt := range tc.ColumnsToEncrypt {
+		if value := data[columnToEncrypt]; value != nil {
+			castedValue, err := primitives.AsBytes(value)
+			if err != nil {
+				return nil, fmt.Errorf("failed to cast value to bytes: %w", err)
+			}
+
+			encrypted, err := cryptography.Encrypt([]byte(encryptionPassphrase), castedValue)
+			if err != nil {
+				return nil, fmt.Errorf("failed to encrypt column %q: %w", columnToEncrypt, err)
+			}
+
+			data[columnToEncrypt] = base64.StdEncoding.EncodeToString(encrypted)
 		}
 	}
 
@@ -164,10 +208,10 @@ func transformData(data map[string]any, tc kafkalib.TopicConfig) map[string]any 
 			filteredData[col.Name] = col.Value
 		}
 
-		return filteredData
+		return filteredData, nil
 	}
 
-	return data
+	return data, nil
 }
 
 func buildEventData(event cdc.Event, tc kafkalib.TopicConfig) (map[string]any, error) {

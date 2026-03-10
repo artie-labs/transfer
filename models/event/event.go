@@ -127,6 +127,7 @@ func ToMemoryEvent(ctx context.Context, dest destination.Destination, event cdc.
 	}
 
 	updateSchemaForHashedColumns(tc, optionalSchema)
+	updateSchemaForEncryptedColumns(tc, optionalSchema)
 
 	// Static columns cannot collide with the event data.
 	for _, staticColumn := range tc.StaticColumns {
@@ -136,6 +137,11 @@ func ToMemoryEvent(ctx context.Context, dest destination.Destination, event cdc.
 
 		// Inject static columns into the event data.
 		data[staticColumn.Name] = staticColumn.Value
+	}
+
+	transformedData, err := transformData(data, tc, sharedDestinationSettings.EncryptionPassphrase)
+	if err != nil {
+		return Event{}, fmt.Errorf("failed to transform data: %w", err)
 	}
 
 	sort.Strings(pks)
@@ -149,7 +155,7 @@ func ToMemoryEvent(ctx context.Context, dest destination.Destination, event cdc.
 		tableID:        cdc.NewTableID(tc.Schema, tblName),
 		optionalSchema: optionalSchema,
 		columns:        cols,
-		data:           transformData(data, tc),
+		data:           transformedData,
 		deleted:        event.DeletePayload(),
 	}, nil
 }
