@@ -72,7 +72,6 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, w
 			return false, err
 		}
 
-		// For BQ streaming, we don't commit the offset immediately because the data is not yet queryable.
 		return false, nil
 	}
 
