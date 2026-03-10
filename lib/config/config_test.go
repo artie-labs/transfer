@@ -55,6 +55,28 @@ func TestBigQuery_DSN(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "INTERACTIVE", config.Priority)
 	}
+	{
+		// Unset priority and location from above.
+		b.Location = ""
+		b.Priority = ""
+		b.Reservation = "reservation"
+		assert.Equal(t, "bigquery://project/dataset?reservation=reservation", b.DSN())
+		config, err := bigquery.ParseDSN(b.DSN())
+		assert.NoError(t, err)
+		assert.Equal(t, "reservation", config.Reservation)
+	}
+	{
+		// set all fields on dsn
+		b.Location = "eu"
+		b.Priority = "INTERACTIVE"
+		b.Reservation = "reservation"
+		assert.Equal(t, "bigquery://project/eu/dataset?priority=INTERACTIVE&reservation=reservation", b.DSN())
+		config, err := bigquery.ParseDSN(b.DSN())
+		assert.NoError(t, err)
+		assert.Equal(t, "eu", config.Location)
+		assert.Equal(t, "INTERACTIVE", config.Priority)
+		assert.Equal(t, "reservation", config.Reservation)
+	}
 }
 
 func TestReadNonExistentFile(t *testing.T) {

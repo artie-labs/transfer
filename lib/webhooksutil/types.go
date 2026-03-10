@@ -12,6 +12,7 @@ const (
 	ReplicationStarted EventType = "replication.started"
 	ReplicationFailed  EventType = "replication.failed"
 	UnableToReplicate  EventType = "unable.to.replicate"
+	RowSkipped         EventType = "row.skipped"
 )
 
 const (
@@ -53,6 +54,7 @@ var AllEventTypes = []EventType{
 	ReplicationStarted,
 	ReplicationFailed,
 	UnableToReplicate,
+	RowSkipped,
 	TableStarted,
 	TableCompleted,
 	TableFailed,

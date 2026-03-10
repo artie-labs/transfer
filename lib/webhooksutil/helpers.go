@@ -19,6 +19,7 @@ var eventMetadataMap = map[EventType]EventMetadata{
 	ReplicationStarted: {SeverityInfo, "replication", "Replication started"},
 	ReplicationFailed:  {SeverityError, "replication", "Replication failed"},
 	UnableToReplicate:  {SeverityError, "replication", "Unable to replicate"},
+	RowSkipped:         {SeverityWarning, "replication", "Row skipped"},
 	// Table events
 	TableStarted:   {SeverityInfo, "table", "Table processing started"},
 	TableCompleted: {SeverityInfo, "table", "Table processing completed"},
