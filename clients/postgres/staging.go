@@ -119,7 +119,6 @@ func parseValue(value any, col columns.Column) (any, error) {
 
 	switch col.KindDetails.Kind {
 	case typing.String.Kind:
-
 		str, err := typingconverters.StringConverter{}.ConvertNew(value)
 		if err != nil {
 			return nil, err
