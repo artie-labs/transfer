@@ -111,7 +111,7 @@ func TestWriteTemporaryTableFile_InvalidUTF8(t *testing.T) {
 	}
 
 	tempTableDataFile := NewTemporaryDataFile(tableID)
-	file, _, err := tempTableDataFile.WriteTemporaryTableFile(tableData, valueConverter, config.SharedDestinationSettings{})
+	file, _, err := tempTableDataFile.WriteTemporaryTableFile(tableData, valueConverter, config.SharedDestinationSettings{CSVConvertUTF8: true})
 	assert.NoError(t, err)
 	defer os.RemoveAll(file.FilePath)
 
