@@ -38,6 +38,12 @@ func TestParseValue_String(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "42", result)
 	}
+	{
+		// String with backslashes must not be doubled
+		result, err := parseValue(`hello\world`, col)
+		assert.NoError(t, err)
+		assert.Equal(t, `hello\world`, result)
+	}
 }
 
 func TestParseValue_Interval(t *testing.T) {
