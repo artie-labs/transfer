@@ -67,8 +67,12 @@ func (s Store) Dialect() dialect.IcebergDialect {
 	return dialect.IcebergDialect{}
 }
 
-func (s Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, useTempTable bool) error {
-	return s.append(ctx, s.GetApacheLivyClient(), tableData, whClient, useTempTable, 0)
+func (s Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, useTempTable bool) (bool, error) {
+	if err := s.append(ctx, s.GetApacheLivyClient(), tableData, whClient, useTempTable, 0); err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 func (s Store) append(ctx context.Context, client *apachelivy.Client, tableData *optimization.TableData, whClient *webhooksclient.Client, useTempTable bool, retryCount int) error {

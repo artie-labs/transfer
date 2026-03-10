@@ -10,7 +10,6 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/artie-labs/transfer/lib/config"
-	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
@@ -180,14 +179,12 @@ func flush(ctx context.Context, dest destination.Destination, _tableData *models
 	}
 
 	if mode == config.History || _tableData.TopicConfig().AppendOnly {
-		err := dest.Append(ctx, _tableData.TableData, whClient, false)
+		commitOffset, err := dest.Append(ctx, _tableData.TableData, whClient, false)
 		if err != nil {
 			return flushResult{What: "merge_fail"}, fmt.Errorf("failed to append: %w", err)
 		}
 
-		isBQStreaming := dest.Label() == constants.BigQuery && mode == config.History
-
-		return flushResult{What: "success", CommitOffset: !isBQStreaming, ClearMemory: true}, nil
+		return flushResult{What: "success", CommitOffset: commitOffset, ClearMemory: true}, nil
 	} else {
 		commitTransaction, err := dest.Merge(ctx, _tableData.TableData, whClient)
 		if err != nil {

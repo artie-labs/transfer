@@ -56,12 +56,9 @@ func (s *Store) IdentifierFor(topicConfig kafkalib.DatabaseAndSchemaPair, table 
 	return NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table)
 }
 
-func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, _ bool) error {
+func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, _ bool) (bool, error) {
 	// For SQS, append and merge are identical - we always send new messages
-	if _, err := s.Merge(ctx, tableData, whClient); err != nil {
-		return fmt.Errorf("failed to append: %w", err)
-	}
-	return nil
+	return s.Merge(ctx, tableData, whClient)
 }
 
 // [buildQueueURL] - returns the appropriate queue URL based on configuration mode

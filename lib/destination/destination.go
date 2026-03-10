@@ -43,7 +43,7 @@ type Destination interface {
 	GetConfig() config.Config
 
 	Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client) (commitTransaction bool, err error)
-	Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, useTempTable bool) error
+	Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, useTempTable bool) (bool, error)
 	IsRetryableError(err error) bool
 	IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, table string) sqllib.TableIdentifier
 	DropTable(ctx context.Context, tableID sqllib.TableIdentifier) error

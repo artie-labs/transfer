@@ -49,12 +49,9 @@ func (s *Store) IdentifierFor(topicConfig kafkalib.DatabaseAndSchemaPair, table 
 	return NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table)
 }
 
-func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, _ bool) error {
+func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, _ bool) (bool, error) {
 	// For Redis, append and merge are the same - we always create new records
-	if _, err := s.Merge(ctx, tableData, whClient); err != nil {
-		return fmt.Errorf("failed to append: %w", err)
-	}
-	return nil
+	return s.Merge(ctx, tableData, whClient)
 }
 
 // Merge writes rows from TableData as individual entries into a Redis Stream.

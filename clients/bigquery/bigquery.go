@@ -64,11 +64,16 @@ func (s *Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) erro
 	return shared.DropTemporaryTable(ctx, s, tableID, s.configMap)
 }
 
-func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, useTempTable bool) error {
+func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, useTempTable bool) (bool, error) {
 	if !useTempTable {
-		return shared.Append(ctx, s, tableData, whClient, types.AdditionalSettings{
+		if err := shared.Append(ctx, s, tableData, whClient, types.AdditionalSettings{
 			ColumnSettings: s.config.SharedDestinationSettings.ColumnSettings,
-		})
+		}); err != nil {
+			return false, err
+		}
+
+		// For BQ streaming, we don't commit the offset immediately because the data is not yet queryable.
+		return false, nil
 	}
 
 	// We can simplify this once Google has fully rolled out the ability to execute DML on recently streamed data
@@ -85,7 +90,7 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, w
 		TempTableID:    temporaryTableID,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to append: %w", err)
+		return false, fmt.Errorf("failed to append: %w", err)
 	}
 
 	query := fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s`,
@@ -96,10 +101,10 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, w
 	)
 
 	if _, err = s.ExecContext(ctx, query); err != nil {
-		return fmt.Errorf("failed to insert data into target table: %w", err)
+		return false, fmt.Errorf("failed to insert data into target table: %w", err)
 	}
 
-	return nil
+	return true, nil
 }
 
 func (s *Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tableID, _ sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
