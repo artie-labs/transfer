@@ -17,8 +17,7 @@ import (
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
-	stringconverters "github.com/artie-labs/transfer/lib/typing/converters"
-	"github.com/artie-labs/transfer/lib/typing/values"
+	typingconverters "github.com/artie-labs/transfer/lib/typing/converters"
 )
 
 // [stagingIterator] - This is an implementation of [pgx.CopyFromSource]
@@ -120,10 +119,8 @@ func parseValue(value any, col columns.Column) (any, error) {
 
 	switch col.KindDetails.Kind {
 	case typing.String.Kind:
-		// forcing UseNewStringMethod so that we dont mangle data in destination. ex: hello/world -> hello//world
-		str, err := values.ToStringOpts(value, col.KindDetails, stringconverters.GetStringConverterOpts{
-			UseNewStringMethod: true,
-		})
+
+		str, err := typingconverters.StringConverter{}.ConvertNew(value)
 		if err != nil {
 			return nil, err
 		}
