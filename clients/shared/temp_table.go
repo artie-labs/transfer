@@ -104,7 +104,7 @@ func (t TemporaryDataFile) WriteTemporaryTableFile(tableData *optimization.Table
 				}
 			}
 
-			csvValues = append(csvValues, result.Value)
+			csvValues = append(csvValues, stringutil.ReplaceInvalidUTF8(result.Value))
 		}
 
 		if err = gzipWriter.Write(csvValues); err != nil {

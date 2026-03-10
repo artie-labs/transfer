@@ -92,3 +92,42 @@ func TestWriteTemporaryTableFile(t *testing.T) {
 	// Clean up
 	assert.NoError(t, os.RemoveAll(file.FilePath))
 }
+
+func TestWriteTemporaryTableFile_InvalidUTF8(t *testing.T) {
+	cols := columns.NewColumns(nil)
+	for _, col := range []string{"id", "description"} {
+		cols.AddColumn(columns.NewColumn(col, typing.String))
+	}
+
+	tableData := optimization.NewTableData(cols, config.Replication, []string{"id"}, kafkalib.TopicConfig{}, "test_table")
+	tableData.InsertRow("1", map[string]any{
+		"id":          "1",
+		"description": "Spesen M\xe4rz 17", // Latin-1 encoded 'ä'
+	}, false)
+
+	tableID := dialect.NewTableIdentifier("test_db", "test_schema", "test_table")
+	valueConverter := func(colValue any, colKind typing.KindDetails, _ config.SharedDestinationSettings) (ValueConvertResponse, error) {
+		return ValueConvertResponse{Value: fmt.Sprintf("%v", colValue)}, nil
+	}
+
+	tempTableDataFile := NewTemporaryDataFile(tableID)
+	file, _, err := tempTableDataFile.WriteTemporaryTableFile(tableData, valueConverter, config.SharedDestinationSettings{})
+	assert.NoError(t, err)
+	defer os.RemoveAll(file.FilePath)
+
+	csvfile, err := os.Open(file.FilePath)
+	assert.NoError(t, err)
+	defer csvfile.Close()
+
+	gzipReader, err := gzip.NewReader(csvfile)
+	assert.NoError(t, err)
+	defer gzipReader.Close()
+
+	r := csv.NewReader(gzipReader)
+	r.Comma = '\t'
+
+	record, err := r.Read()
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(record))
+	assert.Equal(t, "Spesen März 17", record[1])
+}
