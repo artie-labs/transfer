@@ -118,7 +118,7 @@ func parseValue(value any, col columns.Column) (any, error) {
 
 	switch col.KindDetails.Kind {
 	case typing.String.Kind:
-		return converters.StringConverter{}.Convert(value)
+		return converters.NewStringConverter(col.KindDetails).Convert(value)
 	case typing.Integer.Kind:
 		return converters.Int64Converter{}.Convert(value)
 	case typing.Boolean.Kind:
