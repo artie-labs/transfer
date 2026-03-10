@@ -11,6 +11,35 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
+func TestParseValue_String(t *testing.T) {
+	col := columns.NewColumn("name", typing.String)
+
+	{
+		// nil value
+		result, err := parseValue(nil, col)
+		assert.NoError(t, err)
+		assert.Nil(t, result)
+	}
+	{
+		// String value
+		result, err := parseValue("hello", col)
+		assert.NoError(t, err)
+		assert.Equal(t, "hello", result)
+	}
+	{
+		// int64 value - should be converted to string, not error
+		result, err := parseValue(int64(12345), col)
+		assert.NoError(t, err)
+		assert.Equal(t, "12345", result)
+	}
+	{
+		// int value
+		result, err := parseValue(42, col)
+		assert.NoError(t, err)
+		assert.Equal(t, "42", result)
+	}
+}
+
 func TestParseValue_Interval(t *testing.T) {
 	col := columns.NewColumn("duration", typing.Interval)
 
