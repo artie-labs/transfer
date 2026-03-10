@@ -44,7 +44,7 @@ require (
 	github.com/twmb/franz-go v1.19.5
 	github.com/twmb/franz-go/pkg/kmsg v1.11.2
 	github.com/twpayne/go-geom v1.6.0
-	github.com/viant/bigquery v0.5.2-0.20260123172731-124e144d0244
+	github.com/viant/bigquery v0.5.2-0.20260310151010-5f60dae14850
 	go.mongodb.org/mongo-driver v1.17.3
 	golang.org/x/sync v0.18.0
 	golang.org/x/time v0.13.0
@@ -56,10 +56,6 @@ require (
 // Pin golang.org/x/tools to v0.27.0 to fix counterfeiter compatibility issue
 // https://github.com/maxbrunsfeld/counterfeiter/issues/344
 replace golang.org/x/tools => golang.org/x/tools v0.37.0
-
-// Temporary replacement to support setting reservations on BQ jobs.
-// Once https://github.com/viant/bigquery/pull/14 is merged, we can remove this.
-replace github.com/viant/bigquery => github.com/artie-labs/bigquery v0.0.0-20260309220101-0761b734f74b
 
 require (
 	atomicgo.dev/cursor v0.2.0 // indirect
