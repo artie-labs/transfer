@@ -59,6 +59,9 @@ type SharedDestinationSettings struct {
 	SkipBadIntegers bool `yaml:"skipBadIntegers"`
 	// [ForceUTCTimezone] - If enabled, for all TimestampNTZ types, we will return TimestampTZ kind. The converters should ensure that the timezone is set to UTC.
 	ForceUTCTimezone bool `yaml:"forceUTCTimezone"`
+
+	// [EncryptionPassphrase] - This is used to encrypt columns that should be written to the destination.
+	EncryptionPassphrase string `yaml:"encryptionPassphrase,omitempty"`
 }
 
 type StagingTableReuseConfig struct {

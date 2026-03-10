@@ -288,9 +288,14 @@ func (c Config) Validate() error {
 		return fmt.Errorf("no topic configs found")
 	}
 
+	var hasColumnsToEncrypt bool
 	for _, topicConfig := range tcs {
 		if err := topicConfig.Validate(); err != nil {
 			return fmt.Errorf("failed to validate topic config: %w", err)
+		}
+
+		if len(topicConfig.ColumnsToEncrypt) > 0 {
+			hasColumnsToEncrypt = true
 		}
 
 		// History Mode Validation
@@ -307,7 +312,13 @@ func (c Config) Validate() error {
 				return fmt.Errorf("soft partitioning is not supported in history mode, topic: %s", topicConfig.String())
 			}
 		}
+	}
 
+	if hasColumnsToEncrypt {
+		// Now check if [SharedDestinationSettings.EncryptionPassphrase] is passed in.
+		if stringutil.Empty(c.SharedDestinationSettings.EncryptionPassphrase) {
+			return fmt.Errorf("encryption passphrase is required when columnsToEncrypt is passed in")
+		}
 	}
 
 	return nil

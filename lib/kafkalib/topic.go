@@ -174,7 +174,10 @@ type TopicConfig struct {
 	// [ColumnsToInclude] can be used to specify the exact columns that should be written to the destination.
 	ColumnsToInclude []string `yaml:"columnsToInclude,omitempty"`
 	// [ColumnsToExclude] can be used to exclude columns from being written to the destination.
-	ColumnsToExclude    []string `yaml:"columnsToExclude,omitempty"`
+	ColumnsToExclude []string `yaml:"columnsToExclude,omitempty"`
+	// [ColumnsToEncrypt] can be used to encrypt columns that should be written to the destination.
+	// If this is passed in, you must pass in the [SharedDestinationSettings.EncryptionPassphrase] as well.
+	ColumnsToEncrypt    []string `yaml:"columnsToEncrypt,omitempty"`
 	PrimaryKeysOverride []string `yaml:"primaryKeysOverride,omitempty"`
 
 	// [IncludePrimaryKeys] - This is used to specify an additional column that can be used as part of the primary key
