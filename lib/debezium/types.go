@@ -9,7 +9,9 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/debezium/converters"
+	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 	"github.com/artie-labs/transfer/lib/typing/ext"
 )
@@ -150,6 +152,37 @@ func (f Field) ParseValue(value any) (any, error) {
 			return nil, fmt.Errorf("failed to convert to bytes: %w", err)
 		}
 	}
+
+	if f.Compressed {
+		// Only check this if the value is not null.
+		if value != nil {
+			switch castedValue := value.(type) {
+			case string:
+				// Leave the TOAST placeholder value as-is.
+				if castedValue != constants.ToastUnavailableValuePlaceholder {
+					compressedBytes, err := base64.StdEncoding.DecodeString(castedValue)
+					if err != nil {
+						return nil, fmt.Errorf("failed to base64 decode compressed value: %w", err)
+					}
+
+					_value, err := stringutil.GZipDecompress(compressedBytes)
+					if err != nil {
+						return nil, fmt.Errorf("failed to decompress value: %w", err)
+					}
+					value = string(_value)
+				}
+			case []byte:
+				_value, err := stringutil.GZipDecompress(castedValue)
+				if err != nil {
+					return nil, fmt.Errorf("failed to decompress value: %w", err)
+				}
+				value = _value
+			default:
+				return nil, fmt.Errorf("expected string or []byte, got %T", value)
+			}
+		}
+	}
+	// End of preprocessing logic.
 
 	converter, err := f.ToValueConverter()
 	if err != nil {
