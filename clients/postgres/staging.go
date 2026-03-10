@@ -17,6 +17,7 @@ import (
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
+	typingconverters "github.com/artie-labs/transfer/lib/typing/converters"
 )
 
 // [stagingIterator] - This is an implementation of [pgx.CopyFromSource]
@@ -118,12 +119,11 @@ func parseValue(value any, col columns.Column) (any, error) {
 
 	switch col.KindDetails.Kind {
 	case typing.String.Kind:
-		castedValue, err := typing.AssertType[string](value)
+		str, err := typingconverters.StringConverter{}.ConvertNew(value)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
-
-		return castedValue, nil
+		return str, nil
 	case typing.Integer.Kind:
 		return converters.Int64Converter{}.Convert(value)
 	case typing.Boolean.Kind:
