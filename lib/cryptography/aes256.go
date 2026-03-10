@@ -22,6 +22,11 @@ func GeneratePassphrase() ([]byte, error) {
 // Encrypt encrypts plaintext using AES-256-GCM with the provided key.
 // A random nonce is generated and prepended to the returned ciphertext.
 func Encrypt(key, plaintext []byte) ([]byte, error) {
+	// Key is 32 bytes
+	if len(key) != aes256KeySize {
+		return nil, fmt.Errorf("key must be 32 bytes, got: %d", len(key))
+	}
+
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create cipher: %w", err)
@@ -43,6 +48,11 @@ func Encrypt(key, plaintext []byte) ([]byte, error) {
 // Decrypt decrypts ciphertext that was encrypted with [Encrypt] using AES-256-GCM.
 // It expects the nonce to be prepended to the ciphertext.
 func Decrypt(key, ciphertext []byte) ([]byte, error) {
+	// Key is 32 bytes
+	if len(key) != aes256KeySize {
+		return nil, fmt.Errorf("key must be 32 bytes, got: %d", len(key))
+	}
+
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create cipher: %w", err)
