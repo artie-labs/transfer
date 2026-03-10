@@ -72,7 +72,8 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, w
 			return false, err
 		}
 
-		return false, nil
+		// For BQ streaming in history mode, don't commit the offset immediately because the data is not yet queryable.
+		return tableData.Mode() != config.History, nil
 	}
 
 	// We can simplify this once Google has fully rolled out the ability to execute DML on recently streamed data
