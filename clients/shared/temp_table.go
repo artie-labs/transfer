@@ -97,6 +97,13 @@ func (t TemporaryDataFile) WriteTemporaryTableFile(tableData *optimization.Table
 				return File{}, AdditionalOutput{}, fmt.Errorf("failed to cast value %q: %w", col.Name(), err)
 			}
 
+			if sharedDestinationSettings.CSVConvertUTF8 {
+				result.Value = stringutil.ReplaceInvalidUTF8(result.Value)
+				if result.NewLength > 0 {
+					result.NewLength = int32(len(result.Value))
+				}
+			}
+
 			if result.NewLength > 0 {
 				_newLength, ok := columnToNewLengthMap[col.Name()]
 				if result.NewLength > _newLength || !ok {
