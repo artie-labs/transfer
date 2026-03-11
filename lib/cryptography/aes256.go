@@ -11,14 +11,30 @@ import (
 const aes256KeySize = 32
 
 // GeneratePassphrase generates a cryptographically random passphrase suitable for AES-256.
-// It returns a 32-character base64-encoded string derived from random bytes.
+// It returns a base64-encoded string of 32 random bytes, preserving the full 256 bits of entropy.
+// Use [DecodePassphrase] to recover the raw 32-byte key for use with [Encrypt] and [Decrypt].
 func GeneratePassphrase() (string, error) {
 	key := make([]byte, aes256KeySize)
 	if _, err := rand.Read(key); err != nil {
 		return "", fmt.Errorf("failed to generate passphrase: %w", err)
 	}
 
-	return base64.StdEncoding.EncodeToString(key)[:aes256KeySize], nil
+	return base64.StdEncoding.EncodeToString(key), nil
+}
+
+// DecodePassphrase decodes a base64-encoded passphrase (as returned by [GeneratePassphrase])
+// back into the raw 32-byte key suitable for [Encrypt] and [Decrypt].
+func DecodePassphrase(passphrase string) ([]byte, error) {
+	key, err := base64.StdEncoding.DecodeString(passphrase)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode passphrase: %w", err)
+	}
+
+	if err := ensureKeySize(key); err != nil {
+		return nil, err
+	}
+
+	return key, nil
 }
 
 func ensureKeySize(key []byte) error {
