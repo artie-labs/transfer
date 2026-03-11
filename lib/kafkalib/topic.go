@@ -264,5 +264,24 @@ func (t TopicConfig) Validate() error {
 		return fmt.Errorf("invalid soft partitioning configuration: %w", err)
 	}
 
+	if len(t.ColumnsToEncrypt) > 0 {
+		encryptSet := make(map[string]bool, len(t.ColumnsToEncrypt))
+		for _, col := range t.ColumnsToEncrypt {
+			encryptSet[col] = true
+		}
+
+		for _, pk := range t.PrimaryKeysOverride {
+			if encryptSet[pk] {
+				return fmt.Errorf("column %q cannot be both a primary key and encrypted, as AES-GCM encryption is non-deterministic", pk)
+			}
+		}
+
+		for _, pk := range t.IncludePrimaryKeys {
+			if encryptSet[pk] {
+				return fmt.Errorf("column %q cannot be both a primary key and encrypted, as AES-GCM encryption is non-deterministic", pk)
+			}
+		}
+	}
+
 	return nil
 }

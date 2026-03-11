@@ -12,55 +12,53 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func (e *EventsTestSuite) TestSetHashedColumnTypes() {
+func (e *EventsTestSuite) TestSetColumnTypesToString() {
 	{
-		// No columns to hash - all types unchanged
+		// No columns - all types unchanged
 		cols := columns.NewColumns([]columns.Column{
 			columns.NewColumn("id", typing.Integer),
 			columns.NewColumn("name", typing.String),
 		})
-		SetHashedColumnTypes(kafkalib.TopicConfig{}, cols)
+		setColumnTypesToString(cols, nil)
 		idCol, _ := cols.GetColumn("id")
 		assert.Equal(e.T(), typing.Integer, idCol.KindDetails)
 		nameCol, _ := cols.GetColumn("name")
 		assert.Equal(e.T(), typing.String, nameCol.KindDetails)
 	}
 	{
-		// Column to hash does not exist - no-op, no panic
+		// Column does not exist - no-op, no panic
 		cols := columns.NewColumns([]columns.Column{
 			columns.NewColumn("id", typing.Integer),
 		})
-		SetHashedColumnTypes(kafkalib.TopicConfig{ColumnsToHash: []string{"email"}}, cols)
+		setColumnTypesToString(cols, []string{"email"})
 		idCol, _ := cols.GetColumn("id")
 		assert.Equal(e.T(), typing.Integer, idCol.KindDetails)
 	}
 	{
-		// Hashed column with a non-string type is overridden to string
+		// Column with a non-string type is overridden to string
 		cols := columns.NewColumns([]columns.Column{
 			columns.NewColumn("id", typing.Integer),
 			columns.NewColumn("email", typing.String),
 		})
-		SetHashedColumnTypes(kafkalib.TopicConfig{ColumnsToHash: []string{"id"}}, cols)
+		setColumnTypesToString(cols, []string{"id"})
 		idCol, _ := cols.GetColumn("id")
 		assert.Equal(e.T(), typing.String, idCol.KindDetails)
-		// Unhashed column is unchanged
 		emailCol, _ := cols.GetColumn("email")
 		assert.Equal(e.T(), typing.String, emailCol.KindDetails)
 	}
 	{
-		// Multiple columns to hash - all overridden, others unchanged
+		// Multiple columns - all overridden, others unchanged
 		cols := columns.NewColumns([]columns.Column{
 			columns.NewColumn("id", typing.Integer),
 			columns.NewColumn("score", typing.Float),
 			columns.NewColumn("active", typing.Boolean),
 			columns.NewColumn("name", typing.String),
 		})
-		SetHashedColumnTypes(kafkalib.TopicConfig{ColumnsToHash: []string{"id", "score"}}, cols)
+		setColumnTypesToString(cols, []string{"id", "score"})
 		idCol, _ := cols.GetColumn("id")
 		assert.Equal(e.T(), typing.String, idCol.KindDetails)
 		scoreCol, _ := cols.GetColumn("score")
 		assert.Equal(e.T(), typing.String, scoreCol.KindDetails)
-		// Unhashed columns unchanged
 		activeCol, _ := cols.GetColumn("active")
 		assert.Equal(e.T(), typing.Boolean, activeCol.KindDetails)
 		nameCol, _ := cols.GetColumn("name")

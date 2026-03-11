@@ -72,8 +72,8 @@ func buildColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns map[
 			filteredColumns.AddColumn(columns.NewColumn(col.Name, typing.String))
 		}
 
-		SetHashedColumnTypes(tc, filteredColumns)
-		SetEncryptedColumnTypes(tc, filteredColumns)
+		setColumnTypesToString(filteredColumns, tc.ColumnsToHash)
+		setColumnTypesToString(filteredColumns, tc.ColumnsToEncrypt)
 
 		return filteredColumns.GetColumns(), nil
 	}
@@ -83,14 +83,14 @@ func buildColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns map[
 		cols.AddColumn(columns.NewColumn(col.Name, typing.String))
 	}
 
-	SetHashedColumnTypes(tc, cols)
-	SetEncryptedColumnTypes(tc, cols)
+	setColumnTypesToString(cols, tc.ColumnsToHash)
+	setColumnTypesToString(cols, tc.ColumnsToEncrypt)
 
 	return cols.GetColumns(), nil
 }
 
-func SetHashedColumnTypes(tc kafkalib.TopicConfig, cols *columns.Columns) {
-	for _, col := range tc.ColumnsToHash {
+func setColumnTypesToString(cols *columns.Columns, columnNames []string) {
+	for _, col := range columnNames {
 		columnInfo, ok := cols.GetColumn(col)
 		if !ok {
 			continue
@@ -100,35 +100,12 @@ func SetHashedColumnTypes(tc kafkalib.TopicConfig, cols *columns.Columns) {
 	}
 }
 
-func SetEncryptedColumnTypes(tc kafkalib.TopicConfig, cols *columns.Columns) {
-	for _, col := range tc.ColumnsToEncrypt {
-		columnInfo, ok := cols.GetColumn(col)
-		if !ok {
-			continue
-		}
-		columnInfo.KindDetails = typing.String
-		cols.UpdateColumn(columnInfo)
-	}
-}
-
-func updateSchemaForHashedColumns(tc kafkalib.TopicConfig, schema map[string]typing.KindDetails) {
+func setSchemaColumnsToString(schema map[string]typing.KindDetails, columnNames []string) {
 	if schema == nil {
 		return
 	}
 
-	for _, col := range tc.ColumnsToHash {
-		if _, ok := schema[col]; ok {
-			schema[col] = typing.String
-		}
-	}
-}
-
-func updateSchemaForEncryptedColumns(tc kafkalib.TopicConfig, schema map[string]typing.KindDetails) {
-	if schema == nil {
-		return
-	}
-
-	for _, col := range tc.ColumnsToEncrypt {
+	for _, col := range columnNames {
 		if _, ok := schema[col]; ok {
 			schema[col] = typing.String
 		}
