@@ -1,9 +1,12 @@
 package event
 
 import (
+	"encoding/base64"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/cryptography"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
@@ -113,8 +116,6 @@ func (e *EventsTestSuite) TestTransformData() {
 		}
 	}
 	{
-<<<<<<< Updated upstream
-=======
 		// Encrypting columns
 		passphraseString, err := cryptography.GeneratePassphrase()
 		assert.NoError(e.T(), err)
@@ -169,7 +170,6 @@ func (e *EventsTestSuite) TestTransformData() {
 		}
 	}
 	{
->>>>>>> Stashed changes
 		// Excluding columns
 		{
 			// No columns to exclude
