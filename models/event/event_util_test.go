@@ -113,6 +113,63 @@ func (e *EventsTestSuite) TestTransformData() {
 		}
 	}
 	{
+<<<<<<< Updated upstream
+=======
+		// Encrypting columns
+		passphraseString, err := cryptography.GeneratePassphrase()
+		assert.NoError(e.T(), err)
+		{
+			// No columns to encrypt
+			data, err := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{}, passphraseString)
+			assert.NoError(e.T(), err)
+			assert.Equal(e.T(), map[string]any{"foo": "bar", "abc": "def"}, data)
+		}
+		{
+			// Column to encrypt does not exist in the data
+			data, err := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToEncrypt: []string{"nonexistent"}}, passphraseString)
+			assert.NoError(e.T(), err)
+			assert.Equal(e.T(), map[string]any{"foo": "bar", "abc": "def"}, data)
+		}
+		{
+			// Encrypt the column foo (value is set) — verify round-trip
+			data, err := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToEncrypt: []string{"foo"}}, passphraseString)
+			assert.NoError(e.T(), err)
+			assert.Equal(e.T(), "def", data["abc"])
+			assert.NotEqual(e.T(), "bar", data["foo"])
+
+			ciphertext, err := base64.StdEncoding.DecodeString(data["foo"].(string))
+			assert.NoError(e.T(), err)
+			decrypted, err := cryptography.Decrypt([]byte(passphraseString), ciphertext)
+			assert.NoError(e.T(), err)
+			assert.Equal(e.T(), "bar", string(decrypted))
+		}
+		{
+			// Encrypt the column foo (value is nil) — nil should be preserved
+			data, err := transformData(map[string]any{"foo": nil, "abc": "def"}, kafkalib.TopicConfig{ColumnsToEncrypt: []string{"foo"}}, passphraseString)
+			assert.NoError(e.T(), err)
+			assert.Equal(e.T(), map[string]any{"foo": nil, "abc": "def"}, data)
+		}
+		{
+			// Multiple columns to encrypt
+			data, err := transformData(map[string]any{"foo": "bar", "abc": "def", "num": 42}, kafkalib.TopicConfig{ColumnsToEncrypt: []string{"foo", "num"}}, passphraseString)
+			assert.NoError(e.T(), err)
+			assert.Equal(e.T(), "def", data["abc"])
+
+			for _, col := range []string{"foo", "num"} {
+				ciphertext, err := base64.StdEncoding.DecodeString(data[col].(string))
+				assert.NoError(e.T(), err)
+				_, err = cryptography.Decrypt([]byte(passphraseString), ciphertext)
+				assert.NoError(e.T(), err)
+			}
+		}
+		{
+			// Invalid passphrase length should return an error
+			_, err := transformData(map[string]any{"foo": "bar"}, kafkalib.TopicConfig{ColumnsToEncrypt: []string{"foo"}}, "too-short")
+			assert.ErrorContains(e.T(), err, "failed to encrypt column")
+		}
+	}
+	{
+>>>>>>> Stashed changes
 		// Excluding columns
 		{
 			// No columns to exclude

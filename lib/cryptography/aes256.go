@@ -4,19 +4,21 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 )
 
 const aes256KeySize = 32
 
-// GeneratePassphrase generates a cryptographically random 32-byte key suitable for AES-256.
-func GeneratePassphrase() ([]byte, error) {
+// GeneratePassphrase generates a cryptographically random passphrase suitable for AES-256.
+// It returns a 32-character base64-encoded string derived from random bytes.
+func GeneratePassphrase() (string, error) {
 	key := make([]byte, aes256KeySize)
 	if _, err := rand.Read(key); err != nil {
-		return nil, fmt.Errorf("failed to generate passphrase: %w", err)
+		return "", fmt.Errorf("failed to generate passphrase: %w", err)
 	}
 
-	return key, nil
+	return base64.StdEncoding.EncodeToString(key)[:aes256KeySize], nil
 }
 
 func ensureKeySize(key []byte) error {
