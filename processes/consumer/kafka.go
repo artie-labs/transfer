@@ -10,6 +10,7 @@ import (
 	"github.com/artie-labs/transfer/lib/artie/metrics"
 	"github.com/artie-labs/transfer/lib/cdc/format"
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/cryptography"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/jitter"
@@ -24,6 +25,15 @@ import (
 const maxFetchRetries = 10
 
 func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client, whClient *webhooksclient.Client) {
+	var encryptionKey []byte
+	if cfg.SharedDestinationSettings.EncryptionPassphrase != "" {
+		var err error
+		encryptionKey, err = cryptography.DecodePassphrase(cfg.SharedDestinationSettings.EncryptionPassphrase)
+		if err != nil {
+			logger.Fatal("Failed to decode encryption passphrase", slog.Any("err", err))
+		}
+	}
+
 	tcFmtMap := NewTcFmtMap()
 	var topics []string
 	for _, topicConfig := range cfg.Kafka.TopicConfigs {
@@ -63,6 +73,7 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 						GroupID:                kafkaConsumer.GetGroupID(),
 						TopicToConfigFormatMap: tcFmtMap,
 						WhClient:               whClient,
+						EncryptionKey:          encryptionKey,
 					}
 
 					tableID, err := args.process(ctx, cfg, inMemDB, dest, metricsClient)

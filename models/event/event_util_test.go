@@ -94,25 +94,25 @@ func (e *EventsTestSuite) TestTransformData() {
 		// Hashing columns
 		{
 			// No columns to hash
-			data, err := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{}, "")
+			data, err := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{}, nil)
 			assert.NoError(e.T(), err)
 			assert.Equal(e.T(), map[string]any{"foo": "bar", "abc": "def"}, data)
 		}
 		{
 			// There's a column to hash, but the event does not have any data
-			data, err := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToHash: []string{"super duper"}}, "")
+			data, err := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToHash: []string{"super duper"}}, nil)
 			assert.NoError(e.T(), err)
 			assert.Equal(e.T(), map[string]any{"foo": "bar", "abc": "def"}, data)
 		}
 		{
 			// Hash the column foo (value is set)
-			data, err := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToHash: []string{"foo"}}, "")
+			data, err := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToHash: []string{"foo"}}, nil)
 			assert.NoError(e.T(), err)
 			assert.Equal(e.T(), map[string]any{"foo": "fcde2b2edba56bf408601fb721fe9b5c338d10ee429ea04fae5511b68fbf8fb9", "abc": "def"}, data)
 		}
 		{
 			// Hash the column foo (value is nil)
-			data, err := transformData(map[string]any{"foo": nil, "abc": "def"}, kafkalib.TopicConfig{ColumnsToHash: []string{"foo"}}, "")
+			data, err := transformData(map[string]any{"foo": nil, "abc": "def"}, kafkalib.TopicConfig{ColumnsToHash: []string{"foo"}}, nil)
 			assert.NoError(e.T(), err)
 			assert.Equal(e.T(), map[string]any{"foo": nil, "abc": "def"}, data)
 		}
@@ -121,28 +121,28 @@ func (e *EventsTestSuite) TestTransformData() {
 		// Encrypting columns
 		passphraseString, err := cryptography.GeneratePassphrase()
 		assert.NoError(e.T(), err)
+		key, err := cryptography.DecodePassphrase(passphraseString)
+		assert.NoError(e.T(), err)
 		{
 			// No columns to encrypt
-			data, err := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{}, passphraseString)
+			data, err := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{}, key)
 			assert.NoError(e.T(), err)
 			assert.Equal(e.T(), map[string]any{"foo": "bar", "abc": "def"}, data)
 		}
 		{
 			// Column to encrypt does not exist in the data
-			data, err := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToEncrypt: []string{"nonexistent"}}, passphraseString)
+			data, err := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToEncrypt: []string{"nonexistent"}}, key)
 			assert.NoError(e.T(), err)
 			assert.Equal(e.T(), map[string]any{"foo": "bar", "abc": "def"}, data)
 		}
 		{
 			// Encrypt the column foo (value is set) — verify round-trip
-			data, err := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToEncrypt: []string{"foo"}}, passphraseString)
+			data, err := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToEncrypt: []string{"foo"}}, key)
 			assert.NoError(e.T(), err)
 			assert.Equal(e.T(), "def", data["abc"])
 			assert.NotEqual(e.T(), "bar", data["foo"])
 
 			ciphertext, err := base64.StdEncoding.DecodeString(data["foo"].(string))
-			assert.NoError(e.T(), err)
-			key, err := cryptography.DecodePassphrase(passphraseString)
 			assert.NoError(e.T(), err)
 			decrypted, err := cryptography.Decrypt(key, ciphertext)
 			assert.NoError(e.T(), err)
@@ -150,42 +150,40 @@ func (e *EventsTestSuite) TestTransformData() {
 		}
 		{
 			// Encrypt the column foo (value is nil) — nil should be preserved
-			data, err := transformData(map[string]any{"foo": nil, "abc": "def"}, kafkalib.TopicConfig{ColumnsToEncrypt: []string{"foo"}}, passphraseString)
+			data, err := transformData(map[string]any{"foo": nil, "abc": "def"}, kafkalib.TopicConfig{ColumnsToEncrypt: []string{"foo"}}, key)
 			assert.NoError(e.T(), err)
 			assert.Equal(e.T(), map[string]any{"foo": nil, "abc": "def"}, data)
 		}
 		{
 			// Multiple columns to encrypt
-			data, err := transformData(map[string]any{"foo": "bar", "abc": "def", "num": 42}, kafkalib.TopicConfig{ColumnsToEncrypt: []string{"foo", "num"}}, passphraseString)
+			data, err := transformData(map[string]any{"foo": "bar", "abc": "def", "num": 42}, kafkalib.TopicConfig{ColumnsToEncrypt: []string{"foo", "num"}}, key)
 			assert.NoError(e.T(), err)
 			assert.Equal(e.T(), "def", data["abc"])
 
 			for _, col := range []string{"foo", "num"} {
 				ciphertext, err := base64.StdEncoding.DecodeString(data[col].(string))
 				assert.NoError(e.T(), err)
-				key, err := cryptography.DecodePassphrase(passphraseString)
-				assert.NoError(e.T(), err)
 				_, err = cryptography.Decrypt(key, ciphertext)
 				assert.NoError(e.T(), err)
 			}
 		}
 		{
-			// Invalid passphrase should return an error
-			_, err := transformData(map[string]any{"foo": "bar"}, kafkalib.TopicConfig{ColumnsToEncrypt: []string{"foo"}}, "too-short")
-			assert.ErrorContains(e.T(), err, "failed to decode encryption passphrase")
+			// Invalid key size should return an error from Encrypt
+			_, err := transformData(map[string]any{"foo": "bar"}, kafkalib.TopicConfig{ColumnsToEncrypt: []string{"foo"}}, []byte("too-short"))
+			assert.ErrorContains(e.T(), err, "failed to encrypt column")
 		}
 	}
 	{
 		// Excluding columns
 		{
 			// No columns to exclude
-			data, err := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToExclude: []string{}}, "")
+			data, err := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToExclude: []string{}}, nil)
 			assert.NoError(e.T(), err)
 			assert.Equal(e.T(), map[string]any{"foo": "bar", "abc": "def"}, data)
 		}
 		{
 			// Exclude the column foo
-			data, err := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToExclude: []string{"foo"}}, "")
+			data, err := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToExclude: []string{"foo"}}, nil)
 			assert.NoError(e.T(), err)
 			assert.Equal(e.T(), map[string]any{"abc": "def"}, data)
 		}
@@ -194,25 +192,25 @@ func (e *EventsTestSuite) TestTransformData() {
 		// Include columns
 		{
 			// No columns to include
-			data, err := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToInclude: []string{}}, "")
+			data, err := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToInclude: []string{}}, nil)
 			assert.NoError(e.T(), err)
 			assert.Equal(e.T(), map[string]any{"foo": "bar", "abc": "def"}, data)
 		}
 		{
 			// Include the column foo
-			data, err := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToInclude: []string{"foo"}}, "")
+			data, err := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToInclude: []string{"foo"}}, nil)
 			assert.NoError(e.T(), err)
 			assert.Equal(e.T(), map[string]any{"foo": "bar"}, data)
 		}
 		{
 			// include foo, but also artie columns
-			data, err := transformData(map[string]any{"foo": "bar", "abc": "def", constants.DeleteColumnMarker: true}, kafkalib.TopicConfig{ColumnsToInclude: []string{"foo"}}, "")
+			data, err := transformData(map[string]any{"foo": "bar", "abc": "def", constants.DeleteColumnMarker: true}, kafkalib.TopicConfig{ColumnsToInclude: []string{"foo"}}, nil)
 			assert.NoError(e.T(), err)
 			assert.Equal(e.T(), map[string]any{"foo": "bar", constants.DeleteColumnMarker: true}, data)
 		}
 		{
 			// Includes static columns
-			data, err := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToInclude: []string{"foo"}, StaticColumns: []kafkalib.StaticColumn{{Name: "dusty", Value: "mini aussie"}}}, "")
+			data, err := transformData(map[string]any{"foo": "bar", "abc": "def"}, kafkalib.TopicConfig{ColumnsToInclude: []string{"foo"}, StaticColumns: []kafkalib.StaticColumn{{Name: "dusty", Value: "mini aussie"}}}, nil)
 			assert.NoError(e.T(), err)
 			assert.Equal(e.T(), map[string]any{"foo": "bar", "dusty": "mini aussie"}, data)
 		}
