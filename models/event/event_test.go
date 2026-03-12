@@ -137,24 +137,24 @@ func (e *EventsTestSuite) TestBuildFilteredColumns() {
 func (e *EventsTestSuite) TestEvent_TableName() {
 	{
 		// Don't pass in tableName.
-		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, idMap, kafkalib.TopicConfig{}, config.Replication, config.SharedDestinationSettings{})
+		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, idMap, kafkalib.TopicConfig{}, config.Replication, config.SharedDestinationSettings{}, nil)
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), e.fakeEvent.GetTableName(), evt.GetTable())
 	}
 	{
 		// Now pass it in, it should override.
-		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, idMap, kafkalib.TopicConfig{TableName: "orders"}, config.Replication, config.SharedDestinationSettings{})
+		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, idMap, kafkalib.TopicConfig{TableName: "orders"}, config.Replication, config.SharedDestinationSettings{}, nil)
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), "orders", evt.GetTable())
 	}
 	{
 		// Now, if it's history mode...
-		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, idMap, kafkalib.TopicConfig{TableName: "orders"}, config.History, config.SharedDestinationSettings{})
+		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, idMap, kafkalib.TopicConfig{TableName: "orders"}, config.History, config.SharedDestinationSettings{}, nil)
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), "orders__history", evt.GetTable())
 
 		// Table already has history suffix, so it won't add extra.
-		evt, err = ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, idMap, kafkalib.TopicConfig{TableName: "dusty__history"}, config.History, config.SharedDestinationSettings{})
+		evt, err = ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, idMap, kafkalib.TopicConfig{TableName: "dusty__history"}, config.History, config.SharedDestinationSettings{}, nil)
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), "dusty__history", evt.GetTable())
 	}
@@ -164,7 +164,7 @@ func (e *EventsTestSuite) TestEvent_Columns() {
 	{
 		// When GetColumns returns an empty slice, primary keys should be added to columns
 		e.fakeEvent.GetColumnsReturns([]columns.Column{}, nil)
-		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, map[string]any{"id": 123}, kafkalib.TopicConfig{}, config.Replication, config.SharedDestinationSettings{})
+		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, map[string]any{"id": 123}, kafkalib.TopicConfig{}, config.Replication, config.SharedDestinationSettings{}, nil)
 		assert.NoError(e.T(), err)
 
 		assert.Equal(e.T(), 1, len(evt.columns.GetColumns()))
@@ -173,7 +173,7 @@ func (e *EventsTestSuite) TestEvent_Columns() {
 	}
 	{
 		e.fakeEvent.GetColumnsReturns([]columns.Column{}, nil)
-		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, map[string]any{"id": 123, "capital": "foo"}, kafkalib.TopicConfig{}, config.Replication, config.SharedDestinationSettings{})
+		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, map[string]any{"id": 123, "capital": "foo"}, kafkalib.TopicConfig{}, config.Replication, config.SharedDestinationSettings{}, nil)
 		assert.NoError(e.T(), err)
 
 		assert.Equal(e.T(), 2, len(evt.columns.GetColumns()))
@@ -185,7 +185,7 @@ func (e *EventsTestSuite) TestEvent_Columns() {
 	}
 	{
 		// In history mode, the deletion column markers should be removed from the event data
-		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, map[string]any{"id": 123}, kafkalib.TopicConfig{}, config.History, config.SharedDestinationSettings{})
+		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, map[string]any{"id": 123}, kafkalib.TopicConfig{}, config.History, config.SharedDestinationSettings{}, nil)
 		assert.NoError(e.T(), err)
 
 		_, ok := evt.data[constants.DeleteColumnMarker]
@@ -218,7 +218,7 @@ func (e *EventsTestSuite) TestEventPrimaryKeys() {
 	mockEvent.GetTableNameReturns("foo")
 	mockEvent.GetDataReturns(map[string]any{"id": 1, "course_id": 2}, nil)
 
-	anotherEvt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": 1, "course_id": 2}, kafkalib.TopicConfig{}, config.Replication, config.SharedDestinationSettings{})
+	anotherEvt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": 1, "course_id": 2}, kafkalib.TopicConfig{}, config.Replication, config.SharedDestinationSettings{}, nil)
 	assert.NoError(e.T(), err)
 
 	pkValue, err := anotherEvt.PrimaryKeyValue()
@@ -241,7 +241,7 @@ func (e *EventsTestSuite) TestEventPrimaryKeys() {
 		mockEvent.GetTableNameReturns("foo")
 		mockEvent.GetDataReturns(map[string]any{"course_id": 2}, nil)
 
-		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": 123}, kafkalib.TopicConfig{}, config.Replication, config.SharedDestinationSettings{})
+		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": 123}, kafkalib.TopicConfig{}, config.Replication, config.SharedDestinationSettings{}, nil)
 		assert.NoError(e.T(), err)
 
 		pkValue, err := evt.PrimaryKeyValue()
@@ -318,7 +318,7 @@ func (e *EventsTestSuite) TestPrimaryKeyValueDeterministic() {
 		"zz":    "ff",
 		"gg":    "artie",
 		"dusty": "mini aussie",
-	}, kafkalib.TopicConfig{}, config.Replication, config.SharedDestinationSettings{})
+	}, kafkalib.TopicConfig{}, config.Replication, config.SharedDestinationSettings{}, nil)
 	assert.NoError(e.T(), err)
 
 	for i := 0; i < 50_000; i++ {
@@ -331,13 +331,13 @@ func (e *EventsTestSuite) TestPrimaryKeyValueDeterministic() {
 func (e *EventsTestSuite) TestEvent_PrimaryKeysOverride() {
 	{
 		// No primary keys override
-		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, map[string]any{"not_id": 123}, kafkalib.TopicConfig{}, config.Replication, config.SharedDestinationSettings{})
+		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, map[string]any{"not_id": 123}, kafkalib.TopicConfig{}, config.Replication, config.SharedDestinationSettings{}, nil)
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), []string{"not_id"}, evt.GetPrimaryKeys())
 	}
 	{
 		// Specified primary keys override
-		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, map[string]any{"not_id": 123}, kafkalib.TopicConfig{PrimaryKeysOverride: []string{"id"}}, config.Replication, config.SharedDestinationSettings{})
+		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, map[string]any{"not_id": 123}, kafkalib.TopicConfig{PrimaryKeysOverride: []string{"id"}}, config.Replication, config.SharedDestinationSettings{}, nil)
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), []string{"id"}, evt.GetPrimaryKeys())
 	}
@@ -347,13 +347,13 @@ func (e *EventsTestSuite) TestEvent_StaticColumns() {
 	{
 		// Should error if there's a static column collision
 		e.fakeEvent.GetDataReturns(map[string]any{"id": 123}, nil)
-		_, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, map[string]any{"id": 123}, kafkalib.TopicConfig{StaticColumns: []kafkalib.StaticColumn{{Name: "id", Value: "123"}}}, config.Replication, config.SharedDestinationSettings{})
+		_, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, map[string]any{"id": 123}, kafkalib.TopicConfig{StaticColumns: []kafkalib.StaticColumn{{Name: "id", Value: "123"}}}, config.Replication, config.SharedDestinationSettings{}, nil)
 		assert.ErrorContains(e.T(), err, `static column "id" collides with event data`)
 	}
 	{
 		// No error since there's no collision
 		e.fakeEvent.GetDataReturns(map[string]any{"id": 123}, nil)
-		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, map[string]any{"id": 123}, kafkalib.TopicConfig{StaticColumns: []kafkalib.StaticColumn{{Name: "foo", Value: "bar"}}}, config.Replication, config.SharedDestinationSettings{})
+		evt, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, e.fakeEvent, map[string]any{"id": 123}, kafkalib.TopicConfig{StaticColumns: []kafkalib.StaticColumn{{Name: "foo", Value: "bar"}}}, config.Replication, config.SharedDestinationSettings{}, nil)
 		assert.NoError(e.T(), err)
 		assert.Equal(e.T(), map[string]any{"id": 123, "foo": "bar"}, evt.data)
 	}
@@ -396,7 +396,7 @@ func (e *EventsTestSuite) TestToMemoryEventWithSoftPartitioning() {
 			"created_at": typing.TimeKindDetails,
 		}, nil)
 
-		event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, tc, config.Replication, config.SharedDestinationSettings{})
+		event, err := ToMemoryEvent(e.T().Context(), e.fakeBaseline, mockEvent, map[string]any{"id": "123"}, tc, config.Replication, config.SharedDestinationSettings{}, nil)
 		assert.NoError(e.T(), err)
 
 		// Verify that the event has the correct partitioned table name

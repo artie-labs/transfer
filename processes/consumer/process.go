@@ -20,6 +20,7 @@ type processArgs struct {
 	GroupID                string
 	TopicToConfigFormatMap *TcFmtMap
 	WhClient               *webhooksclient.Client
+	EncryptionKey          []byte
 }
 
 func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client) (cdc.TableID, error) {
@@ -61,7 +62,7 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 	}
 
 	tags["op"] = string(_event.Operation())
-	evt, err := event.ToMemoryEvent(ctx, dest, _event, pkMap, topicConfig.tc, cfg.Mode, cfg.SharedDestinationSettings)
+	evt, err := event.ToMemoryEvent(ctx, dest, _event, pkMap, topicConfig.tc, cfg.Mode, cfg.SharedDestinationSettings, p.EncryptionKey)
 	if err != nil {
 		tags["what"] = "to_mem_event_err"
 		return cdc.TableID{}, fmt.Errorf("cannot convert to memory event: %w", err)

@@ -8,25 +8,31 @@ import (
 
 func TestGeneratePassphrase(t *testing.T) {
 	{
-		// Key should be 32 bytes (AES-256).
-		key, err := GeneratePassphrase()
+		// Passphrase should be a valid base64 string encoding 32 bytes.
+		passphrase, err := GeneratePassphrase()
+		assert.NoError(t, err)
+		assert.Len(t, passphrase, 44) // base64 of 32 bytes = 44 chars
+
+		key, err := DecodePassphrase(passphrase)
 		assert.NoError(t, err)
 		assert.Len(t, key, 32)
 	}
 	{
-		// Keys should be unique across calls.
-		key1, err := GeneratePassphrase()
+		// Passphrases should be unique across calls.
+		p1, err := GeneratePassphrase()
 		assert.NoError(t, err)
 
-		key2, err := GeneratePassphrase()
+		p2, err := GeneratePassphrase()
 		assert.NoError(t, err)
 
-		assert.NotEqual(t, key1, key2)
+		assert.NotEqual(t, p1, p2)
 	}
 }
 
 func TestEncryptDecrypt(t *testing.T) {
-	key, err := GeneratePassphrase()
+	passphrase, err := GeneratePassphrase()
+	assert.NoError(t, err)
+	key, err := DecodePassphrase(passphrase)
 	assert.NoError(t, err)
 
 	{
@@ -63,10 +69,14 @@ func TestEncryptDecrypt(t *testing.T) {
 }
 
 func TestDecrypt_WrongKey(t *testing.T) {
-	key1, err := GeneratePassphrase()
+	p1, err := GeneratePassphrase()
+	assert.NoError(t, err)
+	key1, err := DecodePassphrase(p1)
 	assert.NoError(t, err)
 
-	key2, err := GeneratePassphrase()
+	p2, err := GeneratePassphrase()
+	assert.NoError(t, err)
+	key2, err := DecodePassphrase(p2)
 	assert.NoError(t, err)
 
 	ciphertext, err := Encrypt(key1, []byte("secret"))
@@ -77,7 +87,9 @@ func TestDecrypt_WrongKey(t *testing.T) {
 }
 
 func TestDecrypt_InvalidCiphertext(t *testing.T) {
-	key, err := GeneratePassphrase()
+	passphrase, err := GeneratePassphrase()
+	assert.NoError(t, err)
+	key, err := DecodePassphrase(passphrase)
 	assert.NoError(t, err)
 
 	{

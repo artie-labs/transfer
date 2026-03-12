@@ -321,8 +321,8 @@ func (c Config) Validate() error {
 			return fmt.Errorf("encryption passphrase is required when columnsToEncrypt is passed in")
 		}
 
-		if err := cryptography.EnsureKeySize([]byte(c.SharedDestinationSettings.EncryptionPassphrase)); err != nil {
-			return fmt.Errorf("failed to ensure key size: %w", err)
+		if _, err := cryptography.DecodePassphrase(c.SharedDestinationSettings.EncryptionPassphrase); err != nil {
+			return fmt.Errorf("invalid encryption passphrase: %w", err)
 		}
 	}
 

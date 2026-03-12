@@ -46,7 +46,7 @@ func (e Event) GetTable() string {
 	return e.table
 }
 
-func ToMemoryEvent(ctx context.Context, dest destination.Destination, event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfig, cfgMode config.Mode, sharedDestinationSettings config.SharedDestinationSettings) (Event, error) {
+func ToMemoryEvent(ctx context.Context, dest destination.Destination, event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfig, cfgMode config.Mode, sharedDestinationSettings config.SharedDestinationSettings, encryptionKey []byte) (Event, error) {
 	reservedColumns := destination.BuildReservedColumnNames(dest)
 	_cols, err := buildColumns(event, tc, reservedColumns)
 	if err != nil {
@@ -139,7 +139,7 @@ func ToMemoryEvent(ctx context.Context, dest destination.Destination, event cdc.
 		data[staticColumn.Name] = staticColumn.Value
 	}
 
-	transformedData, err := transformData(data, tc, sharedDestinationSettings.EncryptionPassphrase)
+	transformedData, err := transformData(data, tc, encryptionKey)
 	if err != nil {
 		return Event{}, fmt.Errorf("failed to transform data: %w", err)
 	}

@@ -137,26 +137,28 @@ func buildPrimaryKeys(tc kafkalib.TopicConfig, pkMap map[string]any, reservedCol
 	return pks
 }
 
-func transformData(data map[string]any, tc kafkalib.TopicConfig, encryptionPassphrase string) (map[string]any, error) {
+func transformData(data map[string]any, tc kafkalib.TopicConfig, encryptionKey []byte) (map[string]any, error) {
 	for _, columnToHash := range tc.ColumnsToHash {
 		if value, ok := data[columnToHash]; ok {
 			data[columnToHash] = cryptography.HashValue(value)
 		}
 	}
 
-	for _, columnToEncrypt := range tc.ColumnsToEncrypt {
-		if value := data[columnToEncrypt]; value != nil {
-			castedValue, err := primitives.AsBytes(value)
-			if err != nil {
-				return nil, fmt.Errorf("failed to cast value to bytes: %w", err)
-			}
+	if len(tc.ColumnsToEncrypt) > 0 {
+		for _, columnToEncrypt := range tc.ColumnsToEncrypt {
+			if value := data[columnToEncrypt]; value != nil {
+				castedValue, err := primitives.AsBytes(value)
+				if err != nil {
+					return nil, fmt.Errorf("failed to cast value to bytes: %w", err)
+				}
 
-			encrypted, err := cryptography.Encrypt([]byte(encryptionPassphrase), castedValue)
-			if err != nil {
-				return nil, fmt.Errorf("failed to encrypt column %q: %w", columnToEncrypt, err)
-			}
+				encrypted, err := cryptography.Encrypt(encryptionKey, castedValue)
+				if err != nil {
+					return nil, fmt.Errorf("failed to encrypt column %q: %w", columnToEncrypt, err)
+				}
 
-			data[columnToEncrypt] = base64.StdEncoding.EncodeToString(encrypted)
+				data[columnToEncrypt] = base64.StdEncoding.EncodeToString(encrypted)
+			}
 		}
 	}
 
