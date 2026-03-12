@@ -62,10 +62,14 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whC
 	return true, nil
 }
 
-func (s Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, _ bool) error {
-	return shared.Append(ctx, s, tableData, whClient, types.AdditionalSettings{
+func (s Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, _ bool) (bool, error) {
+	if err := shared.Append(ctx, s, tableData, whClient, types.AdditionalSettings{
 		ColumnSettings: s.cfg.SharedDestinationSettings.ColumnSettings,
-	})
+	}); err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 func (s Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, table string) sql.TableIdentifier {

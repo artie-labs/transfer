@@ -107,8 +107,12 @@ func (s Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, t
 	return dialect.NewTableIdentifier(databaseAndSchema.Database, table)
 }
 
-func (s Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, useTempTable bool) error {
-	return shared.Append(ctx, s, tableData, whClient, types.AdditionalSettings{})
+func (s Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, useTempTable bool) (bool, error) {
+	if err := shared.Append(ctx, s, tableData, whClient, types.AdditionalSettings{}); err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 func (s Store) IsRetryableError(err error) bool {

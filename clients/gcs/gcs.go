@@ -68,13 +68,13 @@ func (s *Store) ObjectPrefix(tableData *optimization.TableData) string {
 	return strings.Join([]string{fqTableName, yyyyMMDDFormat}, "/")
 }
 
-func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, _ bool) error {
+func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, _ bool) (bool, error) {
 	// There's no difference in appending or merging for GCS.
-	if _, err := s.Merge(ctx, tableData, whClient); err != nil {
-		return fmt.Errorf("failed to merge: %w", err)
+	success, err := s.Merge(ctx, tableData, whClient)
+	if err != nil {
+		return false, fmt.Errorf("failed to merge: %w", err)
 	}
-
-	return nil
+	return success, nil
 }
 
 func buildTemporaryFilePath(tableData *optimization.TableData) string {

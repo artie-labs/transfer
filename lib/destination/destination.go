@@ -33,12 +33,17 @@ type SQLDestination interface {
 	LoadDataIntoTable(ctx context.Context, tableData *optimization.TableData, tableConfig *types.DestinationTableConfig, tableID, parentTableID sqllib.TableIdentifier, additionalSettings types.AdditionalSettings, createTempTable bool) error
 }
 
+// offset commit override for destinations that support streaming.
+type OffsetCommitter interface {
+	ShouldCommitOffset(reason string, commitOffset bool) bool
+}
+
 type Destination interface {
 	Label() constants.DestinationKind
 	GetConfig() config.Config
 
 	Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client) (commitTransaction bool, err error)
-	Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, useTempTable bool) error
+	Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, useTempTable bool) (bool, error)
 	IsRetryableError(err error) bool
 	IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, table string) sqllib.TableIdentifier
 	DropTable(ctx context.Context, tableID sqllib.TableIdentifier) error

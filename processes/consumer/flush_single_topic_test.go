@@ -130,7 +130,7 @@ func (f *FlushTestSuite) TestFlushSingleTopic_HistoryMode() {
 	td.SetTableData(optimization.NewTableData(columns.NewColumns(nil), config.History, []string{"id"}, topicConfig, tableID.Table))
 	td.InsertRow("1", map[string]any{"id": 1, "event": "login"}, false)
 
-	f.fakeBaseline.AppendReturns(nil)
+	f.fakeBaseline.AppendReturns(true, nil)
 	assert.NoError(f.T(), FlushSingleTopic(ctx, f.db, f.baseline, metrics.NullMetricsProvider{}, nil, Args{Reason: "test"}, topicName, false))
 	assert.Equal(f.T(), 1, f.fakeBaseline.AppendCallCount())
 	assert.Equal(f.T(), 0, f.fakeBaseline.MergeCallCount())

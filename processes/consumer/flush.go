@@ -65,6 +65,8 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 
 	var grp errgroup.Group
 	var commitOffset atomic.Bool
+	var clearMemory atomic.Bool
+	var isAppend atomic.Bool
 	err = consumer.LockAndProcess(ctx, shouldLock, func() error {
 		// If there are more tables, let's ensure that ALL tables in this topic are flushable.
 		// If not, let's hold off and wait for the next flush cycle. This is to avoid a situation where we flush a fraction of the tables in this topic
@@ -122,6 +124,8 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 				// It's okay that this will get overwritten by other tables
 				// This is because MSM is only supported for a single table / topic.
 				commitOffset.Store(result.CommitOffset)
+				clearMemory.Store(result.ClearMemory)
+				isAppend.Store(result.IsAppend)
 				tags["what"] = result.What
 				metricsClient.Timing("flush", result.Duration, tags)
 				return nil
@@ -136,10 +140,20 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 			return fmt.Errorf("failed to flush table: %w", err)
 		}
 
-		if commitOffset.Load() {
+		shouldCommit := commitOffset.Load()
+		if isAppend.Load() {
+			if oc, ok := dest.(destination.OffsetCommitter); ok {
+				shouldCommit = oc.ShouldCommitOffset(args.Reason, commitOffset.Load())
+			}
+		}
+
+		if shouldCommit {
 			if err := consumer.CommitMessage(ctx); err != nil {
 				return fmt.Errorf("failed to commit message: %w", err)
 			}
+		}
+
+		if clearMemory.Load() || commitOffset.Load() {
 			for _, table := range tables {
 				slog.Info("Flush success, clearing memory...", slog.String("tableID", table.GetTableID().String()))
 				inMemDB.ClearTableConfig(table.GetTableID())
@@ -155,6 +169,8 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 type flushResult struct {
 	What         string
 	CommitOffset bool
+	ClearMemory  bool
+	IsAppend     bool
 	Duration     time.Duration
 }
 
@@ -168,12 +184,12 @@ func flush(ctx context.Context, dest destination.Destination, _tableData *models
 	}
 
 	if mode == config.History || _tableData.TopicConfig().AppendOnly {
-		err := dest.Append(ctx, _tableData.TableData, whClient, false)
+		commitOffset, err := dest.Append(ctx, _tableData.TableData, whClient, false)
 		if err != nil {
 			return flushResult{What: "merge_fail"}, fmt.Errorf("failed to append: %w", err)
 		}
 
-		return flushResult{What: "success", CommitOffset: true}, nil
+		return flushResult{What: "success", CommitOffset: commitOffset, ClearMemory: true, IsAppend: true}, nil
 	} else {
 		commitTransaction, err := dest.Merge(ctx, _tableData.TableData, whClient)
 		if err != nil {

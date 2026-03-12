@@ -14,7 +14,6 @@ import (
 	"cloud.google.com/go/bigquery/storage/managedwriter/adapt"
 	_ "github.com/viant/bigquery"
 	"google.golang.org/api/option"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/artie-labs/transfer/clients/bigquery/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
@@ -40,6 +39,7 @@ type Store struct {
 	configMap           *types.DestinationTableConfigMap
 	config              config.Config
 	bqClient            *bigquery.Client
+	streamManager       *StreamManager
 
 	db.Store
 }
@@ -56,15 +56,24 @@ func (s Store) IsOLTP() bool {
 	return false
 }
 
+func (s Store) ShouldCommitOffset(reason string, commitOffset bool) bool {
+	return commitOffset || reason == "time"
+}
+
 func (s *Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error {
 	return shared.DropTemporaryTable(ctx, s, tableID, s.configMap)
 }
 
-func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, useTempTable bool) error {
+func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, useTempTable bool) (bool, error) {
 	if !useTempTable {
-		return shared.Append(ctx, s, tableData, whClient, types.AdditionalSettings{
+		if err := shared.Append(ctx, s, tableData, whClient, types.AdditionalSettings{
 			ColumnSettings: s.config.SharedDestinationSettings.ColumnSettings,
-		})
+		}); err != nil {
+			return false, err
+		}
+
+		// For BQ streaming in history mode, don't commit the offset immediately because the data is not yet queryable.
+		return tableData.Mode() != config.History, nil
 	}
 
 	// We can simplify this once Google has fully rolled out the ability to execute DML on recently streamed data
@@ -81,7 +90,7 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, w
 		TempTableID:    temporaryTableID,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to append: %w", err)
+		return false, fmt.Errorf("failed to append: %w", err)
 	}
 
 	query := fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s`,
@@ -92,10 +101,10 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, w
 	)
 
 	if _, err = s.ExecContext(ctx, query); err != nil {
-		return fmt.Errorf("failed to insert data into target table: %w", err)
+		return false, fmt.Errorf("failed to insert data into target table: %w", err)
 	}
 
-	return nil
+	return true, nil
 }
 
 func (s *Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.TableData, dwh *types.DestinationTableConfig, tableID, _ sql.TableIdentifier, opts types.AdditionalSettings, createTempTable bool) error {
@@ -108,6 +117,9 @@ func (s *Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.T
 	bqTempTableID, err := typing.AssertType[dialect.TableIdentifier](tableID)
 	if err != nil {
 		return err
+	}
+	if tableData.Mode() == config.History {
+		return s.putTableStreaming(ctx, bqTempTableID, tableData)
 	}
 
 	if err = s.putTable(ctx, bqTempTableID, tableData); err != nil {
@@ -186,56 +198,13 @@ func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier,
 	}
 	defer managedStream.Close()
 
-	encoder := func(row optimization.Row) ([]byte, error) {
-		message, err := rowToMessage(row.GetData(), columns, *messageDescriptor, s.config)
-		if err != nil {
-			return nil, fmt.Errorf("failed to convert row to message: %w", err)
-		}
-
-		bytes, err := proto.Marshal(message)
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal message: %w", err)
-		}
-
-		return bytes, nil
-	}
-
+	encoder := buildEncoder(columns, *messageDescriptor, s.config)
 	skipped, err := batch.BySize(tableData.Rows(), s.maxRequestBytesSize, false, encoder, func(chunk [][]byte, _ []optimization.Row) error {
 		result, err := managedStream.AppendRows(ctx, chunk)
 		if err != nil {
 			return fmt.Errorf("failed to append rows: %w", err)
 		}
-
-		resp, err := result.FullResponse(ctx)
-		if err != nil {
-			if resp != nil {
-				if rowErrs := resp.GetRowErrors(); len(rowErrs) > 0 {
-					// Just log the first few errors
-					var errors []any
-					for i, rowErr := range rowErrs {
-						if i > 5 {
-							break
-						}
-
-						errors = append(errors, rowErr)
-					}
-
-					return fmt.Errorf("failed to append rows, encountered %d errors: %v", len(rowErrs), errors)
-				}
-			}
-
-			return fmt.Errorf("failed to get response: %w", err)
-		}
-
-		if status := resp.GetError(); status != nil {
-			return fmt.Errorf("failed to append rows: %s", status.String())
-		}
-
-		if rowErrs := resp.GetRowErrors(); len(rowErrs) > 0 {
-			return fmt.Errorf("failed to append rows, encountered %d errors", len(rowErrs))
-		}
-
-		return nil
+		return checkAppendResponse(ctx, result)
 	})
 	if err != nil {
 		return fmt.Errorf("failed to write rows: %w", err)
@@ -325,11 +294,47 @@ func LoadStore(ctx context.Context, cfg config.Config, _store *db.Store) (*Store
 		slog.Int("maxPayloadBytes", maxRequestByteSize),
 		slog.Int("overheadBytes", bigQueryMaxRequestSize-maxRequestByteSize),
 	)
+
+	// Stream Manager init:
+	streamManager, err := NewStreamManager(ctx, bqClient.Project())
+	if err != nil {
+		return nil, fmt.Errorf("failed to init stream manager for BQ:  %w", err)
+	}
 	return &Store{
 		bqClient:            bqClient,
 		configMap:           &types.DestinationTableConfigMap{},
 		config:              cfg,
 		Store:               store,
+		streamManager:       streamManager,
 		maxRequestBytesSize: maxRequestByteSize,
 	}, nil
+}
+
+func (s *Store) putTableStreaming(ctx context.Context, bqTableID dialect.TableIdentifier, tableData *optimization.TableData) error {
+	streamEntry, err := s.streamManager.getOrCreateStream(ctx, bqTableID, tableData.ReadOnlyInMemoryCols().ValidColumns())
+	if err != nil {
+		return fmt.Errorf("failed to fetch stream for table:%s. error: %w", bqTableID.FullyQualifiedName(), err)
+	}
+	columns := tableData.ReadOnlyInMemoryCols().ValidColumns()
+	encoder := buildEncoder(columns, *streamEntry.messageDescriptor, s.config)
+	skipped, err := batch.BySize(tableData.Rows(), s.maxRequestBytesSize, false, encoder, func(chunk [][]byte, rows []optimization.Row) error {
+		result, err := streamEntry.stream.AppendRows(ctx, chunk, managedwriter.WithOffset(streamEntry.CurrentOffset()))
+		if err != nil {
+			return fmt.Errorf("failed to append rows: %w", err)
+		}
+		if err := checkAppendResponse(ctx, result); err != nil {
+			return err
+		}
+		streamEntry.AdvanceOffset(int64(len(rows)))
+		return nil
+	})
+	if err != nil {
+		s.streamManager.EvictStream(bqTableID)
+		return fmt.Errorf("failed to write rows: %w", err)
+	}
+	if skipped > 0 {
+		slog.Warn("Skipped rows during streaming append", slog.String("table", bqTableID.FullyQualifiedName()), slog.Int("skipped", skipped))
+	}
+
+	return nil
 }

@@ -11,11 +11,15 @@ import (
 	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
 )
 
-func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, _ bool) error {
+func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, _ bool) (bool, error) {
 	// TODO: For history mode - in the future, we could also have a separate stage name for history mode so we can enable parallel processing.
-	return shared.Append(ctx, s, tableData, whClient, types.AdditionalSettings{
+	if err := shared.Append(ctx, s, tableData, whClient, types.AdditionalSettings{
 		AdditionalCopyClause: fmt.Sprintf(`FILE_FORMAT = (TYPE = 'csv' FIELD_DELIMITER= '\t' FIELD_OPTIONALLY_ENCLOSED_BY='"' NULL_IF='%s' EMPTY_FIELD_AS_NULL=FALSE) PURGE = TRUE`, constants.NullValuePlaceholder),
-	})
+	}); err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client) (bool, error) {
