@@ -313,7 +313,17 @@ func (c Config) Validate() error {
 				return fmt.Errorf("soft partitioning is not supported in history mode, topic: %s", topicConfig.String())
 			}
 		}
+	}
 
+	if hasColumnsToEncrypt {
+		// Now check if [SharedDestinationSettings.EncryptionPassphrase] is passed in.
+		if stringutil.Empty(c.SharedDestinationSettings.EncryptionPassphrase) {
+			return fmt.Errorf("encryption passphrase is required when columnsToEncrypt is passed in")
+		}
+
+		if _, err := cryptography.DecodePassphrase(c.SharedDestinationSettings.EncryptionPassphrase); err != nil {
+			return fmt.Errorf("invalid encryption passphrase: %w", err)
+		}
 	}
 
 	return nil

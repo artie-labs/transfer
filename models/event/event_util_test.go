@@ -170,9 +170,9 @@ func (e *EventsTestSuite) TestTransformData() {
 			}
 		}
 		{
-			// Invalid passphrase length should return an error
+			// Invalid passphrase should return an error
 			_, err := transformData(map[string]any{"foo": "bar"}, kafkalib.TopicConfig{ColumnsToEncrypt: []string{"foo"}}, "too-short")
-			assert.ErrorContains(e.T(), err, "failed to encrypt column")
+			assert.ErrorContains(e.T(), err, "failed to decode encryption passphrase")
 		}
 	}
 	{
