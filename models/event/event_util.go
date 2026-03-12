@@ -72,8 +72,8 @@ func buildColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns map[
 			filteredColumns.AddColumn(columns.NewColumn(col.Name, typing.String))
 		}
 
-		setColumnTypesToString(filteredColumns, tc.ColumnsToHash)
-		setColumnTypesToString(filteredColumns, tc.ColumnsToEncrypt)
+		SetColumnTypesToString(filteredColumns, tc.ColumnsToHash)
+		SetColumnTypesToString(filteredColumns, tc.ColumnsToEncrypt)
 
 		return filteredColumns.GetColumns(), nil
 	}
@@ -83,13 +83,14 @@ func buildColumns(event cdc.Event, tc kafkalib.TopicConfig, reservedColumns map[
 		cols.AddColumn(columns.NewColumn(col.Name, typing.String))
 	}
 
-	setColumnTypesToString(cols, tc.ColumnsToHash)
-	setColumnTypesToString(cols, tc.ColumnsToEncrypt)
+	SetColumnTypesToString(cols, tc.ColumnsToHash)
+	SetColumnTypesToString(cols, tc.ColumnsToEncrypt)
 
 	return cols.GetColumns(), nil
 }
 
-func setColumnTypesToString(cols *columns.Columns, columnNames []string) {
+// [SetColumnTypesToString] - will set the column types to string. This needs to be public so that we can reference it in Reader.
+func SetColumnTypesToString(cols *columns.Columns, columnNames []string) {
 	for _, col := range columnNames {
 		columnInfo, ok := cols.GetColumn(col)
 		if !ok {

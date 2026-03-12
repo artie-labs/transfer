@@ -19,7 +19,7 @@ func (e *EventsTestSuite) TestSetColumnTypesToString() {
 			columns.NewColumn("id", typing.Integer),
 			columns.NewColumn("name", typing.String),
 		})
-		setColumnTypesToString(cols, nil)
+		SetColumnTypesToString(cols, nil)
 		idCol, _ := cols.GetColumn("id")
 		assert.Equal(e.T(), typing.Integer, idCol.KindDetails)
 		nameCol, _ := cols.GetColumn("name")
@@ -30,7 +30,7 @@ func (e *EventsTestSuite) TestSetColumnTypesToString() {
 		cols := columns.NewColumns([]columns.Column{
 			columns.NewColumn("id", typing.Integer),
 		})
-		setColumnTypesToString(cols, []string{"email"})
+		SetColumnTypesToString(cols, []string{"email"})
 		idCol, _ := cols.GetColumn("id")
 		assert.Equal(e.T(), typing.Integer, idCol.KindDetails)
 	}
@@ -40,7 +40,7 @@ func (e *EventsTestSuite) TestSetColumnTypesToString() {
 			columns.NewColumn("id", typing.Integer),
 			columns.NewColumn("email", typing.String),
 		})
-		setColumnTypesToString(cols, []string{"id"})
+		SetColumnTypesToString(cols, []string{"id"})
 		idCol, _ := cols.GetColumn("id")
 		assert.Equal(e.T(), typing.String, idCol.KindDetails)
 		emailCol, _ := cols.GetColumn("email")
@@ -54,7 +54,7 @@ func (e *EventsTestSuite) TestSetColumnTypesToString() {
 			columns.NewColumn("active", typing.Boolean),
 			columns.NewColumn("name", typing.String),
 		})
-		setColumnTypesToString(cols, []string{"id", "score"})
+		SetColumnTypesToString(cols, []string{"id", "score"})
 		idCol, _ := cols.GetColumn("id")
 		assert.Equal(e.T(), typing.String, idCol.KindDetails)
 		scoreCol, _ := cols.GetColumn("score")
