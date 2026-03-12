@@ -262,6 +262,46 @@ func TestTopicConfig_Validate(t *testing.T) {
 
 	tc.ColumnsToInclude = []string{}
 	assert.NoError(t, tc.Validate(), tc.String())
+
+	{
+		// ColumnsToEncrypt overlaps with PrimaryKeysOverride
+		tc := TopicConfig{
+			Database:            "db",
+			Schema:              "schema",
+			Topic:               "topic",
+			CDCFormat:           "debezium",
+			CDCKeyFormat:        JSONKeyFmt,
+			ColumnsToEncrypt:    []string{"email"},
+			PrimaryKeysOverride: []string{"id", "email"},
+		}
+		assert.ErrorContains(t, tc.Validate(), `column "email" cannot be both a primary key and encrypted`)
+	}
+	{
+		// ColumnsToEncrypt overlaps with IncludePrimaryKeys
+		tc := TopicConfig{
+			Database:           "db",
+			Schema:             "schema",
+			Topic:              "topic",
+			CDCFormat:          "debezium",
+			CDCKeyFormat:       JSONKeyFmt,
+			ColumnsToEncrypt:   []string{"ssn"},
+			IncludePrimaryKeys: []string{"ssn"},
+		}
+		assert.ErrorContains(t, tc.Validate(), `column "ssn" cannot be both a primary key and encrypted`)
+	}
+	{
+		// ColumnsToEncrypt with no overlap — valid
+		tc := TopicConfig{
+			Database:            "db",
+			Schema:              "schema",
+			Topic:               "topic",
+			CDCFormat:           "debezium",
+			CDCKeyFormat:        JSONKeyFmt,
+			ColumnsToEncrypt:    []string{"email"},
+			PrimaryKeysOverride: []string{"id"},
+		}
+		assert.NoError(t, tc.Validate())
+	}
 }
 
 func TestMultiStepMergeSettings_Validate(t *testing.T) {

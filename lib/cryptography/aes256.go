@@ -19,7 +19,7 @@ func GeneratePassphrase() ([]byte, error) {
 	return key, nil
 }
 
-func ensureKeySize(key []byte) error {
+func EnsureKeySize(key []byte) error {
 	if len(key) != aes256KeySize {
 		return fmt.Errorf("key must be 32 bytes, got: %d", len(key))
 	}
@@ -30,7 +30,7 @@ func ensureKeySize(key []byte) error {
 // Encrypt encrypts plaintext using AES-256-GCM with the provided key.
 // A random nonce is generated and prepended to the returned ciphertext.
 func Encrypt(key, plaintext []byte) ([]byte, error) {
-	if err := ensureKeySize(key); err != nil {
+	if err := EnsureKeySize(key); err != nil {
 		return nil, err
 	}
 
@@ -55,7 +55,7 @@ func Encrypt(key, plaintext []byte) ([]byte, error) {
 // Decrypt decrypts ciphertext that was encrypted with [Encrypt] using AES-256-GCM.
 // It expects the nonce to be prepended to the ciphertext.
 func Decrypt(key, ciphertext []byte) ([]byte, error) {
-	if err := ensureKeySize(key); err != nil {
+	if err := EnsureKeySize(key); err != nil {
 		return nil, err
 	}
 
