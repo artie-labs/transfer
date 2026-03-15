@@ -3,9 +3,11 @@ package config
 import (
 	"testing"
 
-	"github.com/artie-labs/transfer/lib/config/constants"
-
 	"github.com/stretchr/testify/assert"
+
+	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/cryptography"
+	"github.com/artie-labs/transfer/lib/kafkalib"
 )
 
 func TestS3Settings_Validate(t *testing.T) {
@@ -164,6 +166,130 @@ func TestSQSSettings_Validate(t *testing.T) {
 		}
 		assert.NoError(t, sqs.Validate())
 		assert.False(t, sqs.IsSingleQueueMode())
+	}
+}
+
+func TestColumnEncryptionKMSConfig_Validate(t *testing.T) {
+	{
+		// Missing keyARN
+		cfg := ColumnEncryptionKMSConfig{
+			EncryptedPassphrase: "some-encrypted-dek",
+		}
+		assert.ErrorContains(t, cfg.Validate(), "keyARN is required")
+	}
+	{
+		// Missing encryptedPassphrase
+		cfg := ColumnEncryptionKMSConfig{
+			KeyARN: "arn:aws:kms:us-east-1:123456789012:key/abcd-1234",
+		}
+		assert.ErrorContains(t, cfg.Validate(), "encryptedPassphrase is required")
+	}
+	{
+		// Both empty
+		cfg := ColumnEncryptionKMSConfig{}
+		assert.ErrorContains(t, cfg.Validate(), "keyARN is required")
+	}
+	{
+		// Valid
+		cfg := ColumnEncryptionKMSConfig{
+			KeyARN:              "arn:aws:kms:us-east-1:123456789012:key/abcd-1234",
+			EncryptedPassphrase: "AQIDAHh-base64-encrypted-dek",
+		}
+		assert.NoError(t, cfg.Validate())
+	}
+	{
+		// Valid with region
+		cfg := ColumnEncryptionKMSConfig{
+			KeyARN:              "arn:aws:kms:us-east-1:123456789012:key/abcd-1234",
+			EncryptedPassphrase: "AQIDAHh-base64-encrypted-dek",
+			AwsRegion:           "us-east-1",
+		}
+		assert.NoError(t, cfg.Validate())
+	}
+}
+
+func TestConfig_Validate_Encryption(t *testing.T) {
+	baseCfg := func() Config {
+		kafka := &kafkalib.Kafka{
+			BootstrapServer: "server",
+			GroupID:         "group",
+			TopicConfigs: []*kafkalib.TopicConfig{
+				{
+					Database:         "db",
+					TableName:        "table",
+					Schema:           "schema",
+					Topic:            "topic",
+					CDCFormat:        constants.DBZPostgresAltFormat,
+					CDCKeyFormat:     "org.apache.kafka.connect.json.JsonConverter",
+					ColumnsToEncrypt: []string{"email"},
+				},
+			},
+		}
+		return Config{
+			Kafka:                kafka,
+			FlushIntervalSeconds: 10,
+			FlushSizeKb:          5,
+			BufferRows:           500,
+			Output:               constants.Snowflake,
+			Queue:                constants.Kafka,
+		}
+	}
+
+	{
+		// Neither passphrase nor KMS config set
+		cfg := baseCfg()
+		assert.ErrorContains(t, cfg.Validate(), "encryptionPassphrase or encryptionKMSConfig is required when columnsToEncrypt is specified")
+	}
+	{
+		// Both passphrase and KMS config set
+		passphrase, err := cryptography.GeneratePassphrase()
+		assert.NoError(t, err)
+		cfg := baseCfg()
+		cfg.SharedDestinationSettings.EncryptionPassphrase = passphrase
+		cfg.SharedDestinationSettings.EncryptionKMSConfig = &ColumnEncryptionKMSConfig{
+			KeyARN:              "arn:aws:kms:us-east-1:123456789012:key/abcd-1234",
+			EncryptedPassphrase: "AQIDAHh-base64",
+		}
+		assert.ErrorContains(t, cfg.Validate(), "encryptionPassphrase and encryptionKMSConfig are mutually exclusive")
+	}
+	{
+		// Valid with passphrase only
+		passphrase, err := cryptography.GeneratePassphrase()
+		assert.NoError(t, err)
+		cfg := baseCfg()
+		cfg.SharedDestinationSettings.EncryptionPassphrase = passphrase
+		assert.NoError(t, cfg.Validate())
+	}
+	{
+		// Valid with KMS config only
+		cfg := baseCfg()
+		cfg.SharedDestinationSettings.EncryptionKMSConfig = &ColumnEncryptionKMSConfig{
+			KeyARN:              "arn:aws:kms:us-east-1:123456789012:key/abcd-1234",
+			EncryptedPassphrase: "AQIDAHh-base64-encrypted-dek",
+		}
+		assert.NoError(t, cfg.Validate())
+	}
+	{
+		// KMS config with missing keyARN
+		cfg := baseCfg()
+		cfg.SharedDestinationSettings.EncryptionKMSConfig = &ColumnEncryptionKMSConfig{
+			EncryptedPassphrase: "AQIDAHh-base64-encrypted-dek",
+		}
+		assert.ErrorContains(t, cfg.Validate(), "invalid encryption KMS config: keyARN is required")
+	}
+	{
+		// KMS config with missing encryptedPassphrase
+		cfg := baseCfg()
+		cfg.SharedDestinationSettings.EncryptionKMSConfig = &ColumnEncryptionKMSConfig{
+			KeyARN: "arn:aws:kms:us-east-1:123456789012:key/abcd-1234",
+		}
+		assert.ErrorContains(t, cfg.Validate(), "invalid encryption KMS config: encryptedPassphrase is required")
+	}
+	{
+		// Invalid passphrase (not valid base64 of 32 bytes)
+		cfg := baseCfg()
+		cfg.SharedDestinationSettings.EncryptionPassphrase = "not-a-valid-passphrase"
+		assert.ErrorContains(t, cfg.Validate(), "invalid encryption passphrase")
 	}
 }
 

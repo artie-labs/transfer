@@ -1,8 +1,11 @@
 package config
 
 import (
+	"fmt"
+
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/webhooksutil"
 )
 
@@ -60,9 +63,34 @@ type SharedDestinationSettings struct {
 	// [ForceUTCTimezone] - If enabled, for all TimestampNTZ types, we will return TimestampTZ kind. The converters should ensure that the timezone is set to UTC.
 	ForceUTCTimezone bool `yaml:"forceUTCTimezone"`
 	// [EncryptionPassphrase] - This is used to encrypt columns that should be written to the destination.
+	// Mutually exclusive with [EncryptionKMSConfig].
 	EncryptionPassphrase string `yaml:"encryptionPassphrase,omitempty"`
+	// [EncryptionKMSConfig] - If set, the encryption passphrase will be decrypted at startup using AWS KMS.
+	// Mutually exclusive with [EncryptionPassphrase].
+	EncryptionKMSConfig *ColumnEncryptionKMSConfig `yaml:"encryptionKMSConfig,omitempty"`
 	// [CSVConvertUTF8] - If enabled, we will convert all values to UTF-8 when writing to the staging CSV file.
 	CSVConvertUTF8 bool `yaml:"csvConvertUTF8"`
+}
+
+type ColumnEncryptionKMSConfig struct {
+	// [KeyARN] - The ARN of the KMS master key used to encrypt the data encryption key.
+	KeyARN string `yaml:"keyARN"`
+	// [EncryptedPassphrase] - Base64-encoded encrypted data encryption key (produced by KMS GenerateDataKeyWithoutPlaintext or equivalent).
+	EncryptedPassphrase string `yaml:"encryptedPassphrase"`
+	// [AwsRegion] - AWS region for the KMS call. If empty, falls back to AWS SDK defaults.
+	AwsRegion string `yaml:"awsRegion,omitempty"`
+}
+
+func (c ColumnEncryptionKMSConfig) Validate() error {
+	if stringutil.Empty(c.KeyARN) {
+		return fmt.Errorf("keyARN is required")
+	}
+
+	if stringutil.Empty(c.EncryptedPassphrase) {
+		return fmt.Errorf("encryptedPassphrase is required")
+	}
+
+	return nil
 }
 
 type StagingTableReuseConfig struct {

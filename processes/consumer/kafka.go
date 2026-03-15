@@ -8,6 +8,7 @@ import (
 
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/artie/metrics"
+	"github.com/artie-labs/transfer/lib/awslib"
 	"github.com/artie-labs/transfer/lib/cdc/format"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/cryptography"
@@ -31,6 +32,22 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 		encryptionKey, err = cryptography.DecodePassphrase(cfg.SharedDestinationSettings.EncryptionPassphrase)
 		if err != nil {
 			logger.Fatal("Failed to decode encryption passphrase", slog.Any("err", err))
+		}
+	} else if kmsCfg := cfg.SharedDestinationSettings.EncryptionKMSConfig; kmsCfg != nil {
+		awsCfg, err := awslib.NewDefaultConfig(ctx, kmsCfg.AwsRegion)
+		if err != nil {
+			logger.Fatal("Failed to load AWS config for KMS", slog.Any("err", err))
+		}
+
+		kmsClient := awslib.NewKMSClient(awsCfg)
+		passphrase, err := kmsClient.DecryptDataKey(ctx, kmsCfg.EncryptedPassphrase, kmsCfg.KeyARN)
+		if err != nil {
+			logger.Fatal("Failed to decrypt encryption passphrase via KMS", slog.Any("err", err))
+		}
+
+		encryptionKey, err = cryptography.DecodePassphrase(passphrase)
+		if err != nil {
+			logger.Fatal("Failed to decode KMS-decrypted encryption passphrase", slog.Any("err", err))
 		}
 	}
 

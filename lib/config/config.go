@@ -316,13 +316,27 @@ func (c Config) Validate() error {
 	}
 
 	if hasColumnsToEncrypt {
-		// Now check if [SharedDestinationSettings.EncryptionPassphrase] is passed in.
-		if stringutil.Empty(c.SharedDestinationSettings.EncryptionPassphrase) {
-			return fmt.Errorf("encryption passphrase is required when columnsToEncrypt is passed in")
+		hasPassphrase := !stringutil.Empty(c.SharedDestinationSettings.EncryptionPassphrase)
+		hasKMSConfig := c.SharedDestinationSettings.EncryptionKMSConfig != nil
+
+		if hasPassphrase && hasKMSConfig {
+			return fmt.Errorf("encryptionPassphrase and encryptionKMSConfig are mutually exclusive")
 		}
 
-		if _, err := cryptography.DecodePassphrase(c.SharedDestinationSettings.EncryptionPassphrase); err != nil {
-			return fmt.Errorf("invalid encryption passphrase: %w", err)
+		if !hasPassphrase && !hasKMSConfig {
+			return fmt.Errorf("encryptionPassphrase or encryptionKMSConfig is required when columnsToEncrypt is specified")
+		}
+
+		if hasPassphrase {
+			if _, err := cryptography.DecodePassphrase(c.SharedDestinationSettings.EncryptionPassphrase); err != nil {
+				return fmt.Errorf("invalid encryption passphrase: %w", err)
+			}
+		}
+
+		if hasKMSConfig {
+			if err := c.SharedDestinationSettings.EncryptionKMSConfig.Validate(); err != nil {
+				return fmt.Errorf("invalid encryption KMS config: %w", err)
+			}
 		}
 	}
 
