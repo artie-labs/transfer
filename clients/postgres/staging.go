@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/artie-labs/transfer/clients/bigquery/converters"
@@ -50,7 +51,7 @@ func (s *Store) buildStagingIterator(tableData *optimization.TableData) (pgx.Cop
 			value, _ := row.GetValue(col.Name())
 			parsedValue, err := parseValue(value, col)
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse value: %w", err)
+				return nil, fmt.Errorf("failed to parse value for column %q: %w", col.Name(), err)
 			}
 
 			rowValues = append(rowValues, parsedValue)
@@ -139,19 +140,22 @@ func parseValue(value any, col columns.Column) (any, error) {
 		}
 
 		return base64.StdEncoding.DecodeString(castedValue)
-	case typing.Interval.Kind:
-		castedValue, err := typing.AssertType[string](value)
-		if err != nil {
-			return nil, err
-		}
-
-		return castedValue, nil
 	case typing.Struct.Kind:
 		// If it's the toast placeholder value, wrap it in quotes so it's valid json
 		if value == constants.ToastUnavailableValuePlaceholder {
 			return fmt.Sprintf(`%q`, value), nil
 		}
 		return value, nil
+	case typing.Interval.Kind:
+		switch castedValue := value.(type) {
+		case string:
+			// It's already been encoded, just leave it alone.
+			return castedValue, nil
+		case int64:
+			return pgtype.Interval{Microseconds: castedValue, Valid: true}, nil
+		default:
+			return nil, fmt.Errorf("expected string or int64 for interval, got %T", value)
+		}
 	default:
 		return value, nil
 	}
