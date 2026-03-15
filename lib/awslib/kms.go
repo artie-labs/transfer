@@ -23,12 +23,20 @@ func NewKMSClient(cfg aws.Config) KMSClient {
 }
 
 type GenerateDataKeyResult struct {
-	PlaintextDEK string
 	EncryptedDEK string
 }
 
-func (k KMSClient) GenerateDataKey(ctx context.Context, kmsKeyARN string) (GenerateDataKeyResult, error) {
-	output, err := k.client.GenerateDataKey(ctx, &kms.GenerateDataKeyInput{
+func (k KMSClient) GetKMS(ctx context.Context, kmsKeyARN string) (KMSClient, error) {
+	return KMSClient{
+		cfg:    k.cfg,
+		client: kms.NewFromConfig(k.cfg),
+	}, nil
+}
+
+// [GenerateDataKeyWithoutPlaintext] generates a data key without returning the plaintext.
+// We'll need to run [DecryptDataKey] to get the plaintext.
+func (k KMSClient) GenerateDataKeyWithoutPlaintext(ctx context.Context, kmsKeyARN string) (GenerateDataKeyResult, error) {
+	output, err := k.client.GenerateDataKeyWithoutPlaintext(ctx, &kms.GenerateDataKeyWithoutPlaintextInput{
 		KeyId:   aws.String(kmsKeyARN),
 		KeySpec: types.DataKeySpecAes256,
 	})
@@ -37,18 +45,17 @@ func (k KMSClient) GenerateDataKey(ctx context.Context, kmsKeyARN string) (Gener
 	}
 
 	return GenerateDataKeyResult{
-		PlaintextDEK: base64.StdEncoding.EncodeToString(output.Plaintext),
 		EncryptedDEK: base64.StdEncoding.EncodeToString(output.CiphertextBlob),
 	}, nil
 }
 
-func (k KMSClient) DecryptDataKey(ctx context.Context, encryptedDEK string) (string, error) {
+func (k KMSClient) DecryptDataKey(ctx context.Context, encryptedDEK string, kmsKeyARN string) (string, error) {
 	ciphertextBlob, err := base64.StdEncoding.DecodeString(encryptedDEK)
 	if err != nil {
 		return "", fmt.Errorf("failed to decode encrypted DEK: %w", err)
 	}
 
-	output, err := k.client.Decrypt(ctx, &kms.DecryptInput{CiphertextBlob: ciphertextBlob})
+	output, err := k.client.Decrypt(ctx, &kms.DecryptInput{CiphertextBlob: ciphertextBlob, KeyId: aws.String(kmsKeyARN)})
 	if err != nil {
 		return "", fmt.Errorf("failed to decrypt data key: %w", err)
 	}
