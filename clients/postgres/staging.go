@@ -50,7 +50,7 @@ func (s *Store) buildStagingIterator(tableData *optimization.TableData) (pgx.Cop
 			value, _ := row.GetValue(col.Name())
 			parsedValue, err := parseValue(value, col)
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse value: %w", err)
+				return nil, fmt.Errorf("failed to parse value for column %q: %w", col.Name(), err)
 			}
 
 			rowValues = append(rowValues, parsedValue)
