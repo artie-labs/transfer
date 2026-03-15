@@ -11,13 +11,11 @@ import (
 )
 
 type KMSClient struct {
-	cfg    aws.Config
 	client *kms.Client
 }
 
 func NewKMSClient(cfg aws.Config) KMSClient {
 	return KMSClient{
-		cfg:    cfg,
 		client: kms.NewFromConfig(cfg),
 	}
 }
