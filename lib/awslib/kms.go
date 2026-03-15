@@ -48,7 +48,7 @@ func (k KMSClient) DecryptDataKey(ctx context.Context, encryptedDEK string) (str
 		return "", fmt.Errorf("failed to decode encrypted DEK: %w", err)
 	}
 
-	output, err := k.client.Decrypt(ctx, &kms.DecryptInput{CiphertextBlob: &ciphertextBlob})
+	output, err := k.client.Decrypt(ctx, &kms.DecryptInput{CiphertextBlob: ciphertextBlob})
 	if err != nil {
 		return "", fmt.Errorf("failed to decrypt data key: %w", err)
 	}
