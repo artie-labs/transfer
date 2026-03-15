@@ -147,17 +147,16 @@ func parseValue(value any, col columns.Column) (any, error) {
 		}
 		return value, nil
 	case typing.Interval.Kind:
-		return intervalToPgType(value)
+		switch castedValue := value.(type) {
+		case string:
+			// It's already been encoded, just leave it alone.
+			return castedValue, nil
+		case int64:
+			return pgtype.Interval{Microseconds: castedValue, Valid: true}, nil
+		default:
+			return nil, fmt.Errorf("expected string or int64 for interval, got %T", value)
+		}
 	default:
 		return value, nil
-	}
-}
-
-func intervalToPgType(value any) (pgtype.Interval, error) {
-	switch castedValue := value.(type) {
-	case int64:
-		return pgtype.Interval{Microseconds: castedValue, Valid: true}, nil
-	default:
-		return pgtype.Interval{}, fmt.Errorf("expected int64 for interval, got %T", value)
 	}
 }
