@@ -33,7 +33,7 @@ func (k KMSClient) GenerateDataKeyWithoutPlaintext(ctx context.Context, kmsKeyAR
 	return base64.StdEncoding.EncodeToString(output.CiphertextBlob), nil
 }
 
-func (k KMSClient) DecryptDataKey(ctx context.Context, encryptedDEK string, kmsKeyARN string) (string, error) {
+func (k KMSClient) DecryptDataKey(ctx context.Context, encryptedDEK, kmsKeyARN string) (string, error) {
 	ciphertextBlob, err := base64.StdEncoding.DecodeString(encryptedDEK)
 	if err != nil {
 		return "", fmt.Errorf("failed to decode encrypted DEK: %w", err)
