@@ -125,10 +125,57 @@ type WebhookSettings struct {
 	Enabled          bool   `yaml:"enabled"`
 	URL              string `yaml:"url"`
 	APIKey           string `yaml:"apiKey"`
-	CompanyUUID      string `yaml:"companyUuid"`
-	PipelineUUID     string `yaml:"pipelineUuid,omitempty"`
-	SourceReaderUUID string `yaml:"sourceReaderUuid,omitempty"`
+	CompanyUUID      string `yaml:"companyUUID"`
+	PipelineUUID     string `yaml:"pipelineUUID,omitempty"`
+	SourceReaderUUID string `yaml:"sourceReaderUUID,omitempty"`
 	Source           string `yaml:"source,omitempty"`      // connector source type, e.g. "postgresql"
 	Destination      string `yaml:"destination,omitempty"` // connector destination type, e.g. "bigquery"
 	Mode             string `yaml:"mode,omitempty"`        // transfer run mode, e.g. "replication"
+
+	// Deprecated: old configs nested company_uuid/pipeline_uuid here.
+	// Values are migrated to CompanyUUID/PipelineUUID automatically on load.
+	Properties map[string]any `yaml:"properties,omitempty"`
+}
+
+// oldServiceNames are values that old configs stored in the "source" YAML key to identify
+// the Artie service. The field's meaning changed to "connector source type" (e.g. "postgresql"),
+// so these stale values are discarded during migration.
+var oldServiceNames = map[string]bool{
+	"transfer":  true,
+	"reader":    true,
+	"debezium":  true,
+	"eventsAPI": true,
+}
+
+// Temporary: this promotes values from the deprecated Properties map into typed fields,
+// and discards stale "source" values that refer to the old service identifier.
+func (w *WebhookSettings) migrate() {
+	if w == nil {
+		return
+	}
+
+	// Lift company_uuid / pipeline_uuid out of the old properties block.
+	if len(w.Properties) > 0 {
+		if w.CompanyUUID == "" {
+			if v, ok := w.Properties["company_uuid"].(string); ok {
+				w.CompanyUUID = v
+			}
+		}
+		if w.PipelineUUID == "" {
+			if v, ok := w.Properties["pipeline_uuid"].(string); ok {
+				w.PipelineUUID = v
+			}
+		}
+		if w.SourceReaderUUID == "" {
+			if v, ok := w.Properties["source_reader_uuid"].(string); ok {
+				w.SourceReaderUUID = v
+			}
+		}
+	}
+
+	// Old configs set source to a service name (e.g. "transfer"). That field now holds
+	// the connector source type (e.g. "postgresql"), so discard legacy service-name values.
+	if oldServiceNames[w.Source] {
+		w.Source = ""
+	}
 }

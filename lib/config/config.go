@@ -83,6 +83,8 @@ func readFileToConfig(pathToConfig string) (*Config, error) {
 		return nil, err
 	}
 
+	config.WebhookSettings.migrate()
+
 	config.Queue = cmp.Or(config.Queue, constants.Kafka)
 	config.FlushIntervalSeconds = cmp.Or(config.FlushIntervalSeconds, defaultFlushTimeSeconds)
 	config.BufferRows = cmp.Or(config.BufferRows, defaultBufferPoolSize)
