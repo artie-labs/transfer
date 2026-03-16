@@ -70,10 +70,6 @@ func (w WebhooksClient) BuildProperties(args SendEventArgs) WebhookProperties {
 		DurationSeconds:  args.DurationSeconds,
 		Reason:           redact.ScrubString(args.Reason),
 		PrimaryKeys:      args.PrimaryKeys,
-		Columns:          args.Columns,
-		Count:            args.Count,
-		Column:           redact.ScrubString(args.Column),
-		DefaultValue:     args.DefaultValue,
 	}
 }
 

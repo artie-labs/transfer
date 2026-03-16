@@ -138,14 +138,6 @@ type WebhookProperties struct {
 	DurationSeconds float64  `json:"duration_seconds,omitempty"`
 	Reason          string   `json:"reason,omitempty"`       // table.skipped
 	PrimaryKeys     []string `json:"primary_keys,omitempty"` // row.skipped, dedupe.*
-
-	// backfill.started / backfill.completed
-	Columns []string `json:"columns,omitempty"`
-	Count   int      `json:"count,omitempty"`
-
-	// backfill.failed
-	Column       string `json:"column,omitempty"`
-	DefaultValue any    `json:"default_value,omitempty"`
 }
 
 // SendEventArgs is passed by call sites to SendEvent.
@@ -164,12 +156,4 @@ type SendEventArgs struct {
 	DurationSeconds float64
 	Reason          string
 	PrimaryKeys     []string
-
-	// backfill.started / backfill.completed
-	Columns []string
-	Count   int
-
-	// backfill.failed
-	Column       string
-	DefaultValue any
 }

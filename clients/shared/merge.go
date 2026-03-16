@@ -17,7 +17,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
-	"github.com/artie-labs/transfer/lib/webhooksutil"
 )
 
 const (
@@ -115,15 +114,6 @@ func Merge(ctx context.Context, dest destination.SQLDestination, tableData *opti
 		}
 	}
 
-	if len(colsToBackfill) > 0 {
-		whClient.SendEvent(ctx, webhooksutil.EventBackFillStarted, webhooksutil.SendEventArgs{
-			Table:   tableData.Name(),
-			Schema:  tableData.TopicConfig().Schema,
-			Columns: colsToBackfill,
-			Count:   len(colsToBackfill),
-		})
-	}
-
 	// Now iterate over all the in-memory cols and see which ones require a backfill.
 	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
 		if col.ShouldSkip() {
@@ -157,24 +147,8 @@ func Merge(ctx context.Context, dest destination.SQLDestination, tableData *opti
 		}
 
 		if backfillErr != nil {
-			whClient.SendEvent(ctx, webhooksutil.EventBackFillFailed, webhooksutil.SendEventArgs{
-				Table:        tableData.Name(),
-				Schema:       tableData.TopicConfig().Schema,
-				Column:       col.Name(),
-				DefaultValue: col.DefaultValue(),
-				Error:        fmt.Sprintf("Failed to backfill column: %s", backfillErr),
-			})
 			return fmt.Errorf("failed to backfill col: %s, default value: %v, err: %w", col.Name(), col.DefaultValue(), backfillErr)
 		}
-	}
-
-	if len(colsToBackfill) > 0 {
-		whClient.SendEvent(ctx, webhooksutil.EventBackFillCompleted, webhooksutil.SendEventArgs{
-			Table:   tableData.Name(),
-			Schema:  tableData.TopicConfig().Schema,
-			Columns: colsToBackfill,
-			Count:   len(colsToBackfill),
-		})
 	}
 
 	if subQuery == "" {
