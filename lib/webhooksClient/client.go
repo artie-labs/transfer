@@ -14,19 +14,23 @@ type Client struct {
 	enabled bool
 }
 
-func new(apiKey, url string, cfg *config.WebhookSettings, version string) (*Client, error) {
-	client, err := webhooksutil.NewWebhooksClient(
-		apiKey,
-		url,
-		webhooksutil.Transfer,
-		version,
-		cfg.CompanyUUID,
-		cfg.PipelineUUID,
-		cfg.SourceReaderUUID,
-		cfg.Source,
-		cfg.Destination,
-		cfg.Mode,
-	)
+func NewFromConfig(cfg *config.WebhookSettings, version string) (*Client, error) {
+	if cfg == nil || !cfg.Enabled {
+		return &Client{}, nil
+	}
+
+	client, err := webhooksutil.NewWebhooksClient(webhooksutil.WebhooksClientConfig{
+		APIKey:           cfg.APIKey,
+		URL:              cfg.URL,
+		Service:          webhooksutil.Transfer,
+		Version:          version,
+		CompanyUUID:      cfg.CompanyUUID,
+		PipelineUUID:     cfg.PipelineUUID,
+		SourceReaderUUID: cfg.SourceReaderUUID,
+		Source:           cfg.Source,
+		Destination:      cfg.Destination,
+		Mode:             cfg.Mode,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create webhooks client: %w", err)
 	}
@@ -35,14 +39,6 @@ func new(apiKey, url string, cfg *config.WebhookSettings, version string) (*Clie
 		client:  &client,
 		enabled: true,
 	}, nil
-}
-
-func NewFromConfig(cfg *config.WebhookSettings, version string) (*Client, error) {
-	if cfg == nil || !cfg.Enabled {
-		return &Client{}, nil
-	}
-
-	return new(cfg.APIKey, cfg.URL, cfg, version)
 }
 
 func (c *Client) IsEnabled() bool {

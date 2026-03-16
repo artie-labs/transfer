@@ -14,23 +14,30 @@ import (
 	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
-// WebhooksClient sends events to the webhooks service.
-type WebhooksClient struct {
-	httpClient       http.Client
-	apiKey           string
-	url              string
-	service          Service
-	version          string
-	companyUUID      string
-	pipelineUUID     string
-	sourceReaderUUID string
-	source           string // connector source type, e.g. "postgresql"
-	destination      string // connector destination type, e.g. "bigquery"
-	mode             string
+// WebhooksClientConfig holds all configuration for creating a WebhooksClient.
+// Using a struct instead of positional parameters prevents accidental argument transposition
+// among the many string fields.
+type WebhooksClientConfig struct {
+	APIKey           string
+	URL              string
+	Service          Service
+	Version          string
+	CompanyUUID      string
+	PipelineUUID     string
+	SourceReaderUUID string
+	Source           string // connector source type, e.g. "postgresql"
+	Destination      string // connector destination type, e.g. "bigquery"
+	Mode             string
 }
 
-func NewWebhooksClient(apiKey, url string, service Service, version, companyUUID, pipelineUUID, sourceReaderUUID, source, destination, mode string) (WebhooksClient, error) {
-	if stringutil.Empty(apiKey, url) {
+// WebhooksClient sends events to the webhooks service.
+type WebhooksClient struct {
+	httpClient http.Client
+	cfg        WebhooksClientConfig
+}
+
+func NewWebhooksClient(cfg WebhooksClientConfig) (WebhooksClient, error) {
+	if stringutil.Empty(cfg.APIKey, cfg.URL) {
 		return WebhooksClient{}, fmt.Errorf("apiKey and url are required")
 	}
 
@@ -38,29 +45,20 @@ func NewWebhooksClient(apiKey, url string, service Service, version, companyUUID
 		httpClient: http.Client{
 			Timeout: 10 * time.Second,
 		},
-		apiKey:           apiKey,
-		url:              url,
-		service:          service,
-		version:          version,
-		companyUUID:      companyUUID,
-		pipelineUUID:     pipelineUUID,
-		sourceReaderUUID: sourceReaderUUID,
-		source:           source,
-		destination:      destination,
-		mode:             mode,
+		cfg: cfg,
 	}, nil
 }
 
 func (w WebhooksClient) BuildProperties(args SendEventArgs) WebhookProperties {
 	return WebhookProperties{
-		CompanyUUID:      w.companyUUID,
-		PipelineUUID:     w.pipelineUUID,
-		SourceReaderUUID: w.sourceReaderUUID,
-		Source:           redact.ScrubString(w.source),
-		Destination:      redact.ScrubString(w.destination),
-		Service:          w.service,
-		Mode:             w.mode,
-		Version:          w.version,
+		CompanyUUID:      w.cfg.CompanyUUID,
+		PipelineUUID:     w.cfg.PipelineUUID,
+		SourceReaderUUID: w.cfg.SourceReaderUUID,
+		Source:           redact.ScrubString(w.cfg.Source),
+		Destination:      redact.ScrubString(w.cfg.Destination),
+		Service:          w.cfg.Service,
+		Mode:             w.cfg.Mode,
+		Version:          w.cfg.Version,
 		Error:            redact.ScrubString(args.Error),
 		Database:         redact.ScrubString(args.Database),
 		Table:            redact.ScrubString(args.Table),
@@ -87,13 +85,13 @@ func (w WebhooksClient) SendEvent(ctx context.Context, eventType EventType, args
 		return fmt.Errorf("failed to marshal event: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", w.url, bytes.NewBuffer(body))
+	req, err := http.NewRequestWithContext(ctx, "POST", w.cfg.URL, bytes.NewBuffer(body))
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", w.apiKey))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", w.cfg.APIKey))
 
 	resp, err := w.httpClient.Do(req)
 	if err != nil {

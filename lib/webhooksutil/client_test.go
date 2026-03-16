@@ -22,37 +22,57 @@ func TestWebhooksClientTestSuite(t *testing.T) {
 
 func newTestClient(t *testing.T, serverURL string, service Service) WebhooksClient {
 	t.Helper()
-	client, err := NewWebhooksClient("test-api-key", serverURL, service, "v1.0.0", "company-123", "pipeline-1", "", "postgresql", "bigquery", "replication")
+	client, err := NewWebhooksClient(WebhooksClientConfig{
+		APIKey:      "test-api-key",
+		URL:         serverURL,
+		Service:     service,
+		Version:     "v1.0.0",
+		CompanyUUID: "company-123",
+		PipelineUUID: "pipeline-1",
+		Source:      "postgresql",
+		Destination: "bigquery",
+		Mode:        "replication",
+	})
 	assert.NoError(t, err)
 	return client
 }
 
 func (w *WebhooksClientTestSuite) TestNewWebhooksClient_Success() {
-	client, err := NewWebhooksClient("test-api-key", "https://example.com/webhooks", Transfer, "v1.0.0", "company-123", "pipeline-1", "", "postgresql", "bigquery", "replication")
+	client, err := NewWebhooksClient(WebhooksClientConfig{
+		APIKey:      "test-api-key",
+		URL:         "https://example.com/webhooks",
+		Service:     Transfer,
+		Version:     "v1.0.0",
+		CompanyUUID: "company-123",
+		PipelineUUID: "pipeline-1",
+		Source:      "postgresql",
+		Destination: "bigquery",
+		Mode:        "replication",
+	})
 	assert.NoError(w.T(), err)
-	assert.Equal(w.T(), Transfer, client.service)
-	assert.Equal(w.T(), "test-api-key", client.apiKey)
-	assert.Equal(w.T(), "https://example.com/webhooks", client.url)
-	assert.Equal(w.T(), "company-123", client.companyUUID)
-	assert.Equal(w.T(), "pipeline-1", client.pipelineUUID)
-	assert.Equal(w.T(), "postgresql", client.source)
-	assert.Equal(w.T(), "bigquery", client.destination)
-	assert.Equal(w.T(), "replication", client.mode)
-	assert.Equal(w.T(), "v1.0.0", client.version)
+	assert.Equal(w.T(), Transfer, client.cfg.Service)
+	assert.Equal(w.T(), "test-api-key", client.cfg.APIKey)
+	assert.Equal(w.T(), "https://example.com/webhooks", client.cfg.URL)
+	assert.Equal(w.T(), "company-123", client.cfg.CompanyUUID)
+	assert.Equal(w.T(), "pipeline-1", client.cfg.PipelineUUID)
+	assert.Equal(w.T(), "postgresql", client.cfg.Source)
+	assert.Equal(w.T(), "bigquery", client.cfg.Destination)
+	assert.Equal(w.T(), "replication", client.cfg.Mode)
+	assert.Equal(w.T(), "v1.0.0", client.cfg.Version)
 }
 
 func (w *WebhooksClientTestSuite) TestNewWebhooksClient_MissingAPIKey() {
-	_, err := NewWebhooksClient("", "https://example.com/webhooks", Transfer, "v1.0.0", "company-123", "", "", "", "", "")
+	_, err := NewWebhooksClient(WebhooksClientConfig{URL: "https://example.com/webhooks", Service: Transfer})
 	assert.ErrorContains(w.T(), err, "apiKey and url are required")
 }
 
 func (w *WebhooksClientTestSuite) TestNewWebhooksClient_MissingURL() {
-	_, err := NewWebhooksClient("test-api-key", "", Transfer, "v1.0.0", "company-123", "", "", "", "", "")
+	_, err := NewWebhooksClient(WebhooksClientConfig{APIKey: "test-api-key", Service: Transfer})
 	assert.ErrorContains(w.T(), err, "apiKey and url are required")
 }
 
 func (w *WebhooksClientTestSuite) TestNewWebhooksClient_MissingBoth() {
-	_, err := NewWebhooksClient("", "", Transfer, "v1.0.0", "company-123", "", "", "", "", "")
+	_, err := NewWebhooksClient(WebhooksClientConfig{Service: Transfer})
 	assert.ErrorContains(w.T(), err, "apiKey and url are required")
 }
 
@@ -117,11 +137,8 @@ func (w *WebhooksClientTestSuite) TestSendEvent_HTTPError() {
 	defer server.Close()
 
 	client := WebhooksClient{
-		httpClient:  http.Client{Timeout: 10 * time.Second},
-		service:     Transfer,
-		companyUUID: "company-123",
-		url:         server.URL,
-		apiKey:      "test-api-key",
+		httpClient: http.Client{Timeout: 10 * time.Second},
+		cfg:        WebhooksClientConfig{Service: Transfer, CompanyUUID: "company-123", URL: server.URL, APIKey: "test-api-key"},
 	}
 
 	assert.ErrorContains(w.T(), client.SendEvent(w.T().Context(), EventBackFillFailed, SendEventArgs{}), "unexpected status code: 500")
@@ -134,11 +151,8 @@ func (w *WebhooksClientTestSuite) TestSendEvent_HTTPClientError() {
 	defer server.Close()
 
 	client := WebhooksClient{
-		httpClient:  http.Client{Timeout: 10 * time.Second},
-		service:     Transfer,
-		companyUUID: "company-123",
-		url:         server.URL,
-		apiKey:      "test-api-key",
+		httpClient: http.Client{Timeout: 10 * time.Second},
+		cfg:        WebhooksClientConfig{Service: Transfer, CompanyUUID: "company-123", URL: server.URL, APIKey: "test-api-key"},
 	}
 
 	assert.ErrorContains(w.T(), client.SendEvent(w.T().Context(), EventBackFillFailed, SendEventArgs{}), "unexpected status code: 400")
@@ -152,11 +166,8 @@ func (w *WebhooksClientTestSuite) TestSendEvent_ContextCanceled() {
 	defer server.Close()
 
 	client := WebhooksClient{
-		httpClient:  http.Client{Timeout: 10 * time.Second},
-		service:     Transfer,
-		companyUUID: "company-123",
-		url:         server.URL,
-		apiKey:      "test-api-key",
+		httpClient: http.Client{Timeout: 10 * time.Second},
+		cfg:        WebhooksClientConfig{Service: Transfer, CompanyUUID: "company-123", URL: server.URL, APIKey: "test-api-key"},
 	}
 
 	ctx, cancel := context.WithTimeout(w.T().Context(), 100*time.Millisecond)
@@ -167,11 +178,8 @@ func (w *WebhooksClientTestSuite) TestSendEvent_ContextCanceled() {
 
 func (w *WebhooksClientTestSuite) TestSendEvent_InvalidURL() {
 	client := WebhooksClient{
-		httpClient:  http.Client{Timeout: 10 * time.Second},
-		service:     Transfer,
-		companyUUID: "company-123",
-		url:         "://invalid-url",
-		apiKey:      "test-api-key",
+		httpClient: http.Client{Timeout: 10 * time.Second},
+		cfg:        WebhooksClientConfig{Service: Transfer, CompanyUUID: "company-123", URL: "://invalid-url", APIKey: "test-api-key"},
 	}
 
 	assert.ErrorContains(w.T(), client.SendEvent(w.T().Context(), EventBackFillFailed, SendEventArgs{}), "failed to create request")
@@ -179,11 +187,8 @@ func (w *WebhooksClientTestSuite) TestSendEvent_InvalidURL() {
 
 func (w *WebhooksClientTestSuite) TestSendEvent_NetworkError() {
 	client := WebhooksClient{
-		httpClient:  http.Client{Timeout: 1 * time.Second},
-		service:     Transfer,
-		companyUUID: "company-123",
-		url:         "http://localhost:1",
-		apiKey:      "test-api-key",
+		httpClient: http.Client{Timeout: 1 * time.Second},
+		cfg:        WebhooksClientConfig{Service: Transfer, CompanyUUID: "company-123", URL: "http://localhost:1", APIKey: "test-api-key"},
 	}
 
 	assert.ErrorContains(w.T(), client.SendEvent(w.T().Context(), EventBackFillFailed, SendEventArgs{}), "failed to send request")
@@ -228,12 +233,14 @@ func (w *WebhooksClientTestSuite) TestSendEvent_AllServices() {
 
 func (w *WebhooksClientTestSuite) TestBuildProperties_ErrorConsolidation() {
 	client := WebhooksClient{
-		service:     Transfer,
-		companyUUID: "company-123",
-		source:      "postgresql",
-		destination: "bigquery",
-		mode:        "replication",
-		version:     "v1.2.3",
+		cfg: WebhooksClientConfig{
+			Service:     Transfer,
+			CompanyUUID: "company-123",
+			Source:      "postgresql",
+			Destination: "bigquery",
+			Mode:        "replication",
+			Version:     "v1.2.3",
+		},
 	}
 
 	props := client.BuildProperties(SendEventArgs{

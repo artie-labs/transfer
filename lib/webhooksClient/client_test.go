@@ -201,28 +201,31 @@ func TestClient_SendEvent_AllEventTypes(t *testing.T) {
 	}
 }
 
-func TestNew(t *testing.T) {
+func TestNewFromConfig_Validation(t *testing.T) {
 	{
 		// empty API key
-		client, err := new("", "https://example.com", &config.WebhookSettings{}, "v1.0.0")
+		client, err := NewFromConfig(&config.WebhookSettings{
+			Enabled: true,
+			URL:     "https://example.com",
+		}, "v1.0.0")
 		assert.Error(t, err)
 		assert.Nil(t, client)
 	}
 	{
 		// empty URL
-		client, err := new("test-key", "", &config.WebhookSettings{}, "v1.0.0")
+		client, err := NewFromConfig(&config.WebhookSettings{
+			Enabled: true,
+			APIKey:  "test-key",
+		}, "v1.0.0")
 		assert.Error(t, err)
 		assert.Nil(t, client)
 	}
 	{
-		// both empty
-		client, err := new("", "", &config.WebhookSettings{}, "v1.0.0")
-		assert.Error(t, err)
-		assert.Nil(t, client)
-	}
-	{
-		// valid inputs
-		client, err := new("test-api-key", "https://example.com/webhook", &config.WebhookSettings{
+		// valid with typed fields
+		client, err := NewFromConfig(&config.WebhookSettings{
+			Enabled:     true,
+			APIKey:      "test-api-key",
+			URL:         "https://example.com/webhook",
 			CompanyUUID: "company-123",
 			Source:      "postgresql",
 			Destination: "bigquery",
@@ -233,8 +236,11 @@ func TestNew(t *testing.T) {
 		assert.NotNil(t, client.client)
 	}
 	{
-		// valid inputs with empty optional fields
-		client, err := new("test-api-key", "https://example.com/webhook", &config.WebhookSettings{
+		// valid with only required fields
+		client, err := NewFromConfig(&config.WebhookSettings{
+			Enabled:     true,
+			APIKey:      "test-api-key",
+			URL:         "https://example.com/webhook",
 			CompanyUUID: "company-123",
 		}, "v1.0.0")
 		assert.NoError(t, err)
