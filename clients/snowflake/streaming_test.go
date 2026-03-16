@@ -80,6 +80,12 @@ func TestParseChannelError(t *testing.T) {
 		assert.Equal(t, "ERR_CHANNEL_MUST_BE_REOPENED_DUE_TO_ROW_SEQ_GAP", result.Code)
 	}
 	{
+		// STALE_CONTINUATION_TOKEN_SEQUENCER error
+		result := NewErrorResponse("STALE_CONTINUATION_TOKEN_SEQUENCER", "Channel sequencer in the continuation token is stale. Please reopen the channel")
+		assert.True(t, result.IsChannelReopenError())
+		assert.Equal(t, "STALE_CONTINUATION_TOKEN_SEQUENCER", result.Code)
+	}
+	{
 		// Non-reopenable error
 		result := NewErrorResponse("SOME_OTHER_ERROR", "Something else went wrong")
 		assert.False(t, result.IsChannelReopenError())
@@ -664,6 +670,102 @@ func TestSnowpipeStreamingChannelManager_ChannelReopenOnERR_CHANNEL_DOES_NOT_EXI
 	defer mu.Unlock()
 	assert.Equal(t, 2, openChannelCallCount, "Channel should be reopened after ERR_CHANNEL_DOES_NOT_EXIST")
 	assert.Equal(t, 2, appendCallCount, "Append should be retried after channel reopen")
+}
+
+type appendTestResult struct {
+	err              error
+	openChannelCount int
+	appendCount      int
+	manager          *SnowpipeStreamingChannelManager
+}
+
+// runAppendTest sets up a mock server where sequential append calls return the given error codes.
+// An empty string or calls beyond the slice length return success.
+func runAppendTest(t *testing.T, errorCodes ...string) appendTestResult {
+	t.Helper()
+	http.DefaultClient.Transport = &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
+
+	var mu sync.Mutex
+	var result appendTestResult
+
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mu.Lock()
+		defer mu.Unlock()
+
+		if strings.Contains(r.URL.Path, "/channels/") && r.Method == http.MethodPut {
+			result.openChannelCount++
+			w.WriteHeader(http.StatusOK)
+			require.NoError(t, json.NewEncoder(w).Encode(map[string]any{
+				"next_continuation_token": fmt.Sprintf("token-open-%d", result.openChannelCount),
+			}))
+			return
+		}
+
+		if strings.Contains(r.URL.Path, "/rows") && r.Method == http.MethodPost {
+			result.appendCount++
+			idx := result.appendCount - 1
+			if idx < len(errorCodes) && errorCodes[idx] != "" {
+				w.WriteHeader(http.StatusBadRequest)
+				require.NoError(t, json.NewEncoder(w).Encode(map[string]any{
+					"code":    errorCodes[idx],
+					"message": "mock error",
+				}))
+				return
+			}
+
+			w.WriteHeader(http.StatusOK)
+			require.NoError(t, json.NewEncoder(w).Encode(map[string]any{
+				"next_continuation_token": fmt.Sprintf("token-%d", result.appendCount),
+			}))
+			return
+		}
+
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+
+	result.manager = NewSnowpipeStreamingChannelManager(&gosnowflake.Config{Account: "test", User: "test"}, 1)
+	result.manager.ingestHost = strings.TrimPrefix(server.URL, "https://")
+	result.manager.scopedToken = "mock-token"
+	result.manager.expiresAt = time.Now().Add(1 * time.Hour)
+
+	tableData := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "test_table")
+	tableData.InsertRow("1", map[string]any{"id": 1, "name": "test"}, false)
+
+	result.err = result.manager.LoadData(t.Context(), "db", "schema", "pipe", time.Now(), *tableData)
+	return result
+}
+
+func TestSnowpipeStreamingChannelManager_AppendErrorHandling(t *testing.T) {
+	{
+		// DUPLICATE_ROWSET treated as success — reopen to refresh token, no retry
+		result := runAppendTest(t, "DUPLICATE_ROWSET")
+		assert.NoError(t, result.err)
+		assert.Equal(t, 2, result.openChannelCount)
+		assert.Equal(t, 1, result.appendCount)
+	}
+	{
+		// STALE_CONTINUATION_TOKEN_SEQUENCER triggers reopen and retry
+		result := runAppendTest(t, "STALE_CONTINUATION_TOKEN_SEQUENCER")
+		assert.NoError(t, result.err)
+		assert.Equal(t, 2, result.openChannelCount)
+		assert.Equal(t, 2, result.appendCount)
+	}
+	{
+		// Multiple reopen retries before success
+		result := runAppendTest(t, "STALE_PIPE_CACHE", "STALE_PIPE_CACHE")
+		assert.NoError(t, result.err)
+		assert.Equal(t, 3, result.openChannelCount)
+		assert.Equal(t, 3, result.appendCount)
+	}
+	{
+		// Reopen retries exhausted — error returned, channels invalidated
+		result := runAppendTest(t, "STALE_PIPE_CACHE", "STALE_PIPE_CACHE", "STALE_PIPE_CACHE")
+		assert.ErrorContains(t, result.err, fmt.Sprintf("exhausted %d attempts", maxAppendAttempts))
+		assert.Equal(t, 1+maxAppendAttempts, result.openChannelCount)
+		assert.Equal(t, maxAppendAttempts, result.appendCount)
+		assert.Equal(t, "", result.manager.channelNameToChannel["test_table-0"].GetContinuationToken())
+	}
 }
 
 // Helper function to create a mock Snowflake TLS server
