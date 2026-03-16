@@ -215,7 +215,7 @@ func (w *WebhooksClientTestSuite) TestSendEvent_AllEventTypes() {
 }
 
 func (w *WebhooksClientTestSuite) TestSendEvent_AllServices() {
-	for _, service := range []Service{Transfer, Reader, Debezium, EventsAPI} {
+	for _, service := range []Service{Transfer, Reader, Debezium} {
 		w.T().Run(string(service), func(t *testing.T) {
 			var receivedEvent WebhooksEvent
 			server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {

@@ -141,10 +141,9 @@ type WebhookSettings struct {
 // the Artie service. The field's meaning changed to "connector source type" (e.g. "postgresql"),
 // so these stale values are discarded during migration.
 var oldServiceNames = map[string]bool{
-	"transfer":  true,
-	"reader":    true,
-	"debezium":  true,
-	"eventsAPI": true,
+	"transfer": true,
+	"reader":   true,
+	"debezium": true,
 }
 
 // Temporary: this promotes values from the deprecated Properties map into typed fields,

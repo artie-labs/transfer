@@ -84,10 +84,9 @@ const (
 type Service string
 
 const (
-	Transfer  Service = "transfer"
-	Reader    Service = "reader"
-	Debezium  Service = "debezium"
-	EventsAPI Service = "eventsAPI"
+	Transfer Service = "transfer"
+	Reader   Service = "reader"
+	Debezium Service = "debezium"
 )
 
 // WebhooksEvent is sent by transfer/reader to the events API.
