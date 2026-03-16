@@ -29,39 +29,39 @@ type Sentry struct {
 type SharedDestinationColumnSettings struct {
 	// BigNumericForVariableNumeric - If enabled, we will use BigQuery's BIGNUMERIC type for variable numeric types.
 	// Note: this field also accepts the legacy YAML key "bigQueryNumericForVariableNumeric" for backward compatibility.
-	BigNumericForVariableNumeric bool `yaml:"bigQueryNumericForVariableNumeric"`
+	BigNumericForVariableNumeric bool `yaml:"bigQueryNumericForVariableNumeric,omitempty"`
 	// [WriteRawBinaryValues] - If enabled, we will write raw binary values to the destination (e.g. BINARY column type)
 	// instead of storing them as Base64 encoded strings.
-	WriteRawBinaryValues bool `yaml:"writeRawBinaryValues"`
+	WriteRawBinaryValues bool `yaml:"writeRawBinaryValues,omitempty"`
 }
 
 type SharedDestinationSettings struct {
 	// TruncateExceededValues - This will truncate exceeded values instead of replacing it with `__artie_exceeded_value`
-	TruncateExceededValues bool `yaml:"truncateExceededValues"`
+	TruncateExceededValues bool `yaml:"truncateExceededValues,omitempty"`
 	// ExpandStringPrecision - This will expand the string precision if the incoming data has a higher precision than the destination table.
 	// This is only supported by Redshift at the moment.
-	ExpandStringPrecision bool                            `yaml:"expandStringPrecision"`
+	ExpandStringPrecision bool                            `yaml:"expandStringPrecision,omitempty"`
 	ColumnSettings        SharedDestinationColumnSettings `yaml:"columnSettings"`
 	// TODO: Standardize on this method.
-	UseNewStringMethod bool `yaml:"useNewStringMethod"`
+	UseNewStringMethod bool `yaml:"useNewStringMethod,omitempty"`
 	// [EnableMergeAssertion] - This will enable the merge assertion checks for the destination.
 	EnableMergeAssertion bool `yaml:"enableMergeAssertion,omitempty"`
 	// [SkipBadValues] - If enabled, we'll skip over all bad values (timestamps, integers, etc.) instead of throwing an error.
 	// This is a catch-all setting that supersedes the more specific settings below.
 	// Currently only supported for Snowflake.
-	SkipBadValues bool `yaml:"skipBadValues"`
+	SkipBadValues bool `yaml:"skipBadValues,omitempty"`
 	// [SkipBadTimestamps] - If enabled, we'll skip over bad timestamp (or alike) values instead of throwing an error.
 	// Currently only supported for Snowflake and BigQuery.
-	SkipBadTimestamps bool `yaml:"skipBadTimestamps"`
+	SkipBadTimestamps bool `yaml:"skipBadTimestamps,omitempty"`
 	// [SkipBadIntegers] - If enabled, we'll skip over bad integer values instead of throwing an error.
 	// Currently only supported for Snowflake and Redshift.
-	SkipBadIntegers bool `yaml:"skipBadIntegers"`
+	SkipBadIntegers bool `yaml:"skipBadIntegers,omitempty"`
 	// [ForceUTCTimezone] - If enabled, for all TimestampNTZ types, we will return TimestampTZ kind. The converters should ensure that the timezone is set to UTC.
-	ForceUTCTimezone bool `yaml:"forceUTCTimezone"`
+	ForceUTCTimezone bool `yaml:"forceUTCTimezone,omitempty"`
 	// [EncryptionPassphrase] - This is used to encrypt columns that should be written to the destination.
 	EncryptionPassphrase string `yaml:"encryptionPassphrase,omitempty"`
 	// [CSVConvertUTF8] - If enabled, we will convert all values to UTF-8 when writing to the staging CSV file.
-	CSVConvertUTF8 bool `yaml:"csvConvertUTF8"`
+	CSVConvertUTF8 bool `yaml:"csvConvertUTF8,omitempty"`
 }
 
 type StagingTableReuseConfig struct {
