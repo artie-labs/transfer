@@ -133,11 +133,11 @@ type WebhookProperties struct {
 	// Table and Schema are kept separate for future dashboard linking by object identity.
 	Table           string   `json:"table,omitempty"`
 	Schema          string   `json:"schema,omitempty"`
-	Topic           string   `json:"topic,omitempty"`            // Kafka topic (transfer only)
+	Topic           string   `json:"topic,omitempty"` // Kafka topic (transfer only)
 	RowsWritten     int64    `json:"rows_written,omitempty"`
 	DurationSeconds float64  `json:"duration_seconds,omitempty"`
-	Reason          string   `json:"reason,omitempty"`           // table.skipped
-	PrimaryKeys     []string `json:"primary_keys,omitempty"`     // row.skipped, dedupe.*
+	Reason          string   `json:"reason,omitempty"`       // table.skipped
+	PrimaryKeys     []string `json:"primary_keys,omitempty"` // row.skipped, dedupe.*
 
 	// backfill.started / backfill.completed
 	Columns []string `json:"columns,omitempty"`
@@ -158,8 +158,8 @@ type SendEventArgs struct {
 
 	// table.*, unable.to.replicate, row.skipped, backfill.*, dedupe.*
 	Table           string
-	Schema          string   // kept separate from Table for future dashboard object linking
-	Topic           string   // Kafka topic (transfer only)
+	Schema          string // kept separate from Table for future dashboard object linking
+	Topic           string // Kafka topic (transfer only)
 	RowsWritten     int64
 	DurationSeconds float64
 	Reason          string
