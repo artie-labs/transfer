@@ -118,40 +118,28 @@ type WebhookProperties struct {
 	Mode    string `json:"mode,omitempty"`    // transfer run mode (e.g. "replication"); from WebhookSettings
 	Version string `json:"version,omitempty"` // binary version; passed to NewWebhooksClient at startup
 
-	// Error. New senders: full constructed string (fmt.Sprintf("...: %s", err)).
-	// Old senders: see Details.
-	Error string `json:"error,omitempty"`
-	// Deprecated: old transfer payloads set this alongside a static Error string.
-	// New senders omit it. Retained for backward compat during rollout.
-	Details string `json:"details,omitempty"`
-
-	// connection.* events
-	Database string `json:"database,omitempty"` // database name (reader)
-	// Note: DatabaseType is omitted — it duplicates Source (the connector source type).
-
-	// table.*, unable.to.replicate, row.skipped, backfill.*, dedupe.*
-	// Table and Schema are kept separate for future dashboard linking by object identity.
+	Error           string   `json:"error,omitempty"`
 	Table           string   `json:"table,omitempty"`
 	Schema          string   `json:"schema,omitempty"`
-	Topic           string   `json:"topic,omitempty"` // Kafka topic (transfer only)
+	Database        string   `json:"database,omitempty"`
+	Topic           string   `json:"topic,omitempty"`
 	RowsWritten     int64    `json:"rows_written,omitempty"`
 	DurationSeconds float64  `json:"duration_seconds,omitempty"`
-	Reason          string   `json:"reason,omitempty"`       // table.skipped
-	PrimaryKeys     []string `json:"primary_keys,omitempty"` // row.skipped, dedupe.*
+	Reason          string   `json:"reason,omitempty"`
+	PrimaryKeys     []string `json:"primary_keys,omitempty"`
+
+	// Deprecated - include full error string in Error field instead
+	Details string `json:"details,omitempty"`
 }
 
 // SendEventArgs is passed by call sites to SendEvent.
 // The client fills in config-level and metadata fields automatically.
 type SendEventArgs struct {
-	Error string
-
-	// connection.* events
-	Database string // database name (reader); DatabaseType omitted — same as Source
-
-	// table.*, unable.to.replicate, row.skipped, backfill.*, dedupe.*
+	Error           string
 	Table           string
-	Schema          string // kept separate from Table for future dashboard object linking
-	Topic           string // Kafka topic (transfer only)
+	Schema          string
+	Database        string
+	Topic           string
 	RowsWritten     int64
 	DurationSeconds float64
 	Reason          string
