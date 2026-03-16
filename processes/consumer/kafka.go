@@ -103,7 +103,6 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 						fetchRetries++
 						continue
 					}
-
 					logger.Fatal("Failed to process message", slog.Any("err", err), slog.String("topic", topic))
 				}
 				fetchRetries = 0
