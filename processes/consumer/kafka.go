@@ -91,7 +91,7 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 				})
 				if err != nil {
 					_, isFetchErr := kafkalib.AsFetchMessageError(err)
-					if isFetchErr && db.IsRetryableError(err, context.DeadlineExceeded) {
+					if isFetchErr && db.IsRetryableError(err, context.DeadlineExceeded, kafkalib.ErrNoMessages) {
 						sleepDuration := jitter.Jitter(500, jitter.DefaultMaxMs, fetchRetries)
 						slog.Warn("Retryable fetch error, backing off",
 							slog.Any("err", err),
