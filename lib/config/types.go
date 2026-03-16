@@ -149,7 +149,7 @@ var oldServiceNames = map[string]bool{
 
 // Temporary: this promotes values from the deprecated Properties map into typed fields,
 // and discards stale "source" values that refer to the old service identifier.
-func (w *WebhookSettings) migrate() {
+func (w *WebhookSettings) migrate(mode Mode) {
 	if w == nil {
 		return
 	}
@@ -171,6 +171,10 @@ func (w *WebhookSettings) migrate() {
 				w.SourceReaderUUID = v
 			}
 		}
+	}
+
+	if w.Mode == "" {
+		w.Mode = mode.String()
 	}
 
 	// Old configs set source to a service name (e.g. "transfer"). That field now holds
