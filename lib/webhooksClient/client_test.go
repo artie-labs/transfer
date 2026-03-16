@@ -13,7 +13,7 @@ import (
 func TestNewFromConfig(t *testing.T) {
 	{
 		// nil config
-		client, err := NewFromConfig(nil)
+		client, err := NewFromConfig(nil, "v1.0.0")
 		assert.NoError(t, err)
 		assert.NotNil(t, client)
 		assert.False(t, client.enabled)
@@ -25,7 +25,7 @@ func TestNewFromConfig(t *testing.T) {
 			Enabled: false,
 			URL:     "https://example.com",
 			APIKey:  "test-key",
-		})
+		}, "v1.0.0")
 		assert.NoError(t, err)
 		assert.NotNil(t, client)
 		assert.False(t, client.enabled)
@@ -37,7 +37,7 @@ func TestNewFromConfig(t *testing.T) {
 			Enabled: true,
 			URL:     "https://example.com",
 			APIKey:  "",
-		})
+		}, "v1.0.0")
 		assert.Error(t, err)
 		assert.Nil(t, client)
 	}
@@ -47,33 +47,34 @@ func TestNewFromConfig(t *testing.T) {
 			Enabled: true,
 			URL:     "",
 			APIKey:  "test-key",
-		})
+		}, "v1.0.0")
 		assert.Error(t, err)
 		assert.Nil(t, client)
 	}
 	{
-		// valid enabled config
+		// valid enabled config with typed fields
 		client, err := NewFromConfig(&config.WebhookSettings{
-			Enabled: true,
-			URL:     "https://example.com/webhook",
-			APIKey:  "test-api-key",
-			Properties: map[string]any{
-				"environment": "test",
-				"version":     "1.0.0",
-			},
-		})
+			Enabled:     true,
+			URL:         "https://example.com/webhook",
+			APIKey:      "test-api-key",
+			CompanyUUID: "company-123",
+			Source:      "postgresql",
+			Destination: "bigquery",
+			Mode:        "replication",
+		}, "v1.0.0")
 		assert.NoError(t, err)
 		assert.NotNil(t, client)
 		assert.True(t, client.enabled)
 		assert.NotNil(t, client.client)
 	}
 	{
-		// valid enabled config without properties
+		// valid enabled config without optional fields
 		client, err := NewFromConfig(&config.WebhookSettings{
-			Enabled: true,
-			URL:     "https://example.com/webhook",
-			APIKey:  "test-api-key",
-		})
+			Enabled:     true,
+			URL:         "https://example.com/webhook",
+			APIKey:      "test-api-key",
+			CompanyUUID: "company-123",
+		}, "v1.0.0")
 		assert.NoError(t, err)
 		assert.NotNil(t, client)
 		assert.True(t, client.enabled)
@@ -126,7 +127,7 @@ func TestClient_SendEvent(t *testing.T) {
 		// nil client
 		var client *Client
 		assert.NotPanics(t, func() {
-			client.SendEvent(context.Background(), webhooksutil.TableStarted, map[string]any{"table": "users"})
+			client.SendEvent(context.Background(), webhooksutil.TableStarted, webhooksutil.SendEventArgs{Table: "users"})
 		})
 	}
 	{
@@ -136,7 +137,7 @@ func TestClient_SendEvent(t *testing.T) {
 			client:  nil,
 		}
 		assert.NotPanics(t, func() {
-			client.SendEvent(context.Background(), webhooksutil.TableStarted, map[string]any{"table": "users"})
+			client.SendEvent(context.Background(), webhooksutil.TableStarted, webhooksutil.SendEventArgs{Table: "users"})
 		})
 	}
 	{
@@ -146,7 +147,7 @@ func TestClient_SendEvent(t *testing.T) {
 			client:  nil,
 		}
 		assert.NotPanics(t, func() {
-			client.SendEvent(context.Background(), webhooksutil.TableStarted, map[string]any{"table": "users"})
+			client.SendEvent(context.Background(), webhooksutil.TableStarted, webhooksutil.SendEventArgs{Table: "users"})
 		})
 	}
 	{
@@ -156,60 +157,46 @@ func TestClient_SendEvent(t *testing.T) {
 			client:  &webhooksutil.WebhooksClient{},
 		}
 		assert.NotPanics(t, func() {
-			client.SendEvent(context.Background(), webhooksutil.TableStarted, map[string]any{"table": "users"})
+			client.SendEvent(context.Background(), webhooksutil.TableStarted, webhooksutil.SendEventArgs{Table: "users"})
 		})
 	}
 	{
-		// send event with nil properties
+		// send event with empty args
 		client := &Client{
 			enabled: true,
 			client:  &webhooksutil.WebhooksClient{},
 		}
 		assert.NotPanics(t, func() {
-			client.SendEvent(context.Background(), webhooksutil.EventBackFillStarted, nil)
+			client.SendEvent(context.Background(), webhooksutil.EventBackFillStarted, webhooksutil.SendEventArgs{})
 		})
 	}
 	{
-		// send event with empty properties
+		// send event with complex args
 		client := &Client{
 			enabled: true,
 			client:  &webhooksutil.WebhooksClient{},
 		}
 		assert.NotPanics(t, func() {
-			client.SendEvent(context.Background(), webhooksutil.EventBackFillCompleted, map[string]any{})
-		})
-	}
-	{
-		// send event with complex properties
-		client := &Client{
-			enabled: true,
-			client:  &webhooksutil.WebhooksClient{},
-		}
-		assert.NotPanics(t, func() {
-			client.SendEvent(context.Background(), webhooksutil.BackfillProgress, map[string]any{
-				"rowsWritten":         1000,
-				"duration":            "5m",
-				"throughputPerSecond": 3.33,
+			client.SendEvent(context.Background(), webhooksutil.BackfillProgress, webhooksutil.SendEventArgs{
+				Table:           "users",
+				Schema:          "public",
+				RowsWritten:     1000,
+				DurationSeconds: 300.0,
 			})
 		})
 	}
 }
 
 func TestClient_SendEvent_AllEventTypes(t *testing.T) {
-	// Test that all event types can be sent without panicking
 	client := &Client{
 		enabled: true,
 		client:  &webhooksutil.WebhooksClient{},
 	}
 
 	ctx := context.Background()
-	properties := map[string]any{
-		"test": "value",
-	}
-
 	for _, eventType := range webhooksutil.AllEventTypes {
 		assert.NotPanics(t, func() {
-			client.SendEvent(ctx, eventType, properties)
+			client.SendEvent(ctx, eventType, webhooksutil.SendEventArgs{})
 		})
 	}
 }
@@ -217,33 +204,39 @@ func TestClient_SendEvent_AllEventTypes(t *testing.T) {
 func TestNew(t *testing.T) {
 	{
 		// empty API key
-		client, err := new("", "https://example.com", nil)
+		client, err := new("", "https://example.com", &config.WebhookSettings{}, "v1.0.0")
 		assert.Error(t, err)
 		assert.Nil(t, client)
 	}
 	{
 		// empty URL
-		client, err := new("test-key", "", nil)
+		client, err := new("test-key", "", &config.WebhookSettings{}, "v1.0.0")
 		assert.Error(t, err)
 		assert.Nil(t, client)
 	}
 	{
 		// both empty
-		client, err := new("", "", nil)
+		client, err := new("", "", &config.WebhookSettings{}, "v1.0.0")
 		assert.Error(t, err)
 		assert.Nil(t, client)
 	}
 	{
 		// valid inputs
-		client, err := new("test-api-key", "https://example.com/webhook", map[string]any{"env": "test"})
+		client, err := new("test-api-key", "https://example.com/webhook", &config.WebhookSettings{
+			CompanyUUID: "company-123",
+			Source:      "postgresql",
+			Destination: "bigquery",
+		}, "v1.0.0")
 		assert.NoError(t, err)
 		assert.NotNil(t, client)
 		assert.True(t, client.enabled)
 		assert.NotNil(t, client.client)
 	}
 	{
-		// valid inputs with nil properties
-		client, err := new("test-api-key", "https://example.com/webhook", nil)
+		// valid inputs with empty optional fields
+		client, err := new("test-api-key", "https://example.com/webhook", &config.WebhookSettings{
+			CompanyUUID: "company-123",
+		}, "v1.0.0")
 		assert.NoError(t, err)
 		assert.NotNil(t, client)
 		assert.True(t, client.enabled)

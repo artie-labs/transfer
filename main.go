@@ -34,15 +34,14 @@ func main() {
 	if settings != nil {
 		webhookSettings = settings.Config.WebhookSettings
 	}
-	whClient, whErr := webhooksclient.NewFromConfig(webhookSettings)
+	whClient, whErr := webhooksclient.NewFromConfig(webhookSettings, version)
 	if whErr != nil {
 		logger.Fatal("Failed to initialize webhooks client", slog.Any("err", whErr))
 	}
 
 	if err != nil {
-		whClient.SendEvent(ctx, webhooksutil.ConfigInvalid, map[string]any{
-			"error":   "Failed to initialize config",
-			"details": err.Error(),
+		whClient.SendEvent(ctx, webhooksutil.ConfigInvalid, webhooksutil.SendEventArgs{
+			Error: fmt.Sprintf("Failed to initialize config: %s", err),
 		})
 		logger.Fatal("Failed to initialize config", slog.Any("err", err))
 	}
@@ -79,32 +78,25 @@ func main() {
 	metricsClient := metrics.LoadExporter(settings.Config)
 	dest, err := utils.Load(ctx, settings.Config)
 	if err != nil {
-		whClient.SendEvent(ctx, webhooksutil.ConnectionFailed, map[string]any{
-			"error":   "Unable to load destination",
-			"details": err.Error(),
+		whClient.SendEvent(ctx, webhooksutil.ConnectionFailed, webhooksutil.SendEventArgs{
+			Error: fmt.Sprintf("Unable to load destination: %s", err),
 		})
 		logger.Fatal("Unable to load destination", slog.Any("err", err))
 	}
 
 	if sqlDest, ok := dest.(destination.SQLDestination); ok {
 		if err = sqlDest.SweepTemporaryTables(ctx, whClient); err != nil {
-			whClient.SendEvent(ctx, webhooksutil.ConnectionFailed, map[string]any{
-				"error":   "Failed to clean up temporary tables",
-				"details": err.Error(),
+			whClient.SendEvent(ctx, webhooksutil.ConnectionFailed, webhooksutil.SendEventArgs{
+				Error: fmt.Sprintf("Failed to clean up temporary tables: %s", err),
 			})
 			logger.Fatal("Failed to clean up temporary tables", slog.Any("err", err))
 		}
 
-		whClient.SendEvent(ctx, webhooksutil.ConnectionEstablished, map[string]any{
-			"mode": settings.Config.Mode,
-		})
+		whClient.SendEvent(ctx, webhooksutil.ConnectionEstablished, webhooksutil.SendEventArgs{})
 	}
 
 	slog.Info("Starting...", slog.String("version", version))
-	whClient.SendEvent(ctx, webhooksutil.ReplicationStarted, map[string]any{
-		"version": version,
-		"mode":    settings.Config.Mode,
-	})
+	whClient.SendEvent(ctx, webhooksutil.ReplicationStarted, webhooksutil.SendEventArgs{})
 
 	inMemDB := models.NewMemoryDB()
 	switch settings.Config.KafkaClient {

@@ -14,8 +14,19 @@ type Client struct {
 	enabled bool
 }
 
-func new(apiKey, url string, properties map[string]any) (*Client, error) {
-	client, err := webhooksutil.NewWebhooksClient(apiKey, url, webhooksutil.Transfer, properties)
+func new(apiKey, url string, cfg *config.WebhookSettings, version string) (*Client, error) {
+	client, err := webhooksutil.NewWebhooksClient(
+		apiKey,
+		url,
+		webhooksutil.Transfer,
+		version,
+		cfg.CompanyUUID,
+		cfg.PipelineUUID,
+		cfg.SourceReaderUUID,
+		cfg.Source,
+		cfg.Destination,
+		cfg.Mode,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create webhooks client: %w", err)
 	}
@@ -26,23 +37,23 @@ func new(apiKey, url string, properties map[string]any) (*Client, error) {
 	}, nil
 }
 
-func NewFromConfig(cfg *config.WebhookSettings) (*Client, error) {
+func NewFromConfig(cfg *config.WebhookSettings, version string) (*Client, error) {
 	if cfg == nil || !cfg.Enabled {
 		return &Client{}, nil
 	}
 
-	return new(cfg.APIKey, cfg.URL, cfg.Properties)
+	return new(cfg.APIKey, cfg.URL, cfg, version)
 }
 
 func (c *Client) IsEnabled() bool {
 	return c != nil && c.enabled && c.client != nil
 }
 
-func (c *Client) SendEvent(ctx context.Context, eventType webhooksutil.EventType, properties map[string]any) {
+func (c *Client) SendEvent(ctx context.Context, eventType webhooksutil.EventType, args webhooksutil.SendEventArgs) {
 	if !c.IsEnabled() {
 		return
 	}
-	if err := c.client.SendEvent(ctx, eventType, properties); err != nil {
+	if err := c.client.SendEvent(ctx, eventType, args); err != nil {
 		slog.Error("Failed to send webhook event", slog.String("event", string(eventType)), slog.Any("err", err))
 	}
 }

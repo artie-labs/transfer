@@ -3,7 +3,6 @@ package config
 import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/artie-labs/transfer/lib/webhooksutil"
 )
 
 type Mode string
@@ -123,9 +122,13 @@ type Config struct {
 }
 
 type WebhookSettings struct {
-	Enabled    bool                `yaml:"enabled"`
-	URL        string              `yaml:"url"`
-	APIKey     string              `yaml:"apiKey"`
-	Properties map[string]any      `yaml:"properties,omitempty"`
-	Source     webhooksutil.Source `yaml:"source"`
+	Enabled          bool   `yaml:"enabled"`
+	URL              string `yaml:"url"`
+	APIKey           string `yaml:"apiKey"`
+	CompanyUUID      string `yaml:"companyUuid"`
+	PipelineUUID     string `yaml:"pipelineUuid,omitempty"`
+	SourceReaderUUID string `yaml:"sourceReaderUuid,omitempty"`
+	Source           string `yaml:"source,omitempty"`      // connector source type, e.g. "postgresql"
+	Destination      string `yaml:"destination,omitempty"` // connector destination type, e.g. "bigquery"
+	Mode             string `yaml:"mode,omitempty"`        // transfer run mode, e.g. "replication"
 }

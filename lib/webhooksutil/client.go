@@ -5,9 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"maps"
 	"net/http"
 	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/artie-labs/transfer/lib/redact"
 	"github.com/artie-labs/transfer/lib/stringutil"
@@ -15,57 +16,74 @@ import (
 
 // WebhooksClient sends events to the webhooks service.
 type WebhooksClient struct {
-	httpClient http.Client
-	apiKey     string
-	url        string
-	source     Source
-	properties map[string]any
+	httpClient       http.Client
+	apiKey           string
+	url              string
+	service          Service
+	version          string
+	companyUUID      string
+	pipelineUUID     string
+	sourceReaderUUID string
+	source           string // connector source type, e.g. "postgresql"
+	destination      string // connector destination type, e.g. "bigquery"
+	mode             string
 }
 
-func NewWebhooksClient(apiKey, url string, source Source, properties map[string]any) (WebhooksClient, error) {
+func NewWebhooksClient(apiKey, url string, service Service, version, companyUUID, pipelineUUID, sourceReaderUUID, source, destination, mode string) (WebhooksClient, error) {
 	if stringutil.Empty(apiKey, url) {
 		return WebhooksClient{}, fmt.Errorf("apiKey and url are required")
-	}
-
-	if properties == nil {
-		properties = make(map[string]any)
 	}
 
 	return WebhooksClient{
 		httpClient: http.Client{
 			Timeout: 10 * time.Second,
 		},
-		apiKey:     apiKey,
-		url:        url,
-		source:     source,
-		properties: properties,
+		apiKey:           apiKey,
+		url:              url,
+		service:          service,
+		version:          version,
+		companyUUID:      companyUUID,
+		pipelineUUID:     pipelineUUID,
+		sourceReaderUUID: sourceReaderUUID,
+		source:           source,
+		destination:      destination,
+		mode:             mode,
 	}, nil
 }
 
-func (w WebhooksClient) BuildProperties(eventType EventType, additionalProperties map[string]any) map[string]any {
-	props := map[string]any{
-		"source":   w.source,
-		"message":  GetEventMessage(eventType),
-		"severity": GetEventSeverity(eventType),
+func (w WebhooksClient) BuildProperties(args SendEventArgs) WebhookProperties {
+	return WebhookProperties{
+		CompanyUUID:      w.companyUUID,
+		PipelineUUID:     w.pipelineUUID,
+		SourceReaderUUID: w.sourceReaderUUID,
+		Source:           redact.ScrubString(w.source),
+		Destination:      redact.ScrubString(w.destination),
+		Service:          w.service,
+		Mode:             w.mode,
+		Version:          w.version,
+		Error:            redact.ScrubString(args.Error),
+		Database:         redact.ScrubString(args.Database),
+		Table:            redact.ScrubString(args.Table),
+		Schema:           redact.ScrubString(args.Schema),
+		Topic:            redact.ScrubString(args.Topic),
+		RowsWritten:      args.RowsWritten,
+		DurationSeconds:  args.DurationSeconds,
+		Reason:           redact.ScrubString(args.Reason),
+		PrimaryKeys:      args.PrimaryKeys,
+		Columns:          args.Columns,
+		Count:            args.Count,
+		Column:           redact.ScrubString(args.Column),
+		DefaultValue:     args.DefaultValue,
 	}
-	maps.Copy(props, w.properties)
-	maps.Copy(props, additionalProperties)
-
-	for key, value := range props {
-		if strVal, ok := value.(string); ok {
-			props[key] = redact.ScrubString(strVal)
-		}
-	}
-
-	return props
 }
 
 // SendEvent sends an event to the webhooks service.
-func (w WebhooksClient) SendEvent(ctx context.Context, eventType EventType, additionalProperties map[string]any) error {
+func (w WebhooksClient) SendEvent(ctx context.Context, eventType EventType, args SendEventArgs) error {
 	event := WebhooksEvent{
 		Event:      string(eventType),
 		Timestamp:  time.Now().UTC(),
-		Properties: w.BuildProperties(eventType, additionalProperties),
+		MessageID:  uuid.New().String(),
+		Properties: w.BuildProperties(args),
 	}
 
 	body, err := json.Marshal(event)

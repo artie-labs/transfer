@@ -116,10 +116,11 @@ func Merge(ctx context.Context, dest destination.SQLDestination, tableData *opti
 	}
 
 	if len(colsToBackfill) > 0 {
-		whClient.SendEvent(ctx, webhooksutil.EventBackFillStarted, map[string]any{
-			"table":   tableData.Name(),
-			"columns": colsToBackfill,
-			"count":   len(colsToBackfill),
+		whClient.SendEvent(ctx, webhooksutil.EventBackFillStarted, webhooksutil.SendEventArgs{
+			Table:   tableData.Name(),
+			Schema:  tableData.TopicConfig().Schema,
+			Columns: colsToBackfill,
+			Count:   len(colsToBackfill),
 		})
 	}
 
@@ -156,21 +157,23 @@ func Merge(ctx context.Context, dest destination.SQLDestination, tableData *opti
 		}
 
 		if backfillErr != nil {
-			whClient.SendEvent(ctx, webhooksutil.EventBackFillFailed, map[string]any{
-				"table":         tableData.Name(),
-				"column":        col.Name(),
-				"default_value": col.DefaultValue(),
-				"error":         backfillErr.Error(),
+			whClient.SendEvent(ctx, webhooksutil.EventBackFillFailed, webhooksutil.SendEventArgs{
+				Table:        tableData.Name(),
+				Schema:       tableData.TopicConfig().Schema,
+				Column:       col.Name(),
+				DefaultValue: col.DefaultValue(),
+				Error:        fmt.Sprintf("Failed to backfill column: %s", backfillErr),
 			})
 			return fmt.Errorf("failed to backfill col: %s, default value: %v, err: %w", col.Name(), col.DefaultValue(), backfillErr)
 		}
 	}
 
 	if len(colsToBackfill) > 0 {
-		whClient.SendEvent(ctx, webhooksutil.EventBackFillCompleted, map[string]any{
-			"table":   tableData.Name(),
-			"columns": colsToBackfill,
-			"count":   len(colsToBackfill),
+		whClient.SendEvent(ctx, webhooksutil.EventBackFillCompleted, webhooksutil.SendEventArgs{
+			Table:   tableData.Name(),
+			Schema:  tableData.TopicConfig().Schema,
+			Columns: colsToBackfill,
+			Count:   len(colsToBackfill),
 		})
 	}
 

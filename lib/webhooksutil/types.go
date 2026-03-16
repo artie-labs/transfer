@@ -45,8 +45,8 @@ const (
 	ConfigInvalid   EventType = "config.invalid"
 )
 
-// AllEventTypes contains all defined event types
-// Add new event types here when you define them above
+// AllEventTypes contains all defined event types.
+// Add new event types here when you define them above.
 var AllEventTypes = []EventType{
 	EventBackFillStarted,
 	EventBackFillCompleted,
@@ -80,48 +80,96 @@ const (
 	SeverityError   Severity = "error"
 )
 
-type Source string
+// Service identifies which Artie service emitted the event.
+type Service string
 
 const (
-	Transfer  Source = "transfer"
-	Reader    Source = "reader"
-	Debezium  Source = "debezium"
-	EventsAPI Source = "eventsAPI"
+	Transfer  Service = "transfer"
+	Reader    Service = "reader"
+	Debezium  Service = "debezium"
+	EventsAPI Service = "eventsAPI"
 )
 
+// WebhooksEvent is sent by transfer/reader to the events API.
+// The events API unfurls Properties into a flat top-level message in Redis.
 type WebhooksEvent struct {
-	Event      string         `json:"event"`
-	Timestamp  time.Time      `json:"timestamp"`
-	Properties map[string]any `json:"properties"`
+	Event      string            `json:"event"`
+	Timestamp  time.Time         `json:"timestamp"`
+	MessageID  string            `json:"messageId,omitempty"`
+	Properties WebhookProperties `json:"properties"`
 }
 
-type ProgressProperties struct {
-	RowsWritten         int64         `json:"rowsWritten"`
-	Duration            time.Duration `json:"duration"`
-	EstimatedCompletion *time.Time    `json:"estimatedCompletion,omitempty"`
-	ThroughputPerSecond float64       `json:"throughputPerSecond,omitempty"`
+// WebhookProperties is the source of truth for all webhook event fields.
+// In transfer/reader: marshaled as the "properties" field of WebhooksEvent.
+// In dashboard: embedded at the top level of WebhookEvent (matching the flat
+// Redis message after unfurling).
+type WebhookProperties struct {
+	// Config-level fields (set from WebhookSettings at client init)
+	CompanyUUID      string `json:"company_uuid"`
+	PipelineUUID     string `json:"pipeline_uuid,omitempty"`
+	SourceReaderUUID string `json:"source_reader_uuid,omitempty"`
+	Source           string `json:"source,omitempty"`      // connector source type, e.g. "postgresql"
+	Destination      string `json:"destination,omitempty"` // connector destination type, e.g. "bigquery"
+
+	// Set by BuildProperties
+	Service Service `json:"service"` // Artie service: transfer/reader/debezium
+
+	// Auto-set at client init (not passed per-event)
+	Mode    string `json:"mode,omitempty"`    // transfer run mode (e.g. "replication"); from WebhookSettings
+	Version string `json:"version,omitempty"` // binary version; passed to NewWebhooksClient at startup
+
+	// Error. New senders: full constructed string (fmt.Sprintf("...: %s", err)).
+	// Old senders: see Details.
+	Error string `json:"error,omitempty"`
+	// Deprecated: old transfer payloads set this alongside a static Error string.
+	// New senders omit it. Retained for backward compat during rollout.
+	Details string `json:"details,omitempty"`
+
+	// connection.* events
+	Database string `json:"database,omitempty"` // database name (reader)
+	// Note: DatabaseType is omitted — it duplicates Source (the connector source type).
+
+	// table.*, unable.to.replicate, row.skipped, backfill.*, dedupe.*
+	// Table and Schema are kept separate for future dashboard linking by object identity.
+	Table           string   `json:"table,omitempty"`
+	Schema          string   `json:"schema,omitempty"`
+	Topic           string   `json:"topic,omitempty"`            // Kafka topic (transfer only)
+	RowsWritten     int64    `json:"rows_written,omitempty"`
+	DurationSeconds float64  `json:"duration_seconds,omitempty"`
+	Reason          string   `json:"reason,omitempty"`           // table.skipped
+	PrimaryKeys     []string `json:"primary_keys,omitempty"`     // row.skipped, dedupe.*
+
+	// backfill.started / backfill.completed
+	Columns []string `json:"columns,omitempty"`
+	Count   int      `json:"count,omitempty"`
+
+	// backfill.failed
+	Column       string `json:"column,omitempty"`
+	DefaultValue any    `json:"default_value,omitempty"`
 }
 
-type TableProperties struct {
-	Table    string `json:"table"`
-	Schema   string `json:"schema,omitempty"`
-	Database string `json:"database,omitempty"`
-	RowCount int64  `json:"rowCount,omitempty"`
-}
+// SendEventArgs is passed by call sites to SendEvent.
+// The client fills in config-level and metadata fields automatically.
+type SendEventArgs struct {
+	Error string
 
-type ConnectionProperties struct {
-	Host            string        `json:"host,omitempty"`
-	Port            int           `json:"port,omitempty"`
-	DatabaseType    string        `json:"databaseType"` // postgres, mysql, mssql, mongodb, etc.
-	RetryCount      int           `json:"retryCount,omitempty"`
-	BackoffDuration time.Duration `json:"backoffDuration,omitempty"`
-	MaxRetries      int           `json:"maxRetries,omitempty"`
-}
+	// connection.* events
+	Database string // database name (reader); DatabaseType omitted — same as Source
 
-type ErrorProperties struct {
-	Error             string `json:"error"`
-	StackTrace        string `json:"stackTrace,omitempty"`
-	RetryCount        int    `json:"retryCount,omitempty"`
-	ConsecutiveErrors int    `json:"consecutiveErrors,omitempty"`
-	Fatal             bool   `json:"fatal,omitempty"`
+	// table.*, unable.to.replicate, row.skipped, backfill.*, dedupe.*
+	Table           string
+	Schema          string   // kept separate from Table for future dashboard object linking
+	Topic           string   // Kafka topic (transfer only)
+	RowsWritten     int64
+	DurationSeconds float64
+	Reason          string
+	PrimaryKeys     []string
+
+	// backfill.started / backfill.completed
+	Columns []string
+	Count   int
+
+	// backfill.failed
+	Column       string
+	DefaultValue any
 }
