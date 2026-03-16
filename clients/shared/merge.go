@@ -25,7 +25,7 @@ const (
 	heartbeatsInterval     = 2 * time.Minute
 )
 
-func Merge(ctx context.Context, dest destination.SQLDestination, tableData *optimization.TableData, opts types.MergeOpts, whClient *webhooksclient.Client) error {
+func Merge(ctx context.Context, dest destination.SQLDestination, tableData *optimization.TableData, opts types.MergeOpts, _ *webhooksclient.Client) error {
 	if tableData.ShouldSkipUpdate() {
 		return nil
 	}
@@ -102,16 +102,6 @@ func Merge(ctx context.Context, dest destination.SQLDestination, tableData *opti
 		}
 
 		subQuery = temporaryTableID.FullyQualifiedName()
-	}
-
-	var colsToBackfill []string
-	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
-		if col.ShouldSkip() || slices.Contains(constants.ArtieColumns, col.Name()) {
-			continue
-		}
-		if col.ShouldBackfill() {
-			colsToBackfill = append(colsToBackfill, col.Name())
-		}
 	}
 
 	// Now iterate over all the in-memory cols and see which ones require a backfill.
