@@ -78,15 +78,15 @@ func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 			{
 				// Super
 				{
-					// Masked (data type is a JSON object)
-					result := replaceExceededValues(fmt.Sprintf(`{"foo": "%s"}`, stringutil.Random(int(maxSuperLength)+1)), typing.Struct, false, false)
+					// Masked (data type is a JSON object) - Redshift COPY CSV limits SUPER fields to 65535 bytes
+					result := replaceExceededValues(fmt.Sprintf(`{"foo": "%s"}`, stringutil.Random(int(maxStringLength)+1)), typing.Struct, false, false)
 					assert.Equal(r.T(), fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker), result.Value)
 					assert.Zero(r.T(), result.NewLength)
 					assert.True(r.T(), result.Exceeded)
 				}
 				{
-					// Masked (data type is an array)
-					result := replaceExceededValues(fmt.Sprintf(`["%s"]`, stringutil.Random(int(maxSuperLength)+1)), typing.Struct, false, false)
+					// Masked (data type is an array) - Redshift COPY CSV limits SUPER fields to 65535 bytes
+					result := replaceExceededValues(fmt.Sprintf(`["%s"]`, stringutil.Random(int(maxStringLength)+1)), typing.Struct, false, false)
 					assert.Equal(r.T(), fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker), result.Value)
 					assert.Zero(r.T(), result.NewLength)
 					assert.True(r.T(), result.Exceeded)
@@ -120,16 +120,16 @@ func (r *RedshiftTestSuite) TestReplaceExceededValues() {
 				{
 					// SUPER
 					{
-						// Value is a struct with a short string value - valid
-						value := fmt.Sprintf(`{"foo": "%s"}`, stringutil.Random(int(maxStringLength)-1))
+						// Value is a struct
+						value := fmt.Sprintf(`{"foo": "%s"}`, stringutil.Random(int(maxStringLength)-11))
 						result := replaceExceededValues(value, typing.Struct, false, false)
 						assert.Equal(r.T(), value, result.Value)
 						assert.Zero(r.T(), result.NewLength)
 						assert.False(r.T(), result.Exceeded)
 					}
 					{
-						// Value is an array with a short string value - valid
-						value := fmt.Sprintf(`["%s"]`, stringutil.Random(int(maxStringLength)-1))
+						// Value is an array
+						value := fmt.Sprintf(`["%s"]`, stringutil.Random(int(maxStringLength)-11))
 						result := replaceExceededValues(value, typing.Struct, false, false)
 						assert.Equal(r.T(), value, result.Value)
 						assert.Zero(r.T(), result.NewLength)

@@ -1,9 +1,7 @@
 package redshift
 
 import (
-	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config"
@@ -21,38 +19,16 @@ type Result struct {
 	Exceeded  bool
 }
 
-const (
-	maxStringLength int32 = 65535
-	maxSuperLength  int32 = 16_000_000
-)
-
-// jsonContainsLongString returns true if any string value within the JSON exceeds maxLen bytes.
-func jsonContainsLongString(jsonStr string, maxLen int) bool {
-	dec := json.NewDecoder(strings.NewReader(jsonStr))
-	for {
-		token, err := dec.Token()
-		if err != nil {
-			break
-		}
-		if s, ok := token.(string); ok && len(s) > maxLen {
-			return true
-		}
-	}
-	return false
-}
+const maxStringLength int32 = 65535
 
 func replaceExceededValues(colVal string, colKind typing.KindDetails, truncateExceededValue, expandStringPrecision bool) shared.ValueConvertResponse {
 	switch colKind.Kind {
 	case typing.Struct.Kind:
-		// If the value is a JSON object, we will use [maxSuperLength], else we will use [maxStringLength]
-		// Ref: https://docs.aws.amazon.com/redshift/latest/dg/limitations-super.html
-		// Note: individual string values within SUPER are also capped at [maxStringLength].
 		if typing.IsJSON(colVal) {
-			if int32(len(colVal)) > maxSuperLength {
-				return shared.ValueConvertResponse{Value: fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker), Exceeded: true}
-			}
-
-			if int32(len(colVal)) > maxStringLength && jsonContainsLongString(colVal, int(maxStringLength)) {
+			// When loading via COPY from CSV, Redshift limits SUPER column values to 65535 bytes per field,
+			// even though SUPER columns can store up to 16MB.
+			// Ref: https://docs.aws.amazon.com/redshift/latest/dg/copy-parameters-data-format.html#copy-super
+			if int32(len(colVal)) > maxStringLength {
 				return shared.ValueConvertResponse{Value: fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker), Exceeded: true}
 			}
 
