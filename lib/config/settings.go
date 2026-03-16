@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 
-	"github.com/artie-labs/transfer/lib/cryptography"
 	"github.com/jessevdk/go-flags"
 )
 
@@ -35,14 +34,6 @@ func LoadSettings(args []string, loadConfig bool) (*Settings, error) {
 
 		if err = config.Validate(); err != nil {
 			return nil, fmt.Errorf("failed to validate config: %w", err)
-		}
-
-		if config.SharedDestinationSettings.EncryptionPassphrase != "" {
-			encryptionKey, decodeErr := cryptography.DecodePassphrase(config.SharedDestinationSettings.EncryptionPassphrase)
-			if decodeErr != nil {
-				return nil, fmt.Errorf("failed to decode encryption passphrase: %w", decodeErr)
-			}
-			config.SharedDestinationSettings.EncryptionKey = encryptionKey
 		}
 
 		settings.Config = *config
