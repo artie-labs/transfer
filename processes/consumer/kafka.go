@@ -22,8 +22,6 @@ import (
 	"github.com/artie-labs/transfer/models"
 )
 
-const maxFetchRetries = 10
-
 func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client, whClient *webhooksclient.Client) {
 	var encryptionKey []byte
 	if cfg.SharedDestinationSettings.EncryptionPassphrase != "" {
@@ -93,7 +91,7 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 				})
 				if err != nil {
 					_, isFetchErr := kafkalib.AsFetchMessageError(err)
-					if isFetchErr && db.IsRetryableError(err, context.DeadlineExceeded) && fetchRetries < maxFetchRetries {
+					if isFetchErr && db.IsRetryableError(err, context.DeadlineExceeded) {
 						sleepDuration := jitter.Jitter(500, jitter.DefaultMaxMs, fetchRetries)
 						slog.Warn("Retryable fetch error, backing off",
 							slog.Any("err", err),
@@ -108,7 +106,6 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 
 					logger.Fatal("Failed to process message", slog.Any("err", err), slog.String("topic", topic))
 				}
-
 				fetchRetries = 0
 			}
 		}(topic)
