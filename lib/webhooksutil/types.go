@@ -103,20 +103,17 @@ type WebhooksEvent struct {
 // In dashboard: embedded at the top level of WebhookEvent (matching the flat
 // Redis message after unfurling).
 type WebhookProperties struct {
-	// Config-level fields (set from WebhookSettings at client init)
-	CompanyUUID      string `json:"company_uuid"`
-	PipelineUUID     string `json:"pipeline_uuid,omitempty"`
-	SourceReaderUUID string `json:"source_reader_uuid,omitempty"`
-	Source           string `json:"source,omitempty"`      // connector source type, e.g. "postgresql"
-	Destination      string `json:"destination,omitempty"` // connector destination type, e.g. "bigquery"
+	// Properties set when client is initialized
+	CompanyUUID      string  `json:"company_uuid"`
+	PipelineUUID     string  `json:"pipeline_uuid,omitempty"`
+	SourceReaderUUID string  `json:"source_reader_uuid,omitempty"`
+	Source           string  `json:"source,omitempty"`      // connector source type, e.g. "postgresql"
+	Destination      string  `json:"destination,omitempty"` // connector destination type, e.g. "bigquery"
+	Service          Service `json:"service"`               // Artie service: transfer/reader/debezium
+	Version          string  `json:"version,omitempty"`     // service version (e.g. "v1.0.0")
+	Mode             string  `json:"mode,omitempty"`        // transfer run mode (replication/history)
 
-	// Set by BuildProperties
-	Service Service `json:"service"` // Artie service: transfer/reader/debezium
-
-	// Auto-set at client init (not passed per-event)
-	Mode    string `json:"mode,omitempty"`    // transfer run mode (e.g. "replication"); from WebhookSettings
-	Version string `json:"version,omitempty"` // binary version; passed to NewWebhooksClient at startup
-
+	// Properties specified when SendEvent is called
 	Error           string   `json:"error,omitempty"`
 	Table           string   `json:"table,omitempty"`
 	Schema          string   `json:"schema,omitempty"`
