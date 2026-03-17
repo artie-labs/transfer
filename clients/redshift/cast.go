@@ -65,7 +65,7 @@ func replaceExceededValues(colVal string, colKind typing.KindDetails, truncateEx
 
 		return result
 	case typing.String.Kind:
-		maxLength := typing.DefaultValueFromPtr[int32](colKind.OptionalStringPrecision, maxStringLength)
+		maxLength := typing.DefaultValueFromPtr(colKind.OptionalStringPrecision, maxStringLength)
 		colValLength := int32(len(colVal))
 		// If [expandStringPrecision] is enabled and the value is greater than the maximum length, and lte Redshift's max length.
 		if expandStringPrecision && colValLength > maxLength && colValLength <= maxStringLength {
