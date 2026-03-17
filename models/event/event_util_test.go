@@ -121,7 +121,7 @@ func (e *EventsTestSuite) TestTransformData() {
 		// Encrypting columns
 		passphraseString, err := cryptography.GeneratePassphrase()
 		assert.NoError(e.T(), err)
-		key, err := cryptography.DecodePassphrase(passphraseString)
+		key, err := cryptography.DecodePassphrase(passphraseString, true)
 		assert.NoError(e.T(), err)
 		{
 			// No columns to encrypt
