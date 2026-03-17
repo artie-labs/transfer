@@ -19,6 +19,7 @@ func NewFromConfig(cfg *config.WebhookSettings, version string) (*Client, error)
 		return &Client{}, nil
 	}
 
+	cfg.Migrate()
 	client, err := webhooksutil.NewWebhooksClient(webhooksutil.WebhooksClientConfig{
 		APIKey:           cfg.APIKey,
 		URL:              cfg.URL,

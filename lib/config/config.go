@@ -83,14 +83,17 @@ func readFileToConfig(pathToConfig string) (*Config, error) {
 		return nil, err
 	}
 
-	config.WebhookSettings.migrate(config.Mode)
-
 	config.Queue = cmp.Or(config.Queue, constants.Kafka)
 	config.FlushIntervalSeconds = cmp.Or(config.FlushIntervalSeconds, defaultFlushTimeSeconds)
 	config.BufferRows = cmp.Or(config.BufferRows, defaultBufferPoolSize)
 	config.FlushSizeKb = cmp.Or(config.FlushSizeKb, defaultFlushSizeKb)
 	config.Mode = cmp.Or(config.Mode, Replication)
 	config.KafkaClient = cmp.Or(config.KafkaClient, FranzGoClient)
+
+	// If mode is not included in WebhookSettings, use the mode from the main config.
+	if config.WebhookSettings != nil && config.WebhookSettings.Mode == "" {
+		config.WebhookSettings.Mode = config.Mode.String()
+	}
 
 	return &config, nil
 }

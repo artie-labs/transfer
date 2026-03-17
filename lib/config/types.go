@@ -132,28 +132,18 @@ type WebhookSettings struct {
 	Destination      string `yaml:"destination,omitempty"` // connector destination type, e.g. "bigquery"
 	Mode             string `yaml:"mode,omitempty"`        // transfer run mode, e.g. "replication"
 
-	// Deprecated: old configs nested company_uuid/pipeline_uuid here.
-	// Values are migrated to CompanyUUID/PipelineUUID automatically on load.
+	// Deprecated: old configs nested company_uuid/pipeline_uuid.source_reader_uuid here.
+	// Values are migrated to CompanyUUID/PipelineUUID/SourceReaderUUID automatically on load.
 	Properties map[string]any `yaml:"properties,omitempty"`
 }
 
-// oldServiceNames are values that old configs stored in the "source" YAML key to identify
-// the Artie service. The field's meaning changed to "connector source type" (e.g. "postgresql"),
-// so these stale values are discarded during migration.
-var oldServiceNames = map[string]bool{
-	"transfer": true,
-	"reader":   true,
-	"debezium": true,
-}
-
-// Temporary: this promotes values from the deprecated Properties map into typed fields,
-// and discards stale "source" values that refer to the old service identifier.
-func (w *WebhookSettings) migrate(mode Mode) {
+// Temporary: this preserves backward compatibility while rolling out changes to WebhookSettings
+func (w *WebhookSettings) Migrate() {
 	if w == nil {
 		return
 	}
 
-	// Lift company_uuid / pipeline_uuid out of the old properties block.
+	// Lift company_uuid / pipeline_uuid / source_reader_uuid out of the old properties block.
 	if len(w.Properties) > 0 {
 		if w.CompanyUUID == "" {
 			if v, ok := w.Properties["company_uuid"].(string); ok {
@@ -172,13 +162,9 @@ func (w *WebhookSettings) migrate(mode Mode) {
 		}
 	}
 
-	if w.Mode == "" {
-		w.Mode = mode.String()
-	}
-
 	// Old configs set source to a service name (e.g. "transfer"). That field now holds
 	// the connector source type (e.g. "postgresql"), so discard legacy service-name values.
-	if oldServiceNames[w.Source] {
+	if w.Source == "transfer" || w.Source == "reader" || w.Source == "debezium" {
 		w.Source = ""
 	}
 }
