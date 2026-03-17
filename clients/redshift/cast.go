@@ -1,6 +1,7 @@
 package redshift
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/artie-labs/transfer/clients/shared"
@@ -24,13 +25,32 @@ const (
 	maxSuperLength        = 16 * 1024 * 1024
 )
 
+func jsonStringExceedsMaxLength(v any) bool {
+	switch val := v.(type) {
+	case string:
+		return int32(len(val)) > maxStringLength
+	case []any:
+		for _, item := range val {
+			if jsonStringExceedsMaxLength(item) {
+				return true
+			}
+		}
+	case map[string]any:
+		for _, item := range val {
+			if jsonStringExceedsMaxLength(item) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func replaceExceededValues(colVal string, colKind typing.KindDetails, truncateExceededValue, expandStringPrecision bool) shared.ValueConvertResponse {
 	switch colKind.Kind {
 	case typing.Struct.Kind:
-		// If the value is a JSON object, we will use [maxSuperLength], else we will use [maxStringLength]
-		// Ref: https://docs.aws.amazon.com/redshift/latest/dg/limitations-super.html
-		if typing.IsJSON(colVal) {
-			if len(colVal) > maxSuperLength {
+		var parsed any
+		if err := json.Unmarshal([]byte(colVal), &parsed); err == nil {
+			if len(colVal) > maxSuperLength || jsonStringExceedsMaxLength(parsed) {
 				return shared.ValueConvertResponse{Value: fmt.Sprintf(`{"key":"%s"}`, constants.ExceededValueMarker), Exceeded: true}
 			}
 
