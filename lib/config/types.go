@@ -84,7 +84,7 @@ type SharedDestinationSettings struct {
 // Returns nil if no encryption is configured.
 func (s SharedDestinationSettings) BuildEncryptionKey(ctx context.Context) ([]byte, error) {
 	if s.EncryptionPassphrase != "" {
-		return cryptography.DecodePassphrase(s.EncryptionPassphrase)
+		return cryptography.DecodePassphrase(s.EncryptionPassphrase, true)
 	}
 
 	if s.EncryptionKMSConfig != nil {
@@ -100,7 +100,7 @@ func (s SharedDestinationSettings) BuildEncryptionKey(ctx context.Context) ([]by
 			return nil, fmt.Errorf("failed to decrypt encryption passphrase via KMS: %w", err)
 		}
 
-		return cryptography.DecodePassphrase(passphrase)
+		return cryptography.DecodePassphrase(passphrase, false)
 	}
 
 	return nil, nil
