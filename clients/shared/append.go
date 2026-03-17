@@ -8,10 +8,10 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing/columns"
-	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
+	"github.com/artie-labs/transfer/lib/webhooks"
 )
 
-func Append(ctx context.Context, dest destination.SQLDestination, tableData *optimization.TableData, _ *webhooksclient.Client, opts types.AdditionalSettings) error {
+func Append(ctx context.Context, dest destination.SQLDestination, tableData *optimization.TableData, _ *webhooks.Client, opts types.AdditionalSettings) error {
 	if tableData.ShouldSkipUpdate() {
 		return nil
 	}

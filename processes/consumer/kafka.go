@@ -18,12 +18,11 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
-	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
-	"github.com/artie-labs/transfer/lib/webhooksutil"
+	"github.com/artie-labs/transfer/lib/webhooks"
 	"github.com/artie-labs/transfer/models"
 )
 
-func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client, whClient *webhooksclient.Client) {
+func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client, whClient *webhooks.Client) {
 	var encryptionKey []byte
 	if cfg.SharedDestinationSettings.EncryptionPassphrase != "" {
 		var err error
@@ -76,7 +75,7 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 
 					tableID, err := args.process(ctx, cfg, inMemDB, dest, metricsClient)
 					if err != nil {
-						whClient.SendEvent(ctx, webhooksutil.UnableToReplicate, webhooksutil.SendEventArgs{
+						whClient.SendEvent(ctx, webhooks.UnableToReplicate, webhooks.SendEventArgs{
 							Error: fmt.Sprintf("Failed to process message: %s", err),
 							Topic: msg.Topic(),
 						})

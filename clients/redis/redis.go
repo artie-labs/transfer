@@ -16,7 +16,7 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	sqllib "github.com/artie-labs/transfer/lib/sql"
-	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
+	"github.com/artie-labs/transfer/lib/webhooks"
 )
 
 const (
@@ -49,7 +49,7 @@ func (s *Store) IdentifierFor(topicConfig kafkalib.DatabaseAndSchemaPair, table 
 	return NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table)
 }
 
-func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, _ bool) error {
+func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooks.Client, _ bool) error {
 	// For Redis, append and merge are the same - we always create new records
 	if _, err := s.Merge(ctx, tableData, whClient); err != nil {
 		return fmt.Errorf("failed to append: %w", err)
@@ -59,7 +59,7 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, w
 
 // Merge writes rows from TableData as individual entries into a Redis Stream.
 // Each entry contains two fields: the CDC event JSON (artieData) and an emitted-at timestamp (artieEmittedAt).
-func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client) (bool, error) {
+func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooks.Client) (bool, error) {
 	if tableData.ShouldSkipUpdate() {
 		return false, nil
 	}

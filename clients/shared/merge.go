@@ -16,7 +16,7 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
-	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
+	"github.com/artie-labs/transfer/lib/webhooks"
 )
 
 const (
@@ -25,7 +25,7 @@ const (
 	heartbeatsInterval     = 2 * time.Minute
 )
 
-func Merge(ctx context.Context, dest destination.SQLDestination, tableData *optimization.TableData, opts types.MergeOpts, _ *webhooksclient.Client) error {
+func Merge(ctx context.Context, dest destination.SQLDestination, tableData *optimization.TableData, opts types.MergeOpts, _ *webhooks.Client) error {
 	if tableData.ShouldSkipUpdate() {
 		return nil
 	}

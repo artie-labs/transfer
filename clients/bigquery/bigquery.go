@@ -30,7 +30,7 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
-	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
+	"github.com/artie-labs/transfer/lib/webhooks"
 )
 
 const GooglePathToCredentialsEnvKey = "GOOGLE_APPLICATION_CREDENTIALS"
@@ -60,7 +60,7 @@ func (s *Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) erro
 	return shared.DropTemporaryTable(ctx, s, tableID, s.configMap)
 }
 
-func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, useTempTable bool) error {
+func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooks.Client, useTempTable bool) error {
 	if !useTempTable {
 		return shared.Append(ctx, s, tableData, whClient, types.AdditionalSettings{
 			ColumnSettings: s.config.SharedDestinationSettings.ColumnSettings,
@@ -269,7 +269,7 @@ func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair ka
 	return nil
 }
 
-func (s *Store) SweepTemporaryTables(_ context.Context, _ *webhooksclient.Client) error {
+func (s *Store) SweepTemporaryTables(_ context.Context) error {
 	// BigQuery doesn't need to sweep temporary tables, since they support setting TTL on temporary tables.
 	return nil
 }
