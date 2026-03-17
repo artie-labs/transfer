@@ -45,8 +45,8 @@ const (
 	ConfigInvalid   EventType = "config.invalid"
 )
 
-// AllEventTypes contains all defined event types
-// Add new event types here when you define them above
+// AllEventTypes contains all defined event types.
+// Add new event types here when you define them above.
 var AllEventTypes = []EventType{
 	EventBackFillStarted,
 	EventBackFillCompleted,
@@ -80,48 +80,64 @@ const (
 	SeverityError   Severity = "error"
 )
 
-type Source string
+// Service identifies which Artie service emitted the event.
+type Service string
 
 const (
-	Transfer  Source = "transfer"
-	Reader    Source = "reader"
-	Debezium  Source = "debezium"
-	EventsAPI Source = "eventsAPI"
+	Transfer Service = "transfer"
+	Reader   Service = "reader"
+	Debezium Service = "debezium"
 )
 
+// WebhooksEvent is sent by transfer/reader to the events API.
+// The events API unfurls Properties into a flat top-level message in Redis.
 type WebhooksEvent struct {
-	Event      string         `json:"event"`
-	Timestamp  time.Time      `json:"timestamp"`
-	Properties map[string]any `json:"properties"`
+	Event      string            `json:"event"`
+	Timestamp  time.Time         `json:"timestamp"`
+	MessageID  string            `json:"messageId,omitempty"`
+	Properties WebhookProperties `json:"properties"`
 }
 
-type ProgressProperties struct {
-	RowsWritten         int64         `json:"rowsWritten"`
-	Duration            time.Duration `json:"duration"`
-	EstimatedCompletion *time.Time    `json:"estimatedCompletion,omitempty"`
-	ThroughputPerSecond float64       `json:"throughputPerSecond,omitempty"`
+// WebhookProperties is the source of truth for all webhook event fields.
+// In transfer/reader: marshaled as the "properties" field of WebhooksEvent.
+// In dashboard: embedded at the top level of WebhookEvent (matching the flat
+// Redis message after unfurling).
+type WebhookProperties struct {
+	// Properties set when client is initialized
+	CompanyUUID      string  `json:"company_uuid"`
+	PipelineUUID     string  `json:"pipeline_uuid,omitempty"`
+	SourceReaderUUID string  `json:"source_reader_uuid,omitempty"`
+	Source           string  `json:"source,omitempty"`      // connector source type, e.g. "postgresql"
+	Destination      string  `json:"destination,omitempty"` // connector destination type, e.g. "bigquery"
+	Service          Service `json:"service"`               // Artie service: transfer/reader/debezium
+	Version          string  `json:"version,omitempty"`     // service version (e.g. "v1.0.0")
+	Mode             string  `json:"mode,omitempty"`        // transfer run mode (replication/history)
+
+	// Properties specified when SendEvent is called
+	Error           string   `json:"error,omitempty"`
+	Table           string   `json:"table,omitempty"`
+	Schema          string   `json:"schema,omitempty"`
+	Database        string   `json:"database,omitempty"`
+	Topic           string   `json:"topic,omitempty"`
+	RowsWritten     int64    `json:"rows_written,omitempty"`
+	DurationSeconds float64  `json:"duration_seconds,omitempty"`
+	Reason          string   `json:"reason,omitempty"`
+	PrimaryKeys     []string `json:"primary_keys,omitempty"`
+
+	// Deprecated - include full error string in Error field instead
+	Details string `json:"details,omitempty"`
 }
 
-type TableProperties struct {
-	Table    string `json:"table"`
-	Schema   string `json:"schema,omitempty"`
-	Database string `json:"database,omitempty"`
-	RowCount int64  `json:"rowCount,omitempty"`
-}
-
-type ConnectionProperties struct {
-	Host            string        `json:"host,omitempty"`
-	Port            int           `json:"port,omitempty"`
-	DatabaseType    string        `json:"databaseType"` // postgres, mysql, mssql, mongodb, etc.
-	RetryCount      int           `json:"retryCount,omitempty"`
-	BackoffDuration time.Duration `json:"backoffDuration,omitempty"`
-	MaxRetries      int           `json:"maxRetries,omitempty"`
-}
-
-type ErrorProperties struct {
-	Error             string `json:"error"`
-	StackTrace        string `json:"stackTrace,omitempty"`
-	RetryCount        int    `json:"retryCount,omitempty"`
-	ConsecutiveErrors int    `json:"consecutiveErrors,omitempty"`
-	Fatal             bool   `json:"fatal,omitempty"`
+// SendEventArgs is passed by call sites to SendEvent.
+// The client fills in config-level and metadata fields automatically.
+type SendEventArgs struct {
+	Error           string
+	Table           string
+	Schema          string
+	Database        string
+	Topic           string
+	RowsWritten     int64
+	DurationSeconds float64
+	Reason          string
+	PrimaryKeys     []string
 }

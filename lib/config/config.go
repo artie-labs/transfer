@@ -90,6 +90,11 @@ func readFileToConfig(pathToConfig string) (*Config, error) {
 	config.Mode = cmp.Or(config.Mode, Replication)
 	config.KafkaClient = cmp.Or(config.KafkaClient, FranzGoClient)
 
+	// If mode is not included in WebhookSettings, use the mode from the main config.
+	if config.WebhookSettings != nil && config.WebhookSettings.Mode == "" {
+		config.WebhookSettings.Mode = config.Mode.String()
+	}
+
 	return &config, nil
 }
 

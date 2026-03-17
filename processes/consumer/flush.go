@@ -129,9 +129,9 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 		}
 
 		if err = grp.Wait(); err != nil {
-			whClient.SendEvent(ctx, webhooksutil.TableFailed, map[string]any{
-				"topic": topic,
-				"error": err.Error(),
+			whClient.SendEvent(ctx, webhooksutil.TableFailed, webhooksutil.SendEventArgs{
+				Topic: topic,
+				Error: fmt.Sprintf("Failed to flush table: %s", err),
 			})
 			return fmt.Errorf("failed to flush table: %w", err)
 		}

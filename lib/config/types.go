@@ -3,7 +3,6 @@ package config
 import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/artie-labs/transfer/lib/webhooksutil"
 )
 
 type Mode string
@@ -123,9 +122,49 @@ type Config struct {
 }
 
 type WebhookSettings struct {
-	Enabled    bool                `yaml:"enabled"`
-	URL        string              `yaml:"url"`
-	APIKey     string              `yaml:"apiKey"`
-	Properties map[string]any      `yaml:"properties,omitempty"`
-	Source     webhooksutil.Source `yaml:"source"`
+	Enabled          bool   `yaml:"enabled"`
+	URL              string `yaml:"url"`
+	APIKey           string `yaml:"apiKey"`
+	CompanyUUID      string `yaml:"companyUUID"`
+	PipelineUUID     string `yaml:"pipelineUUID,omitempty"`
+	SourceReaderUUID string `yaml:"sourceReaderUUID,omitempty"`
+	Source           string `yaml:"source,omitempty"`      // connector source type, e.g. "postgresql"
+	Destination      string `yaml:"destination,omitempty"` // connector destination type, e.g. "bigquery"
+	Mode             string `yaml:"mode,omitempty"`        // transfer run mode, e.g. "replication"
+
+	// Deprecated: old configs nested company_uuid/pipeline_uuid.source_reader_uuid here.
+	// Values are migrated to CompanyUUID/PipelineUUID/SourceReaderUUID automatically on load.
+	Properties map[string]any `yaml:"properties,omitempty"`
+}
+
+// Temporary: this preserves backward compatibility while rolling out changes to WebhookSettings
+func (w *WebhookSettings) Migrate() {
+	if w == nil {
+		return
+	}
+
+	// Lift company_uuid / pipeline_uuid / source_reader_uuid out of the old properties block.
+	if len(w.Properties) > 0 {
+		if w.CompanyUUID == "" {
+			if v, ok := w.Properties["company_uuid"].(string); ok {
+				w.CompanyUUID = v
+			}
+		}
+		if w.PipelineUUID == "" {
+			if v, ok := w.Properties["pipeline_uuid"].(string); ok {
+				w.PipelineUUID = v
+			}
+		}
+		if w.SourceReaderUUID == "" {
+			if v, ok := w.Properties["source_reader_uuid"].(string); ok {
+				w.SourceReaderUUID = v
+			}
+		}
+	}
+
+	// Old configs set source to a service name (e.g. "transfer"). That field now holds
+	// the connector source type (e.g. "postgresql"), so discard legacy service-name values.
+	if w.Source == "transfer" || w.Source == "reader" || w.Source == "debezium" {
+		w.Source = ""
+	}
 }
