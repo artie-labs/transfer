@@ -13,7 +13,6 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	sqllib "github.com/artie-labs/transfer/lib/sql"
-	"github.com/artie-labs/transfer/lib/webhooks"
 )
 
 type SQLDestination interface {
@@ -37,8 +36,8 @@ type Destination interface {
 	Label() constants.DestinationKind
 	GetConfig() config.Config
 
-	Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooks.Client) (commitTransaction bool, err error)
-	Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooks.Client, useTempTable bool) error
+	Merge(ctx context.Context, tableData *optimization.TableData) (commitTransaction bool, err error)
+	Append(ctx context.Context, tableData *optimization.TableData, useTempTable bool) error
 	IsRetryableError(err error) bool
 	IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, table string) sqllib.TableIdentifier
 	DropTable(ctx context.Context, tableID sqllib.TableIdentifier) error

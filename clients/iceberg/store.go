@@ -22,7 +22,6 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing/columns"
-	"github.com/artie-labs/transfer/lib/webhooks"
 )
 
 type Store struct {
@@ -67,11 +66,11 @@ func (s Store) Dialect() dialect.IcebergDialect {
 	return dialect.IcebergDialect{}
 }
 
-func (s Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooks.Client, useTempTable bool) error {
-	return s.append(ctx, s.GetApacheLivyClient(), tableData, whClient, useTempTable, 0)
+func (s Store) Append(ctx context.Context, tableData *optimization.TableData, useTempTable bool) error {
+	return s.append(ctx, s.GetApacheLivyClient(), tableData, useTempTable, 0)
 }
 
-func (s Store) append(ctx context.Context, client *apachelivy.Client, tableData *optimization.TableData, whClient *webhooks.Client, useTempTable bool, retryCount int) error {
+func (s Store) append(ctx context.Context, client *apachelivy.Client, tableData *optimization.TableData, useTempTable bool, retryCount int) error {
 	if tableData.ShouldSkipUpdate() {
 		return nil
 	}
@@ -125,7 +124,7 @@ func (s Store) append(ctx context.Context, client *apachelivy.Client, tableData 
 		if s.Dialect().IsTableDoesNotExistErr(err) {
 			s.cm.RemoveTable(tableID)
 			tableConfig.SetCreateTable(true)
-			return s.append(ctx, client, tableData, whClient, useTempTable, retryCount+1)
+			return s.append(ctx, client, tableData, useTempTable, retryCount+1)
 		}
 
 		return fmt.Errorf("failed to append to table: %w, query: %s", err, query)
@@ -167,7 +166,7 @@ func (s Store) getTableConfig(ctx context.Context, client *apachelivy.Client, ta
 	return tableCfg, nil
 }
 
-func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooks.Client) (bool, error) {
+func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
 	if tableData.ShouldSkipUpdate() {
 		return false, nil
 	}

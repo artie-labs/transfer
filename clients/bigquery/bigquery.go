@@ -30,7 +30,6 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
-	"github.com/artie-labs/transfer/lib/webhooks"
 )
 
 const GooglePathToCredentialsEnvKey = "GOOGLE_APPLICATION_CREDENTIALS"
@@ -60,9 +59,9 @@ func (s *Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) erro
 	return shared.DropTemporaryTable(ctx, s, tableID, s.configMap)
 }
 
-func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooks.Client, useTempTable bool) error {
+func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, useTempTable bool) error {
 	if !useTempTable {
-		return shared.Append(ctx, s, tableData, whClient, types.AdditionalSettings{
+		return shared.Append(ctx, s, tableData, types.AdditionalSettings{
 			ColumnSettings: s.config.SharedDestinationSettings.ColumnSettings,
 		})
 	}
@@ -75,7 +74,7 @@ func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, w
 
 	defer func() { _ = ddl.DropTemporaryTable(ctx, s, temporaryTableID, false) }()
 
-	err := shared.Append(ctx, s, tableData, whClient, types.AdditionalSettings{
+	err := shared.Append(ctx, s, tableData, types.AdditionalSettings{
 		ColumnSettings: s.config.SharedDestinationSettings.ColumnSettings,
 		UseTempTable:   true,
 		TempTableID:    temporaryTableID,

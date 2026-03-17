@@ -18,7 +18,6 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/retry"
 	"github.com/artie-labs/transfer/lib/sql"
-	"github.com/artie-labs/transfer/lib/webhooks"
 )
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
@@ -194,20 +193,20 @@ func (s Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error
 	return shared.DropTemporaryTable(ctx, &s, tableID, s.configMap)
 }
 
-func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooks.Client) (bool, error) {
+func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
 	if tableData.MultiStepMergeSettings().Enabled {
-		return shared.MultiStepMerge(ctx, s, tableData, types.MergeOpts{}, whClient)
+		return shared.MultiStepMerge(ctx, s, tableData, types.MergeOpts{})
 	}
 
-	if err := shared.Merge(ctx, s, tableData, types.MergeOpts{}, whClient); err != nil {
+	if err := shared.Merge(ctx, s, tableData, types.MergeOpts{}); err != nil {
 		return false, fmt.Errorf("failed to merge: %w", err)
 	}
 
 	return true, nil
 }
 
-func (s Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooks.Client, _ bool) error {
-	return shared.Append(ctx, s, tableData, whClient, types.AdditionalSettings{})
+func (s Store) Append(ctx context.Context, tableData *optimization.TableData, _ bool) error {
+	return shared.Append(ctx, s, tableData, types.AdditionalSettings{})
 }
 
 func (s *Store) specificIdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, table string) dialect.TableIdentifier {

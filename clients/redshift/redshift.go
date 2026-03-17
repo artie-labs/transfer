@@ -20,7 +20,6 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/retry"
 	"github.com/artie-labs/transfer/lib/sql"
-	"github.com/artie-labs/transfer/lib/webhooks"
 )
 
 type Store struct {
@@ -78,12 +77,12 @@ func (s *Store) TruncateTable(ctx context.Context, tableID sql.TableIdentifier) 
 	return nil
 }
 
-func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooks.Client, _ bool) error {
-	return shared.Append(ctx, s, tableData, whClient, types.AdditionalSettings{})
+func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, _ bool) error {
+	return shared.Append(ctx, s, tableData, types.AdditionalSettings{})
 }
 
-func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooks.Client) (bool, error) {
-	if err := shared.Merge(ctx, s, tableData, types.MergeOpts{}, whClient); err != nil {
+func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
+	if err := shared.Merge(ctx, s, tableData, types.MergeOpts{}); err != nil {
 		return false, fmt.Errorf("failed to merge: %w", err)
 	}
 

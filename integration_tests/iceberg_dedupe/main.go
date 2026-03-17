@@ -78,7 +78,7 @@ func (dt *DedupeTest) insertDataWithDuplicates(ctx context.Context) (uniquePKs i
 			tableData.InsertRow(key, map[string]any{"id": pk, "value": pk * 10}, false)
 		}
 
-		if err := dt.store.Append(ctx, tableData, nil, false); err != nil {
+		if err := dt.store.Append(ctx, tableData, false); err != nil {
 			return 0, fmt.Errorf("append failed at row %d: %w", batchStart, err)
 		}
 

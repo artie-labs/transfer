@@ -25,7 +25,6 @@ import (
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/values"
-	"github.com/artie-labs/transfer/lib/webhooks"
 )
 
 type Store struct {
@@ -52,18 +51,18 @@ func (s Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error
 	return shared.DropTemporaryTable(ctx, &s, tableID, s.configMap)
 }
 
-func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooks.Client) (bool, error) {
+func (s Store) Merge(ctx context.Context, tableData *optimization.TableData) (bool, error) {
 	if err := shared.Merge(ctx, s, tableData, types.MergeOpts{
 		ColumnSettings: s.cfg.SharedDestinationSettings.ColumnSettings,
-	}, whClient); err != nil {
+	}); err != nil {
 		return false, fmt.Errorf("failed to merge: %w", err)
 	}
 
 	return true, nil
 }
 
-func (s Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooks.Client, _ bool) error {
-	return shared.Append(ctx, s, tableData, whClient, types.AdditionalSettings{
+func (s Store) Append(ctx context.Context, tableData *optimization.TableData, _ bool) error {
+	return shared.Append(ctx, s, tableData, types.AdditionalSettings{
 		ColumnSettings: s.cfg.SharedDestinationSettings.ColumnSettings,
 	})
 }

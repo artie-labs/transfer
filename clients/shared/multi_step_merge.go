@@ -11,10 +11,9 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing/columns"
-	"github.com/artie-labs/transfer/lib/webhooks"
 )
 
-func MultiStepMerge(ctx context.Context, dest destination.SQLDestination, tableData *optimization.TableData, opts types.MergeOpts, _ *webhooks.Client) (bool, error) {
+func MultiStepMerge(ctx context.Context, dest destination.SQLDestination, tableData *optimization.TableData, opts types.MergeOpts) (bool, error) {
 	msmSettings := tableData.MultiStepMergeSettings()
 	if !msmSettings.Enabled {
 		return false, fmt.Errorf("multi-step merge is not enabled")
