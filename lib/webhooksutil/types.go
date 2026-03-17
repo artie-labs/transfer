@@ -114,15 +114,15 @@ type WebhookProperties struct {
 	Mode             string  `json:"mode,omitempty"`        // transfer run mode (replication/history)
 
 	// Properties specified when SendEvent is called
-	Error           string   `json:"error,omitempty"`
-	Table           string   `json:"table,omitempty"`
-	Schema          string   `json:"schema,omitempty"`
-	Database        string   `json:"database,omitempty"`
-	Topic           string   `json:"topic,omitempty"`
-	RowsWritten     int64    `json:"rows_written,omitempty"`
-	DurationSeconds float64  `json:"duration_seconds,omitempty"`
-	Reason          string   `json:"reason,omitempty"`
-	PrimaryKeys     []string `json:"primary_keys,omitempty"`
+	Error           string         `json:"error,omitempty"`
+	Table           string         `json:"table,omitempty"`
+	Schema          string         `json:"schema,omitempty"`
+	Database        string         `json:"database,omitempty"`
+	Topic           string         `json:"topic,omitempty"`
+	RowsWritten     int64          `json:"rows_written,omitempty"`
+	DurationSeconds float64        `json:"duration_seconds,omitempty"`
+	Reason          string         `json:"reason,omitempty"`
+	PrimaryKeys     map[string]any `json:"primary_keys,omitempty"`
 
 	// Deprecated - include full error string in Error field instead
 	Details string `json:"details,omitempty"`
@@ -139,5 +139,5 @@ type SendEventArgs struct {
 	RowsWritten     int64
 	DurationSeconds float64
 	Reason          string
-	PrimaryKeys     []string
+	PrimaryKeys     map[string]any
 }
