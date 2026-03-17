@@ -38,18 +38,7 @@ func newTestClient(t *testing.T, serverURL string, service Service) WebhooksClie
 }
 
 func (w *WebhooksClientTestSuite) TestNewWebhooksClient_Success() {
-	client, err := NewWebhooksClient(WebhooksClientConfig{
-		APIKey:       "test-api-key",
-		URL:          "https://example.com/webhooks",
-		Service:      Transfer,
-		Version:      "v1.0.0",
-		CompanyUUID:  "company-123",
-		PipelineUUID: "pipeline-1",
-		Source:       "postgresql",
-		Destination:  "bigquery",
-		Mode:         "replication",
-	})
-	assert.NoError(w.T(), err)
+	client := newTestClient(w.T(), "https://example.com/webhooks", Transfer)
 	assert.Equal(w.T(), Transfer, client.cfg.Service)
 	assert.Equal(w.T(), "test-api-key", client.cfg.APIKey)
 	assert.Equal(w.T(), "https://example.com/webhooks", client.cfg.URL)
