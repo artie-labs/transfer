@@ -174,35 +174,69 @@ func TestColumnEncryptionKMSConfig_Validate(t *testing.T) {
 		// Missing keyARN
 		cfg := ColumnEncryptionKMSConfig{
 			EncryptedPassphrase: "some-encrypted-dek",
+			AwsRegion:           "us-east-1",
 		}
 		assert.ErrorContains(t, cfg.Validate(), "keyARN is required")
 	}
 	{
 		// Missing encryptedPassphrase
 		cfg := ColumnEncryptionKMSConfig{
-			KeyARN: "arn:aws:kms:us-east-1:123456789012:key/abcd-1234",
+			KeyARN:    "arn:aws:kms:us-east-1:123456789012:key/abcd-1234",
+			AwsRegion: "us-east-1",
 		}
 		assert.ErrorContains(t, cfg.Validate(), "encryptedPassphrase is required")
 	}
 	{
-		// Both empty
+		// All empty
 		cfg := ColumnEncryptionKMSConfig{}
 		assert.ErrorContains(t, cfg.Validate(), "keyARN is required")
 	}
 	{
-		// Valid
+		// Missing awsRegion
 		cfg := ColumnEncryptionKMSConfig{
 			KeyARN:              "arn:aws:kms:us-east-1:123456789012:key/abcd-1234",
 			EncryptedPassphrase: "AQIDAHh-base64-encrypted-dek",
 		}
-		assert.NoError(t, cfg.Validate())
+		assert.ErrorContains(t, cfg.Validate(), "awsRegion is required")
 	}
 	{
-		// Valid with region
+		// Valid with default credential chain
 		cfg := ColumnEncryptionKMSConfig{
 			KeyARN:              "arn:aws:kms:us-east-1:123456789012:key/abcd-1234",
 			EncryptedPassphrase: "AQIDAHh-base64-encrypted-dek",
 			AwsRegion:           "us-east-1",
+		}
+		assert.NoError(t, cfg.Validate())
+	}
+	{
+		// Valid with static credentials
+		cfg := ColumnEncryptionKMSConfig{
+			KeyARN:              "arn:aws:kms:us-east-1:123456789012:key/abcd-1234",
+			EncryptedPassphrase: "AQIDAHh-base64-encrypted-dek",
+			AwsRegion:           "us-east-1",
+			AwsAccessKeyID:      "AKIAIOSFODNN7EXAMPLE",
+			AwsSecretAccessKey:  "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+		}
+		assert.NoError(t, cfg.Validate())
+	}
+	{
+		// Valid with role ARN
+		cfg := ColumnEncryptionKMSConfig{
+			KeyARN:              "arn:aws:kms:us-east-1:123456789012:key/abcd-1234",
+			EncryptedPassphrase: "AQIDAHh-base64-encrypted-dek",
+			AwsRegion:           "us-east-1",
+			RoleARN:             "arn:aws:iam::123456789012:role/kms-role",
+		}
+		assert.NoError(t, cfg.Validate())
+	}
+	{
+		// Valid with role ARN and external ID
+		cfg := ColumnEncryptionKMSConfig{
+			KeyARN:              "arn:aws:kms:us-east-1:123456789012:key/abcd-1234",
+			EncryptedPassphrase: "AQIDAHh-base64-encrypted-dek",
+			AwsRegion:           "us-east-1",
+			RoleARN:             "arn:aws:iam::123456789012:role/kms-role",
+			ExternalID:          "my-external-id",
 		}
 		assert.NoError(t, cfg.Validate())
 	}
@@ -249,6 +283,7 @@ func TestConfig_Validate_Encryption(t *testing.T) {
 		cfg.SharedDestinationSettings.EncryptionKMSConfig = &ColumnEncryptionKMSConfig{
 			KeyARN:              "arn:aws:kms:us-east-1:123456789012:key/abcd-1234",
 			EncryptedPassphrase: "AQIDAHh-base64",
+			AwsRegion:           "us-east-1",
 		}
 		assert.ErrorContains(t, cfg.Validate(), "encryptionPassphrase and encryptionKMSConfig are mutually exclusive")
 	}
@@ -266,6 +301,7 @@ func TestConfig_Validate_Encryption(t *testing.T) {
 		cfg.SharedDestinationSettings.EncryptionKMSConfig = &ColumnEncryptionKMSConfig{
 			KeyARN:              "arn:aws:kms:us-east-1:123456789012:key/abcd-1234",
 			EncryptedPassphrase: "AQIDAHh-base64-encrypted-dek",
+			AwsRegion:           "us-east-1",
 		}
 		assert.NoError(t, cfg.Validate())
 	}
@@ -274,6 +310,7 @@ func TestConfig_Validate_Encryption(t *testing.T) {
 		cfg := baseCfg()
 		cfg.SharedDestinationSettings.EncryptionKMSConfig = &ColumnEncryptionKMSConfig{
 			EncryptedPassphrase: "AQIDAHh-base64-encrypted-dek",
+			AwsRegion:           "us-east-1",
 		}
 		assert.ErrorContains(t, cfg.Validate(), "invalid encryption KMS config: keyARN is required")
 	}
@@ -281,9 +318,19 @@ func TestConfig_Validate_Encryption(t *testing.T) {
 		// KMS config with missing encryptedPassphrase
 		cfg := baseCfg()
 		cfg.SharedDestinationSettings.EncryptionKMSConfig = &ColumnEncryptionKMSConfig{
-			KeyARN: "arn:aws:kms:us-east-1:123456789012:key/abcd-1234",
+			KeyARN:    "arn:aws:kms:us-east-1:123456789012:key/abcd-1234",
+			AwsRegion: "us-east-1",
 		}
 		assert.ErrorContains(t, cfg.Validate(), "invalid encryption KMS config: encryptedPassphrase is required")
+	}
+	{
+		// KMS config with missing awsRegion
+		cfg := baseCfg()
+		cfg.SharedDestinationSettings.EncryptionKMSConfig = &ColumnEncryptionKMSConfig{
+			KeyARN:              "arn:aws:kms:us-east-1:123456789012:key/abcd-1234",
+			EncryptedPassphrase: "AQIDAHh-base64-encrypted-dek",
+		}
+		assert.ErrorContains(t, cfg.Validate(), "invalid encryption KMS config: awsRegion is required")
 	}
 	{
 		// Invalid passphrase (not valid base64 of 32 bytes)

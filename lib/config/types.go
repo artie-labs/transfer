@@ -1,9 +1,18 @@
 package config
 
 import (
+	"context"
 	"fmt"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
+	"github.com/aws/aws-sdk-go-v2/service/sts"
+
+	"github.com/artie-labs/transfer/lib/awslib"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/cryptography"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/stringutil"
 )
@@ -71,13 +80,48 @@ type SharedDestinationSettings struct {
 	CSVConvertUTF8 bool `yaml:"csvConvertUTF8,omitempty"`
 }
 
+// BuildEncryptionKey resolves the encryption key from either a plaintext passphrase or a KMS-encrypted passphrase.
+// Returns nil if no encryption is configured.
+func (s SharedDestinationSettings) BuildEncryptionKey(ctx context.Context) ([]byte, error) {
+	if s.EncryptionPassphrase != "" {
+		return cryptography.DecodePassphrase(s.EncryptionPassphrase)
+	}
+
+	if s.EncryptionKMSConfig != nil {
+		kmsCfg := s.EncryptionKMSConfig
+		awsCfg, err := kmsCfg.BuildAWSConfig(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load AWS config for KMS: %w", err)
+		}
+
+		kmsClient := awslib.NewKMSClient(awsCfg)
+		passphrase, err := kmsClient.DecryptDataKey(ctx, kmsCfg.EncryptedPassphrase, kmsCfg.KeyARN)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decrypt encryption passphrase via KMS: %w", err)
+		}
+
+		return cryptography.DecodePassphrase(passphrase)
+	}
+
+	return nil, nil
+}
+
 type ColumnEncryptionKMSConfig struct {
 	// [KeyARN] - The ARN of the KMS master key used to encrypt the data encryption key.
 	KeyARN string `yaml:"keyARN"`
 	// [EncryptedPassphrase] - Base64-encoded encrypted data encryption key (produced by KMS GenerateDataKeyWithoutPlaintext or equivalent).
 	EncryptedPassphrase string `yaml:"encryptedPassphrase"`
-	// [AwsRegion] - AWS region for the KMS call. If empty, falls back to AWS SDK defaults.
-	AwsRegion string `yaml:"awsRegion,omitempty"`
+	// [AwsRegion] - AWS region for the KMS call.
+	AwsRegion string `yaml:"awsRegion"`
+
+	// Optional: static credentials for AWS authentication.
+	// If not provided, falls back to the default credential chain (env vars, IAM role, etc.).
+	AwsAccessKeyID     string `yaml:"awsAccessKeyID,omitempty"`
+	AwsSecretAccessKey string `yaml:"awsSecretAccessKey,omitempty"`
+
+	// Optional: assume an IAM role for AWS authentication.
+	RoleARN    string `yaml:"roleARN,omitempty"`
+	ExternalID string `yaml:"externalID,omitempty"`
 }
 
 func (c ColumnEncryptionKMSConfig) Validate() error {
@@ -89,7 +133,39 @@ func (c ColumnEncryptionKMSConfig) Validate() error {
 		return fmt.Errorf("encryptedPassphrase is required")
 	}
 
+	if stringutil.Empty(c.AwsRegion) {
+		return fmt.Errorf("awsRegion is required")
+	}
+
 	return nil
+}
+
+func (c ColumnEncryptionKMSConfig) BuildAWSConfig(ctx context.Context) (aws.Config, error) {
+	var opts []func(*awsconfig.LoadOptions) error
+	opts = append(opts, awsconfig.WithRegion(c.AwsRegion))
+
+	if c.AwsAccessKeyID != "" && c.AwsSecretAccessKey != "" {
+		opts = append(opts, awsconfig.WithCredentialsProvider(
+			credentials.NewStaticCredentialsProvider(c.AwsAccessKeyID, c.AwsSecretAccessKey, ""),
+		))
+	}
+
+	cfg, err := awsconfig.LoadDefaultConfig(ctx, opts...)
+	if err != nil {
+		return aws.Config{}, fmt.Errorf("failed to load AWS config: %w", err)
+	}
+
+	if c.RoleARN != "" {
+		stsClient := sts.NewFromConfig(cfg)
+		assumeRoleOpts := func(o *stscreds.AssumeRoleOptions) {
+			if c.ExternalID != "" {
+				o.ExternalID = &c.ExternalID
+			}
+		}
+		cfg.Credentials = aws.NewCredentialsCache(stscreds.NewAssumeRoleProvider(stsClient, c.RoleARN, assumeRoleOpts))
+	}
+
+	return cfg, nil
 }
 
 type StagingTableReuseConfig struct {
