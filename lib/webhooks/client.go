@@ -1,15 +1,17 @@
-package webhooksutil
+package webhooks
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/google/uuid"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/redact"
 	"github.com/artie-labs/transfer/lib/stringutil"
 )
@@ -104,4 +106,52 @@ func (w WebhooksClient) SendEvent(ctx context.Context, eventType EventType, args
 	}
 
 	return nil
+}
+
+// Client is a high-level wrapper around WebhooksClient that no-ops gracefully
+// when webhooks are not configured or disabled.
+type Client struct {
+	inner *WebhooksClient
+}
+
+// NewFromConfig creates a Client from config. Returns a no-op client if cfg is nil or disabled.
+// service identifies which Artie binary is sending events (e.g. Transfer or Reader).
+func NewFromConfig(cfg *config.WebhookSettings, service Service, version string) (*Client, error) {
+	if cfg == nil || !cfg.Enabled {
+		return &Client{}, nil
+	}
+
+	cfg.Migrate()
+	inner, err := NewWebhooksClient(WebhooksClientConfig{
+		APIKey:           cfg.APIKey,
+		URL:              cfg.URL,
+		Service:          service,
+		Version:          version,
+		CompanyUUID:      cfg.CompanyUUID,
+		PipelineUUID:     cfg.PipelineUUID,
+		SourceReaderUUID: cfg.SourceReaderUUID,
+		Source:           cfg.Source,
+		Destination:      cfg.Destination,
+		Mode:             cfg.Mode,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create webhooks client: %w", err)
+	}
+
+	return &Client{inner: &inner}, nil
+}
+
+func (c *Client) IsEnabled() bool {
+	return c != nil && c.inner != nil
+}
+
+// SendEvent sends a webhook event. Errors are logged and never returned;
+// webhook delivery failures should never interrupt the main data pipeline.
+func (c *Client) SendEvent(ctx context.Context, eventType EventType, args SendEventArgs) {
+	if !c.IsEnabled() {
+		return
+	}
+	if err := c.inner.SendEvent(ctx, eventType, args); err != nil {
+		slog.Error("Failed to send webhook event", slog.String("event", string(eventType)), slog.Any("err", err))
+	}
 }

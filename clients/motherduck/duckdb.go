@@ -18,7 +18,7 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/retry"
 	"github.com/artie-labs/transfer/lib/sql"
-	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
+	"github.com/artie-labs/transfer/lib/webhooks"
 )
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
@@ -157,7 +157,7 @@ func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kaf
 	return nil
 }
 
-func (s Store) SweepTemporaryTables(ctx context.Context, _ *webhooksclient.Client) error {
+func (s Store) SweepTemporaryTables(ctx context.Context, _ *webhooks.Client) error {
 	for _, dbAndSchema := range kafkalib.GetUniqueStagingDatabaseAndSchemaPairs(s.config.TopicConfigs()) {
 		query, args := s.dialect().BuildSweepQuery(dbAndSchema.Database, dbAndSchema.Schema)
 		response, err := s.QueryContextHttp(ctx, query, args...)
@@ -194,7 +194,7 @@ func (s Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error
 	return shared.DropTemporaryTable(ctx, &s, tableID, s.configMap)
 }
 
-func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client) (bool, error) {
+func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooks.Client) (bool, error) {
 	if tableData.MultiStepMergeSettings().Enabled {
 		return shared.MultiStepMerge(ctx, s, tableData, types.MergeOpts{}, whClient)
 	}
@@ -206,7 +206,7 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whC
 	return true, nil
 }
 
-func (s Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, _ bool) error {
+func (s Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooks.Client, _ bool) error {
 	return shared.Append(ctx, s, tableData, whClient, types.AdditionalSettings{})
 }
 

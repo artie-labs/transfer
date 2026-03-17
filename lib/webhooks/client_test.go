@@ -1,4 +1,4 @@
-package webhooksutil
+package webhooks
 
 import (
 	"context"
@@ -10,6 +10,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/artie-labs/transfer/lib/config"
 )
 
 type WebhooksClientTestSuite struct {
@@ -256,4 +258,124 @@ func (w *WebhooksClientTestSuite) TestSendEvent_EmptyArgs() {
 	assert.NoError(w.T(), client.SendEvent(w.T().Context(), EventBackFillStarted, SendEventArgs{}))
 	assert.Empty(w.T(), receivedEvent.Properties.Table)
 	assert.Empty(w.T(), receivedEvent.Properties.Error)
+}
+
+// Tests for the high-level Client wrapper.
+
+func TestNewFromConfig(t *testing.T) {
+	{
+		// nil config returns no-op client
+		client, err := NewFromConfig(nil, Transfer, "v1.0.0")
+		assert.NoError(t, err)
+		assert.NotNil(t, client)
+		assert.False(t, client.IsEnabled())
+	}
+	{
+		// disabled config returns no-op client
+		client, err := NewFromConfig(&config.WebhookSettings{
+			Enabled: false,
+			URL:     "https://example.com",
+			APIKey:  "test-key",
+		}, Transfer, "v1.0.0")
+		assert.NoError(t, err)
+		assert.NotNil(t, client)
+		assert.False(t, client.IsEnabled())
+	}
+	{
+		// enabled config missing API key returns error
+		client, err := NewFromConfig(&config.WebhookSettings{
+			Enabled: true,
+			URL:     "https://example.com",
+			APIKey:  "",
+		}, Transfer, "v1.0.0")
+		assert.Error(t, err)
+		assert.Nil(t, client)
+	}
+	{
+		// enabled config missing URL returns error
+		client, err := NewFromConfig(&config.WebhookSettings{
+			Enabled: true,
+			URL:     "",
+			APIKey:  "test-key",
+		}, Transfer, "v1.0.0")
+		assert.Error(t, err)
+		assert.Nil(t, client)
+	}
+	{
+		// valid enabled config
+		client, err := NewFromConfig(&config.WebhookSettings{
+			Enabled:     true,
+			URL:         "https://example.com/webhook",
+			APIKey:      "test-api-key",
+			CompanyUUID: "company-123",
+			Source:      "postgresql",
+			Destination: "bigquery",
+			Mode:        "replication",
+		}, Transfer, "v1.0.0")
+		assert.NoError(t, err)
+		assert.NotNil(t, client)
+		assert.True(t, client.IsEnabled())
+		assert.NotNil(t, client.inner)
+	}
+	{
+		// service parameter is passed through correctly
+		client, err := NewFromConfig(&config.WebhookSettings{
+			Enabled:     true,
+			URL:         "https://example.com/webhook",
+			APIKey:      "test-api-key",
+			CompanyUUID: "company-123",
+		}, Reader, "v2.0.0")
+		assert.NoError(t, err)
+		assert.NotNil(t, client)
+		assert.True(t, client.IsEnabled())
+		assert.Equal(t, Reader, client.inner.cfg.Service)
+		assert.Equal(t, "v2.0.0", client.inner.cfg.Version)
+	}
+}
+
+func TestClient_IsEnabled(t *testing.T) {
+	{
+		// nil client
+		var client *Client
+		assert.False(t, client.IsEnabled())
+	}
+	{
+		// no-op client (inner is nil)
+		client := &Client{}
+		assert.False(t, client.IsEnabled())
+	}
+	{
+		// enabled client
+		inner := WebhooksClient{}
+		client := &Client{inner: &inner}
+		assert.True(t, client.IsEnabled())
+	}
+}
+
+func TestClient_SendEvent(t *testing.T) {
+	ctx := context.Background()
+	{
+		// nil client should not panic
+		var client *Client
+		assert.NotPanics(t, func() {
+			client.SendEvent(ctx, TableStarted, SendEventArgs{Table: "users"})
+		})
+	}
+	{
+		// disabled (no-op) client should not panic
+		client := &Client{}
+		assert.NotPanics(t, func() {
+			client.SendEvent(ctx, TableStarted, SendEventArgs{Table: "users"})
+		})
+	}
+	{
+		// enabled client with all event types should not panic
+		inner := WebhooksClient{}
+		client := &Client{inner: &inner}
+		for _, eventType := range AllEventTypes {
+			assert.NotPanics(t, func() {
+				client.SendEvent(ctx, eventType, SendEventArgs{})
+			})
+		}
+	}
 }

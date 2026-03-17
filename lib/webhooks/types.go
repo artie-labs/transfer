@@ -1,4 +1,4 @@
-package webhooksutil
+package webhooks
 
 import "time"
 

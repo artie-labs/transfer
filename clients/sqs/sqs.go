@@ -23,7 +23,7 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	sqllib "github.com/artie-labs/transfer/lib/sql"
-	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
+	"github.com/artie-labs/transfer/lib/webhooks"
 )
 
 const (
@@ -56,7 +56,7 @@ func (s *Store) IdentifierFor(topicConfig kafkalib.DatabaseAndSchemaPair, table 
 	return NewTableIdentifier(topicConfig.Database, topicConfig.Schema, table)
 }
 
-func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, _ bool) error {
+func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooks.Client, _ bool) error {
 	// For SQS, append and merge are identical - we always send new messages
 	if _, err := s.Merge(ctx, tableData, whClient); err != nil {
 		return fmt.Errorf("failed to append: %w", err)
@@ -84,7 +84,7 @@ func (s *Store) buildQueueURL(ctx context.Context, tableID TableIdentifier) (str
 }
 
 // Merge sends all rows from TableData as JSON messages to SQS
-func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData, _ *webhooksclient.Client) (bool, error) {
+func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData, _ *webhooks.Client) (bool, error) {
 	if tableData.ShouldSkipUpdate() {
 		return false, nil
 	}

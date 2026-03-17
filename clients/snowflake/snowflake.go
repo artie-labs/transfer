@@ -20,7 +20,7 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/retry"
 	"github.com/artie-labs/transfer/lib/sql"
-	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
+	"github.com/artie-labs/transfer/lib/webhooks"
 )
 
 func init() {
@@ -74,7 +74,7 @@ func (s *Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier,
 	}.GetTableConfig(ctx)
 }
 
-func (s *Store) SweepTemporaryTables(ctx context.Context, whClient *webhooksclient.Client) error {
+func (s *Store) SweepTemporaryTables(ctx context.Context, whClient *webhooks.Client) error {
 	return shared.Sweep(ctx, s, s.config.TopicConfigs(), whClient, s.dialect().BuildSweepQuery)
 }
 
