@@ -11,7 +11,6 @@ import (
 	"github.com/artie-labs/transfer/lib/artie/metrics"
 	"github.com/artie-labs/transfer/lib/cdc/format"
 	"github.com/artie-labs/transfer/lib/config"
-	"github.com/artie-labs/transfer/lib/cryptography"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/jitter"
@@ -23,13 +22,9 @@ import (
 )
 
 func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client, whClient *webhooks.Client) {
-	var encryptionKey []byte
-	if cfg.SharedDestinationSettings.EncryptionPassphrase != "" {
-		var err error
-		encryptionKey, err = cryptography.DecodePassphrase(cfg.SharedDestinationSettings.EncryptionPassphrase)
-		if err != nil {
-			logger.Fatal("Failed to decode encryption passphrase", slog.Any("err", err))
-		}
+	encryptionKey, err := cfg.SharedDestinationSettings.BuildEncryptionKey(ctx)
+	if err != nil {
+		logger.Fatal("Failed to build encryption key", slog.Any("err", err))
 	}
 
 	tcFmtMap := NewTcFmtMap()
