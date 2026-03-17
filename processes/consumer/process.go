@@ -10,7 +10,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
-	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
+	"github.com/artie-labs/transfer/lib/webhooks"
 	"github.com/artie-labs/transfer/models"
 	"github.com/artie-labs/transfer/models/event"
 )
@@ -19,7 +19,7 @@ type processArgs struct {
 	Msg                    artie.Message
 	GroupID                string
 	TopicToConfigFormatMap *TcFmtMap
-	WhClient               *webhooksclient.Client
+	WhClient               *webhooks.Client
 	EncryptionKey          []byte
 }
 

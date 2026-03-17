@@ -1,23 +1,70 @@
-package webhooksutil
+package webhooks
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/google/uuid"
 
+	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/redact"
 	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
-// WebhooksClientConfig holds all configuration for creating a WebhooksClient.
-// Using a struct instead of positional parameters prevents accidental argument transposition
-// among the many string fields.
-type WebhooksClientConfig struct {
+// Client is a high-level wrapper around webhooksClient that no-ops gracefully
+// when webhooks are disabled or not configured.
+type Client struct {
+	inner *webhooksClient
+}
+
+func NewClient(cfg *config.WebhookSettings, service Service, version string) (*Client, error) {
+	if cfg == nil || !cfg.Enabled {
+		return &Client{}, nil
+	}
+
+	// Temporary for backward compatibility with old configs
+	cfg.Migrate()
+
+	inner, err := newWebhooksClient(webhooksClientConfig{
+		APIKey:           cfg.APIKey,
+		URL:              cfg.URL,
+		Service:          service,
+		Version:          version,
+		CompanyUUID:      cfg.CompanyUUID,
+		PipelineUUID:     cfg.PipelineUUID,
+		SourceReaderUUID: cfg.SourceReaderUUID,
+		Source:           cfg.Source,
+		Destination:      cfg.Destination,
+		Mode:             cfg.Mode,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create webhooks client: %w", err)
+	}
+
+	return &Client{inner: &inner}, nil
+}
+
+func (c *Client) IsEnabled() bool {
+	return c != nil && c.inner != nil
+}
+
+// SendEvent sends a webhook event. Errors are logged and never returned;
+// webhook delivery failures should never interrupt the main data pipeline.
+func (c *Client) SendEvent(ctx context.Context, eventType EventType, args SendEventArgs) {
+	if !c.IsEnabled() {
+		return
+	}
+	if err := c.inner.SendEvent(ctx, eventType, args); err != nil {
+		slog.Error("Failed to send webhook event", slog.String("event", string(eventType)), slog.Any("err", err))
+	}
+}
+
+type webhooksClientConfig struct {
 	APIKey           string
 	URL              string
 	Service          Service
@@ -25,23 +72,22 @@ type WebhooksClientConfig struct {
 	CompanyUUID      string
 	PipelineUUID     string
 	SourceReaderUUID string
-	Source           string // connector source type, e.g. "postgresql"
-	Destination      string // connector destination type, e.g. "bigquery"
+	Source           string
+	Destination      string
 	Mode             string
 }
 
-// WebhooksClient sends events to the webhooks service.
-type WebhooksClient struct {
+type webhooksClient struct {
 	httpClient http.Client
-	cfg        WebhooksClientConfig
+	cfg        webhooksClientConfig
 }
 
-func NewWebhooksClient(cfg WebhooksClientConfig) (WebhooksClient, error) {
+func newWebhooksClient(cfg webhooksClientConfig) (webhooksClient, error) {
 	if stringutil.Empty(cfg.APIKey, cfg.URL) {
-		return WebhooksClient{}, fmt.Errorf("apiKey and url are required")
+		return webhooksClient{}, fmt.Errorf("apiKey and url are required")
 	}
 
-	return WebhooksClient{
+	return webhooksClient{
 		httpClient: http.Client{
 			Timeout: 10 * time.Second,
 		},
@@ -49,7 +95,7 @@ func NewWebhooksClient(cfg WebhooksClientConfig) (WebhooksClient, error) {
 	}, nil
 }
 
-func (w WebhooksClient) BuildProperties(args SendEventArgs) WebhookProperties {
+func (w webhooksClient) buildProperties(args SendEventArgs) WebhookProperties {
 	return WebhookProperties{
 		CompanyUUID:      w.cfg.CompanyUUID,
 		PipelineUUID:     w.cfg.PipelineUUID,
@@ -71,13 +117,12 @@ func (w WebhooksClient) BuildProperties(args SendEventArgs) WebhookProperties {
 	}
 }
 
-// SendEvent sends an event to the webhooks service.
-func (w WebhooksClient) SendEvent(ctx context.Context, eventType EventType, args SendEventArgs) error {
+func (w webhooksClient) SendEvent(ctx context.Context, eventType EventType, args SendEventArgs) error {
 	event := WebhooksEvent{
 		Event:      string(eventType),
 		Timestamp:  time.Now().UTC(),
 		MessageID:  uuid.New().String(),
-		Properties: w.BuildProperties(args),
+		Properties: w.buildProperties(args),
 	}
 
 	body, err := json.Marshal(event)
