@@ -22,9 +22,9 @@ func TestWebhooksClientTestSuite(t *testing.T) {
 	suite.Run(t, new(WebhooksClientTestSuite))
 }
 
-func newTestClient(t *testing.T, serverURL string, service Service) WebhooksClient {
+func newTestClient(t *testing.T, serverURL string, service Service) webhooksClient {
 	t.Helper()
-	client, err := NewWebhooksClient(WebhooksClientConfig{
+	client, err := newWebhooksClient(webhooksClientConfig{
 		APIKey:       "test-api-key",
 		URL:          serverURL,
 		Service:      service,
@@ -53,17 +53,17 @@ func (w *WebhooksClientTestSuite) TestNewWebhooksClient_Success() {
 }
 
 func (w *WebhooksClientTestSuite) TestNewWebhooksClient_MissingAPIKey() {
-	_, err := NewWebhooksClient(WebhooksClientConfig{URL: "https://example.com/webhooks", Service: Transfer})
+	_, err := newWebhooksClient(webhooksClientConfig{URL: "https://example.com/webhooks", Service: Transfer})
 	assert.ErrorContains(w.T(), err, "apiKey and url are required")
 }
 
 func (w *WebhooksClientTestSuite) TestNewWebhooksClient_MissingURL() {
-	_, err := NewWebhooksClient(WebhooksClientConfig{APIKey: "test-api-key", Service: Transfer})
+	_, err := newWebhooksClient(webhooksClientConfig{APIKey: "test-api-key", Service: Transfer})
 	assert.ErrorContains(w.T(), err, "apiKey and url are required")
 }
 
 func (w *WebhooksClientTestSuite) TestNewWebhooksClient_MissingBoth() {
-	_, err := NewWebhooksClient(WebhooksClientConfig{Service: Transfer})
+	_, err := newWebhooksClient(webhooksClientConfig{Service: Transfer})
 	assert.ErrorContains(w.T(), err, "apiKey and url are required")
 }
 
@@ -127,9 +127,9 @@ func (w *WebhooksClientTestSuite) TestSendEvent_HTTPError() {
 	}))
 	defer server.Close()
 
-	client := WebhooksClient{
+	client := webhooksClient{
 		httpClient: http.Client{Timeout: 10 * time.Second},
-		cfg:        WebhooksClientConfig{Service: Transfer, CompanyUUID: "company-123", URL: server.URL, APIKey: "test-api-key"},
+		cfg:        webhooksClientConfig{Service: Transfer, CompanyUUID: "company-123", URL: server.URL, APIKey: "test-api-key"},
 	}
 
 	assert.ErrorContains(w.T(), client.SendEvent(w.T().Context(), EventBackFillFailed, SendEventArgs{}), "unexpected status code: 500")
@@ -141,9 +141,9 @@ func (w *WebhooksClientTestSuite) TestSendEvent_HTTPClientError() {
 	}))
 	defer server.Close()
 
-	client := WebhooksClient{
+	client := webhooksClient{
 		httpClient: http.Client{Timeout: 10 * time.Second},
-		cfg:        WebhooksClientConfig{Service: Transfer, CompanyUUID: "company-123", URL: server.URL, APIKey: "test-api-key"},
+		cfg:        webhooksClientConfig{Service: Transfer, CompanyUUID: "company-123", URL: server.URL, APIKey: "test-api-key"},
 	}
 
 	assert.ErrorContains(w.T(), client.SendEvent(w.T().Context(), EventBackFillFailed, SendEventArgs{}), "unexpected status code: 400")
@@ -156,9 +156,9 @@ func (w *WebhooksClientTestSuite) TestSendEvent_ContextCanceled() {
 	}))
 	defer server.Close()
 
-	client := WebhooksClient{
+	client := webhooksClient{
 		httpClient: http.Client{Timeout: 10 * time.Second},
-		cfg:        WebhooksClientConfig{Service: Transfer, CompanyUUID: "company-123", URL: server.URL, APIKey: "test-api-key"},
+		cfg:        webhooksClientConfig{Service: Transfer, CompanyUUID: "company-123", URL: server.URL, APIKey: "test-api-key"},
 	}
 
 	ctx, cancel := context.WithTimeout(w.T().Context(), 100*time.Millisecond)
@@ -168,18 +168,18 @@ func (w *WebhooksClientTestSuite) TestSendEvent_ContextCanceled() {
 }
 
 func (w *WebhooksClientTestSuite) TestSendEvent_InvalidURL() {
-	client := WebhooksClient{
+	client := webhooksClient{
 		httpClient: http.Client{Timeout: 10 * time.Second},
-		cfg:        WebhooksClientConfig{Service: Transfer, CompanyUUID: "company-123", URL: "://invalid-url", APIKey: "test-api-key"},
+		cfg:        webhooksClientConfig{Service: Transfer, CompanyUUID: "company-123", URL: "://invalid-url", APIKey: "test-api-key"},
 	}
 
 	assert.ErrorContains(w.T(), client.SendEvent(w.T().Context(), EventBackFillFailed, SendEventArgs{}), "failed to create request")
 }
 
 func (w *WebhooksClientTestSuite) TestSendEvent_NetworkError() {
-	client := WebhooksClient{
+	client := webhooksClient{
 		httpClient: http.Client{Timeout: 1 * time.Second},
-		cfg:        WebhooksClientConfig{Service: Transfer, CompanyUUID: "company-123", URL: "http://localhost:1", APIKey: "test-api-key"},
+		cfg:        webhooksClientConfig{Service: Transfer, CompanyUUID: "company-123", URL: "http://localhost:1", APIKey: "test-api-key"},
 	}
 
 	assert.ErrorContains(w.T(), client.SendEvent(w.T().Context(), EventBackFillFailed, SendEventArgs{}), "failed to send request")
@@ -223,8 +223,8 @@ func (w *WebhooksClientTestSuite) TestSendEvent_AllServices() {
 }
 
 func (w *WebhooksClientTestSuite) TestBuildProperties_ErrorConsolidation() {
-	client := WebhooksClient{
-		cfg: WebhooksClientConfig{
+	client := webhooksClient{
+		cfg: webhooksClientConfig{
 			Service:     Transfer,
 			CompanyUUID: "company-123",
 			Source:      "postgresql",
@@ -234,7 +234,7 @@ func (w *WebhooksClientTestSuite) TestBuildProperties_ErrorConsolidation() {
 		},
 	}
 
-	props := client.BuildProperties(SendEventArgs{
+	props := client.buildProperties(SendEventArgs{
 		Error: "Failed to replicate: connection timeout",
 		Table: "users",
 	})
@@ -265,14 +265,14 @@ func (w *WebhooksClientTestSuite) TestSendEvent_EmptyArgs() {
 func TestNewFromConfig(t *testing.T) {
 	{
 		// nil config returns no-op client
-		client, err := NewFromConfig(nil, Transfer, "v1.0.0")
+		client, err := NewClient(nil, Transfer, "v1.0.0")
 		assert.NoError(t, err)
 		assert.NotNil(t, client)
 		assert.False(t, client.IsEnabled())
 	}
 	{
 		// disabled config returns no-op client
-		client, err := NewFromConfig(&config.WebhookSettings{
+		client, err := NewClient(&config.WebhookSettings{
 			Enabled: false,
 			URL:     "https://example.com",
 			APIKey:  "test-key",
@@ -283,7 +283,7 @@ func TestNewFromConfig(t *testing.T) {
 	}
 	{
 		// enabled config missing API key returns error
-		client, err := NewFromConfig(&config.WebhookSettings{
+		client, err := NewClient(&config.WebhookSettings{
 			Enabled: true,
 			URL:     "https://example.com",
 			APIKey:  "",
@@ -293,7 +293,7 @@ func TestNewFromConfig(t *testing.T) {
 	}
 	{
 		// enabled config missing URL returns error
-		client, err := NewFromConfig(&config.WebhookSettings{
+		client, err := NewClient(&config.WebhookSettings{
 			Enabled: true,
 			URL:     "",
 			APIKey:  "test-key",
@@ -303,7 +303,7 @@ func TestNewFromConfig(t *testing.T) {
 	}
 	{
 		// valid enabled config
-		client, err := NewFromConfig(&config.WebhookSettings{
+		client, err := NewClient(&config.WebhookSettings{
 			Enabled:     true,
 			URL:         "https://example.com/webhook",
 			APIKey:      "test-api-key",
@@ -319,7 +319,7 @@ func TestNewFromConfig(t *testing.T) {
 	}
 	{
 		// service parameter is passed through correctly
-		client, err := NewFromConfig(&config.WebhookSettings{
+		client, err := NewClient(&config.WebhookSettings{
 			Enabled:     true,
 			URL:         "https://example.com/webhook",
 			APIKey:      "test-api-key",
@@ -346,7 +346,7 @@ func TestClient_IsEnabled(t *testing.T) {
 	}
 	{
 		// enabled client
-		inner := WebhooksClient{}
+		inner := webhooksClient{}
 		client := &Client{inner: &inner}
 		assert.True(t, client.IsEnabled())
 	}
@@ -370,7 +370,7 @@ func TestClient_SendEvent(t *testing.T) {
 	}
 	{
 		// enabled client with all event types should not panic
-		inner := WebhooksClient{}
+		inner := webhooksClient{}
 		client := &Client{inner: &inner}
 		for _, eventType := range AllEventTypes {
 			assert.NotPanics(t, func() {

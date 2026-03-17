@@ -33,7 +33,7 @@ func main() {
 	if settings != nil {
 		webhookSettings = settings.Config.WebhookSettings
 	}
-	whClient, whErr := webhooks.NewFromConfig(webhookSettings, webhooks.Transfer, version)
+	whClient, whErr := webhooks.NewClient(webhookSettings, webhooks.Transfer, version)
 	if whErr != nil {
 		logger.Fatal("Failed to initialize webhooks client", slog.Any("err", whErr))
 	}
