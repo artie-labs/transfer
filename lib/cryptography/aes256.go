@@ -24,13 +24,13 @@ func GeneratePassphrase() (string, error) {
 
 // DecodePassphrase decodes a base64-encoded passphrase (as returned by [GeneratePassphrase])
 // back into the raw 32-byte key suitable for [Encrypt] and [Decrypt].
-func DecodePassphrase(passphrase string, ensure bool) ([]byte, error) {
+func DecodePassphrase(passphrase string, ensureSize bool) ([]byte, error) {
 	key, err := base64.StdEncoding.DecodeString(passphrase)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode passphrase: %w", err)
 	}
 
-	if ensure {
+	if ensureSize {
 		if err := ensureKeySize(key); err != nil {
 			return nil, err
 		}

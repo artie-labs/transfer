@@ -333,7 +333,7 @@ func (c Config) Validate() error {
 		}
 
 		if hasPassphrase {
-			if _, err := cryptography.DecodePassphrase(c.SharedDestinationSettings.EncryptionPassphrase); err != nil {
+			if _, err := cryptography.DecodePassphrase(c.SharedDestinationSettings.EncryptionPassphrase, true); err != nil {
 				return fmt.Errorf("invalid encryption passphrase: %w", err)
 			}
 		}
