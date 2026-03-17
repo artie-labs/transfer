@@ -6,7 +6,6 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/stringutil"
-	"github.com/artie-labs/transfer/lib/webhooksutil"
 )
 
 type Mode string
@@ -33,35 +32,35 @@ type Sentry struct {
 type SharedDestinationColumnSettings struct {
 	// BigNumericForVariableNumeric - If enabled, we will use BigQuery's BIGNUMERIC type for variable numeric types.
 	// Note: this field also accepts the legacy YAML key "bigQueryNumericForVariableNumeric" for backward compatibility.
-	BigNumericForVariableNumeric bool `yaml:"bigQueryNumericForVariableNumeric"`
+	BigNumericForVariableNumeric bool `yaml:"bigQueryNumericForVariableNumeric,omitempty"`
 	// [WriteRawBinaryValues] - If enabled, we will write raw binary values to the destination (e.g. BINARY column type)
 	// instead of storing them as Base64 encoded strings.
-	WriteRawBinaryValues bool `yaml:"writeRawBinaryValues"`
+	WriteRawBinaryValues bool `yaml:"writeRawBinaryValues,omitempty"`
 }
 
 type SharedDestinationSettings struct {
 	// TruncateExceededValues - This will truncate exceeded values instead of replacing it with `__artie_exceeded_value`
-	TruncateExceededValues bool `yaml:"truncateExceededValues"`
+	TruncateExceededValues bool `yaml:"truncateExceededValues,omitempty"`
 	// ExpandStringPrecision - This will expand the string precision if the incoming data has a higher precision than the destination table.
 	// This is only supported by Redshift at the moment.
-	ExpandStringPrecision bool                            `yaml:"expandStringPrecision"`
+	ExpandStringPrecision bool                            `yaml:"expandStringPrecision,omitempty"`
 	ColumnSettings        SharedDestinationColumnSettings `yaml:"columnSettings"`
 	// TODO: Standardize on this method.
-	UseNewStringMethod bool `yaml:"useNewStringMethod"`
+	UseNewStringMethod bool `yaml:"useNewStringMethod,omitempty"`
 	// [EnableMergeAssertion] - This will enable the merge assertion checks for the destination.
 	EnableMergeAssertion bool `yaml:"enableMergeAssertion,omitempty"`
 	// [SkipBadValues] - If enabled, we'll skip over all bad values (timestamps, integers, etc.) instead of throwing an error.
 	// This is a catch-all setting that supersedes the more specific settings below.
 	// Currently only supported for Snowflake.
-	SkipBadValues bool `yaml:"skipBadValues"`
+	SkipBadValues bool `yaml:"skipBadValues,omitempty"`
 	// [SkipBadTimestamps] - If enabled, we'll skip over bad timestamp (or alike) values instead of throwing an error.
 	// Currently only supported for Snowflake and BigQuery.
-	SkipBadTimestamps bool `yaml:"skipBadTimestamps"`
+	SkipBadTimestamps bool `yaml:"skipBadTimestamps,omitempty"`
 	// [SkipBadIntegers] - If enabled, we'll skip over bad integer values instead of throwing an error.
 	// Currently only supported for Snowflake and Redshift.
-	SkipBadIntegers bool `yaml:"skipBadIntegers"`
+	SkipBadIntegers bool `yaml:"skipBadIntegers,omitempty"`
 	// [ForceUTCTimezone] - If enabled, for all TimestampNTZ types, we will return TimestampTZ kind. The converters should ensure that the timezone is set to UTC.
-	ForceUTCTimezone bool `yaml:"forceUTCTimezone"`
+	ForceUTCTimezone bool `yaml:"forceUTCTimezone,omitempty"`
 	// [EncryptionPassphrase] - This is used to encrypt columns that should be written to the destination.
 	// Mutually exclusive with [EncryptionKMSConfig].
 	EncryptionPassphrase string `yaml:"encryptionPassphrase,omitempty"`
@@ -69,7 +68,7 @@ type SharedDestinationSettings struct {
 	// Mutually exclusive with [EncryptionPassphrase].
 	EncryptionKMSConfig *ColumnEncryptionKMSConfig `yaml:"encryptionKMSConfig,omitempty"`
 	// [CSVConvertUTF8] - If enabled, we will convert all values to UTF-8 when writing to the staging CSV file.
-	CSVConvertUTF8 bool `yaml:"csvConvertUTF8"`
+	CSVConvertUTF8 bool `yaml:"csvConvertUTF8,omitempty"`
 }
 
 type ColumnEncryptionKMSConfig struct {
@@ -151,9 +150,49 @@ type Config struct {
 }
 
 type WebhookSettings struct {
-	Enabled    bool                `yaml:"enabled"`
-	URL        string              `yaml:"url"`
-	APIKey     string              `yaml:"apiKey"`
-	Properties map[string]any      `yaml:"properties,omitempty"`
-	Source     webhooksutil.Source `yaml:"source"`
+	Enabled          bool   `yaml:"enabled"`
+	URL              string `yaml:"url"`
+	APIKey           string `yaml:"apiKey"`
+	CompanyUUID      string `yaml:"companyUUID"`
+	PipelineUUID     string `yaml:"pipelineUUID,omitempty"`
+	SourceReaderUUID string `yaml:"sourceReaderUUID,omitempty"`
+	Source           string `yaml:"source,omitempty"`      // connector source type, e.g. "postgresql"
+	Destination      string `yaml:"destination,omitempty"` // connector destination type, e.g. "bigquery"
+	Mode             string `yaml:"mode,omitempty"`        // transfer run mode, e.g. "replication"
+
+	// Deprecated: old configs nested company_uuid/pipeline_uuid.source_reader_uuid here.
+	// Values are migrated to CompanyUUID/PipelineUUID/SourceReaderUUID automatically on load.
+	Properties map[string]any `yaml:"properties,omitempty"`
+}
+
+// Temporary: this preserves backward compatibility while rolling out changes to WebhookSettings
+func (w *WebhookSettings) Migrate() {
+	if w == nil {
+		return
+	}
+
+	// Lift company_uuid / pipeline_uuid / source_reader_uuid out of the old properties block.
+	if len(w.Properties) > 0 {
+		if w.CompanyUUID == "" {
+			if v, ok := w.Properties["company_uuid"].(string); ok {
+				w.CompanyUUID = v
+			}
+		}
+		if w.PipelineUUID == "" {
+			if v, ok := w.Properties["pipeline_uuid"].(string); ok {
+				w.PipelineUUID = v
+			}
+		}
+		if w.SourceReaderUUID == "" {
+			if v, ok := w.Properties["source_reader_uuid"].(string); ok {
+				w.SourceReaderUUID = v
+			}
+		}
+	}
+
+	// Old configs set source to a service name (e.g. "transfer"). That field now holds
+	// the connector source type (e.g. "postgresql"), so discard legacy service-name values.
+	if w.Source == "transfer" || w.Source == "reader" || w.Source == "debezium" {
+		w.Source = ""
+	}
 }
