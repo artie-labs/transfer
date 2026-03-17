@@ -209,6 +209,26 @@ func TestColumnEncryptionKMSConfig_Validate(t *testing.T) {
 		assert.NoError(t, cfg.Validate())
 	}
 	{
+		// Only awsAccessKeyID provided (missing awsSecretAccessKey)
+		cfg := ColumnEncryptionKMSConfig{
+			KeyARN:              "arn:aws:kms:us-east-1:123456789012:key/abcd-1234",
+			EncryptedPassphrase: "AQIDAHh-base64-encrypted-dek",
+			AwsRegion:           "us-east-1",
+			AwsAccessKeyID:      "AKIAIOSFODNN7EXAMPLE",
+		}
+		assert.ErrorContains(t, cfg.Validate(), "both awsAccessKeyID and awsSecretAccessKey must be provided together")
+	}
+	{
+		// Only awsSecretAccessKey provided (missing awsAccessKeyID)
+		cfg := ColumnEncryptionKMSConfig{
+			KeyARN:              "arn:aws:kms:us-east-1:123456789012:key/abcd-1234",
+			EncryptedPassphrase: "AQIDAHh-base64-encrypted-dek",
+			AwsRegion:           "us-east-1",
+			AwsSecretAccessKey:  "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+		}
+		assert.ErrorContains(t, cfg.Validate(), "both awsAccessKeyID and awsSecretAccessKey must be provided together")
+	}
+	{
 		// Valid with static credentials
 		cfg := ColumnEncryptionKMSConfig{
 			KeyARN:              "arn:aws:kms:us-east-1:123456789012:key/abcd-1234",

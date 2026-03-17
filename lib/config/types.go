@@ -137,6 +137,12 @@ func (c ColumnEncryptionKMSConfig) Validate() error {
 		return fmt.Errorf("awsRegion is required")
 	}
 
+	hasAccessKey := !stringutil.Empty(c.AwsAccessKeyID)
+	hasSecretKey := !stringutil.Empty(c.AwsSecretAccessKey)
+	if hasAccessKey != hasSecretKey {
+		return fmt.Errorf("both awsAccessKeyID and awsSecretAccessKey must be provided together")
+	}
+
 	return nil
 }
 
