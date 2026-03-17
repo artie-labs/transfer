@@ -70,8 +70,8 @@ func (s *Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, 
 	return s.specificIdentifierFor(databaseAndSchema, table)
 }
 
-func (s *Store) SweepTemporaryTables(ctx context.Context, whClient *webhooks.Client) error {
-	return shared.Sweep(ctx, s, s.config.TopicConfigs(), whClient, s.dialect().BuildSweepQuery)
+func (s *Store) SweepTemporaryTables(ctx context.Context) error {
+	return shared.Sweep(ctx, s, s.config.TopicConfigs(), s.dialect().BuildSweepQuery)
 }
 
 func (s *Store) Dedupe(_ context.Context, _ sql.TableIdentifier, _ kafkalib.DatabaseAndSchemaPair, _ []string, _ bool) error {

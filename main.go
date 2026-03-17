@@ -84,7 +84,7 @@ func main() {
 	}
 
 	if sqlDest, ok := dest.(destination.SQLDestination); ok {
-		if err = sqlDest.SweepTemporaryTables(ctx, whClient); err != nil {
+		if err = sqlDest.SweepTemporaryTables(ctx); err != nil {
 			whClient.SendEvent(ctx, webhooks.ConnectionFailed, webhooks.SendEventArgs{
 				Error: fmt.Sprintf("Failed to clean up temporary tables: %s", err),
 			})

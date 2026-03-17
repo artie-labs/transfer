@@ -127,8 +127,8 @@ func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, _ kafkal
 	return nil
 }
 
-func (s Store) SweepTemporaryTables(ctx context.Context, whClient *webhooks.Client) error {
-	return shared.Sweep(ctx, s, s.config.TopicConfigs(), whClient, dialect.ClickhouseDialect{}.BuildSweepQuery)
+func (s Store) SweepTemporaryTables(ctx context.Context) error {
+	return shared.Sweep(ctx, s, s.config.TopicConfigs(), dialect.ClickhouseDialect{}.BuildSweepQuery)
 }
 
 func (s Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error {

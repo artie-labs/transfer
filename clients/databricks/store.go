@@ -215,7 +215,7 @@ func (s Store) writeTemporaryTableFile(tableData *optimization.TableData, fileNa
 	return file.FilePath, nil
 }
 
-func (s Store) SweepTemporaryTables(ctx context.Context, whClient *webhooks.Client) error {
+func (s Store) SweepTemporaryTables(ctx context.Context) error {
 	ctx = driverctx.NewContextWithStagingInfo(ctx, []string{"/var", "tmp"})
 	// Remove the temporary files from volumes
 	for _, dbAndSchema := range kafkalib.GetUniqueStagingDatabaseAndSchemaPairs(s.cfg.TopicConfigs()) {
@@ -244,7 +244,7 @@ func (s Store) SweepTemporaryTables(ctx context.Context, whClient *webhooks.Clie
 	}
 
 	// Delete the temporary tables
-	return shared.Sweep(ctx, s, s.cfg.TopicConfigs(), whClient, s.dialect().BuildSweepQuery)
+	return shared.Sweep(ctx, s, s.cfg.TopicConfigs(), s.dialect().BuildSweepQuery)
 }
 
 func BuildDatabricksSQL(dbCfg config.Databricks) (*gosql.DB, error) {
