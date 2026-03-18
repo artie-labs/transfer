@@ -39,9 +39,6 @@ func main() {
 	}
 
 	if err != nil {
-		whClient.SendEvent(ctx, webhooks.ConfigInvalid, webhooks.SendEventArgs{
-			Error: fmt.Sprintf("Failed to initialize config: %s", err),
-		})
 		logger.Fatal("Failed to initialize config", slog.Any("err", err))
 	}
 
@@ -90,8 +87,6 @@ func main() {
 			})
 			logger.Fatal("Failed to clean up temporary tables", slog.Any("err", err))
 		}
-
-		whClient.SendEvent(ctx, webhooks.ConnectionEstablished, webhooks.SendEventArgs{})
 	}
 
 	slog.Info("Starting...", slog.String("version", version))

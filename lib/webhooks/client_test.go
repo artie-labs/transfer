@@ -358,14 +358,14 @@ func TestClient_SendEvent(t *testing.T) {
 		// nil client should not panic
 		var client *Client
 		assert.NotPanics(t, func() {
-			client.SendEvent(ctx, TableStarted, SendEventArgs{Table: "users"})
+			client.SendEvent(ctx, EventBackFillStarted, SendEventArgs{Table: "users"})
 		})
 	}
 	{
 		// disabled (no-op) client should not panic
 		client := &Client{}
 		assert.NotPanics(t, func() {
-			client.SendEvent(ctx, TableStarted, SendEventArgs{Table: "users"})
+			client.SendEvent(ctx, EventBackFillStarted, SendEventArgs{Table: "users"})
 		})
 	}
 	{

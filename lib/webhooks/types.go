@@ -8,41 +8,15 @@ const (
 	EventBackFillStarted   EventType = "backfill.started"
 	EventBackFillCompleted EventType = "backfill.completed"
 	EventBackFillFailed    EventType = "backfill.failed"
+	BackfillProgress       EventType = "backfill.progress"
+	DedupeStarted          EventType = "dedupe.started"
+	DedupeCompleted        EventType = "dedupe.completed"
+	DedupeFailed           EventType = "dedupe.failed"
 
 	ReplicationStarted EventType = "replication.started"
 	ReplicationFailed  EventType = "replication.failed"
-	UnableToReplicate  EventType = "unable.to.replicate"
+	ConnectionFailed   EventType = "connection.failed"
 	RowSkipped         EventType = "row.skipped"
-)
-
-const (
-	TableStarted   EventType = "table.started"
-	TableCompleted EventType = "table.completed"
-	TableFailed    EventType = "table.failed"
-	TableSkipped   EventType = "table.skipped"
-	TableEmpty     EventType = "table.empty"
-)
-
-const (
-	BackfillProgress EventType = "backfill.progress"
-)
-
-const (
-	DedupeStarted   EventType = "dedupe.started"
-	DedupeCompleted EventType = "dedupe.completed"
-	DedupeFailed    EventType = "dedupe.failed"
-)
-
-const (
-	ConnectionEstablished EventType = "connection.established"
-	ConnectionLost        EventType = "connection.lost"
-	ConnectionRetry       EventType = "connection.retry"
-	ConnectionFailed      EventType = "connection.failed"
-)
-
-const (
-	ConfigValidated EventType = "config.validated"
-	ConfigInvalid   EventType = "config.invalid"
 )
 
 // AllEventTypes contains all defined event types.
@@ -51,25 +25,14 @@ var AllEventTypes = []EventType{
 	EventBackFillStarted,
 	EventBackFillCompleted,
 	EventBackFillFailed,
-	ReplicationStarted,
-	ReplicationFailed,
-	UnableToReplicate,
-	RowSkipped,
-	TableStarted,
-	TableCompleted,
-	TableFailed,
-	TableSkipped,
-	TableEmpty,
 	BackfillProgress,
 	DedupeStarted,
 	DedupeCompleted,
 	DedupeFailed,
-	ConnectionEstablished,
-	ConnectionLost,
-	ConnectionRetry,
+	ReplicationStarted,
+	ReplicationFailed,
 	ConnectionFailed,
-	ConfigValidated,
-	ConfigInvalid,
+	RowSkipped,
 }
 
 type Severity string

@@ -13,7 +13,6 @@ func TestInferSeverity(t *testing.T) {
 		EventBackFillFailed:    SeverityError,
 		ReplicationStarted:     SeverityInfo,
 		ReplicationFailed:      SeverityError,
-		UnableToReplicate:      SeverityError,
 		EventType("unknown"):   SeverityInfo,
 	}
 
@@ -29,7 +28,6 @@ func TestInferMessage(t *testing.T) {
 		EventBackFillFailed:    "Backfill failed",
 		ReplicationStarted:     "Replication started",
 		ReplicationFailed:      "Replication failed",
-		UnableToReplicate:      "Unable to replicate",
 		EventType("unknown"):   "Unknown event type",
 	}
 

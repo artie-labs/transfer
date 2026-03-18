@@ -15,29 +15,15 @@ var eventMetadataMap = map[EventType]EventMetadata{
 	EventBackFillCompleted: {SeverityInfo, "backfill", "Backfill completed"},
 	EventBackFillFailed:    {SeverityError, "backfill", "Backfill failed"},
 	BackfillProgress:       {SeverityInfo, "backfill", "Backfill progress"},
+	DedupeStarted:          {SeverityInfo, "backfill", "Deduplication started"},
+	DedupeCompleted:        {SeverityInfo, "backfill", "Deduplication completed"},
+	DedupeFailed:           {SeverityError, "backfill", "Deduplication failed"},
 	// Replication events
 	ReplicationStarted: {SeverityInfo, "replication", "Replication started"},
 	ReplicationFailed:  {SeverityError, "replication", "Replication failed"},
-	UnableToReplicate:  {SeverityError, "replication", "Unable to replicate"},
 	RowSkipped:         {SeverityWarning, "replication", "Row skipped"},
-	// Table events
-	TableStarted:   {SeverityInfo, "table", "Table processing started"},
-	TableCompleted: {SeverityInfo, "table", "Table processing completed"},
-	TableFailed:    {SeverityError, "table", "Table processing failed"},
-	TableSkipped:   {SeverityWarning, "table", "Table skipped"},
-	TableEmpty:     {SeverityInfo, "table", "Table is empty"},
-	// Dedupe events
-	DedupeStarted:   {SeverityInfo, "data_quality", "Deduplication started"},
-	DedupeCompleted: {SeverityInfo, "data_quality", "Deduplication completed"},
-	DedupeFailed:    {SeverityError, "data_quality", "Deduplication failed"},
 	// Connection events
-	ConnectionEstablished: {SeverityInfo, "connection", "Connection established"},
-	ConnectionLost:        {SeverityWarning, "connection", "Connection lost"},
-	ConnectionRetry:       {SeverityWarning, "connection", "Connection retry"},
-	ConnectionFailed:      {SeverityError, "connection", "Connection failed"},
-	// Configuration events
-	ConfigValidated: {SeverityInfo, "configuration", "Configuration validated"},
-	ConfigInvalid:   {SeverityError, "configuration", "Configuration invalid"},
+	ConnectionFailed: {SeverityError, "connection", "Connection failed"},
 }
 
 func GetEventMetadata(eventType EventType) EventMetadata {
