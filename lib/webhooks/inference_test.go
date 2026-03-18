@@ -8,13 +8,12 @@ import (
 
 func TestInferSeverity(t *testing.T) {
 	expectedMap := map[EventType]Severity{
-		EventBackFillStarted:   SeverityInfo,
-		EventBackFillCompleted: SeverityInfo,
-		EventBackFillFailed:    SeverityError,
-		ReplicationStarted:     SeverityInfo,
-		ReplicationFailed:      SeverityError,
-		UnableToReplicate:      SeverityError,
-		EventType("unknown"):   SeverityInfo,
+		EventBackfillStarted:    SeverityInfo,
+		EventBackfillCompleted:  SeverityInfo,
+		EventBackfillFailed:     SeverityError,
+		EventReplicationStarted: SeverityInfo,
+		EventReplicationFailed:  SeverityError,
+		EventType("unknown"):    SeverityInfo,
 	}
 
 	for eventType, expectedSeverity := range expectedMap {
@@ -24,13 +23,12 @@ func TestInferSeverity(t *testing.T) {
 
 func TestInferMessage(t *testing.T) {
 	expectedMap := map[EventType]string{
-		EventBackFillStarted:   "Backfill started",
-		EventBackFillCompleted: "Backfill completed",
-		EventBackFillFailed:    "Backfill failed",
-		ReplicationStarted:     "Replication started",
-		ReplicationFailed:      "Replication failed",
-		UnableToReplicate:      "Unable to replicate",
-		EventType("unknown"):   "Unknown event type",
+		EventBackfillStarted:    "Backfill started",
+		EventBackfillCompleted:  "Backfill completed",
+		EventBackfillFailed:     "Backfill failed",
+		EventReplicationStarted: "Replication started",
+		EventReplicationFailed:  "Replication failed",
+		EventType("unknown"):    "Unknown event type",
 	}
 
 	for eventType, expectedMessage := range expectedMap {

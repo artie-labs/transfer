@@ -39,9 +39,6 @@ func main() {
 	}
 
 	if err != nil {
-		whClient.SendEvent(ctx, webhooks.ConfigInvalid, webhooks.SendEventArgs{
-			Error: fmt.Sprintf("Failed to initialize config: %s", err),
-		})
 		logger.Fatal("Failed to initialize config", slog.Any("err", err))
 	}
 
@@ -77,7 +74,7 @@ func main() {
 	metricsClient := metrics.LoadExporter(settings.Config)
 	dest, err := utils.Load(ctx, settings.Config)
 	if err != nil {
-		whClient.SendEvent(ctx, webhooks.ConnectionFailed, webhooks.SendEventArgs{
+		whClient.SendEvent(ctx, webhooks.EventConnectionFailed, webhooks.SendEventArgs{
 			Error: fmt.Sprintf("Unable to load destination: %s", err),
 		})
 		logger.Fatal("Unable to load destination", slog.Any("err", err))
@@ -85,17 +82,15 @@ func main() {
 
 	if sqlDest, ok := dest.(destination.SQLDestination); ok {
 		if err = sqlDest.SweepTemporaryTables(ctx); err != nil {
-			whClient.SendEvent(ctx, webhooks.ConnectionFailed, webhooks.SendEventArgs{
+			whClient.SendEvent(ctx, webhooks.EventConnectionFailed, webhooks.SendEventArgs{
 				Error: fmt.Sprintf("Failed to clean up temporary tables: %s", err),
 			})
 			logger.Fatal("Failed to clean up temporary tables", slog.Any("err", err))
 		}
-
-		whClient.SendEvent(ctx, webhooks.ConnectionEstablished, webhooks.SendEventArgs{})
 	}
 
 	slog.Info("Starting...", slog.String("version", version))
-	whClient.SendEvent(ctx, webhooks.ReplicationStarted, webhooks.SendEventArgs{})
+	whClient.SendEvent(ctx, webhooks.EventReplicationStarted, webhooks.SendEventArgs{})
 
 	inMemDB := models.NewMemoryDB()
 	switch settings.Config.KafkaClient {

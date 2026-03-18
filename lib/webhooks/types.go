@@ -5,71 +5,34 @@ import "time"
 type EventType string
 
 const (
-	EventBackFillStarted   EventType = "backfill.started"
-	EventBackFillCompleted EventType = "backfill.completed"
-	EventBackFillFailed    EventType = "backfill.failed"
+	EventBackfillStarted   EventType = "backfill.started"
+	EventBackfillCompleted EventType = "backfill.completed"
+	EventBackfillFailed    EventType = "backfill.failed"
+	EventBackfillProgress  EventType = "backfill.progress"
+	EventDedupeStarted     EventType = "dedupe.started"
+	EventDedupeCompleted   EventType = "dedupe.completed"
+	EventDedupeFailed      EventType = "dedupe.failed"
 
-	ReplicationStarted EventType = "replication.started"
-	ReplicationFailed  EventType = "replication.failed"
-	UnableToReplicate  EventType = "unable.to.replicate"
-	RowSkipped         EventType = "row.skipped"
-)
-
-const (
-	TableStarted   EventType = "table.started"
-	TableCompleted EventType = "table.completed"
-	TableFailed    EventType = "table.failed"
-	TableSkipped   EventType = "table.skipped"
-	TableEmpty     EventType = "table.empty"
-)
-
-const (
-	BackfillProgress EventType = "backfill.progress"
-)
-
-const (
-	DedupeStarted   EventType = "dedupe.started"
-	DedupeCompleted EventType = "dedupe.completed"
-	DedupeFailed    EventType = "dedupe.failed"
-)
-
-const (
-	ConnectionEstablished EventType = "connection.established"
-	ConnectionLost        EventType = "connection.lost"
-	ConnectionRetry       EventType = "connection.retry"
-	ConnectionFailed      EventType = "connection.failed"
-)
-
-const (
-	ConfigValidated EventType = "config.validated"
-	ConfigInvalid   EventType = "config.invalid"
+	EventReplicationStarted EventType = "replication.started"
+	EventReplicationFailed  EventType = "replication.failed"
+	EventConnectionFailed   EventType = "connection.failed"
+	EventRowSkipped         EventType = "row.skipped"
 )
 
 // AllEventTypes contains all defined event types.
 // Add new event types here when you define them above.
 var AllEventTypes = []EventType{
-	EventBackFillStarted,
-	EventBackFillCompleted,
-	EventBackFillFailed,
-	ReplicationStarted,
-	ReplicationFailed,
-	UnableToReplicate,
-	RowSkipped,
-	TableStarted,
-	TableCompleted,
-	TableFailed,
-	TableSkipped,
-	TableEmpty,
-	BackfillProgress,
-	DedupeStarted,
-	DedupeCompleted,
-	DedupeFailed,
-	ConnectionEstablished,
-	ConnectionLost,
-	ConnectionRetry,
-	ConnectionFailed,
-	ConfigValidated,
-	ConfigInvalid,
+	EventBackfillStarted,
+	EventBackfillCompleted,
+	EventBackfillFailed,
+	EventBackfillProgress,
+	EventDedupeStarted,
+	EventDedupeCompleted,
+	EventDedupeFailed,
+	EventReplicationStarted,
+	EventReplicationFailed,
+	EventConnectionFailed,
+	EventRowSkipped,
 }
 
 type Severity string

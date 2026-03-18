@@ -14,62 +14,71 @@ func TestS3Settings_Validate(t *testing.T) {
 	{
 		// nil
 		var s3 *S3Settings
-		err := s3.Validate()
-		assert.ErrorContains(t, err, "s3 settings are nil")
+		assert.ErrorContains(t, s3.Validate(), "s3 settings are nil")
 	}
 	{
 		// empty
 		s3 := &S3Settings{}
-		err := s3.Validate()
-		assert.ErrorContains(t, err, "one of s3 settings is empty")
+		assert.ErrorContains(t, s3.Validate(), "s3 bucket is empty")
 	}
 	{
-		// missing bucket
+		// no credentials or role ARN
 		s3 := &S3Settings{
-			AwsSecretAccessKey: "foo",
-			AwsAccessKeyID:     "bar",
+			Bucket: "bucket",
 		}
-		err := s3.Validate()
-		assert.ErrorContains(t, err, "one of s3 settings is empty")
+		assert.ErrorContains(t, s3.Validate(), "either awsAccessKeyID and awsSecretAccessKey or roleARN is required")
 	}
 	{
-		// missing aws access key id
+		// partial static credentials (missing secret)
 		s3 := &S3Settings{
-			AwsSecretAccessKey: "foo",
-			Bucket:             "bucket",
-		}
-		err := s3.Validate()
-		assert.ErrorContains(t, err, "one of s3 settings is empty")
-	}
-	{
-		// missing aws secret access key
-		s3 := &S3Settings{
-			AwsAccessKeyID: "bar",
 			Bucket:         "bucket",
+			AwsAccessKeyID: "bar",
 		}
-		err := s3.Validate()
-		assert.ErrorContains(t, err, "one of s3 settings is empty")
+		assert.ErrorContains(t, s3.Validate(), "either awsAccessKeyID and awsSecretAccessKey or roleARN is required")
 	}
 	{
-		// missing output format
+		// partial static credentials (missing key id)
+		s3 := &S3Settings{
+			Bucket:             "bucket",
+			AwsSecretAccessKey: "foo",
+		}
+		assert.ErrorContains(t, s3.Validate(), "either awsAccessKeyID and awsSecretAccessKey or roleARN is required")
+	}
+	{
+		// missing output format with static credentials
 		s3 := &S3Settings{
 			Bucket:             "bucket",
 			AwsSecretAccessKey: "foo",
 			AwsAccessKeyID:     "bar",
 		}
-		err := s3.Validate()
-		assert.ErrorContains(t, err, `invalid s3 output format ""`)
+		assert.ErrorContains(t, s3.Validate(), `invalid s3 output format ""`)
 	}
 	{
-		// valid
+		// missing output format with role ARN
+		s3 := &S3Settings{
+			Bucket:  "bucket",
+			RoleARN: "arn:aws:iam::123456789:role/my-role",
+		}
+		assert.ErrorContains(t, s3.Validate(), `invalid s3 output format ""`)
+	}
+	{
+		// valid with static credentials
 		s3 := &S3Settings{
 			Bucket:             "bucket",
 			AwsSecretAccessKey: "foo",
 			AwsAccessKeyID:     "bar",
 			OutputFormat:       constants.ParquetFormat,
 		}
-		err := s3.Validate()
-		assert.NoError(t, err)
+		assert.NoError(t, s3.Validate())
+	}
+	{
+		// valid with role ARN
+		s3 := &S3Settings{
+			Bucket:       "bucket",
+			RoleARN:      "arn:aws:iam::123456789:role/my-role",
+			OutputFormat: constants.ParquetFormat,
+		}
+		assert.NoError(t, s3.Validate())
 	}
 }
 
