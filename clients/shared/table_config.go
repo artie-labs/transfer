@@ -36,6 +36,8 @@ func (g GetTableCfgArgs) query(ctx context.Context) ([]columns.Column, error) {
 		return nil, fmt.Errorf("failed to generate describe table query: %w", err)
 	}
 
+	slog.Info("Running describe table query", slog.String("query", query), slog.Any("args", args))
+
 	sqlRows, err := g.Destination.QueryContext(ctx, query, args...)
 	if err != nil {
 		if g.Destination.Dialect().IsTableDoesNotExistErr(err) {
@@ -45,10 +47,14 @@ func (g GetTableCfgArgs) query(ctx context.Context) ([]columns.Column, error) {
 		return nil, fmt.Errorf("failed to query %T, err: %w, query: %q", g.Destination, err, query)
 	}
 
+	slog.Info("Describe table query returned rows")
+
 	rows, err := sql.RowsToObjectsLowercase(sqlRows)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert rows to map slice: %w", err)
 	}
+
+	slog.Info("Describe table query results loaded into memory", slog.Int("rowCount", len(rows)))
 
 	var cols []columns.Column
 	for _, row := range rows {
