@@ -80,6 +80,7 @@ type S3Settings struct {
 	AwsAccessKeyID     string                   `yaml:"awsAccessKeyID"`
 	AwsSecretAccessKey string                   `yaml:"awsSecretAccessKey"`
 	AwsRegion          string                   `yaml:"awsRegion"`
+	RoleARN            string                   `yaml:"roleARN,omitempty"`
 	OutputFormat       constants.S3OutputFormat `yaml:"outputFormat"`
 	TableNameSeparator string                   `yaml:"tableNameSeparator"`
 }
