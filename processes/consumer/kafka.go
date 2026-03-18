@@ -2,6 +2,7 @@ package consumer
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"sync"
 	"time"
@@ -10,26 +11,20 @@ import (
 	"github.com/artie-labs/transfer/lib/artie/metrics"
 	"github.com/artie-labs/transfer/lib/cdc/format"
 	"github.com/artie-labs/transfer/lib/config"
-	"github.com/artie-labs/transfer/lib/cryptography"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/jitter"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
-	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
-	"github.com/artie-labs/transfer/lib/webhooksutil"
+	"github.com/artie-labs/transfer/lib/webhooks"
 	"github.com/artie-labs/transfer/models"
 )
 
-func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client, whClient *webhooksclient.Client) {
-	var encryptionKey []byte
-	if cfg.SharedDestinationSettings.EncryptionPassphrase != "" {
-		var err error
-		encryptionKey, err = cryptography.DecodePassphrase(cfg.SharedDestinationSettings.EncryptionPassphrase)
-		if err != nil {
-			logger.Fatal("Failed to decode encryption passphrase", slog.Any("err", err))
-		}
+func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client, whClient *webhooks.Client) {
+	encryptionKey, err := cfg.SharedDestinationSettings.BuildEncryptionKey(ctx)
+	if err != nil {
+		logger.Fatal("Failed to build encryption key", slog.Any("err", err))
 	}
 
 	tcFmtMap := NewTcFmtMap()
@@ -76,10 +71,9 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 
 					tableID, err := args.process(ctx, cfg, inMemDB, dest, metricsClient)
 					if err != nil {
-						whClient.SendEvent(ctx, webhooksutil.UnableToReplicate, map[string]any{
-							"error":   "Failed to process message",
-							"details": err.Error(),
-							"topic":   msg.Topic(),
+						whClient.SendEvent(ctx, webhooks.UnableToReplicate, webhooks.SendEventArgs{
+							Error: fmt.Sprintf("Failed to process message: %s", err),
+							Topic: msg.Topic(),
 						})
 						logger.Fatal("Failed to process message", slog.Any("err", err), slog.String("topic", msg.Topic()))
 					}

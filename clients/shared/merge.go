@@ -16,8 +16,7 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
-	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
-	"github.com/artie-labs/transfer/lib/webhooksutil"
+	"github.com/artie-labs/transfer/lib/webhooks"
 )
 
 const (
@@ -26,7 +25,7 @@ const (
 	heartbeatsInterval     = 2 * time.Minute
 )
 
-func Merge(ctx context.Context, dest destination.SQLDestination, tableData *optimization.TableData, opts types.MergeOpts, whClient *webhooksclient.Client) error {
+func Merge(ctx context.Context, dest destination.SQLDestination, tableData *optimization.TableData, opts types.MergeOpts, _ *webhooks.Client) error {
 	if tableData.ShouldSkipUpdate() {
 		return nil
 	}
@@ -105,24 +104,6 @@ func Merge(ctx context.Context, dest destination.SQLDestination, tableData *opti
 		subQuery = temporaryTableID.FullyQualifiedName()
 	}
 
-	var colsToBackfill []string
-	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
-		if col.ShouldSkip() || slices.Contains(constants.ArtieColumns, col.Name()) {
-			continue
-		}
-		if col.ShouldBackfill() {
-			colsToBackfill = append(colsToBackfill, col.Name())
-		}
-	}
-
-	if len(colsToBackfill) > 0 {
-		whClient.SendEvent(ctx, webhooksutil.EventBackFillStarted, map[string]any{
-			"table":   tableData.Name(),
-			"columns": colsToBackfill,
-			"count":   len(colsToBackfill),
-		})
-	}
-
 	// Now iterate over all the in-memory cols and see which ones require a backfill.
 	for _, col := range tableData.ReadOnlyInMemoryCols().GetColumns() {
 		if col.ShouldSkip() {
@@ -156,22 +137,8 @@ func Merge(ctx context.Context, dest destination.SQLDestination, tableData *opti
 		}
 
 		if backfillErr != nil {
-			whClient.SendEvent(ctx, webhooksutil.EventBackFillFailed, map[string]any{
-				"table":         tableData.Name(),
-				"column":        col.Name(),
-				"default_value": col.DefaultValue(),
-				"error":         backfillErr.Error(),
-			})
 			return fmt.Errorf("failed to backfill col: %s, default value: %v, err: %w", col.Name(), col.DefaultValue(), backfillErr)
 		}
-	}
-
-	if len(colsToBackfill) > 0 {
-		whClient.SendEvent(ctx, webhooksutil.EventBackFillCompleted, map[string]any{
-			"table":   tableData.Name(),
-			"columns": colsToBackfill,
-			"count":   len(colsToBackfill),
-		})
 	}
 
 	if subQuery == "" {

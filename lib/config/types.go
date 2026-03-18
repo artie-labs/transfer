@@ -1,9 +1,20 @@
 package config
 
 import (
+	"context"
+	"fmt"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
+	"github.com/aws/aws-sdk-go-v2/service/sts"
+
+	"github.com/artie-labs/transfer/lib/awslib"
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/cryptography"
 	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/artie-labs/transfer/lib/webhooksutil"
+	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
 type Mode string
@@ -60,9 +71,107 @@ type SharedDestinationSettings struct {
 	// [ForceUTCTimezone] - If enabled, for all TimestampNTZ types, we will return TimestampTZ kind. The converters should ensure that the timezone is set to UTC.
 	ForceUTCTimezone bool `yaml:"forceUTCTimezone,omitempty"`
 	// [EncryptionPassphrase] - This is used to encrypt columns that should be written to the destination.
+	// Mutually exclusive with [EncryptionKMSConfig].
 	EncryptionPassphrase string `yaml:"encryptionPassphrase,omitempty"`
+	// [EncryptionKMSConfig] - If set, the encryption passphrase will be decrypted at startup using AWS KMS.
+	// Mutually exclusive with [EncryptionPassphrase].
+	EncryptionKMSConfig *ColumnEncryptionKMSConfig `yaml:"encryptionKMSConfig,omitempty"`
 	// [CSVConvertUTF8] - If enabled, we will convert all values to UTF-8 when writing to the staging CSV file.
 	CSVConvertUTF8 bool `yaml:"csvConvertUTF8,omitempty"`
+}
+
+// BuildEncryptionKey resolves the encryption key from either a plaintext passphrase or a KMS-encrypted passphrase.
+// Returns nil if no encryption is configured.
+func (s SharedDestinationSettings) BuildEncryptionKey(ctx context.Context) ([]byte, error) {
+	if s.EncryptionPassphrase != "" {
+		return cryptography.DecodePassphrase(s.EncryptionPassphrase, true)
+	}
+
+	if s.EncryptionKMSConfig != nil {
+		kmsCfg := s.EncryptionKMSConfig
+		awsCfg, err := kmsCfg.BuildAWSConfig(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load AWS config for KMS: %w", err)
+		}
+
+		kmsClient := awslib.NewKMSClient(awsCfg)
+		passphrase, err := kmsClient.DecryptDataKey(ctx, kmsCfg.EncryptedPassphrase, kmsCfg.KeyARN)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decrypt encryption passphrase via KMS: %w", err)
+		}
+
+		return cryptography.DecodePassphrase(passphrase, false)
+	}
+
+	return nil, nil
+}
+
+type ColumnEncryptionKMSConfig struct {
+	// [KeyARN] - The ARN of the KMS master key used to encrypt the data encryption key.
+	KeyARN string `yaml:"keyARN"`
+	// [EncryptedPassphrase] - Base64-encoded encrypted data encryption key (produced by KMS GenerateDataKeyWithoutPlaintext or equivalent).
+	EncryptedPassphrase string `yaml:"encryptedPassphrase"`
+	// [AwsRegion] - AWS region for the KMS call.
+	AwsRegion string `yaml:"awsRegion"`
+
+	// Optional: static credentials for AWS authentication.
+	// If not provided, falls back to the default credential chain (env vars, IAM role, etc.).
+	AwsAccessKeyID     string `yaml:"awsAccessKeyID,omitempty"`
+	AwsSecretAccessKey string `yaml:"awsSecretAccessKey,omitempty"`
+
+	// Optional: assume an IAM role for AWS authentication.
+	RoleARN    string `yaml:"roleARN,omitempty"`
+	ExternalID string `yaml:"externalID,omitempty"`
+}
+
+func (c ColumnEncryptionKMSConfig) Validate() error {
+	if stringutil.Empty(c.KeyARN) {
+		return fmt.Errorf("keyARN is required")
+	}
+
+	if stringutil.Empty(c.EncryptedPassphrase) {
+		return fmt.Errorf("encryptedPassphrase is required")
+	}
+
+	if stringutil.Empty(c.AwsRegion) {
+		return fmt.Errorf("awsRegion is required")
+	}
+
+	hasAccessKey := !stringutil.Empty(c.AwsAccessKeyID)
+	hasSecretKey := !stringutil.Empty(c.AwsSecretAccessKey)
+	if hasAccessKey != hasSecretKey {
+		return fmt.Errorf("both awsAccessKeyID and awsSecretAccessKey must be provided together")
+	}
+
+	return nil
+}
+
+func (c ColumnEncryptionKMSConfig) BuildAWSConfig(ctx context.Context) (aws.Config, error) {
+	var opts []func(*awsconfig.LoadOptions) error
+	opts = append(opts, awsconfig.WithRegion(c.AwsRegion))
+
+	if c.AwsAccessKeyID != "" && c.AwsSecretAccessKey != "" {
+		opts = append(opts, awsconfig.WithCredentialsProvider(
+			credentials.NewStaticCredentialsProvider(c.AwsAccessKeyID, c.AwsSecretAccessKey, ""),
+		))
+	}
+
+	cfg, err := awsconfig.LoadDefaultConfig(ctx, opts...)
+	if err != nil {
+		return aws.Config{}, fmt.Errorf("failed to load AWS config: %w", err)
+	}
+
+	if c.RoleARN != "" {
+		stsClient := sts.NewFromConfig(cfg)
+		assumeRoleOpts := func(o *stscreds.AssumeRoleOptions) {
+			if c.ExternalID != "" {
+				o.ExternalID = &c.ExternalID
+			}
+		}
+		cfg.Credentials = aws.NewCredentialsCache(stscreds.NewAssumeRoleProvider(stsClient, c.RoleARN, assumeRoleOpts))
+	}
+
+	return cfg, nil
 }
 
 type StagingTableReuseConfig struct {
@@ -123,9 +232,49 @@ type Config struct {
 }
 
 type WebhookSettings struct {
-	Enabled    bool                `yaml:"enabled"`
-	URL        string              `yaml:"url"`
-	APIKey     string              `yaml:"apiKey"`
-	Properties map[string]any      `yaml:"properties,omitempty"`
-	Source     webhooksutil.Source `yaml:"source"`
+	Enabled          bool   `yaml:"enabled"`
+	URL              string `yaml:"url"`
+	APIKey           string `yaml:"apiKey"`
+	CompanyUUID      string `yaml:"companyUUID"`
+	PipelineUUID     string `yaml:"pipelineUUID,omitempty"`
+	SourceReaderUUID string `yaml:"sourceReaderUUID,omitempty"`
+	Source           string `yaml:"source,omitempty"`      // connector source type, e.g. "postgresql"
+	Destination      string `yaml:"destination,omitempty"` // connector destination type, e.g. "bigquery"
+	Mode             string `yaml:"mode,omitempty"`        // transfer run mode, e.g. "replication"
+
+	// Deprecated: old configs nested company_uuid/pipeline_uuid.source_reader_uuid here.
+	// Values are migrated to CompanyUUID/PipelineUUID/SourceReaderUUID automatically on load.
+	Properties map[string]any `yaml:"properties,omitempty"`
+}
+
+// Temporary: this preserves backward compatibility while rolling out changes to WebhookSettings
+func (w *WebhookSettings) Migrate() {
+	if w == nil {
+		return
+	}
+
+	// Lift company_uuid / pipeline_uuid / source_reader_uuid out of the old properties block.
+	if len(w.Properties) > 0 {
+		if w.CompanyUUID == "" {
+			if v, ok := w.Properties["company_uuid"].(string); ok {
+				w.CompanyUUID = v
+			}
+		}
+		if w.PipelineUUID == "" {
+			if v, ok := w.Properties["pipeline_uuid"].(string); ok {
+				w.PipelineUUID = v
+			}
+		}
+		if w.SourceReaderUUID == "" {
+			if v, ok := w.Properties["source_reader_uuid"].(string); ok {
+				w.SourceReaderUUID = v
+			}
+		}
+	}
+
+	// Old configs set source to a service name (e.g. "transfer"). That field now holds
+	// the connector source type (e.g. "postgresql"), so discard legacy service-name values.
+	if w.Source == "transfer" || w.Source == "reader" || w.Source == "debezium" {
+		w.Source = ""
+	}
 }

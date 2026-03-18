@@ -13,7 +13,7 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	sqllib "github.com/artie-labs/transfer/lib/sql"
-	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
+	"github.com/artie-labs/transfer/lib/webhooks"
 )
 
 type SQLDestination interface {
@@ -22,7 +22,7 @@ type SQLDestination interface {
 	// SQL specific commands
 	Dialect() sqllib.Dialect
 	Dedupe(ctx context.Context, tableID sqllib.TableIdentifier, pair kafkalib.DatabaseAndSchemaPair, primaryKeys []string, includeArtieUpdatedAt bool) error
-	SweepTemporaryTables(ctx context.Context, whClient *webhooksclient.Client) error
+	SweepTemporaryTables(ctx context.Context) error
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
 	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
 	Begin(ctx context.Context) (*sql.Tx, error)
@@ -37,8 +37,8 @@ type Destination interface {
 	Label() constants.DestinationKind
 	GetConfig() config.Config
 
-	Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client) (commitTransaction bool, err error)
-	Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, useTempTable bool) error
+	Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooks.Client) (commitTransaction bool, err error)
+	Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooks.Client, useTempTable bool) error
 	IsRetryableError(err error) bool
 	IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, table string) sqllib.TableIdentifier
 	DropTable(ctx context.Context, tableID sqllib.TableIdentifier) error
