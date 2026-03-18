@@ -15,8 +15,7 @@ import (
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/retry"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
-	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
-	"github.com/artie-labs/transfer/lib/webhooksutil"
+	"github.com/artie-labs/transfer/lib/webhooks"
 	"github.com/artie-labs/transfer/models"
 )
 
@@ -34,7 +33,7 @@ func (a Args) GetExecutionTime() *time.Time {
 	return a.EventExecutionTime
 }
 
-func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client, whClient *webhooksclient.Client, topics []string, args Args) error {
+func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client, whClient *webhooks.Client, topics []string, args Args) error {
 	if inMemDB == nil {
 		return nil
 	}
@@ -48,7 +47,7 @@ func Flush(ctx context.Context, inMemDB *models.DatabaseData, dest destination.D
 	return nil
 }
 
-func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client, whClient *webhooksclient.Client, args Args, topic string, shouldLock bool) error {
+func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client, whClient *webhooks.Client, args Args, topic string, shouldLock bool) error {
 	if inMemDB == nil {
 		return nil
 	}
@@ -129,9 +128,9 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 		}
 
 		if err = grp.Wait(); err != nil {
-			whClient.SendEvent(ctx, webhooksutil.TableFailed, map[string]any{
-				"topic": topic,
-				"error": err.Error(),
+			whClient.SendEvent(ctx, webhooks.TableFailed, webhooks.SendEventArgs{
+				Topic: topic,
+				Error: fmt.Sprintf("Failed to flush table: %s", err),
 			})
 			return fmt.Errorf("failed to flush table: %w", err)
 		}
@@ -159,7 +158,7 @@ type flushResult struct {
 	Duration     time.Duration
 }
 
-func flush(ctx context.Context, dest destination.Destination, _tableData *models.TableData, whClient *webhooksclient.Client) (flushResult, error) {
+func flush(ctx context.Context, dest destination.Destination, _tableData *models.TableData, whClient *webhooks.Client) (flushResult, error) {
 	// This is added so that we have a new temporary table suffix for each merge / append.
 	_tableData.ResetTempTableSuffix()
 

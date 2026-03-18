@@ -2,6 +2,7 @@ package consumer
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"sync"
 	"time"
@@ -10,28 +11,20 @@ import (
 	"github.com/artie-labs/transfer/lib/artie/metrics"
 	"github.com/artie-labs/transfer/lib/cdc/format"
 	"github.com/artie-labs/transfer/lib/config"
-	"github.com/artie-labs/transfer/lib/cryptography"
 	"github.com/artie-labs/transfer/lib/db"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/jitter"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
-	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
-	"github.com/artie-labs/transfer/lib/webhooksutil"
+	"github.com/artie-labs/transfer/lib/webhooks"
 	"github.com/artie-labs/transfer/models"
 )
 
-const maxFetchRetries = 10
-
-func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client, whClient *webhooksclient.Client) {
-	var encryptionKey []byte
-	if cfg.SharedDestinationSettings.EncryptionPassphrase != "" {
-		var err error
-		encryptionKey, err = cryptography.DecodePassphrase(cfg.SharedDestinationSettings.EncryptionPassphrase)
-		if err != nil {
-			logger.Fatal("Failed to decode encryption passphrase", slog.Any("err", err))
-		}
+func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client, whClient *webhooks.Client) {
+	encryptionKey, err := cfg.SharedDestinationSettings.BuildEncryptionKey(ctx)
+	if err != nil {
+		logger.Fatal("Failed to build encryption key", slog.Any("err", err))
 	}
 
 	tcFmtMap := NewTcFmtMap()
@@ -60,7 +53,6 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 				}
 			}
 
-			var fetchRetries int
 			for {
 				err = kafkaConsumer.FetchMessageAndProcess(ctx, func(msg artie.Message) error {
 					if len(msg.Value()) == 0 {
@@ -78,10 +70,9 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 
 					tableID, err := args.process(ctx, cfg, inMemDB, dest, metricsClient)
 					if err != nil {
-						whClient.SendEvent(ctx, webhooksutil.UnableToReplicate, map[string]any{
-							"error":   "Failed to process message",
-							"details": err.Error(),
-							"topic":   msg.Topic(),
+						whClient.SendEvent(ctx, webhooks.UnableToReplicate, webhooks.SendEventArgs{
+							Error: fmt.Sprintf("Failed to process message: %s", err),
+							Topic: msg.Topic(),
 						})
 						logger.Fatal("Failed to process message", slog.Any("err", err), slog.String("topic", msg.Topic()))
 					}
@@ -92,24 +83,13 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 					return nil
 				})
 				if err != nil {
-					_, isFetchErr := kafkalib.AsFetchMessageError(err)
-					if isFetchErr && db.IsRetryableError(err, context.DeadlineExceeded) && fetchRetries < maxFetchRetries {
-						sleepDuration := jitter.Jitter(500, jitter.DefaultMaxMs, fetchRetries)
-						slog.Warn("Retryable fetch error, backing off",
-							slog.Any("err", err),
-							slog.String("topic", topic),
-							slog.Duration("sleep", sleepDuration),
-							slog.Int("attempt", fetchRetries),
-						)
-						time.Sleep(sleepDuration)
-						fetchRetries++
+					if fetchErr, ok := kafkalib.IsFetchMessageError(err); ok && db.IsRetryableError(fetchErr.Err, context.DeadlineExceeded) {
+						time.Sleep(500 * time.Millisecond)
 						continue
+					} else {
+						logger.Fatal("Failed to process message", slog.Any("err", err), slog.String("topic", topic))
 					}
-
-					logger.Fatal("Failed to process message", slog.Any("err", err), slog.String("topic", topic))
 				}
-
-				fetchRetries = 0
 			}
 		}(topic)
 	}

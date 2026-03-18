@@ -25,7 +25,7 @@ import (
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/values"
-	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
+	"github.com/artie-labs/transfer/lib/webhooks"
 )
 
 type Store struct {
@@ -52,7 +52,7 @@ func (s Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error
 	return shared.DropTemporaryTable(ctx, &s, tableID, s.configMap)
 }
 
-func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client) (bool, error) {
+func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooks.Client) (bool, error) {
 	if err := shared.Merge(ctx, s, tableData, types.MergeOpts{
 		ColumnSettings: s.cfg.SharedDestinationSettings.ColumnSettings,
 	}, whClient); err != nil {
@@ -62,7 +62,7 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whC
 	return true, nil
 }
 
-func (s Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, _ bool) error {
+func (s Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooks.Client, _ bool) error {
 	return shared.Append(ctx, s, tableData, whClient, types.AdditionalSettings{
 		ColumnSettings: s.cfg.SharedDestinationSettings.ColumnSettings,
 	})
@@ -215,7 +215,7 @@ func (s Store) writeTemporaryTableFile(tableData *optimization.TableData, fileNa
 	return file.FilePath, nil
 }
 
-func (s Store) SweepTemporaryTables(ctx context.Context, whClient *webhooksclient.Client) error {
+func (s Store) SweepTemporaryTables(ctx context.Context) error {
 	ctx = driverctx.NewContextWithStagingInfo(ctx, []string{"/var", "tmp"})
 	// Remove the temporary files from volumes
 	for _, dbAndSchema := range kafkalib.GetUniqueStagingDatabaseAndSchemaPairs(s.cfg.TopicConfigs()) {
@@ -244,7 +244,7 @@ func (s Store) SweepTemporaryTables(ctx context.Context, whClient *webhooksclien
 	}
 
 	// Delete the temporary tables
-	return shared.Sweep(ctx, s, s.cfg.TopicConfigs(), whClient, s.dialect().BuildSweepQuery)
+	return shared.Sweep(ctx, s, s.cfg.TopicConfigs(), s.dialect().BuildSweepQuery)
 }
 
 func BuildDatabricksSQL(dbCfg config.Databricks) (*gosql.DB, error) {
