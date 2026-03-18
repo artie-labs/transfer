@@ -11,19 +11,19 @@ type EventMetadata struct {
 
 var eventMetadataMap = map[EventType]EventMetadata{
 	// Backfill events
-	EventBackFillStarted:   {SeverityInfo, "backfill", "Backfill started"},
-	EventBackFillCompleted: {SeverityInfo, "backfill", "Backfill completed"},
-	EventBackFillFailed:    {SeverityError, "backfill", "Backfill failed"},
-	BackfillProgress:       {SeverityInfo, "backfill", "Backfill progress"},
-	DedupeStarted:          {SeverityInfo, "backfill", "Deduplication started"},
-	DedupeCompleted:        {SeverityInfo, "backfill", "Deduplication completed"},
-	DedupeFailed:           {SeverityError, "backfill", "Deduplication failed"},
+	EventBackfillStarted:   {SeverityInfo, "backfill", "Backfill started"},
+	EventBackfillCompleted: {SeverityInfo, "backfill", "Backfill completed"},
+	EventBackfillFailed:    {SeverityError, "backfill", "Backfill failed"},
+	EventBackfillProgress:  {SeverityInfo, "backfill", "Backfill progress"},
+	EventDedupeStarted:     {SeverityInfo, "backfill", "Deduplication started"},
+	EventDedupeCompleted:   {SeverityInfo, "backfill", "Deduplication completed"},
+	EventDedupeFailed:      {SeverityError, "backfill", "Deduplication failed"},
 	// Replication events
-	ReplicationStarted: {SeverityInfo, "replication", "Replication started"},
-	ReplicationFailed:  {SeverityError, "replication", "Replication failed"},
-	RowSkipped:         {SeverityWarning, "replication", "Row skipped"},
+	EventReplicationStarted: {SeverityInfo, "replication", "Replication started"},
+	EventReplicationFailed:  {SeverityError, "replication", "Replication failed"},
+	EventRowSkipped:         {SeverityWarning, "replication", "Row skipped"},
 	// Connection events
-	ConnectionFailed: {SeverityError, "connection", "Connection failed"},
+	EventConnectionFailed: {SeverityError, "connection", "Connection failed"},
 }
 
 func GetEventMetadata(eventType EventType) EventMetadata {

@@ -5,34 +5,34 @@ import "time"
 type EventType string
 
 const (
-	EventBackFillStarted   EventType = "backfill.started"
-	EventBackFillCompleted EventType = "backfill.completed"
-	EventBackFillFailed    EventType = "backfill.failed"
-	BackfillProgress       EventType = "backfill.progress"
-	DedupeStarted          EventType = "dedupe.started"
-	DedupeCompleted        EventType = "dedupe.completed"
-	DedupeFailed           EventType = "dedupe.failed"
+	EventBackfillStarted   EventType = "backfill.started"
+	EventBackfillCompleted EventType = "backfill.completed"
+	EventBackfillFailed    EventType = "backfill.failed"
+	EventBackfillProgress  EventType = "backfill.progress"
+	EventDedupeStarted     EventType = "dedupe.started"
+	EventDedupeCompleted   EventType = "dedupe.completed"
+	EventDedupeFailed      EventType = "dedupe.failed"
 
-	ReplicationStarted EventType = "replication.started"
-	ReplicationFailed  EventType = "replication.failed"
-	ConnectionFailed   EventType = "connection.failed"
-	RowSkipped         EventType = "row.skipped"
+	EventReplicationStarted EventType = "replication.started"
+	EventReplicationFailed  EventType = "replication.failed"
+	EventConnectionFailed   EventType = "connection.failed"
+	EventRowSkipped         EventType = "row.skipped"
 )
 
 // AllEventTypes contains all defined event types.
 // Add new event types here when you define them above.
 var AllEventTypes = []EventType{
-	EventBackFillStarted,
-	EventBackFillCompleted,
-	EventBackFillFailed,
-	BackfillProgress,
-	DedupeStarted,
-	DedupeCompleted,
-	DedupeFailed,
-	ReplicationStarted,
-	ReplicationFailed,
-	ConnectionFailed,
-	RowSkipped,
+	EventBackfillStarted,
+	EventBackfillCompleted,
+	EventBackfillFailed,
+	EventBackfillProgress,
+	EventDedupeStarted,
+	EventDedupeCompleted,
+	EventDedupeFailed,
+	EventReplicationStarted,
+	EventReplicationFailed,
+	EventConnectionFailed,
+	EventRowSkipped,
 }
 
 type Severity string

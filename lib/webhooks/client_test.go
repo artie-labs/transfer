@@ -79,13 +79,13 @@ func (w *WebhooksClientTestSuite) TestSendEvent_Success() {
 
 	client := newTestClient(w.T(), server.URL, Transfer)
 
-	assert.NoError(w.T(), client.SendEvent(w.T().Context(), EventBackFillCompleted, SendEventArgs{
+	assert.NoError(w.T(), client.SendEvent(w.T().Context(), EventBackfillCompleted, SendEventArgs{
 		Table:       "my_table",
 		Schema:      "public",
 		RowsWritten: 100,
 	}))
 
-	assert.Equal(w.T(), string(EventBackFillCompleted), receivedEvent.Event)
+	assert.Equal(w.T(), string(EventBackfillCompleted), receivedEvent.Event)
 	assert.WithinDuration(w.T(), time.Now().UTC(), receivedEvent.Timestamp, 2*time.Second)
 	assert.NotEmpty(w.T(), receivedEvent.MessageID)
 
@@ -118,7 +118,7 @@ func (w *WebhooksClientTestSuite) TestSendEvent_NilContext() {
 	defer server.Close()
 
 	client := newTestClient(w.T(), server.URL, Transfer)
-	assert.NoError(w.T(), client.SendEvent(w.T().Context(), ReplicationStarted, SendEventArgs{}))
+	assert.NoError(w.T(), client.SendEvent(w.T().Context(), EventReplicationStarted, SendEventArgs{}))
 }
 
 func (w *WebhooksClientTestSuite) TestSendEvent_HTTPError() {
@@ -132,7 +132,7 @@ func (w *WebhooksClientTestSuite) TestSendEvent_HTTPError() {
 		cfg:        webhooksClientConfig{Service: Transfer, CompanyUUID: "company-123", URL: server.URL, APIKey: "test-api-key"},
 	}
 
-	assert.ErrorContains(w.T(), client.SendEvent(w.T().Context(), EventBackFillFailed, SendEventArgs{}), "unexpected status code: 500")
+	assert.ErrorContains(w.T(), client.SendEvent(w.T().Context(), EventBackfillFailed, SendEventArgs{}), "unexpected status code: 500")
 }
 
 func (w *WebhooksClientTestSuite) TestSendEvent_HTTPClientError() {
@@ -146,7 +146,7 @@ func (w *WebhooksClientTestSuite) TestSendEvent_HTTPClientError() {
 		cfg:        webhooksClientConfig{Service: Transfer, CompanyUUID: "company-123", URL: server.URL, APIKey: "test-api-key"},
 	}
 
-	assert.ErrorContains(w.T(), client.SendEvent(w.T().Context(), EventBackFillFailed, SendEventArgs{}), "unexpected status code: 400")
+	assert.ErrorContains(w.T(), client.SendEvent(w.T().Context(), EventBackfillFailed, SendEventArgs{}), "unexpected status code: 400")
 }
 
 func (w *WebhooksClientTestSuite) TestSendEvent_ContextCanceled() {
@@ -164,7 +164,7 @@ func (w *WebhooksClientTestSuite) TestSendEvent_ContextCanceled() {
 	ctx, cancel := context.WithTimeout(w.T().Context(), 100*time.Millisecond)
 	defer cancel()
 
-	assert.ErrorContains(w.T(), client.SendEvent(ctx, EventBackFillFailed, SendEventArgs{}), "context deadline exceeded")
+	assert.ErrorContains(w.T(), client.SendEvent(ctx, EventBackfillFailed, SendEventArgs{}), "context deadline exceeded")
 }
 
 func (w *WebhooksClientTestSuite) TestSendEvent_InvalidURL() {
@@ -173,7 +173,7 @@ func (w *WebhooksClientTestSuite) TestSendEvent_InvalidURL() {
 		cfg:        webhooksClientConfig{Service: Transfer, CompanyUUID: "company-123", URL: "://invalid-url", APIKey: "test-api-key"},
 	}
 
-	assert.ErrorContains(w.T(), client.SendEvent(w.T().Context(), EventBackFillFailed, SendEventArgs{}), "failed to create request")
+	assert.ErrorContains(w.T(), client.SendEvent(w.T().Context(), EventBackfillFailed, SendEventArgs{}), "failed to create request")
 }
 
 func (w *WebhooksClientTestSuite) TestSendEvent_NetworkError() {
@@ -182,7 +182,7 @@ func (w *WebhooksClientTestSuite) TestSendEvent_NetworkError() {
 		cfg:        webhooksClientConfig{Service: Transfer, CompanyUUID: "company-123", URL: "http://localhost:1", APIKey: "test-api-key"},
 	}
 
-	assert.ErrorContains(w.T(), client.SendEvent(w.T().Context(), EventBackFillFailed, SendEventArgs{}), "failed to send request")
+	assert.ErrorContains(w.T(), client.SendEvent(w.T().Context(), EventBackfillFailed, SendEventArgs{}), "failed to send request")
 }
 
 func (w *WebhooksClientTestSuite) TestSendEvent_AllEventTypes() {
@@ -216,7 +216,7 @@ func (w *WebhooksClientTestSuite) TestSendEvent_AllServices() {
 			defer server.Close()
 
 			client := newTestClient(t, server.URL, service)
-			assert.NoError(t, client.SendEvent(w.T().Context(), ReplicationStarted, SendEventArgs{}))
+			assert.NoError(t, client.SendEvent(w.T().Context(), EventReplicationStarted, SendEventArgs{}))
 			assert.Equal(t, service, receivedEvent.Properties.Service)
 		})
 	}
@@ -255,7 +255,7 @@ func (w *WebhooksClientTestSuite) TestSendEvent_EmptyArgs() {
 	defer server.Close()
 
 	client := newTestClient(w.T(), server.URL, Transfer)
-	assert.NoError(w.T(), client.SendEvent(w.T().Context(), EventBackFillStarted, SendEventArgs{}))
+	assert.NoError(w.T(), client.SendEvent(w.T().Context(), EventBackfillStarted, SendEventArgs{}))
 	assert.Empty(w.T(), receivedEvent.Properties.Table)
 	assert.Empty(w.T(), receivedEvent.Properties.Error)
 }
@@ -358,14 +358,14 @@ func TestClient_SendEvent(t *testing.T) {
 		// nil client should not panic
 		var client *Client
 		assert.NotPanics(t, func() {
-			client.SendEvent(ctx, EventBackFillStarted, SendEventArgs{Table: "users"})
+			client.SendEvent(ctx, EventBackfillStarted, SendEventArgs{Table: "users"})
 		})
 	}
 	{
 		// disabled (no-op) client should not panic
 		client := &Client{}
 		assert.NotPanics(t, func() {
-			client.SendEvent(ctx, EventBackFillStarted, SendEventArgs{Table: "users"})
+			client.SendEvent(ctx, EventBackfillStarted, SendEventArgs{Table: "users"})
 		})
 	}
 	{
