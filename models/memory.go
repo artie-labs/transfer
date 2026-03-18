@@ -15,7 +15,8 @@ type TableData struct {
 	topic   string
 	tableID cdc.TableID
 	*optimization.TableData
-	lastFlushTime time.Time
+	lastFlushTime   time.Time
+	lastFlushFailed bool
 }
 
 func (t *TableData) GetTableID() cdc.TableID {
@@ -25,6 +26,7 @@ func (t *TableData) GetTableID() cdc.TableID {
 func (t *TableData) Wipe() {
 	t.TableData = nil
 	t.lastFlushTime = time.Now()
+	t.lastFlushFailed = false
 }
 
 // ShouldSkipFlush - this function is only used when the flush reason was time-based.
@@ -48,6 +50,18 @@ func (t *TableData) Empty() bool {
 
 func (t *TableData) SetTableData(td *optimization.TableData) {
 	t.TableData = td
+}
+
+func (t *TableData) LastFlushTime() time.Time {
+	return t.lastFlushTime
+}
+
+func (t *TableData) SetLastFlushFailed(failed bool) {
+	t.lastFlushFailed = failed
+}
+
+func (t *TableData) LastFlushFailed() bool {
+	return t.lastFlushFailed
 }
 
 type DatabaseData struct {

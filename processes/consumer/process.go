@@ -88,6 +88,11 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 	}
 
 	if shouldFlush {
+		metricsClient.Incr("buffer.flush_triggered", map[string]string{
+			"reason": flushReason,
+			"table":  tags["table"],
+			"schema": tags["schema"],
+		})
 		executionTime := evt.GetExecutionTime()
 		err = FlushSingleTopic(ctx, inMemDB, dest, metricsClient, p.WhClient, Args{Reason: flushReason, ReportDBExecutionTime: cfg.Reporting.EmitDBExecutionTime, EventExecutionTime: &executionTime}, topicConfig.tc.Topic, false)
 		if err != nil {
