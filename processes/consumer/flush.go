@@ -114,8 +114,11 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 				})
 				if err != nil {
 					tags["what"] = result.What
-					table.SetLastFlushFailed(true)
-					metricsClient.Incr("flush.retry_exhausted", tags)
+					metricsClient.Incr("flush.retry_exhausted", map[string]string{
+						"mode":   tags["mode"],
+						"reason": tags["reason"],
+						"what":   result.What,
+					})
 					metricsClient.Timing("flush", result.Duration, tags)
 					return fmt.Errorf("failed to %s for %q: %w", action, table.GetTableID().String(), err)
 				}
