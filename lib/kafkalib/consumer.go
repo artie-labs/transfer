@@ -20,6 +20,8 @@ const (
 	TopicExistsPollInterval = 5 * time.Minute
 )
 
+var closeOnce sync.Once
+
 type ctxKey string
 
 func BuildContextKey(topic string) ctxKey {
@@ -34,6 +36,7 @@ type Consumer interface {
 
 type FranzGoConsumer struct {
 	client  *kgo.Client
+	closeFn func()
 	groupID string
 	topic   string
 	// Map to store high watermarks by topic-partition key
@@ -45,9 +48,10 @@ func GetHighWatermarkMapKey(topic string, partition int32) string {
 	return fmt.Sprintf("%s-%d", topic, partition)
 }
 
-func NewFranzGoConsumer(client *kgo.Client, groupID, topic string) Consumer {
+func NewFranzGoConsumer(client *kgo.Client, closeFn func(), groupID, topic string) Consumer {
 	return &FranzGoConsumer{
 		client:         client,
+		closeFn:        closeFn,
 		groupID:        groupID,
 		topic:          topic,
 		highWatermarks: make(map[string]int64),
@@ -66,7 +70,7 @@ func (f *FranzGoConsumer) GetHighWatermark(record kgo.Record) int64 {
 }
 
 func (f *FranzGoConsumer) Close() error {
-	f.client.Close()
+	f.closeFn()
 	return nil
 }
 
@@ -277,9 +281,11 @@ func InjectFranzGoConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) 
 			return nil, fmt.Errorf("failed to create Kafka client: %w", err)
 		}
 
+		closeFn := func() { closeOnce.Do(client.Close) }
+
 		for _, topicConfig := range cfg.TopicConfigs {
 			ctx = context.WithValue(ctx, BuildContextKey(topicConfig.Topic), &ConsumerProvider{
-				Consumer:                 NewFranzGoConsumer(client, cfg.GroupID, topicConfig.Topic),
+				Consumer:                 NewFranzGoConsumer(client, closeFn, cfg.GroupID, topicConfig.Topic),
 				topic:                    topicConfig.Topic,
 				groupID:                  cfg.GroupID,
 				partitionToAppliedOffset: make(map[int]artie.Message),
@@ -321,8 +327,10 @@ func InjectFranzGoConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) 
 			slog.String("groupID", cfg.GroupID),
 			slog.Any("brokers", brokers))
 
+		individualCloseFn := func() { client.Close() }
+
 		ctx = context.WithValue(ctx, BuildContextKey(topicConfig.Topic), &ConsumerProvider{
-			Consumer:                 NewFranzGoConsumer(client, cfg.GroupID, topicConfig.Topic),
+			Consumer:                 NewFranzGoConsumer(client, individualCloseFn, cfg.GroupID, topicConfig.Topic),
 			topic:                    topicConfig.Topic,
 			groupID:                  cfg.GroupID,
 			partitionToAppliedOffset: make(map[int]artie.Message),
