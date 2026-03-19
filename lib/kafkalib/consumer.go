@@ -280,7 +280,7 @@ func InjectFranzGoConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) 
 		for _, topicConfig := range cfg.TopicConfigs {
 			ctx = context.WithValue(ctx, BuildContextKey(topicConfig.Topic), &ConsumerProvider{
 				Consumer:                 NewFranzGoConsumer(client, cfg.GroupID, topicConfig.Topic),
-				topic:                    cfg.GroupID,
+				topic:                    topicConfig.Topic,
 				groupID:                  cfg.GroupID,
 				partitionToAppliedOffset: make(map[int]artie.Message),
 				client:                   client,
