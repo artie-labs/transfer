@@ -46,3 +46,12 @@ func (k KMSClient) DecryptDataKey(ctx context.Context, encryptedDEK, kmsKeyARN s
 
 	return base64.StdEncoding.EncodeToString(output.Plaintext), nil
 }
+
+func (k KMSClient) DescribeKey(ctx context.Context, kmsKeyARN string) (types.KeyMetadata, error) {
+	output, err := k.client.DescribeKey(ctx, &kms.DescribeKeyInput{KeyId: aws.String(kmsKeyARN)})
+	if err != nil {
+		return types.KeyMetadata{}, fmt.Errorf("failed to describe key: %w", err)
+	}
+
+	return *output.KeyMetadata, nil
+}
