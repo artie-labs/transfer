@@ -30,8 +30,14 @@ func (s *S3Settings) Validate() error {
 		return fmt.Errorf("s3 settings are nil")
 	}
 
-	if empty := stringutil.Empty(s.Bucket, s.AwsSecretAccessKey, s.AwsAccessKeyID); empty {
-		return fmt.Errorf("one of s3 settings is empty")
+	if s.Bucket == "" {
+		return fmt.Errorf("s3 bucket is empty")
+	}
+
+	hasStaticCreds := s.AwsAccessKeyID != "" && s.AwsSecretAccessKey != ""
+	hasRoleARN := s.RoleARN != ""
+	if !hasStaticCreds && !hasRoleARN {
+		return fmt.Errorf("either awsAccessKeyID and awsSecretAccessKey or roleARN is required")
 	}
 
 	if !constants.IsValidS3OutputFormat(s.OutputFormat) {
