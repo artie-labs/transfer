@@ -415,6 +415,11 @@ func (c *ConsumerProvider) FetchMessageAndProcess(ctx context.Context, do func(a
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	if msg.Topic() != c.topic {
+		// when using a single client, we may receive messages from other topics, should skip
+		return nil
+	}
+
 	if appliedMsg, ok := c.partitionToAppliedOffset[msg.Partition()]; ok {
 		if appliedMsg.Offset() >= msg.Offset() {
 			// We should skip this message because we have already processed it.
