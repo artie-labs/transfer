@@ -119,6 +119,7 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 					metricsClient.Timing("flush", result.Duration, tags)
 					return fmt.Errorf("failed to %s for %q: %w", action, table.GetTableID().String(), err)
 				}
+				table.SetLastFlushFailed(false)
 				// It's okay that this will get overwritten by other tables
 				// This is because MSM is only supported for a single table / topic.
 				commitOffset.Store(result.CommitOffset)

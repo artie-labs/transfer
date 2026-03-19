@@ -25,6 +25,9 @@ func StartPool(ctx context.Context, inMemDB *models.DatabaseData, dest destinati
 		}
 
 		for _, table := range inMemDB.TableData() {
+			if table.Empty() {
+				continue
+			}
 			baseline := table.LastFlushTime()
 			if baseline.IsZero() {
 				baseline = processStartTime
