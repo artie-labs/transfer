@@ -34,6 +34,8 @@ type Kafka struct {
 	FetchMinBytes int32 `yaml:"fetchMinBytes,omitempty"`
 	// FetchMaxWaitMs is how long the broker waits to accumulate FetchMinBytes in milliseconds (default: 5000ms)
 	FetchMaxWaitMs int32 `yaml:"fetchMaxWaitMs,omitempty"`
+	// UseSingleClient - if true, will use a single client for all topics.
+	UseSingleClient bool `yaml:"useSingleClient,omitempty"`
 }
 
 func (k *Kafka) Topics() []string {

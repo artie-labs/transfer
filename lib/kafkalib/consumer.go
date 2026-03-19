@@ -260,6 +260,36 @@ func InjectFranzGoConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) 
 	kafkaConn := NewConnection(cfg.EnableAWSMSKIAM, cfg.DisableTLS, cfg.Username, cfg.Password, DefaultTimeout)
 	brokers := cfg.BootstrapServers(true)
 
+	if cfg.UseSingleClient {
+		clientOpts, err := kafkaConn.ClientOptions(ctx, brokers)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create Kafka client options: %w", err)
+		}
+
+		topics := make([]string, 0, len(cfg.TopicConfigs))
+		for _, topicConfig := range cfg.TopicConfigs {
+			topics = append(topics, topicConfig.Topic)
+		}
+		clientOpts = append(EnrichClientOpts(clientOpts, cfg), kgo.ConsumeTopics(topics...))
+
+		client, err := kgo.NewClient(clientOpts...)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create Kafka client: %w", err)
+		}
+
+		for _, topicConfig := range cfg.TopicConfigs {
+			ctx = context.WithValue(ctx, BuildContextKey(topicConfig.Topic), &ConsumerProvider{
+				Consumer:                 NewFranzGoConsumer(client, cfg.GroupID, topicConfig.Topic),
+				topic:                    cfg.GroupID,
+				groupID:                  cfg.GroupID,
+				partitionToAppliedOffset: make(map[int]artie.Message),
+				client:                   client,
+			})
+		}
+
+		return ctx, nil
+	}
+
 	var createdClients []*kgo.Client
 	closeClients := func() {
 		for _, c := range createdClients {
@@ -275,60 +305,9 @@ func InjectFranzGoConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) 
 			return nil, fmt.Errorf("failed to create Kafka client options for topic %s: %w", topicConfig.Topic, err)
 		}
 
-		clientOpts = append(clientOpts,
-			kgo.ConsumerGroup(cfg.GroupID),
+		clientOpts = append(EnrichClientOpts(clientOpts, cfg),
 			kgo.ConsumeTopics(topicConfig.Topic), // Consume only this specific topic
-			kgo.DisableAutoCommit(),
-			// Set session timeout for consumer group heartbeats
-			kgo.SessionTimeout(30*time.Second),
-			// Set heartbeat interval
-			kgo.HeartbeatInterval(3*time.Second),
-			// Ensure we allow time for rebalancing
-			kgo.RebalanceTimeout(30*time.Second),
-			// Consumer group lifecycle callbacks with detailed logging
-			kgo.OnPartitionsAssigned(func(ctx context.Context, c *kgo.Client, assigned map[string][]int32) {
-				for topic, partitions := range assigned {
-					// Check group metadata during assignment for debugging
-					actualGroupID, generation := c.GroupMetadata()
-					slog.Info("Partitions assigned",
-						slog.String("topic", topic),
-						slog.Any("partitions", partitions),
-						slog.String("expectedGroupID", cfg.GroupID),
-						slog.String("actualGroupID", actualGroupID),
-						slog.Int("generation", int(generation)))
-				}
-			}),
-			kgo.OnPartitionsRevoked(func(ctx context.Context, c *kgo.Client, revoked map[string][]int32) {
-				for topic, partitions := range revoked {
-					slog.Info("Partitions revoked",
-						slog.String("topic", topic),
-						slog.Any("partitions", partitions),
-						slog.String("groupID", cfg.GroupID))
-				}
-			}),
-			kgo.OnPartitionsLost(func(ctx context.Context, c *kgo.Client, lost map[string][]int32) {
-				for topic, partitions := range lost {
-					slog.Warn("Partitions lost",
-						slog.String("topic", topic),
-						slog.Any("partitions", partitions),
-						slog.String("groupID", cfg.GroupID))
-				}
-			}),
 		)
-
-		// Apply optional fetch tuning settings if configured
-		if cfg.FetchMaxBytes > 0 {
-			clientOpts = append(clientOpts, kgo.FetchMaxBytes(cfg.FetchMaxBytes))
-		}
-		if cfg.FetchMaxPartitionBytes > 0 {
-			clientOpts = append(clientOpts, kgo.FetchMaxPartitionBytes(cfg.FetchMaxPartitionBytes))
-		}
-		if cfg.FetchMinBytes > 0 {
-			clientOpts = append(clientOpts, kgo.FetchMinBytes(cfg.FetchMinBytes))
-		}
-		if cfg.FetchMaxWaitMs > 0 {
-			clientOpts = append(clientOpts, kgo.FetchMaxWait(time.Duration(cfg.FetchMaxWaitMs)*time.Millisecond))
-		}
 
 		client, err := kgo.NewClient(clientOpts...)
 		if err != nil {
@@ -352,6 +331,63 @@ func InjectFranzGoConsumerProvidersIntoContext(ctx context.Context, cfg *Kafka) 
 	}
 
 	return ctx, nil
+}
+
+func EnrichClientOpts(clientOpts []kgo.Opt, cfg *Kafka) []kgo.Opt {
+	clientOpts = append(clientOpts,
+		kgo.ConsumerGroup(cfg.GroupID),
+		kgo.DisableAutoCommit(),
+		// Set session timeout for consumer group heartbeats
+		kgo.SessionTimeout(30*time.Second),
+		// Set heartbeat interval
+		kgo.HeartbeatInterval(3*time.Second),
+		// Ensure we allow time for rebalancing
+		kgo.RebalanceTimeout(30*time.Second),
+		// Consumer group lifecycle callbacks with detailed logging
+		kgo.OnPartitionsAssigned(func(ctx context.Context, c *kgo.Client, assigned map[string][]int32) {
+			for topic, partitions := range assigned {
+				// Check group metadata during assignment for debugging
+				actualGroupID, generation := c.GroupMetadata()
+				slog.Info("Partitions assigned",
+					slog.String("topic", topic),
+					slog.Any("partitions", partitions),
+					slog.String("expectedGroupID", cfg.GroupID),
+					slog.String("actualGroupID", actualGroupID),
+					slog.Int("generation", int(generation)))
+			}
+		}),
+		kgo.OnPartitionsRevoked(func(ctx context.Context, c *kgo.Client, revoked map[string][]int32) {
+			for topic, partitions := range revoked {
+				slog.Info("Partitions revoked",
+					slog.String("topic", topic),
+					slog.Any("partitions", partitions),
+					slog.String("groupID", cfg.GroupID))
+			}
+		}),
+		kgo.OnPartitionsLost(func(ctx context.Context, c *kgo.Client, lost map[string][]int32) {
+			for topic, partitions := range lost {
+				slog.Warn("Partitions lost",
+					slog.String("topic", topic),
+					slog.Any("partitions", partitions),
+					slog.String("groupID", cfg.GroupID))
+			}
+		}),
+	)
+
+	// Apply optional fetch tuning settings if configured
+	if cfg.FetchMaxBytes > 0 {
+		clientOpts = append(clientOpts, kgo.FetchMaxBytes(cfg.FetchMaxBytes))
+	}
+	if cfg.FetchMaxPartitionBytes > 0 {
+		clientOpts = append(clientOpts, kgo.FetchMaxPartitionBytes(cfg.FetchMaxPartitionBytes))
+	}
+	if cfg.FetchMinBytes > 0 {
+		clientOpts = append(clientOpts, kgo.FetchMinBytes(cfg.FetchMinBytes))
+	}
+	if cfg.FetchMaxWaitMs > 0 {
+		clientOpts = append(clientOpts, kgo.FetchMaxWait(time.Duration(cfg.FetchMaxWaitMs)*time.Millisecond))
+	}
+	return clientOpts
 }
 
 func (c *ConsumerProvider) LockAndProcess(ctx context.Context, lock bool, do func() error) error {
