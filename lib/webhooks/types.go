@@ -1,75 +1,41 @@
 package webhooks
 
-import "time"
+import (
+	"log/slog"
+	"time"
+)
 
 type EventType string
 
 const (
-	EventBackFillStarted   EventType = "backfill.started"
-	EventBackFillCompleted EventType = "backfill.completed"
-	EventBackFillFailed    EventType = "backfill.failed"
+	EventBackfillStarted   EventType = "backfill.started"
+	EventBackfillCompleted EventType = "backfill.completed"
+	EventBackfillFailed    EventType = "backfill.failed"
+	EventBackfillProgress  EventType = "backfill.progress"
+	EventDedupeStarted     EventType = "dedupe.started"
+	EventDedupeCompleted   EventType = "dedupe.completed"
+	EventDedupeFailed      EventType = "dedupe.failed"
 
-	ReplicationStarted EventType = "replication.started"
-	ReplicationFailed  EventType = "replication.failed"
-	UnableToReplicate  EventType = "unable.to.replicate"
-	RowSkipped         EventType = "row.skipped"
-)
-
-const (
-	TableStarted   EventType = "table.started"
-	TableCompleted EventType = "table.completed"
-	TableFailed    EventType = "table.failed"
-	TableSkipped   EventType = "table.skipped"
-	TableEmpty     EventType = "table.empty"
-)
-
-const (
-	BackfillProgress EventType = "backfill.progress"
-)
-
-const (
-	DedupeStarted   EventType = "dedupe.started"
-	DedupeCompleted EventType = "dedupe.completed"
-	DedupeFailed    EventType = "dedupe.failed"
-)
-
-const (
-	ConnectionEstablished EventType = "connection.established"
-	ConnectionLost        EventType = "connection.lost"
-	ConnectionRetry       EventType = "connection.retry"
-	ConnectionFailed      EventType = "connection.failed"
-)
-
-const (
-	ConfigValidated EventType = "config.validated"
-	ConfigInvalid   EventType = "config.invalid"
+	EventReplicationStarted EventType = "replication.started"
+	EventReplicationFailed  EventType = "replication.failed"
+	EventConnectionFailed   EventType = "connection.failed"
+	EventRowSkipped         EventType = "row.skipped"
 )
 
 // AllEventTypes contains all defined event types.
 // Add new event types here when you define them above.
 var AllEventTypes = []EventType{
-	EventBackFillStarted,
-	EventBackFillCompleted,
-	EventBackFillFailed,
-	ReplicationStarted,
-	ReplicationFailed,
-	UnableToReplicate,
-	RowSkipped,
-	TableStarted,
-	TableCompleted,
-	TableFailed,
-	TableSkipped,
-	TableEmpty,
-	BackfillProgress,
-	DedupeStarted,
-	DedupeCompleted,
-	DedupeFailed,
-	ConnectionEstablished,
-	ConnectionLost,
-	ConnectionRetry,
-	ConnectionFailed,
-	ConfigValidated,
-	ConfigInvalid,
+	EventBackfillStarted,
+	EventBackfillCompleted,
+	EventBackfillFailed,
+	EventBackfillProgress,
+	EventDedupeStarted,
+	EventDedupeCompleted,
+	EventDedupeFailed,
+	EventReplicationStarted,
+	EventReplicationFailed,
+	EventConnectionFailed,
+	EventRowSkipped,
 }
 
 type Severity string
@@ -79,6 +45,50 @@ const (
 	SeverityWarning Severity = "warning"
 	SeverityError   Severity = "error"
 )
+
+type EventMetadata struct {
+	Severity Severity
+	Category string
+	Message  string
+}
+
+var eventMetadataMap = map[EventType]EventMetadata{
+	// Backfill events
+	EventBackfillStarted:   {SeverityInfo, "backfill", "Backfill started"},
+	EventBackfillCompleted: {SeverityInfo, "backfill", "Backfill completed"},
+	EventBackfillFailed:    {SeverityError, "backfill", "Backfill failed"},
+	EventBackfillProgress:  {SeverityInfo, "backfill", "Backfill progress"},
+	EventDedupeStarted:     {SeverityInfo, "backfill", "Deduplication started"},
+	EventDedupeCompleted:   {SeverityInfo, "backfill", "Deduplication completed"},
+	EventDedupeFailed:      {SeverityError, "backfill", "Deduplication failed"},
+	// Replication events
+	EventReplicationStarted: {SeverityInfo, "replication", "Replication started"},
+	EventReplicationFailed:  {SeverityError, "replication", "Replication failed"},
+	EventRowSkipped:         {SeverityWarning, "replication", "Row skipped"},
+	// Connection events
+	EventConnectionFailed: {SeverityError, "connection", "Connection failed"},
+}
+
+func GetEventMetadata(eventType EventType) EventMetadata {
+	if metadata, ok := eventMetadataMap[eventType]; ok {
+		return metadata
+	}
+
+	slog.Error("Unknown event type", "eventType", eventType)
+	return EventMetadata{SeverityInfo, "operation", "Unknown event type"}
+}
+
+func GetEventSeverity(eventType EventType) Severity {
+	return GetEventMetadata(eventType).Severity
+}
+
+func GetEventCategory(eventType EventType) string {
+	return GetEventMetadata(eventType).Category
+}
+
+func GetEventMessage(eventType EventType) string {
+	return GetEventMetadata(eventType).Message
+}
 
 // Service identifies which Artie service emitted the event.
 type Service string
