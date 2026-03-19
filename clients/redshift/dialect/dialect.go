@@ -123,6 +123,7 @@ func (rd RedshiftDialect) buildMergeInsertQuery(
 	cols []columns.Column,
 	softDelete bool,
 ) string {
+	// Only reference the first primary key here since the ON clause (equalitySQL) already covers all PKs.
 	whereClause := fmt.Sprintf("%s IS NULL", sql.QuoteTableAliasColumn(constants.TargetAlias, primaryKeys[0], rd))
 	if !softDelete {
 		whereClause += fmt.Sprintf(" AND COALESCE(%s, false) = false", sql.QuotedDeleteColumnMarker(constants.StagingAlias, rd))
