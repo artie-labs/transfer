@@ -50,6 +50,10 @@ func (t *TableData) SetTableData(td *optimization.TableData) {
 	t.TableData = td
 }
 
+func (t *TableData) LastFlushTime() time.Time {
+	return t.lastFlushTime
+}
+
 type DatabaseData struct {
 	tableData map[cdc.TableID]*TableData
 	sync.RWMutex
