@@ -50,7 +50,8 @@ const (
 	RFC3339MicroTZNoTZ = "2006-01-02T15:04:05.999999"
 	RFC3339MicroTZ     = RFC3339MicroTZNoTZ + TimezoneOffsetFormat
 
-	RFC3339NoTZ = "2006-01-02T15:04:05.999999999"
+	RFC3339NoTZ               = "2006-01-02T15:04:05.999999999"
+	RFC3339NoTZSpaceSeparated = "2006-01-02 15:04:05.999999999"
 
 	RFC3339MillisecondNoTZ = "2006-01-02T15:04:05.000"
 	RFC3339Millisecond     = RFC3339MillisecondNoTZ + TimezoneOffsetFormat

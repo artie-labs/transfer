@@ -102,12 +102,12 @@ func ParseTimestampNTZFromAny(val any) (time.Time, error) {
 	case time.Time:
 		return convertedVal, nil
 	case string:
-		ts, err := ParseTimeExactMatch(RFC3339NoTZ, convertedVal)
-		if err != nil {
-			return time.Time{}, NewParseError(fmt.Sprintf("unsupported value: %q", convertedVal), UnsupportedDateLayout)
+		for _, layout := range []string{RFC3339NoTZ, RFC3339NoTZSpaceSeparated} {
+			if ts, err := ParseTimeExactMatch(layout, convertedVal); err == nil {
+				return ts, nil
+			}
 		}
-
-		return ts, nil
+		return time.Time{}, NewParseError(fmt.Sprintf("unsupported value: %q", convertedVal), UnsupportedDateLayout)
 	case float64:
 		return floatMillisToTime(convertedVal), nil
 	case int64:
