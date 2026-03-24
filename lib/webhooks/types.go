@@ -24,7 +24,7 @@ const (
 	// Source specific events
 	EventDDLSeen EventType = "ddl.seen"
 
-	// Dashboard specific events:
+	// Dashboard specific events
 	EventDEKGenerated EventType = "dek.generated"
 )
 
