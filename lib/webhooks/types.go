@@ -20,6 +20,9 @@ const (
 	EventReplicationFailed  EventType = "replication.failed"
 	EventConnectionFailed   EventType = "connection.failed"
 	EventRowSkipped         EventType = "row.skipped"
+
+	// Source specific events
+	EventDDLSeen EventType = "ddl.seen"
 )
 
 // AllEventTypes contains all defined event types.
@@ -67,6 +70,8 @@ var eventMetadataMap = map[EventType]EventMetadata{
 	EventRowSkipped:         {SeverityWarning, "replication", "Row skipped"},
 	// Connection events
 	EventConnectionFailed: {SeverityError, "connection", "Connection failed"},
+	// Source specific events
+	EventDDLSeen: {SeverityInfo, "ddl", "DDL seen"},
 }
 
 func GetEventMetadata(eventType EventType) EventMetadata {
@@ -108,7 +113,7 @@ type WebhooksEvent struct {
 	Properties WebhookProperties `json:"properties"`
 }
 
-// WebhookProperties is the source of truth for all webhook event fields.
+// [WebhookProperties] is the source of truth for all webhook event fields.
 // In transfer/reader: marshaled as the "properties" field of WebhooksEvent.
 // In dashboard: embedded at the top level of WebhookEvent (matching the flat
 // Redis message after unfurling).
@@ -133,6 +138,11 @@ type WebhookProperties struct {
 	DurationSeconds float64        `json:"duration_seconds,omitempty"`
 	Reason          string         `json:"reason,omitempty"`
 	PrimaryKeys     map[string]any `json:"primary_keys,omitempty"`
+
+	// [Query] - This is the query that we have observed from the source.
+	Query string `json:"query,omitempty"`
+	// [DDLEvent] - These are the parsed ANTLR events from the DDL query.
+	DDLEvent []map[string]any `json:"ddl_event,omitempty"`
 
 	// Deprecated - include full error string in Error field instead
 	Details string `json:"details,omitempty"`
