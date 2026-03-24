@@ -15,8 +15,11 @@ import (
 	"github.com/apache/arrow-go/v18/parquet"
 	"github.com/apache/arrow-go/v18/parquet/compress"
 	"github.com/apache/arrow-go/v18/parquet/pqarrow"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	awsCfg "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
+	"github.com/aws/aws-sdk-go-v2/service/sts"
 
 	"github.com/artie-labs/transfer/lib/awslib"
 	"github.com/artie-labs/transfer/lib/config"
@@ -229,10 +232,29 @@ func (s *Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) erro
 }
 
 func LoadStore(ctx context.Context, cfg config.Config) (*Store, error) {
-	creds := credentials.NewStaticCredentialsProvider(cfg.S3.AwsAccessKeyID, cfg.S3.AwsSecretAccessKey, "")
-	awsConfig, err := awsCfg.LoadDefaultConfig(ctx, awsCfg.WithCredentialsProvider(creds), awsCfg.WithRegion(cfg.S3.AwsRegion))
+	var awsConfig aws.Config
+	var err error
+
+	if cfg.S3.AwsAccessKeyID != "" && cfg.S3.AwsSecretAccessKey != "" {
+		creds := credentials.NewStaticCredentialsProvider(cfg.S3.AwsAccessKeyID, cfg.S3.AwsSecretAccessKey, "")
+		awsConfig, err = awsCfg.LoadDefaultConfig(ctx,
+			awsCfg.WithCredentialsProvider(creds),
+			awsCfg.WithRegion(cfg.S3.AwsRegion),
+		)
+	} else {
+		awsConfig, err = awsCfg.LoadDefaultConfig(ctx,
+			awsCfg.WithRegion(cfg.S3.AwsRegion),
+		)
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to load aws config: %w", err)
+	}
+
+	if cfg.S3.RoleARN != "" {
+		stsClient := sts.NewFromConfig(awsConfig)
+		creds := stscreds.NewAssumeRoleProvider(stsClient, cfg.S3.RoleARN)
+		awsConfig.Credentials = aws.NewCredentialsCache(creds)
 	}
 
 	store := Store{

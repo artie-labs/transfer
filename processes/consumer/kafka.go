@@ -71,7 +71,7 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 
 					tableID, err := args.process(ctx, cfg, inMemDB, dest, metricsClient)
 					if err != nil {
-						whClient.SendEvent(ctx, webhooks.UnableToReplicate, webhooks.SendEventArgs{
+						whClient.SendEvent(ctx, webhooks.EventReplicationFailed, webhooks.SendEventArgs{
 							Error: fmt.Sprintf("Failed to process message: %s", err),
 							Topic: msg.Topic(),
 						})

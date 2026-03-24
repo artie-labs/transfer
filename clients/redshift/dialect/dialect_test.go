@@ -135,10 +135,20 @@ func TestRedshiftDialect_BuildMergeInsertQuery(t *testing.T) {
 
 	fakeTableID := &mocks.FakeTableIdentifier{}
 	fakeTableID.FullyQualifiedNameReturns("{TABLE_ID}")
-	assert.Equal(t,
-		`INSERT INTO {TABLE_ID} ("col1","col2","col3") SELECT stg."col1",stg."col2",stg."col3" FROM {SUB_QUERY} AS stg LEFT JOIN {TABLE_ID} AS tgt ON tgt."col1" = stg."col1" AND tgt."col3" = stg."col3" WHERE tgt."col1" IS NULL;`,
-		RedshiftDialect{}.buildMergeInsertQuery(fakeTableID, "{SUB_QUERY}", []columns.Column{cols[0], cols[2]}, cols),
-	)
+	{
+		// Soft delete enabled - no filter on __artie_delete
+		assert.Equal(t,
+			`INSERT INTO {TABLE_ID} ("col1","col2","col3") SELECT stg."col1",stg."col2",stg."col3" FROM {SUB_QUERY} AS stg LEFT JOIN {TABLE_ID} AS tgt ON tgt."col1" = stg."col1" AND tgt."col3" = stg."col3" WHERE tgt."col1" IS NULL;`,
+			RedshiftDialect{}.buildMergeInsertQuery(fakeTableID, "{SUB_QUERY}", []columns.Column{cols[0], cols[2]}, cols, true),
+		)
+	}
+	{
+		// Soft delete disabled - filter out delete events
+		assert.Equal(t,
+			`INSERT INTO {TABLE_ID} ("col1","col2","col3") SELECT stg."col1",stg."col2",stg."col3" FROM {SUB_QUERY} AS stg LEFT JOIN {TABLE_ID} AS tgt ON tgt."col1" = stg."col1" AND tgt."col3" = stg."col3" WHERE tgt."col1" IS NULL AND COALESCE(stg."__artie_delete", false) = false;`,
+			RedshiftDialect{}.buildMergeInsertQuery(fakeTableID, "{SUB_QUERY}", []columns.Column{cols[0], cols[2]}, cols, false),
+		)
+	}
 }
 
 func TestRedshiftDialect_BuildMergeUpdateQuery(t *testing.T) {
@@ -267,7 +277,7 @@ func TestRedshiftDialect_BuildMergeQueries_SkipDelete(t *testing.T) {
 		parts[0])
 
 	assert.Equal(t,
-		`INSERT INTO public.tableName ("id","email","first_name","last_name","created_at","toast_text") SELECT stg."id",stg."email",stg."first_name",stg."last_name",stg."created_at",stg."toast_text" FROM public.tableName__temp AS stg LEFT JOIN public.tableName AS tgt ON tgt."id" = stg."id" WHERE tgt."id" IS NULL;`,
+		`INSERT INTO public.tableName ("id","email","first_name","last_name","created_at","toast_text") SELECT stg."id",stg."email",stg."first_name",stg."last_name",stg."created_at",stg."toast_text" FROM public.tableName__temp AS stg LEFT JOIN public.tableName AS tgt ON tgt."id" = stg."id" WHERE tgt."id" IS NULL AND COALESCE(stg."__artie_delete", false) = false;`,
 		parts[1])
 }
 
@@ -359,7 +369,7 @@ func TestRedshiftDialect_BuildMergeQueries(t *testing.T) {
 			parts[0])
 
 		assert.Equal(t,
-			`INSERT INTO public.tableName ("id","email","first_name","last_name","created_at","toast_text") SELECT stg."id",stg."email",stg."first_name",stg."last_name",stg."created_at",stg."toast_text" FROM public.tableName__temp AS stg LEFT JOIN public.tableName AS tgt ON tgt."id" = stg."id" WHERE tgt."id" IS NULL;`,
+			`INSERT INTO public.tableName ("id","email","first_name","last_name","created_at","toast_text") SELECT stg."id",stg."email",stg."first_name",stg."last_name",stg."created_at",stg."toast_text" FROM public.tableName__temp AS stg LEFT JOIN public.tableName AS tgt ON tgt."id" = stg."id" WHERE tgt."id" IS NULL AND COALESCE(stg."__artie_delete", false) = false;`,
 			parts[1])
 
 		assert.Equal(t,
@@ -391,7 +401,7 @@ func TestRedshiftDialect_BuildMergeQueries_CompositeKey(t *testing.T) {
 			parts[0])
 
 		assert.Equal(t,
-			`INSERT INTO public.tableName ("id","email","first_name","last_name","created_at","toast_text") SELECT stg."id",stg."email",stg."first_name",stg."last_name",stg."created_at",stg."toast_text" FROM public.tableName__temp AS stg LEFT JOIN public.tableName AS tgt ON tgt."id" = stg."id" AND tgt."email" = stg."email" WHERE tgt."id" IS NULL;`,
+			`INSERT INTO public.tableName ("id","email","first_name","last_name","created_at","toast_text") SELECT stg."id",stg."email",stg."first_name",stg."last_name",stg."created_at",stg."toast_text" FROM public.tableName__temp AS stg LEFT JOIN public.tableName AS tgt ON tgt."id" = stg."id" AND tgt."email" = stg."email" WHERE tgt."id" IS NULL AND COALESCE(stg."__artie_delete", false) = false;`,
 			parts[1])
 
 		assert.Equal(t,
