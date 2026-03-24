@@ -169,4 +169,13 @@ type SendEventArgs struct {
 	DurationSeconds float64
 	Reason          string
 	PrimaryKeys     map[string]any
+
+	// DDL related properties:
+	Query    string
+	DDLEvent []map[string]any
+
+	// DEK related properties:
+	EncryptionKeyUUID string
+	EncryptionKeyName string
+	AWSKMSKeyARN      string
 }
