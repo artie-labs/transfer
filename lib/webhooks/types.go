@@ -23,6 +23,9 @@ const (
 
 	// Source specific events
 	EventDDLSeen EventType = "ddl.seen"
+
+	// Dashboard specific events:
+	EventDEKGenerated EventType = "dek.generated"
 )
 
 // AllEventTypes contains all defined event types.
@@ -39,6 +42,8 @@ var AllEventTypes = []EventType{
 	EventReplicationFailed,
 	EventConnectionFailed,
 	EventRowSkipped,
+	EventDDLSeen,
+	EventDEKGenerated,
 }
 
 type Severity string
@@ -72,6 +77,8 @@ var eventMetadataMap = map[EventType]EventMetadata{
 	EventConnectionFailed: {SeverityError, "connection", "Connection failed"},
 	// Source specific events
 	EventDDLSeen: {SeverityInfo, "ddl", "DDL seen"},
+	// Dashboard specific events:
+	EventDEKGenerated: {SeverityInfo, "dashboard", "AWS KMS Data Encryption Key (DEK) generated"},
 }
 
 func GetEventMetadata(eventType EventType) EventMetadata {
@@ -138,11 +145,12 @@ type WebhookProperties struct {
 	DurationSeconds float64        `json:"duration_seconds,omitempty"`
 	Reason          string         `json:"reason,omitempty"`
 	PrimaryKeys     map[string]any `json:"primary_keys,omitempty"`
-
 	// [Query] - This is the query that we have observed from the source.
 	Query string `json:"query,omitempty"`
 	// [DDLEvent] - These are the parsed ANTLR events from the DDL query.
-	DDLEvent []map[string]any `json:"ddl_event,omitempty"`
+	DDLEvent          []map[string]any `json:"ddl_event,omitempty"`
+	EncryptionKeyUUID string           `json:"encryption_key_uuid,omitempty"`
+	EncryptionKeyName string           `json:"encryption_key_name,omitempty"`
 
 	// Deprecated - include full error string in Error field instead
 	Details string `json:"details,omitempty"`
