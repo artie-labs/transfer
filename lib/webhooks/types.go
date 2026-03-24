@@ -78,7 +78,7 @@ var eventMetadataMap = map[EventType]EventMetadata{
 	// Source specific events
 	EventDDLSeen: {SeverityInfo, "ddl", "DDL seen"},
 	// Dashboard specific events:
-	EventDEKGenerated: {SeverityInfo, "dashboard", "AWS KMS Data Encryption Key (DEK) generated"},
+	EventDEKGenerated: {SeverityInfo, "dashboard", "Data Encryption Key (DEK) generated"},
 }
 
 func GetEventMetadata(eventType EventType) EventMetadata {
@@ -151,6 +151,7 @@ type WebhookProperties struct {
 	DDLEvent          []map[string]any `json:"ddl_event,omitempty"`
 	EncryptionKeyUUID string           `json:"encryption_key_uuid,omitempty"`
 	EncryptionKeyName string           `json:"encryption_key_name,omitempty"`
+	AWSKMSKeyARN      string           `json:"aws_kms_key_arn,omitempty"`
 
 	// Deprecated - include full error string in Error field instead
 	Details string `json:"details,omitempty"`
