@@ -3,6 +3,8 @@ package webhooks
 import (
 	"log/slog"
 	"time"
+
+	"github.com/artie-labs/transfer/lib/redact"
 )
 
 type EventType string
@@ -125,7 +127,7 @@ type WebhooksEvent struct {
 // In dashboard: embedded at the top level of WebhookEvent (matching the flat
 // Redis message after unfurling).
 type WebhookProperties struct {
-	// Properties set when client is initialized
+	// Config-level properties (set when client is initialized):
 	CompanyUUID      string  `json:"company_uuid"`
 	PipelineUUID     string  `json:"pipeline_uuid,omitempty"`
 	SourceReaderUUID string  `json:"source_reader_uuid,omitempty"`
@@ -135,7 +137,14 @@ type WebhookProperties struct {
 	Version          string  `json:"version,omitempty"`     // service version (e.g. "v1.0.0")
 	Mode             string  `json:"mode,omitempty"`        // transfer run mode (replication/history)
 
-	// Properties specified when SendEvent is called
+	// Event-specific properties:
+	EventProperties
+
+	// Deprecated - include full error string in Error field instead
+	Details string `json:"details,omitempty"`
+}
+
+type EventProperties struct {
 	Error           string         `json:"error,omitempty"`
 	Table           string         `json:"table,omitempty"`
 	Schema          string         `json:"schema,omitempty"`
@@ -145,37 +154,25 @@ type WebhookProperties struct {
 	DurationSeconds float64        `json:"duration_seconds,omitempty"`
 	Reason          string         `json:"reason,omitempty"`
 	PrimaryKeys     map[string]any `json:"primary_keys,omitempty"`
-	// [Query] - This is the query that we have observed from the source.
-	Query string `json:"query,omitempty"`
-	// [DDLEvent] - These are the parsed ANTLR events from the DDL query.
-	DDLEvent          []map[string]any `json:"ddl_event,omitempty"`
-	EncryptionKeyUUID string           `json:"encryption_key_uuid,omitempty"`
-	EncryptionKeyName string           `json:"encryption_key_name,omitempty"`
-	AWSKMSKeyARN      string           `json:"aws_kms_key_arn,omitempty"`
-
-	// Deprecated - include full error string in Error field instead
-	Details string `json:"details,omitempty"`
-}
-
-// SendEventArgs is passed by call sites to SendEvent.
-// The client fills in config-level and metadata fields automatically.
-type SendEventArgs struct {
-	Error           string
-	Table           string
-	Schema          string
-	Database        string
-	Topic           string
-	RowsWritten     int64
-	DurationSeconds float64
-	Reason          string
-	PrimaryKeys     map[string]any
 
 	// DDL related properties:
-	Query    string
-	DDLEvent []map[string]any
+	Query string `json:"query,omitempty"`
+	// DDLEvent contains the parsed ANTLR events from the DDL query.
+	DDLEvent []map[string]any `json:"ddl_event,omitempty"`
 
 	// DEK related properties:
-	EncryptionKeyUUID string
-	EncryptionKeyName string
-	AWSKMSKeyARN      string
+	EncryptionKeyUUID string `json:"encryption_key_uuid,omitempty"`
+	EncryptionKeyName string `json:"encryption_key_name,omitempty"`
+	AWSKMSKeyARN      string `json:"aws_kms_key_arn,omitempty"`
+}
+
+// Scrub returns a copy with sensitive string fields redacted.
+func (e EventProperties) Scrub() EventProperties {
+	e.Error = redact.ScrubString(e.Error)
+	e.Database = redact.ScrubString(e.Database)
+	e.Table = redact.ScrubString(e.Table)
+	e.Schema = redact.ScrubString(e.Schema)
+	e.Topic = redact.ScrubString(e.Topic)
+	e.Reason = redact.ScrubString(e.Reason)
+	return e
 }
