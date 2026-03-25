@@ -20,6 +20,8 @@ const (
 	TopicExistsPollInterval = 5 * time.Minute
 )
 
+var ErrNoMessages = errors.New("no messages found")
+
 type ctxKey string
 
 func BuildContextKey(topic string) ctxKey {
@@ -105,7 +107,7 @@ func (f *FranzGoConsumer) FetchMessage(ctx context.Context) (artie.Message, erro
 
 	f.currentIter = fetches.RecordIter()
 	if f.currentIter.Done() {
-		return nil, fmt.Errorf("no messages found")
+		return nil, ErrNoMessages
 	}
 
 	record := f.currentIter.Next()
