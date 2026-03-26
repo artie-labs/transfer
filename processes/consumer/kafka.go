@@ -49,6 +49,7 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 			if err != nil {
 				whClient.SendEvent(ctx, webhooks.EventReplicationFailed, webhooks.EventProperties{
 					Error: fmt.Sprintf("Failed to start Kafka consumer: %s", err),
+					Topic: topic,
 				})
 				logger.Fatal("Failed to get consumer from context", slog.Any("err", err))
 			}
@@ -57,6 +58,7 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 				if err := kafkaConsumer.WaitForTopic(ctx); err != nil {
 					whClient.SendEvent(ctx, webhooks.EventReplicationFailed, webhooks.EventProperties{
 						Error: fmt.Sprintf("Failed waiting for Kafka topic to exist: %s", err),
+						Topic: topic,
 					})
 					logger.Fatal("Failed waiting for topic to exist", slog.Any("err", err), slog.String("topic", topic))
 				}
