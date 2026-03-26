@@ -24,6 +24,9 @@ import (
 func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client, whClient *webhooks.Client) {
 	encryptionKey, err := cfg.SharedDestinationSettings.BuildEncryptionKey(ctx)
 	if err != nil {
+		whClient.SendEvent(ctx, webhooks.EventReplicationFailed, webhooks.EventProperties{
+			Error: fmt.Sprintf("Failed to build encryption key: %s", err),
+		})
 		logger.Fatal("Failed to build encryption key", slog.Any("err", err))
 	}
 
@@ -44,11 +47,17 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 			defer logger.RecoverFatal()
 			kafkaConsumer, err := kafkalib.GetConsumerFromContext(ctx, topic)
 			if err != nil {
+				whClient.SendEvent(ctx, webhooks.EventReplicationFailed, webhooks.EventProperties{
+					Error: fmt.Sprintf("Failed to start Kafka consumer: %s", err),
+				})
 				logger.Fatal("Failed to get consumer from context", slog.Any("err", err))
 			}
 
 			if cfg.Kafka.WaitForTopics {
 				if err := kafkaConsumer.WaitForTopic(ctx); err != nil {
+					whClient.SendEvent(ctx, webhooks.EventReplicationFailed, webhooks.EventProperties{
+						Error: fmt.Sprintf("Failed waiting for Kafka topic to exist: %s", err),
+					})
 					logger.Fatal("Failed waiting for topic to exist", slog.Any("err", err), slog.String("topic", topic))
 				}
 			}
@@ -87,7 +96,11 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 						time.Sleep(500 * time.Millisecond)
 						continue
 					} else {
-						logger.Fatal("Failed to process message", slog.Any("err", err), slog.String("topic", topic))
+						whClient.SendEvent(ctx, webhooks.EventReplicationFailed, webhooks.EventProperties{
+							Error: fmt.Sprintf("Failed to fetch and process message: %s", err),
+							Topic: topic,
+						})
+						logger.Fatal("Failed to fetch and process message", slog.Any("err", err), slog.String("topic", topic))
 					}
 				}
 			}
