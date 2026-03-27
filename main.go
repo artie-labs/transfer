@@ -39,6 +39,11 @@ func main() {
 	}
 
 	if err != nil {
+		if whClient != nil {
+			whClient.SendEvent(ctx, webhooks.EventReplicationFailed, webhooks.EventProperties{
+				Error: fmt.Sprintf("Failed to initialize: %s", err),
+			})
+		}
 		logger.Fatal("Failed to initialize config", slog.Any("err", err))
 	}
 
@@ -52,12 +57,18 @@ func main() {
 	if value := os.Getenv("MAX_INIT_SLEEP_SECONDS"); value != "" {
 		castedValue, err := strconv.ParseInt(value, 10, 64)
 		if err != nil {
-			logger.Fatal("Failed to parse sleep duration", slog.Any("err", err), slog.String("value", value))
+			whClient.SendEvent(ctx, webhooks.EventReplicationFailed, webhooks.EventProperties{
+				Error: fmt.Sprintf("Failed to parse max init sleep duration: %s", err),
+			})
+			logger.Fatal("Failed to parse max init sleep duration", slog.Any("err", err), slog.String("value", value))
 		}
 
 		randomSeconds, err := cryptography.RandomInt64n(castedValue)
 		if err != nil {
-			logger.Fatal("Failed to generate random number", slog.Any("err", err))
+			whClient.SendEvent(ctx, webhooks.EventReplicationFailed, webhooks.EventProperties{
+				Error: fmt.Sprintf("Failed to generate sleep duration: %s", err),
+			})
+			logger.Fatal("Failed to generate sleep duration", slog.Any("err", err))
 		}
 
 		duration := time.Duration(randomSeconds) * time.Second
@@ -82,7 +93,7 @@ func main() {
 
 	if sqlDest, ok := dest.(destination.SQLDestination); ok {
 		if err = sqlDest.SweepTemporaryTables(ctx); err != nil {
-			whClient.SendEvent(ctx, webhooks.EventConnectionFailed, webhooks.EventProperties{
+			whClient.SendEvent(ctx, webhooks.EventReplicationFailed, webhooks.EventProperties{
 				Error: fmt.Sprintf("Failed to clean up temporary tables: %s", err),
 			})
 			logger.Fatal("Failed to clean up temporary tables", slog.Any("err", err))
@@ -97,9 +108,15 @@ func main() {
 	case config.FranzGoClient:
 		ctx, err = kafkalib.InjectFranzGoConsumerProvidersIntoContext(ctx, settings.Config.Kafka)
 		if err != nil {
+			whClient.SendEvent(ctx, webhooks.EventReplicationFailed, webhooks.EventProperties{
+				Error: fmt.Sprintf("Failed to initialize Kafka client: %s", err),
+			})
 			logger.Fatal("Failed to inject franz-go consumer providers into context", slog.Any("err", err))
 		}
 	default:
+		whClient.SendEvent(ctx, webhooks.EventReplicationFailed, webhooks.EventProperties{
+			Error: fmt.Sprintf("Failed to initialize: Kafka client %q not supported", settings.Config.KafkaClient),
+		})
 		logger.Fatal(fmt.Sprintf("Kafka client: %q not supported", settings.Config.KafkaClient))
 	}
 
@@ -119,6 +136,9 @@ func main() {
 		case constants.Kafka:
 			consumer.StartKafkaConsumer(ctx, settings.Config, inMemDB, dest, metricsClient, whClient)
 		default:
+			whClient.SendEvent(ctx, webhooks.EventReplicationFailed, webhooks.EventProperties{
+				Error: fmt.Sprintf("Failed to initialize: message queue %q not supported", settings.Config.Queue),
+			})
 			logger.Fatal(fmt.Sprintf("Message queue: %q not supported", settings.Config.Queue))
 		}
 	}(ctx)
