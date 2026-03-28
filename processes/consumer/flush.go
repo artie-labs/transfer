@@ -101,9 +101,9 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 					"schema":   table.TopicConfig().Schema,
 					"reason":   args.Reason,
 				}
-
 				result, err := retry.WithRetriesAndResult(retryCfg, func(_ int, _ error) (flushResult, error) {
 					slog.Info("Flushing table", slog.String("tableID", table.GetTableID().String()), slog.String("reason", args.Reason))
+
 					r, err := flush(ctx, dest, table, whClient)
 					if args.ReportDBExecutionTime && args.GetExecutionTime() != nil {
 						r.Duration = time.Since(*args.GetExecutionTime())
@@ -114,10 +114,14 @@ func FlushSingleTopic(ctx context.Context, inMemDB *models.DatabaseData, dest de
 				})
 				if err != nil {
 					tags["what"] = result.What
+					metricsClient.Incr("flush.retry_exhausted", map[string]string{
+						"mode":   tags["mode"],
+						"reason": tags["reason"],
+						"what":   result.What,
+					})
 					metricsClient.Timing("flush", result.Duration, tags)
 					return fmt.Errorf("failed to %s for %q: %w", action, table.GetTableID().String(), err)
 				}
-
 				// It's okay that this will get overwritten by other tables
 				// This is because MSM is only supported for a single table / topic.
 				commitOffset.Store(result.CommitOffset)
