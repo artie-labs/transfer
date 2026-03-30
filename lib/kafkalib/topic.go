@@ -179,8 +179,8 @@ type TopicConfig struct {
 	// If this is passed in, you must pass in the [SharedDestinationSettings.EncryptionPassphrase] as well.
 	ColumnsToEncrypt    []string `yaml:"columnsToEncrypt,omitempty"`
 	PrimaryKeysOverride []string `yaml:"primaryKeysOverride,omitempty"`
-	// [SkipPrimaryKeyCreation] - if true, the PRIMARY KEY constraint will not be created on the destination
-	// or staging tables. This is useful when using PrimaryKeysOverride with columns that may contain NULLs.
+	// [SkipPrimaryKeyCreation] - if enabled, we'll skip creating a primary key on the destination.
+	// This is useful when using PrimaryKeysOverride with columns that may contain NULLs.
 	SkipPrimaryKeyCreation bool `yaml:"skipPrimaryKeyCreation,omitempty"`
 
 	// [IncludePrimaryKeys] - This is used to specify an additional column that can be used as part of the primary key
