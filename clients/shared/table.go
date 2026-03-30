@@ -32,16 +32,16 @@ func getValidColumns(cols []columns.Column) []columns.Column {
 }
 
 func CreateTempTable(ctx context.Context, dest destination.SQLDestination, tableData *optimization.TableData, tc *types.DestinationTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier) error {
-	return CreateTable(ctx, dest, tableData.Mode(), tc, settings, tableID, true, tableData.ReadOnlyInMemoryCols().GetColumns())
+	return CreateTable(ctx, dest, tableData.Mode(), tc, settings, tableID, true, tableData.ReadOnlyInMemoryCols().GetColumns(), !tableData.TopicConfig().SkipPrimaryKeyCreation)
 }
 
-func CreateTable(ctx context.Context, dest destination.SQLDestination, mode config.Mode, tc *types.DestinationTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier, tempTable bool, cols []columns.Column) error {
+func CreateTable(ctx context.Context, dest destination.SQLDestination, mode config.Mode, tc *types.DestinationTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier, tempTable bool, cols []columns.Column, createPrimaryKeys bool) error {
 	cols = getValidColumns(cols)
 	if len(cols) == 0 {
 		return nil
 	}
 
-	query, err := ddl.BuildCreateTableSQL(settings, dest.Dialect(), tableID, tempTable, mode, cols)
+	query, err := ddl.BuildCreateTableSQL(settings, dest.Dialect(), tableID, tempTable, mode, cols, createPrimaryKeys)
 	if err != nil {
 		return fmt.Errorf("failed to build create table sql: %w", err)
 	}

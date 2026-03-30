@@ -58,7 +58,7 @@ func MultiStepMerge(ctx context.Context, dest destination.SQLDestination, tableD
 		)
 
 		if msmTableConfig.CreateTable() {
-			if err = CreateTable(ctx, dest, tableData.Mode(), msmTableConfig, opts.ColumnSettings, msmTableID, true, resp.TargetColumnsMissing); err != nil {
+			if err = CreateTable(ctx, dest, tableData.Mode(), msmTableConfig, opts.ColumnSettings, msmTableID, true, resp.TargetColumnsMissing, !tableData.TopicConfig().SkipPrimaryKeyCreation); err != nil {
 				return false, fmt.Errorf("failed to create table: %w", err)
 			}
 		} else {
@@ -77,7 +77,7 @@ func MultiStepMerge(ctx context.Context, dest destination.SQLDestination, tableD
 		)
 
 		if targetTableConfig.CreateTable() {
-			if err = CreateTable(ctx, dest, tableData.Mode(), targetTableConfig, opts.ColumnSettings, targetTableID, false, targetKeysMissing); err != nil {
+			if err = CreateTable(ctx, dest, tableData.Mode(), targetTableConfig, opts.ColumnSettings, targetTableID, false, targetKeysMissing, !tableData.TopicConfig().SkipPrimaryKeyCreation); err != nil {
 				return false, fmt.Errorf("failed to create table: %w", err)
 			}
 		} else {

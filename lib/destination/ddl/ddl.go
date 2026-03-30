@@ -14,11 +14,11 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func shouldCreatePrimaryKey(col columns.Column, mode config.Mode, createTable bool) bool {
-	return col.PrimaryKey() && mode == config.Replication && createTable
+func shouldCreatePrimaryKey(col columns.Column, mode config.Mode, createTable bool, createPrimaryKeys bool) bool {
+	return col.PrimaryKey() && mode == config.Replication && createTable && createPrimaryKeys
 }
 
-func BuildCreateTableSQL(settings config.SharedDestinationColumnSettings, dialect sql.Dialect, tableIdentifier sql.TableIdentifier, temporaryTable bool, mode config.Mode, columns []columns.Column) (string, error) {
+func BuildCreateTableSQL(settings config.SharedDestinationColumnSettings, dialect sql.Dialect, tableIdentifier sql.TableIdentifier, temporaryTable bool, mode config.Mode, columns []columns.Column, createPrimaryKeys bool) (string, error) {
 	if len(columns) == 0 {
 		return "", fmt.Errorf("no columns provided")
 	}
@@ -32,7 +32,7 @@ func BuildCreateTableSQL(settings config.SharedDestinationColumnSettings, dialec
 		}
 
 		colName := dialect.QuoteIdentifier(col.Name())
-		if shouldCreatePrimaryKey(col, mode, true) {
+		if shouldCreatePrimaryKey(col, mode, true, createPrimaryKeys) {
 			primaryKeys = append(primaryKeys, colName)
 		}
 

@@ -51,7 +51,7 @@ func Merge(ctx context.Context, dest destination.SQLDestination, tableData *opti
 	)
 
 	if tableConfig.CreateTable() {
-		if err = CreateTable(ctx, dest, tableData.Mode(), tableConfig, opts.ColumnSettings, tableID, false, targetKeysMissing); err != nil {
+		if err = CreateTable(ctx, dest, tableData.Mode(), tableConfig, opts.ColumnSettings, tableID, false, targetKeysMissing, !tableData.TopicConfig().SkipPrimaryKeyCreation); err != nil {
 			return fmt.Errorf("failed to create table: %w", err)
 		}
 	} else {
