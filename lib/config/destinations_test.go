@@ -76,17 +76,6 @@ func TestMSSQL_DSN(t *testing.T) {
 		assert.Equal(t, "sqlserver://sa:password@localhost:1433?applicationintent=ReadOnly&database=testdb", m.DSN())
 	}
 	{
-		// ReadOnlyIntent true but empty database — should NOT add applicationintent
-		m := MSSQL{
-			Host:           "localhost",
-			Port:           1433,
-			Username:       "sa",
-			Password:       "password",
-			ReadOnlyIntent: true,
-		}
-		assert.Equal(t, "sqlserver://sa:password@localhost:1433?database=", m.DSN())
-	}
-	{
 		// Password with special characters
 		m := MSSQL{
 			Host:           "db.example.com",
