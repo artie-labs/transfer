@@ -51,6 +51,8 @@ type MSSQL struct {
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
 	Database string `yaml:"database"`
+	// [ReadOnlyIntent] - This is used to specify the read only intent for the MSSQL job.
+	ReadOnlyIntent bool `yaml:"readOnlyIntent,omitempty"`
 }
 
 type MySQL struct {
