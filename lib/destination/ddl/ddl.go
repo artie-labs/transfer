@@ -14,7 +14,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func shouldCreatePrimaryKey(col columns.Column, mode config.Mode, createTable bool, shouldCreatePKs bool) bool {
+func shouldCreatePrimaryKey(col columns.Column, mode config.Mode, createTable, shouldCreatePKs bool) bool {
 	return col.PrimaryKey() && mode == config.Replication && createTable && shouldCreatePKs
 }
 
