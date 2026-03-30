@@ -253,7 +253,11 @@ func LoadStore(ctx context.Context, cfg config.Config) (*Store, error) {
 
 	if cfg.S3.RoleARN != "" {
 		stsClient := sts.NewFromConfig(awsConfig)
-		creds := stscreds.NewAssumeRoleProvider(stsClient, cfg.S3.RoleARN)
+		creds := stscreds.NewAssumeRoleProvider(stsClient, cfg.S3.RoleARN, func(o *stscreds.AssumeRoleOptions) {
+			if cfg.S3.ExternalID != "" {
+				o.ExternalID = &cfg.S3.ExternalID
+			}
+		})
 		awsConfig.Credentials = aws.NewCredentialsCache(creds)
 	}
 
