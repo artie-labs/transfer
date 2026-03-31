@@ -29,14 +29,14 @@ func Append(ctx context.Context, dest destination.SQLDestination, tableData *opt
 		tableData.BuildColumnsToKeep(),
 	)
 
+	columnSettings := opts.ColumnSettings
+	columnSettings.SkipPrimaryKeyCreation = tableData.TopicConfig().SkipPrimaryKeyCreation
 	if tableConfig.CreateTable() {
-		columnSettings := opts.ColumnSettings
-		columnSettings.SkipPrimaryKeyCreation = tableData.TopicConfig().SkipPrimaryKeyCreation
 		if err = CreateTable(ctx, dest, tableData.Mode(), tableConfig, columnSettings, tableID, false, targetKeysMissing); err != nil {
 			return fmt.Errorf("failed to create table: %w", err)
 		}
 	} else {
-		if err = AlterTableAddColumns(ctx, dest, tableConfig, opts.ColumnSettings, tableID, targetKeysMissing); err != nil {
+		if err = AlterTableAddColumns(ctx, dest, tableConfig, columnSettings, tableID, targetKeysMissing); err != nil {
 			return fmt.Errorf("failed to alter table: %w", err)
 		}
 	}

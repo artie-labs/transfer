@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	bqDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
-	mssqlDialect "github.com/artie-labs/transfer/clients/mssql/dialect"
 	duckDBDialect "github.com/artie-labs/transfer/clients/motherduck/dialect"
+	mssqlDialect "github.com/artie-labs/transfer/clients/mssql/dialect"
 	"github.com/artie-labs/transfer/clients/redshift/dialect"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/typing"

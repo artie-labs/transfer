@@ -64,7 +64,7 @@ func MultiStepMerge(ctx context.Context, dest destination.SQLDestination, tableD
 				return false, fmt.Errorf("failed to create table: %w", err)
 			}
 		} else {
-			if err = AlterTableAddColumns(ctx, dest, msmTableConfig, opts.ColumnSettings, msmTableID, resp.TargetColumnsMissing); err != nil {
+			if err = AlterTableAddColumns(ctx, dest, msmTableConfig, columnSettings, msmTableID, resp.TargetColumnsMissing); err != nil {
 				return false, fmt.Errorf("failed to add columns for table %q: %w", msmTableID.Table(), err)
 			}
 		}
@@ -83,7 +83,7 @@ func MultiStepMerge(ctx context.Context, dest destination.SQLDestination, tableD
 				return false, fmt.Errorf("failed to create table: %w", err)
 			}
 		} else {
-			if err = AlterTableAddColumns(ctx, dest, targetTableConfig, opts.ColumnSettings, targetTableID, targetKeysMissing); err != nil {
+			if err = AlterTableAddColumns(ctx, dest, targetTableConfig, columnSettings, targetTableID, targetKeysMissing); err != nil {
 				return false, fmt.Errorf("failed to add columns for table %q: %w", targetTableID.Table(), err)
 			}
 		}
