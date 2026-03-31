@@ -32,11 +32,12 @@ func BuildCreateTableSQL(settings config.SharedDestinationColumnSettings, dialec
 		}
 
 		colName := dialect.QuoteIdentifier(col.Name())
-		if shouldCreatePrimaryKey(col, mode, true, settings) {
+		isPk := shouldCreatePrimaryKey(col, mode, true, settings)
+		if isPk {
 			primaryKeys = append(primaryKeys, colName)
 		}
 
-		dataType, err := dialect.DataTypeForKind(col.KindDetails, col.PrimaryKey(), settings)
+		dataType, err := dialect.DataTypeForKind(col.KindDetails, isPk, settings)
 		if err != nil {
 			return "", fmt.Errorf("failed to get data type for column %q: %w", col.Name(), err)
 		}
@@ -85,7 +86,7 @@ func BuildAlterTableAddColumns(settings config.SharedDestinationColumnSettings, 
 			return nil, fmt.Errorf("received an invalid column %q", col.Name())
 		}
 
-		dataType, err := dialect.DataTypeForKind(col.KindDetails, col.PrimaryKey(), settings)
+		dataType, err := dialect.DataTypeForKind(col.KindDetails, col.PrimaryKey() && !settings.SkipPrimaryKeyCreation, settings)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get data type for column %q: %w", col.Name(), err)
 		}

@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	bqDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
+	mssqlDialect "github.com/artie-labs/transfer/clients/mssql/dialect"
 	duckDBDialect "github.com/artie-labs/transfer/clients/motherduck/dialect"
 	"github.com/artie-labs/transfer/clients/redshift/dialect"
 	"github.com/artie-labs/transfer/lib/config"
@@ -163,6 +164,17 @@ func TestBuildCreateTableSQL(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, `CREATE TABLE IF NOT EXISTS schema."table" ("pk" VARCHAR(MAX),"bar" VARCHAR(MAX));`, sql)
+	}
+	{
+		// SkipPrimaryKeyCreation should also use non-PK column types (MSSQL uses VARCHAR(MAX) for non-PK strings vs VARCHAR(900) for PK strings)
+		pk := columns.NewColumn("pk", typing.String)
+		pk.SetPrimaryKeyForTest(true)
+		sql, err := BuildCreateTableSQL(config.SharedDestinationColumnSettings{SkipPrimaryKeyCreation: true}, mssqlDialect.MSSQLDialect{}, mssqlDialect.NewTableIdentifier("schema", "table"), false, config.Replication, []columns.Column{
+			pk,
+			columns.NewColumn("bar", typing.String),
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, `CREATE TABLE [schema].[table] ([pk] VARCHAR(MAX),[bar] VARCHAR(MAX));`, sql)
 	}
 }
 
