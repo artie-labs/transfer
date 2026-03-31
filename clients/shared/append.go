@@ -30,7 +30,9 @@ func Append(ctx context.Context, dest destination.SQLDestination, tableData *opt
 	)
 
 	if tableConfig.CreateTable() {
-		if err = CreateTable(ctx, dest, tableData.Mode(), tableConfig, opts.ColumnSettings, tableID, false, targetKeysMissing, !tableData.TopicConfig().SkipPrimaryKeyCreation); err != nil {
+		columnSettings := opts.ColumnSettings
+		columnSettings.SkipPrimaryKeyCreation = tableData.TopicConfig().SkipPrimaryKeyCreation
+		if err = CreateTable(ctx, dest, tableData.Mode(), tableConfig, columnSettings, tableID, false, targetKeysMissing); err != nil {
 			return fmt.Errorf("failed to create table: %w", err)
 		}
 	} else {
