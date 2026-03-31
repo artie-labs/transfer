@@ -295,7 +295,6 @@ func TestCreateTempTable_ColumnOrder(t *testing.T) {
 		true, // temporaryTable = true
 		config.Replication,
 		tempTableCols,
-		true,
 	)
 	assert.NoError(t, err)
 
@@ -355,7 +354,6 @@ func TestCreateTempTable_ColumnOrderDiffersFromDestination(t *testing.T) {
 		true,
 		config.Replication,
 		tempTableCols,
-		true,
 	)
 	assert.NoError(t, err)
 
@@ -371,7 +369,6 @@ func TestCreateTempTable_ColumnOrderDiffersFromDestination(t *testing.T) {
 		true,
 		config.Replication,
 		destCols,
-		true,
 	)
 	assert.NoError(t, err)
 

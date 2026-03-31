@@ -21,36 +21,36 @@ func TestShouldCreatePrimaryKey(t *testing.T) {
 		{
 			// Column is not a primary key
 			col := columns.NewColumn("foo", typing.String)
-			assert.False(t, shouldCreatePrimaryKey(col, config.Replication, true, true))
+			assert.False(t, shouldCreatePrimaryKey(col, config.Replication, true, config.SharedDestinationColumnSettings{}))
 		}
 		{
 			// Column is a primary key
-			assert.True(t, shouldCreatePrimaryKey(pk, config.Replication, true, true))
+			assert.True(t, shouldCreatePrimaryKey(pk, config.Replication, true, config.SharedDestinationColumnSettings{}))
 		}
 	}
 	{
 		// False because it's history mode
 		// It should be false because we are appending rows to this table.
-		assert.False(t, shouldCreatePrimaryKey(pk, config.History, true, true))
+		assert.False(t, shouldCreatePrimaryKey(pk, config.History, true, config.SharedDestinationColumnSettings{}))
 	}
 	{
 		// False because it's not a create table operation
-		assert.False(t, shouldCreatePrimaryKey(pk, config.Replication, false, true))
+		assert.False(t, shouldCreatePrimaryKey(pk, config.Replication, false, config.SharedDestinationColumnSettings{}))
 	}
 	{
 		// True because it's a primary key, replication mode, and create table operation
-		assert.True(t, shouldCreatePrimaryKey(pk, config.Replication, true, true))
+		assert.True(t, shouldCreatePrimaryKey(pk, config.Replication, true, config.SharedDestinationColumnSettings{}))
 	}
 	{
-		// False because createPrimaryKeys is false
-		assert.False(t, shouldCreatePrimaryKey(pk, config.Replication, true, false))
+		// False because SkipPrimaryKeyCreation is true
+		assert.False(t, shouldCreatePrimaryKey(pk, config.Replication, true, config.SharedDestinationColumnSettings{SkipPrimaryKeyCreation: true}))
 	}
 }
 
 func TestBuildCreateTableSQL(t *testing.T) {
 	{
 		// No columns provided
-		_, err := BuildCreateTableSQL(config.SharedDestinationColumnSettings{}, nil, nil, false, config.Replication, []columns.Column{}, true)
+		_, err := BuildCreateTableSQL(config.SharedDestinationColumnSettings{}, nil, nil, false, config.Replication, []columns.Column{})
 		assert.ErrorContains(t, err, "no columns provided")
 	}
 	{
@@ -62,7 +62,7 @@ func TestBuildCreateTableSQL(t *testing.T) {
 				sql, err := BuildCreateTableSQL(config.SharedDestinationColumnSettings{}, dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"), false, config.Replication, []columns.Column{
 					columns.NewColumn("foo", typing.String),
 					columns.NewColumn("bar", typing.String),
-				}, true)
+				})
 				assert.NoError(t, err)
 				assert.Equal(t, `CREATE TABLE IF NOT EXISTS schema."table" ("foo" VARCHAR(MAX),"bar" VARCHAR(MAX));`, sql)
 			}
@@ -73,7 +73,7 @@ func TestBuildCreateTableSQL(t *testing.T) {
 				sql, err := BuildCreateTableSQL(config.SharedDestinationColumnSettings{}, dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"), false, config.Replication, []columns.Column{
 					pk,
 					columns.NewColumn("bar", typing.String),
-				}, true)
+				})
 				assert.NoError(t, err)
 				assert.Equal(t, `CREATE TABLE IF NOT EXISTS schema."table" ("pk" VARCHAR(MAX),"bar" VARCHAR(MAX),PRIMARY KEY ("pk"));`, sql)
 			}
@@ -88,7 +88,7 @@ func TestBuildCreateTableSQL(t *testing.T) {
 					pk1,
 					pk2,
 					columns.NewColumn("bar", typing.String),
-				}, true)
+				})
 				assert.NoError(t, err)
 				assert.Equal(t, `CREATE TABLE IF NOT EXISTS schema."table" ("pk1" VARCHAR(MAX),"pk2" VARCHAR(MAX),"bar" VARCHAR(MAX),PRIMARY KEY ("pk1", "pk2"));`, sql)
 			}
@@ -100,7 +100,7 @@ func TestBuildCreateTableSQL(t *testing.T) {
 				sql, err := BuildCreateTableSQL(config.SharedDestinationColumnSettings{}, duckDBDialect.DuckDBDialect{}, duckDBDialect.NewTableIdentifier("db", "schema", "table"), false, config.Replication, []columns.Column{
 					columns.NewColumn("foo", typing.String),
 					columns.NewColumn("bar", typing.String),
-				}, true)
+				})
 				assert.NoError(t, err)
 				assert.Equal(t, `CREATE TABLE "db"."schema"."table" ("foo" text,"bar" text);`, sql)
 			}
@@ -111,7 +111,7 @@ func TestBuildCreateTableSQL(t *testing.T) {
 				sql, err := BuildCreateTableSQL(config.SharedDestinationColumnSettings{}, duckDBDialect.DuckDBDialect{}, duckDBDialect.NewTableIdentifier("db", "schema", "table"), false, config.Replication, []columns.Column{
 					pk,
 					columns.NewColumn("bar", typing.String),
-				}, true)
+				})
 				assert.NoError(t, err)
 				assert.Equal(t, `CREATE TABLE "db"."schema"."table" ("pk" text,"bar" text);`, sql)
 			}
@@ -125,7 +125,7 @@ func TestBuildCreateTableSQL(t *testing.T) {
 					pk1,
 					pk2,
 					columns.NewColumn("bar", typing.String),
-				}, true)
+				})
 				assert.NoError(t, err)
 				assert.Equal(t, `CREATE TABLE "db"."schema"."table" ("pk1" text,"pk2" text,"bar" text);`, sql)
 			}
@@ -133,7 +133,7 @@ func TestBuildCreateTableSQL(t *testing.T) {
 				// Temporary table flag is ignored - always creates a regular table
 				sql, err := BuildCreateTableSQL(config.SharedDestinationColumnSettings{}, duckDBDialect.DuckDBDialect{}, duckDBDialect.NewTableIdentifier("db", "schema", "table"), true, config.Replication, []columns.Column{
 					columns.NewColumn("foo", typing.String),
-				}, true)
+				})
 				assert.NoError(t, err)
 				assert.Equal(t, `CREATE TABLE "db"."schema"."table" ("foo" text);`, sql)
 			}
@@ -147,20 +147,20 @@ func TestBuildCreateTableSQL(t *testing.T) {
 				sql, err := BuildCreateTableSQL(config.SharedDestinationColumnSettings{}, bqDialect.BigQueryDialect{}, bqDialect.NewTableIdentifier("projectID", "dataset", "table"), false, config.Replication, []columns.Column{
 					pk,
 					columns.NewColumn("bar", typing.String),
-				}, true)
+				})
 				assert.NoError(t, err)
 				assert.Equal(t, "CREATE TABLE IF NOT EXISTS `projectID`.`dataset`.`table` (`pk` string,`bar` string,PRIMARY KEY (`pk`) NOT ENFORCED)", sql)
 			}
 		}
 	}
 	{
-		// createPrimaryKeys = false should skip PK constraint
+		// SkipPrimaryKeyCreation should skip PK constraint
 		pk := columns.NewColumn("pk", typing.String)
 		pk.SetPrimaryKeyForTest(true)
-		sql, err := BuildCreateTableSQL(config.SharedDestinationColumnSettings{}, dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"), false, config.Replication, []columns.Column{
+		sql, err := BuildCreateTableSQL(config.SharedDestinationColumnSettings{SkipPrimaryKeyCreation: true}, dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"), false, config.Replication, []columns.Column{
 			pk,
 			columns.NewColumn("bar", typing.String),
-		}, false)
+		})
 		assert.NoError(t, err)
 		assert.Equal(t, `CREATE TABLE IF NOT EXISTS schema."table" ("pk" VARCHAR(MAX),"bar" VARCHAR(MAX));`, sql)
 	}
