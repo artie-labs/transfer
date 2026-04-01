@@ -7,6 +7,7 @@ import (
 	"github.com/artie-labs/transfer/clients/bigquery"
 	"github.com/artie-labs/transfer/clients/clickhouse"
 	"github.com/artie-labs/transfer/clients/databricks"
+	"github.com/artie-labs/transfer/clients/elasticsearch"
 	"github.com/artie-labs/transfer/clients/gcs"
 	"github.com/artie-labs/transfer/clients/iceberg"
 	"github.com/artie-labs/transfer/clients/motherduck"
@@ -62,6 +63,8 @@ func Load(ctx context.Context, cfg config.Config) (destination.Destination, erro
 	// Streaming destinations
 	case constants.Redis:
 		return redis.LoadStore(ctx, cfg)
+	case constants.Elasticsearch:
+		return elasticsearch.LoadStore(ctx, cfg)
 	case constants.SQS:
 		return sqs.LoadStore(ctx, cfg)
 	}

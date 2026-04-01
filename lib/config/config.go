@@ -64,7 +64,13 @@ func (g *GCSSettings) Validate() error {
 }
 
 func (c Config) TopicConfigs() []*kafkalib.TopicConfig {
-	return c.Kafka.TopicConfigs
+	if c.Queue == constants.Kinesis && c.Kinesis != nil {
+		return c.Kinesis.TopicConfigs
+	}
+	if c.Kafka != nil {
+		return c.Kafka.TopicConfigs
+	}
+	return nil
 }
 
 func (m Mode) String() string {
@@ -223,6 +229,14 @@ func (c Config) ValidateSQS() error {
 	return c.SQS.Validate()
 }
 
+func (c Config) ValidateElasticsearch() error {
+	if c.Output != constants.Elasticsearch {
+		return fmt.Errorf("output is not Elasticsearch, output: %q", c.Output)
+	}
+
+	return c.Elasticsearch.Validate()
+}
+
 // Validate will check the output source validity
 // It will also check if a topic exists + iterate over each topic to make sure it's valid.
 // The actual output source (like Snowflake) and CDC parser will be loaded and checked by other funcs.
@@ -281,6 +295,10 @@ func (c Config) Validate() error {
 		if err := c.ValidateSQS(); err != nil {
 			return err
 		}
+	case constants.Elasticsearch:
+		if err := c.ValidateElasticsearch(); err != nil {
+			return err
+		}
 	}
 
 	switch c.Queue {
@@ -292,6 +310,13 @@ func (c Config) Validate() error {
 		// Username and password may not be required if this is connecting to a private Kafka cluster.
 		if stringutil.Empty(c.Kafka.GroupID, c.Kafka.BootstrapServer) {
 			return fmt.Errorf("kafka group or bootstrap server is empty")
+		}
+	case constants.Kinesis:
+		if c.Kinesis == nil {
+			return fmt.Errorf("kinesis config is nil")
+		}
+		if stringutil.Empty(c.Kinesis.StreamName, c.Kinesis.Region) {
+			return fmt.Errorf("kinesis streamName or region is empty")
 		}
 	}
 
