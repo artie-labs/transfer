@@ -131,6 +131,7 @@ func parseValue(value any, col columns.Column) (any, error) {
 
 			return arrayStr, nil
 		}
+		return value, nil
 	case typing.String.Kind:
 		str, err := typingconverters.StringConverter{}.ConvertNew(value)
 		if err != nil {
