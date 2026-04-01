@@ -111,14 +111,20 @@ func mapArtieTypeToElasticsearch(col typing.KindDetails) string {
 		return "keyword"
 	case typing.Integer.Kind:
 		return "integer"
-	case typing.Float.Kind, typing.EDecimal.Kind:
+	case typing.Float.Kind:
 		return "float"
+	case typing.EDecimal.Kind:
+		return "double"
 	case typing.Boolean.Kind:
 		return "boolean"
-	case typing.TimestampNTZ.Kind, typing.TimestampTZ.Kind, typing.Date.Kind, typing.TimeKindDetails.Kind:
+	case typing.TimestampNTZ.Kind, typing.TimestampTZ.Kind, typing.Date.Kind:
 		return "date"
-	case typing.Struct.Kind, typing.Bytes.Kind:
+	case typing.TimeKindDetails.Kind:
+		return "keyword"
+	case typing.Struct.Kind:
 		return "object"
+	case typing.Bytes.Kind:
+		return "binary"
 	default:
 		return "keyword"
 	}
@@ -265,6 +271,9 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData, wh
 		recordsWritten++
 	}
 
+	if buf.Len() == 0 {
+		return false, nil
+	}
 	res, err := s.client.Bulk(bytes.NewReader(buf.Bytes()), s.client.Bulk.WithContext(ctx))
 	if err != nil {
 		return false, fmt.Errorf("bulk request: %w", err)
