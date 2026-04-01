@@ -50,6 +50,8 @@ func MultiStepMerge(ctx context.Context, dest destination.SQLDestination, tableD
 	if err != nil {
 		return false, fmt.Errorf("failed to get table config: %w", err)
 	}
+	columnSettings := opts.ColumnSettings
+	columnSettings.SkipPrimaryKeyCreation = tableData.TopicConfig().SkipPrimaryKeyCreation
 	{
 		// Apply schema evolution for the MSM table
 		resp := columns.Diff(
@@ -58,11 +60,11 @@ func MultiStepMerge(ctx context.Context, dest destination.SQLDestination, tableD
 		)
 
 		if msmTableConfig.CreateTable() {
-			if err = CreateTable(ctx, dest, tableData.Mode(), msmTableConfig, opts.ColumnSettings, msmTableID, true, resp.TargetColumnsMissing); err != nil {
+			if err = CreateTable(ctx, dest, tableData.Mode(), msmTableConfig, columnSettings, msmTableID, true, resp.TargetColumnsMissing); err != nil {
 				return false, fmt.Errorf("failed to create table: %w", err)
 			}
 		} else {
-			if err = AlterTableAddColumns(ctx, dest, msmTableConfig, opts.ColumnSettings, msmTableID, resp.TargetColumnsMissing); err != nil {
+			if err = AlterTableAddColumns(ctx, dest, msmTableConfig, columnSettings, msmTableID, resp.TargetColumnsMissing); err != nil {
 				return false, fmt.Errorf("failed to add columns for table %q: %w", msmTableID.Table(), err)
 			}
 		}
@@ -77,11 +79,11 @@ func MultiStepMerge(ctx context.Context, dest destination.SQLDestination, tableD
 		)
 
 		if targetTableConfig.CreateTable() {
-			if err = CreateTable(ctx, dest, tableData.Mode(), targetTableConfig, opts.ColumnSettings, targetTableID, false, targetKeysMissing); err != nil {
+			if err = CreateTable(ctx, dest, tableData.Mode(), targetTableConfig, columnSettings, targetTableID, false, targetKeysMissing); err != nil {
 				return false, fmt.Errorf("failed to create table: %w", err)
 			}
 		} else {
-			if err = AlterTableAddColumns(ctx, dest, targetTableConfig, opts.ColumnSettings, targetTableID, targetKeysMissing); err != nil {
+			if err = AlterTableAddColumns(ctx, dest, targetTableConfig, columnSettings, targetTableID, targetKeysMissing); err != nil {
 				return false, fmt.Errorf("failed to add columns for table %q: %w", targetTableID.Table(), err)
 			}
 		}

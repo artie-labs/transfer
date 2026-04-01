@@ -50,12 +50,14 @@ func Merge(ctx context.Context, dest destination.SQLDestination, tableData *opti
 		tableData.BuildColumnsToKeep(),
 	)
 
+	columnSettings := opts.ColumnSettings
+	columnSettings.SkipPrimaryKeyCreation = tableData.TopicConfig().SkipPrimaryKeyCreation
 	if tableConfig.CreateTable() {
-		if err = CreateTable(ctx, dest, tableData.Mode(), tableConfig, opts.ColumnSettings, tableID, false, targetKeysMissing); err != nil {
+		if err = CreateTable(ctx, dest, tableData.Mode(), tableConfig, columnSettings, tableID, false, targetKeysMissing); err != nil {
 			return fmt.Errorf("failed to create table: %w", err)
 		}
 	} else {
-		if err = AlterTableAddColumns(ctx, dest, tableConfig, opts.ColumnSettings, tableID, targetKeysMissing); err != nil {
+		if err = AlterTableAddColumns(ctx, dest, tableConfig, columnSettings, tableID, targetKeysMissing); err != nil {
 			return fmt.Errorf("failed to add columns for table %q: %w", tableID.Table(), err)
 		}
 	}
