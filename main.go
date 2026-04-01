@@ -135,6 +135,8 @@ func main() {
 		switch settings.Config.Queue {
 		case constants.Kafka:
 			consumer.StartKafkaConsumer(ctx, settings.Config, inMemDB, dest, metricsClient, whClient)
+		case constants.Kinesis:
+			consumer.StartKinesisConsumer(ctx, settings.Config, inMemDB, dest, metricsClient, whClient)
 		default:
 			whClient.SendEvent(ctx, webhooks.EventReplicationFailed, webhooks.EventProperties{
 				Error: fmt.Sprintf("Failed to initialize: message queue %q not supported", settings.Config.Queue),
