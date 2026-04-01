@@ -46,6 +46,66 @@ func TestParseValue_String(t *testing.T) {
 	}
 }
 
+func TestParseValue_Array(t *testing.T) {
+	{
+		// nil value
+		col := columns.NewColumn("tags", typing.Array)
+		result, err := parseValue(nil, col)
+		assert.NoError(t, err)
+		assert.Nil(t, result)
+	}
+	{
+		// OptionalArrayKind not set - should cast to text ([]string)
+		col := columns.NewColumn("tags", typing.Array)
+		result, err := parseValue([]any{"a", "b", "c"}, col)
+		assert.NoError(t, err)
+		assert.Equal(t, []string{"a", "b", "c"}, result)
+	}
+	{
+		// OptionalArrayKind is string - should cast to text ([]string)
+		col := columns.NewColumn("tags", typing.KindDetails{Kind: typing.Array.Kind, OptionalArrayKind: &typing.String})
+		result, err := parseValue([]any{"hello", "world"}, col)
+		assert.NoError(t, err)
+		assert.Equal(t, []string{"hello", "world"}, result)
+	}
+	{
+		// OptionalArrayKind is integer - should return value as-is
+		intKind := typing.Integer
+		col := columns.NewColumn("ids", typing.KindDetails{Kind: typing.Array.Kind, OptionalArrayKind: &intKind})
+		result, err := parseValue([]any{1, 2, 3}, col)
+		assert.NoError(t, err)
+		assert.Equal(t, []any{1, 2, 3}, result)
+	}
+	{
+		// OptionalArrayKind is boolean - should return value as-is
+		col := columns.NewColumn("flags", typing.KindDetails{Kind: typing.Array.Kind, OptionalArrayKind: &typing.Boolean})
+		result, err := parseValue([]any{true, false}, col)
+		assert.NoError(t, err)
+		assert.Equal(t, []any{true, false}, result)
+	}
+	{
+		// OptionalArrayKind is float - should return value as-is
+		col := columns.NewColumn("scores", typing.KindDetails{Kind: typing.Array.Kind, OptionalArrayKind: &typing.Float})
+		result, err := parseValue([]any{1.1, 2.2}, col)
+		assert.NoError(t, err)
+		assert.Equal(t, []any{1.1, 2.2}, result)
+	}
+	{
+		// Non-string elements with text array should be converted to strings
+		col := columns.NewColumn("mixed", typing.Array)
+		result, err := parseValue([]any{42, true, 3.14}, col)
+		assert.NoError(t, err)
+		assert.Equal(t, []string{"42", "true", "3.14"}, result)
+	}
+	{
+		// Single non-slice value with text array should be wrapped and converted
+		col := columns.NewColumn("single", typing.Array)
+		result, err := parseValue("solo", col)
+		assert.NoError(t, err)
+		assert.Equal(t, []string{"solo"}, result)
+	}
+}
+
 func TestParseValue_Bytes(t *testing.T) {
 	col := columns.NewColumn("data", typing.Bytes)
 
