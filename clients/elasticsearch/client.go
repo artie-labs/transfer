@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net/url"
 	"strings"
 
 	"github.com/elastic/go-elasticsearch/v8"
@@ -50,10 +51,11 @@ func buildDocumentID(row optimization.Row, primaryKeys []string) string {
 	if len(primaryKeys) == 0 {
 		return ""
 	}
-	var parts []string
+	parts := make([]string, 0, len(primaryKeys))
 	for _, pk := range primaryKeys {
 		if val, ok := row.GetValue(pk); ok && val != nil {
-			parts = append(parts, fmt.Sprintf("%v", val))
+			// URL-encode each part so values containing the separator don't collide
+			parts = append(parts, url.QueryEscape(fmt.Sprintf("%v", val)))
 		} else {
 			parts = append(parts, "null")
 		}
