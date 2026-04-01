@@ -112,7 +112,7 @@ func mapArtieTypeToElasticsearch(col typing.KindDetails) string {
 	case typing.Integer.Kind:
 		return "integer"
 	case typing.Float.Kind:
-		return "float"
+		return "double"
 	case typing.EDecimal.Kind:
 		return "double"
 	case typing.Boolean.Kind:
