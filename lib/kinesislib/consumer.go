@@ -44,7 +44,7 @@ type Consumer struct {
 
 	mu            sync.Mutex
 	shards        []*shardReader
-	shardIndexMap map[string]int
+	shardIndexMap map[string]int // used in tests to verify stable partition mapping
 
 	currentShardIdx int
 }
@@ -129,11 +129,15 @@ func (c *Consumer) Close() error {
 }
 
 func (c *Consumer) FetchMessage(ctx context.Context) (artie.Message, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
+	nilCount := 0
 	for {
-		// Round-robin shards
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+		}
+
+		c.mu.Lock()
 		reader := c.shards[c.currentShardIdx]
 
 		if len(reader.records) > 0 {
@@ -151,34 +155,54 @@ func (c *Consumer) FetchMessage(ctx context.Context) (artie.Message, error) {
 				highWater:   reader.millisBehind,
 				publishTime: aws.ToTime(rec.ApproximateArrivalTimestamp),
 			}
+			c.mu.Unlock()
 			return msg, nil
 		}
 
 		if reader.iterator == nil {
-			// Shard closed, move to next
+			// Shard closed, move to next.
+			// If all shards are closed, sleep to avoid infinite loop.
+			nilCount++
+			if nilCount >= len(c.shards) {
+				c.mu.Unlock()
+				time.Sleep(1 * time.Second)
+				nilCount = 0
+				continue
+			}
 			c.currentShardIdx = (c.currentShardIdx + 1) % len(c.shards)
+			c.mu.Unlock()
 			continue
 		}
+		nilCount = 0
 
-		// Fetch
+		// Fetch preparation. We unlock before the network call to avoid blocking other operations.
+		iterator := reader.iterator
+		shardID := reader.shardID
+		currIdx := c.currentShardIdx
+		c.mu.Unlock()
+
 		res, err := c.client.GetRecords(ctx, &kinesis.GetRecordsInput{
-			ShardIterator: reader.iterator,
+			ShardIterator: iterator,
 		})
 		if err != nil {
-			return nil, fmt.Errorf("get records shard %s: %w", reader.shardID, err)
+			return nil, fmt.Errorf("get records shard %s: %w", shardID, err)
 		}
 
+		c.mu.Lock()
+		reader = c.shards[currIdx]
 		reader.iterator = res.NextShardIterator
 		reader.millisBehind = aws.ToInt64(res.MillisBehindLatest)
 
 		if len(res.Records) == 0 {
-			// Sleep on empty response to avoid throttling
-			time.Sleep(1 * time.Second)
+			// Sleep on empty response to avoid throttling. Unlock before sleep.
 			c.currentShardIdx = (c.currentShardIdx + 1) % len(c.shards)
+			c.mu.Unlock()
+			time.Sleep(1 * time.Second)
 			continue
 		}
 
 		reader.records = res.Records
+		c.mu.Unlock()
 	}
 }
 
