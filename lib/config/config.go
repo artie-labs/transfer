@@ -293,6 +293,10 @@ func (c Config) Validate() error {
 		if stringutil.Empty(c.Kafka.GroupID, c.Kafka.BootstrapServer) {
 			return fmt.Errorf("kafka group or bootstrap server is empty")
 		}
+	case constants.Kinesis:
+		if err := c.Kinesis.Validate(); err != nil {
+			return err
+		}
 	}
 
 	tcs := c.TopicConfigs()
