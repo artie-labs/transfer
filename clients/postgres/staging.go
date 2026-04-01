@@ -12,6 +12,7 @@ import (
 	"github.com/artie-labs/transfer/clients/bigquery/converters"
 	"github.com/artie-labs/transfer/clients/postgres/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
+	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
@@ -119,6 +120,17 @@ func parseValue(value any, col columns.Column) (any, error) {
 	}
 
 	switch col.KindDetails.Kind {
+	case typing.Array.Kind:
+		// Check nested to see if it's set or text[]
+		shouldCastToText := col.KindDetails.OptionalArrayKind == nil || col.KindDetails.OptionalArrayKind.Kind == typing.String.Kind
+		if shouldCastToText {
+			arrayStr, err := array.InterfaceToArrayString(value, true)
+			if err != nil {
+				return nil, fmt.Errorf("failed to convert array: %w", err)
+			}
+
+			return arrayStr, nil
+		}
 	case typing.String.Kind:
 		str, err := typingconverters.StringConverter{}.ConvertNew(value)
 		if err != nil {
