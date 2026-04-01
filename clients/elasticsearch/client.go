@@ -99,25 +99,25 @@ func (s *Store) DropTable(ctx context.Context, tableID sqllib.TableIdentifier) e
 	return nil
 }
 
-func mapArtieTypeToElasticsearch(kind string) string {
-	switch kind {
+func mapArtieTypeToElasticsearch(col typing.KindDetails) string {
+	// Check for BIGINT before falling through to the generic int case. BIGINT columns have
+	// Kind == "int" but OptionalIntegerKind == BigIntegerKind, so we must inspect both.
+	if col.Kind == typing.Integer.Kind && col.OptionalIntegerKind != nil && *col.OptionalIntegerKind == typing.BigIntegerKind {
+		return "long"
+	}
+
+	switch col.Kind {
 	case typing.Invalid.Kind, typing.String.Kind, typing.Array.Kind:
 		return "keyword"
-	case "text":
-		return "text"
 	case typing.Integer.Kind:
 		return "integer"
-	case "long", "bigint":
-		return "long"
 	case typing.Float.Kind, typing.EDecimal.Kind:
 		return "float"
-	case "double":
-		return "double"
 	case typing.Boolean.Kind:
 		return "boolean"
-	case typing.TimestampNTZ.Kind, typing.TimestampTZ.Kind, typing.Date.Kind, "time", "timestamp":
+	case typing.TimestampNTZ.Kind, typing.TimestampTZ.Kind, typing.Date.Kind, typing.TimeKindDetails.Kind:
 		return "date"
-	case "json", typing.Struct.Kind:
+	case typing.Struct.Kind, typing.Bytes.Kind:
 		return "object"
 	default:
 		return "keyword"
@@ -128,7 +128,7 @@ func (s *Store) CreateTable(ctx context.Context, tableID sqllib.TableIdentifier,
 	properties := make(map[string]any)
 	for _, col := range tableData.ReadOnlyInMemoryCols().ValidColumns() {
 		properties[col.Name()] = map[string]string{
-			"type": mapArtieTypeToElasticsearch(col.KindDetails.Kind),
+			"type": mapArtieTypeToElasticsearch(col.KindDetails),
 		}
 	}
 
@@ -136,9 +136,20 @@ func (s *Store) CreateTable(ctx context.Context, tableID sqllib.TableIdentifier,
 		"properties": properties,
 	}
 
+	// Default to 1 shard and 1 replica if not explicitly configured.
+	// Elasticsearch rejects index creation when number_of_shards is 0.
+	numShards := s.config.Elasticsearch.IndexSettings.NumberOfShards
+	if numShards <= 0 {
+		numShards = 1
+	}
+	numReplicas := s.config.Elasticsearch.IndexSettings.NumberOfReplicas
+	if numReplicas < 0 {
+		numReplicas = 1
+	}
+
 	settings := map[string]any{
-		"number_of_shards":   s.config.Elasticsearch.IndexSettings.NumberOfShards,
-		"number_of_replicas": s.config.Elasticsearch.IndexSettings.NumberOfReplicas,
+		"number_of_shards":   numShards,
+		"number_of_replicas": numReplicas,
 	}
 
 	body := map[string]any{
@@ -202,19 +213,33 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData, wh
 	var recordsWritten int
 
 	for _, row := range rows {
-		meta := make(map[string]any)
+		docID := buildDocumentID(row, pks)
 		action := map[string]any{
 			"_index": esIdent.Name(),
 		}
-
-		docID := buildDocumentID(row, pks)
 		if docID != "" {
 			action["_id"] = docID
 		}
 
-		meta["index"] = action
+		// Hard-delete: emit a bulk delete action instead of re-indexing the document.
+		delVal, _ := row.GetValue(constants.DeleteColumnMarker)
+		isDelete, _ := delVal.(bool)
+		if isDelete {
+			if docID == "" {
+				// Can't delete without an _id — skip silently.
+				continue
+			}
+			metaJSON, err := json.Marshal(map[string]any{"delete": action})
+			if err != nil {
+				return false, fmt.Errorf("marshal delete meta: %w", err)
+			}
+			buf.Write(metaJSON)
+			buf.WriteByte('\n')
+			recordsWritten++
+			continue
+		}
 
-		metaJSON, err := json.Marshal(meta)
+		metaJSON, err := json.Marshal(map[string]any{"index": action})
 		if err != nil {
 			return false, fmt.Errorf("marshal meta: %w", err)
 		}
@@ -223,6 +248,9 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData, wh
 
 		rowData := make(map[string]any)
 		for _, col := range cols {
+			if col.Name() == constants.DeleteColumnMarker {
+				continue
+			}
 			value, _ := row.GetValue(col.Name())
 			rowData[col.Name()] = value
 		}
