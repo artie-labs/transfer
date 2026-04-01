@@ -37,7 +37,7 @@ func BuildCreateTableSQL(settings config.SharedDestinationColumnSettings, dialec
 			primaryKeys = append(primaryKeys, colName)
 		}
 
-		dataType, err := dialect.DataTypeForKind(col.KindDetails, isPk, settings)
+		dataType, err := dialect.DataTypeForKind(col.KindDetails, col.PrimaryKey() && !settings.SkipPrimaryKeyCreation, settings)
 		if err != nil {
 			return "", fmt.Errorf("failed to get data type for column %q: %w", col.Name(), err)
 		}
