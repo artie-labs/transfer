@@ -44,7 +44,7 @@ type Consumer struct {
 
 	mu            sync.Mutex
 	shards        []*shardReader
-	shardIndexMap map[string]int // used in tests to verify stable partition mapping
+	shardIndexMap map[string]int // shardIndexMap is used by tests to verify stable shard-to-partition mapping.
 
 	currentShardIdx int
 }
