@@ -152,7 +152,7 @@ func (c *Consumer) FetchMessage(ctx context.Context) (artie.Message, error) {
 				offset:      reader.offset,
 				key:         []byte(aws.ToString(rec.PartitionKey)),
 				value:       rec.Data,
-				highWater:   reader.millisBehind,
+				highWater:   reader.offset,
 				publishTime: aws.ToTime(rec.ApproximateArrivalTimestamp),
 			}
 			c.mu.Unlock()

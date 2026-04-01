@@ -64,7 +64,13 @@ func (g *GCSSettings) Validate() error {
 }
 
 func (c Config) TopicConfigs() []*kafkalib.TopicConfig {
-	return c.Kafka.TopicConfigs
+	if c.Queue == constants.Kinesis && c.Kinesis != nil {
+		return c.Kinesis.TopicConfigs
+	}
+	if c.Kafka != nil {
+		return c.Kafka.TopicConfigs
+	}
+	return nil
 }
 
 func (m Mode) String() string {
