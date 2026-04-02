@@ -87,6 +87,11 @@ func (e *EventsTestSuite) TestBuildPrimaryKeys() {
 		pks := buildPrimaryKeys(kafkalib.TopicConfig{PrimaryKeysOverride: []string{}, IncludePrimaryKeys: []string{"id2"}}, map[string]any{"id": "123", "id2": "456"}, nil)
 		assert.ElementsMatch(e.T(), []string{"id", "id2"}, pks)
 	}
+	{
+		// Include primary keys and primary keys override
+		pks := buildPrimaryKeys(kafkalib.TopicConfig{PrimaryKeysOverride: []string{"id"}, IncludePrimaryKeys: []string{"id2"}}, map[string]any{"id": "123", "id2": "456"}, nil)
+		assert.ElementsMatch(e.T(), []string{"id", "id2"}, pks)
+	}
 }
 
 func (e *EventsTestSuite) TestTransformData() {
