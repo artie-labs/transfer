@@ -10,6 +10,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/cryptography"
 	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/lib/maputil"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/converters/primitives"
@@ -114,28 +115,24 @@ func setSchemaColumnsToString(schema map[string]typing.KindDetails, columnNames 
 }
 
 func buildPrimaryKeys(tc kafkalib.TopicConfig, pkMap map[string]any, reservedColumns map[string]bool) []string {
-	var pks []string
+	orderedMap := maputil.NewOrderedMap[struct{}](true)
 	if len(tc.PrimaryKeysOverride) > 0 {
 		for _, pk := range tc.PrimaryKeysOverride {
-			pks = append(pks, columns.EscapeName(pk, reservedColumns))
+			orderedMap.Add(pk, struct{}{})
 		}
-
-		return pks
 	}
 
 	// [pkMap] is already escaped.
 	for pk := range pkMap {
-		pks = append(pks, pk)
+		orderedMap.Add(pk, struct{}{})
 	}
 
 	for _, pk := range tc.IncludePrimaryKeys {
 		escapedPk := columns.EscapeName(pk, reservedColumns)
-		if _, ok := pkMap[escapedPk]; !ok {
-			pks = append(pks, escapedPk)
-		}
+		orderedMap.Add(escapedPk, struct{}{})
 	}
 
-	return pks
+	return orderedMap.Keys()
 }
 
 func transformData(data map[string]any, tc kafkalib.TopicConfig, encryptionKey []byte) (map[string]any, error) {
