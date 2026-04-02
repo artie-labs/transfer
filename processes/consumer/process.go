@@ -49,10 +49,18 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 
 	tags["database"] = topicConfig.tc.Database
 	tags["schema"] = topicConfig.tc.Schema
-	pkMap, err := topicConfig.GetPrimaryKey(p.Msg.Key(), topicConfig.tc, reservedColumns)
-	if err != nil {
-		tags["what"] = "marshall_pk_err"
-		return cdc.TableID{}, fmt.Errorf("cannot unmarshal key %q: %w", string(p.Msg.Key()), err)
+	var pkMap map[string]any
+	if len(p.Msg.Key()) == 0 && (len(topicConfig.tc.PrimaryKeysOverride) > 0 || len(topicConfig.tc.IncludePrimaryKeys) > 0) {
+		// If the message key is empty (e.g. table without a primary key) but primary keys are specified via
+		// PrimaryKeysOverride or IncludePrimaryKeys, the values will be extracted from the event payload instead.
+		pkMap = map[string]any{}
+	} else {
+		var err error
+		pkMap, err = topicConfig.GetPrimaryKey(p.Msg.Key(), topicConfig.tc, reservedColumns)
+		if err != nil {
+			tags["what"] = "marshall_pk_err"
+			return cdc.TableID{}, fmt.Errorf("cannot unmarshal key %q: %w", string(p.Msg.Key()), err)
+		}
 	}
 
 	_event, err := topicConfig.GetEventFromBytes(p.Msg.Value())

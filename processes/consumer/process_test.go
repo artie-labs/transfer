@@ -208,6 +208,106 @@ func TestProcessMessageFailures(t *testing.T) {
 	}
 }
 
+func TestProcessMessageNilKeyWithPrimaryKeyOverride(t *testing.T) {
+	cfg := config.Config{
+		FlushIntervalSeconds: 10,
+		BufferRows:           10,
+		FlushSizeKb:          900,
+	}
+	ctx := t.Context()
+	memDB := models.NewMemoryDB()
+
+	var mgo mongo.Debezium
+	tc := kafkalib.TopicConfig{
+		Database:            testDB,
+		TableName:           table,
+		Schema:              schema,
+		Topic:               "foo",
+		CDCFormat:           "",
+		CDCKeyFormat:        "org.apache.kafka.connect.storage.StringConverter",
+		PrimaryKeysOverride: []string{"_id"},
+	}
+
+	tcFmtMap := NewTcFmtMap()
+	tcFmtMap.Add(tc.Topic, NewTopicConfigFormatter(tc, &mgo))
+
+	val := `{
+	"schema": {
+		"type": "struct",
+		"fields": [{
+			"type": "struct",
+			"fields": [{
+				"type": "int32",
+				"optional": false,
+				"default": 0,
+				"field": "id"
+			}, {
+				"type": "string",
+				"optional": false,
+				"field": "first_name"
+			}, {
+				"type": "string",
+				"optional": false,
+				"field": "last_name"
+			}, {
+				"type": "string",
+				"optional": false,
+				"field": "email"
+			}],
+			"optional": true,
+			"name": "dbserver1.inventory.customers.Value",
+			"field": "after"
+		}]
+	},
+	"payload": {
+		"before": null,
+		"after": "{\"_id\": \"1004\"},\"first_name\": \"Anne\",\"last_name\": \"Kretchmar\",\"email\": \"annek@noanswer.org\"}",
+		"patch": null,
+		"filter": null,
+		"updateDescription": null,
+		"source": {
+			"version": "2.0.0.Final",
+			"connector": "mongodb",
+			"name": "dbserver1",
+			"ts_ms": 1668753321000,
+			"snapshot": "true",
+			"db": "inventory",
+			"sequence": null,
+			"rs": "rs0",
+			"collection": "customers",
+			"ord": 29,
+			"lsid": null,
+			"txnNumber": null
+		},
+		"op": "r",
+		"ts_ms": 1668753329387,
+		"transaction": null
+	}
+}`
+
+	kafkaMessage := kgo.Record{
+		Topic:     tc.Topic,
+		Partition: 0,
+		Offset:    0,
+		Key:       nil, // nil key, simulating a table without a primary key
+		Value:     []byte(val),
+		Timestamp: time.Time{},
+	}
+
+	args := processArgs{
+		Msg:                    artie.NewFranzGoMessage(kafkaMessage, 0),
+		GroupID:                "foo",
+		TopicToConfigFormatMap: tcFmtMap,
+	}
+
+	actualTableID, err := args.process(ctx, cfg, memDB, &mocks.FakeDestination{}, metrics.NullMetricsProvider{})
+	assert.NoError(t, err)
+	assert.Equal(t, tableID, actualTableID)
+
+	td := memDB.GetOrCreateTableData(tableID, tc.Topic)
+	assert.Equal(t, 1, int(td.NumberOfRows()))
+}
+
 func TestProcessMessageSkip(t *testing.T) {
 	cfg := config.Config{
 		FlushIntervalSeconds: 10,
