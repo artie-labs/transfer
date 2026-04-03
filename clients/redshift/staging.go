@@ -2,9 +2,11 @@ package redshift
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 
 	"github.com/artie-labs/transfer/clients/redshift/dialect"
 	"github.com/artie-labs/transfer/clients/shared"
@@ -67,7 +69,11 @@ func (s *Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.T
 	}
 
 	copyStmt := s.dialect().BuildCopyStatement(tableID, cols, s3Uri, credentialsClause)
-	if err = retry.WithRetries(s.retryCfg, func(attempt int, _ error) error {
+	copyRetryCfg, err := retry.NewJitterRetryConfig(1_000, 30_000, 10, isRetryableCopyError)
+	if err != nil {
+		return fmt.Errorf("failed to create copy retry config: %w", err)
+	}
+	if err = retry.WithRetries(copyRetryCfg, func(attempt int, _ error) error {
 		if attempt > 0 {
 			// clear the table before retrying.
 			if _, truncateErr := s.ExecContext(ctx, s.Dialect().BuildTruncateTableQuery(tableID)); truncateErr != nil {
@@ -199,4 +205,14 @@ func (s *Store) ValidateStagingTableSchema(ctx context.Context, tableID sql.Tabl
 	}
 
 	return true, nil
+}
+
+func isRetryableCopyError(err error) bool {
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return false
+	}
+	if strings.Contains(err.Error(), "stl_load_errors") {
+		return false
+	}
+	return true
 }
