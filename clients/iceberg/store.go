@@ -361,6 +361,14 @@ func (s Store) multiStepMerge(ctx context.Context, tableData *optimization.Table
 				}
 			}
 
+			// Drop the MSM table and clear its cached config, matching shared.MultiStepMerge's
+			// deferred ddl.DropTemporaryTable on the MSM table after the final merge. MSM names
+			// are excluded from sweep (ShouldDeleteFromName returns false for ..._msm).
+			s.cm.RemoveTable(msmTableID)
+			if err := s.DropTable(ctx, msmTableID); err != nil {
+				slog.Warn("Failed to drop MSM table after final merge", slog.Any("err", err), slog.String("table", msmTableID.FullyQualifiedName()))
+			}
+
 			return true, nil
 		}
 	}
