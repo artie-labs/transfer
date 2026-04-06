@@ -2,6 +2,7 @@ package catalog
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 	"strings"
@@ -149,8 +150,13 @@ func (r *RestCatalog) CreateNamespace(ctx context.Context, name string) error {
 }
 
 // DropTable removes a table from the catalog.
+// When the table is already absent, iceberg-go returns catalog.ErrNoSuchTable (e.g. REST 404),
+// which we treat as success so behavior matches SQL destinations' DROP TABLE IF EXISTS.
 func (r *RestCatalog) DropTable(ctx context.Context, namespace, name string) error {
 	if err := r.catalog.DropTable(ctx, buildTableIdentifier(namespace, name)); err != nil {
+		if errors.Is(err, catalog.ErrNoSuchTable) {
+			return nil
+		}
 		return fmt.Errorf("failed to drop table: %w", err)
 	}
 	return nil
