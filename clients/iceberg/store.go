@@ -258,7 +258,7 @@ func (s Store) multiStepMerge(ctx context.Context, tableData *optimization.Table
 		// Drop the MSM table from a previous run and clear its cached config.
 		s.cm.RemoveTable(msmTableID)
 		if err := s.DropTable(ctx, msmTableID); err != nil {
-			slog.Warn("Failed to drop MSM table on first flush (may not exist)", slog.Any("err", err))
+			return false, fmt.Errorf("failed to drop msm table: %w", err)
 		}
 
 		if err = tableData.MergeColumnsFromDestination(targetTableConfig.GetColumns()...); err != nil {
