@@ -56,6 +56,15 @@ const (
 	SeverityError   Severity = "error"
 )
 
+// Enum implements https://pkg.go.dev/github.com/swaggest/jsonschema-go#Enum
+func (s Severity) Enum() []any {
+	return []any{
+		SeverityInfo,
+		SeverityWarning,
+		SeverityError,
+	}
+}
+
 type EventMetadata struct {
 	Severity Severity
 	Category string
