@@ -16,8 +16,9 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/retry"
 	"github.com/artie-labs/transfer/lib/sql"
-	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
+	"github.com/artie-labs/transfer/lib/webhooks"
 )
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
@@ -27,18 +28,24 @@ func BuildDSN(token string) string {
 }
 
 type Store struct {
-	dsn       string
-	client    *ducktape.Client
-	configMap *types.DestinationTableConfigMap
-	config    config.Config
+	dsn         string
+	client      *ducktape.Client
+	configMap   *types.DestinationTableConfigMap
+	config      config.Config
+	retryConfig retry.RetryConfig
 }
 
 func LoadStore(_ context.Context, cfg config.Config) (*Store, error) {
+	retryConf, err := retry.NewJitterRetryConfig(1_000, 30_000, 10, retry.AlwaysRetryNonCancelled)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create retry config: %w", err)
+	}
 	return &Store{
-		dsn:       BuildDSN(cfg.MotherDuck.Token),
-		client:    ducktape.NewClient(cfg.MotherDuck.DucktapeURL),
-		configMap: &types.DestinationTableConfigMap{},
-		config:    cfg,
+		dsn:         BuildDSN(cfg.MotherDuck.Token),
+		client:      ducktape.NewClient(cfg.MotherDuck.DucktapeURL),
+		configMap:   &types.DestinationTableConfigMap{},
+		config:      cfg,
+		retryConfig: retryConf,
 	}, nil
 }
 
@@ -150,10 +157,9 @@ func (s Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kaf
 	return nil
 }
 
-func (s Store) SweepTemporaryTables(ctx context.Context, _ *webhooksclient.Client) error {
+func (s Store) SweepTemporaryTables(ctx context.Context) error {
 	for _, dbAndSchema := range kafkalib.GetUniqueStagingDatabaseAndSchemaPairs(s.config.TopicConfigs()) {
 		query, args := s.dialect().BuildSweepQuery(dbAndSchema.Database, dbAndSchema.Schema)
-
 		response, err := s.QueryContextHttp(ctx, query, args...)
 		if err != nil {
 			return fmt.Errorf("failed to query temporary tables: %w", err)
@@ -188,7 +194,11 @@ func (s Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error
 	return shared.DropTemporaryTable(ctx, &s, tableID, s.configMap)
 }
 
-func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client) (bool, error) {
+func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooks.Client) (bool, error) {
+	if tableData.MultiStepMergeSettings().Enabled {
+		return shared.MultiStepMerge(ctx, s, tableData, types.MergeOpts{}, whClient)
+	}
+
 	if err := shared.Merge(ctx, s, tableData, types.MergeOpts{}, whClient); err != nil {
 		return false, fmt.Errorf("failed to merge: %w", err)
 	}
@@ -196,7 +206,7 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whC
 	return true, nil
 }
 
-func (s Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, _ bool) error {
+func (s Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooks.Client, _ bool) error {
 	return shared.Append(ctx, s, tableData, whClient, types.AdditionalSettings{})
 }
 

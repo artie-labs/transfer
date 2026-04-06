@@ -8,10 +8,10 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/typing/columns"
-	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
+	"github.com/artie-labs/transfer/lib/webhooks"
 )
 
-func Append(ctx context.Context, dest destination.SQLDestination, tableData *optimization.TableData, _ *webhooksclient.Client, opts types.AdditionalSettings) error {
+func Append(ctx context.Context, dest destination.SQLDestination, tableData *optimization.TableData, _ *webhooks.Client, opts types.AdditionalSettings) error {
 	if tableData.ShouldSkipUpdate() {
 		return nil
 	}
@@ -29,12 +29,14 @@ func Append(ctx context.Context, dest destination.SQLDestination, tableData *opt
 		tableData.BuildColumnsToKeep(),
 	)
 
+	columnSettings := opts.ColumnSettings
+	columnSettings.SkipPrimaryKeyCreation = tableData.TopicConfig().SkipPrimaryKeyCreation
 	if tableConfig.CreateTable() {
-		if err = CreateTable(ctx, dest, tableData.Mode(), tableConfig, opts.ColumnSettings, tableID, false, targetKeysMissing); err != nil {
+		if err = CreateTable(ctx, dest, tableData.Mode(), tableConfig, columnSettings, tableID, false, targetKeysMissing); err != nil {
 			return fmt.Errorf("failed to create table: %w", err)
 		}
 	} else {
-		if err = AlterTableAddColumns(ctx, dest, tableConfig, opts.ColumnSettings, tableID, targetKeysMissing); err != nil {
+		if err = AlterTableAddColumns(ctx, dest, tableConfig, columnSettings, tableID, targetKeysMissing); err != nil {
 			return fmt.Errorf("failed to alter table: %w", err)
 		}
 	}

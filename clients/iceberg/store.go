@@ -23,7 +23,7 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing/columns"
-	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
+	"github.com/artie-labs/transfer/lib/webhooks"
 )
 
 type Store struct {
@@ -68,11 +68,11 @@ func (s Store) Dialect() dialect.IcebergDialect {
 	return dialect.IcebergDialect{}
 }
 
-func (s Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, useTempTable bool) error {
+func (s Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooks.Client, useTempTable bool) error {
 	return s.append(ctx, s.GetApacheLivyClient(), tableData, whClient, useTempTable, 0)
 }
 
-func (s Store) append(ctx context.Context, client *apachelivy.Client, tableData *optimization.TableData, whClient *webhooksclient.Client, useTempTable bool, retryCount int) error {
+func (s Store) append(ctx context.Context, client *apachelivy.Client, tableData *optimization.TableData, whClient *webhooks.Client, useTempTable bool, retryCount int) error {
 	if tableData.ShouldSkipUpdate() {
 		return nil
 	}
@@ -168,7 +168,7 @@ func (s Store) getTableConfig(ctx context.Context, client *apachelivy.Client, ta
 	return tableCfg, nil
 }
 
-func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client) (bool, error) {
+func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooks.Client) (bool, error) {
 	if tableData.MultiStepMergeSettings().Enabled {
 		return s.multiStepMerge(ctx, tableData)
 	}

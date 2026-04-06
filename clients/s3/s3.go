@@ -15,8 +15,11 @@ import (
 	"github.com/apache/arrow-go/v18/parquet"
 	"github.com/apache/arrow-go/v18/parquet/compress"
 	"github.com/apache/arrow-go/v18/parquet/pqarrow"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	awsCfg "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
+	"github.com/aws/aws-sdk-go-v2/service/sts"
 
 	"github.com/artie-labs/transfer/lib/awslib"
 	"github.com/artie-labs/transfer/lib/config"
@@ -26,7 +29,7 @@ import (
 	"github.com/artie-labs/transfer/lib/parquetutil"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/stringutil"
-	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
+	"github.com/artie-labs/transfer/lib/webhooks"
 )
 
 const batchSize = 1000
@@ -75,7 +78,7 @@ func (s *Store) ObjectPrefix(tableData *optimization.TableData) string {
 	return strings.Join([]string{fqTableName, yyyyMMDDFormat}, "/")
 }
 
-func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client, _ bool) error {
+func (s *Store) Append(ctx context.Context, tableData *optimization.TableData, whClient *webhooks.Client, _ bool) error {
 	// There's no difference in appending or merging for S3.
 	if _, err := s.Merge(ctx, tableData, whClient); err != nil {
 		return fmt.Errorf("failed to merge: %w", err)
@@ -189,7 +192,7 @@ func writeArrowRecordsInBatches(writer *pqarrow.FileWriter, schema *arrow.Schema
 // 2. Load the temporary file, under this format: s3://bucket/folderName/fullyQualifiedTableName/YYYY-MM-DD/{{unix_timestamp}}.parquet
 // 3. It will then upload this to S3
 // 4. Delete the temporary file
-func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooksclient.Client) (bool, error) {
+func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData, whClient *webhooks.Client) (bool, error) {
 	if tableData.ShouldSkipUpdate() {
 		return false, nil
 	}
@@ -229,10 +232,33 @@ func (s *Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) erro
 }
 
 func LoadStore(ctx context.Context, cfg config.Config) (*Store, error) {
-	creds := credentials.NewStaticCredentialsProvider(cfg.S3.AwsAccessKeyID, cfg.S3.AwsSecretAccessKey, "")
-	awsConfig, err := awsCfg.LoadDefaultConfig(ctx, awsCfg.WithCredentialsProvider(creds), awsCfg.WithRegion(cfg.S3.AwsRegion))
+	var awsConfig aws.Config
+	var err error
+
+	if cfg.S3.AwsAccessKeyID != "" && cfg.S3.AwsSecretAccessKey != "" {
+		creds := credentials.NewStaticCredentialsProvider(cfg.S3.AwsAccessKeyID, cfg.S3.AwsSecretAccessKey, "")
+		awsConfig, err = awsCfg.LoadDefaultConfig(ctx,
+			awsCfg.WithCredentialsProvider(creds),
+			awsCfg.WithRegion(cfg.S3.AwsRegion),
+		)
+	} else {
+		awsConfig, err = awsCfg.LoadDefaultConfig(ctx,
+			awsCfg.WithRegion(cfg.S3.AwsRegion),
+		)
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to load aws config: %w", err)
+	}
+
+	if cfg.S3.RoleARN != "" {
+		stsClient := sts.NewFromConfig(awsConfig)
+		creds := stscreds.NewAssumeRoleProvider(stsClient, cfg.S3.RoleARN, func(o *stscreds.AssumeRoleOptions) {
+			if cfg.S3.ExternalID != "" {
+				o.ExternalID = &cfg.S3.ExternalID
+			}
+		})
+		awsConfig.Credentials = aws.NewCredentialsCache(creds)
 	}
 
 	store := Store{

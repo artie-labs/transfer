@@ -46,7 +46,7 @@ func (e Event) GetTable() string {
 	return e.table
 }
 
-func ToMemoryEvent(ctx context.Context, dest destination.Destination, event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfig, cfgMode config.Mode, sharedDestinationSettings config.SharedDestinationSettings) (Event, error) {
+func ToMemoryEvent(ctx context.Context, dest destination.Destination, event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfig, cfgMode config.Mode, sharedDestinationSettings config.SharedDestinationSettings, encryptionKey []byte) (Event, error) {
 	reservedColumns := destination.BuildReservedColumnNames(dest)
 	_cols, err := buildColumns(event, tc, reservedColumns)
 	if err != nil {
@@ -126,7 +126,8 @@ func ToMemoryEvent(ctx context.Context, dest destination.Destination, event cdc.
 		return Event{}, fmt.Errorf("failed to get optional schema: %w", err)
 	}
 
-	updateSchemaForHashedColumns(tc, optionalSchema)
+	setSchemaColumnsToString(optionalSchema, tc.ColumnsToHash)
+	setSchemaColumnsToString(optionalSchema, tc.ColumnsToEncrypt)
 
 	// Static columns cannot collide with the event data.
 	for _, staticColumn := range tc.StaticColumns {
@@ -136,6 +137,11 @@ func ToMemoryEvent(ctx context.Context, dest destination.Destination, event cdc.
 
 		// Inject static columns into the event data.
 		data[staticColumn.Name] = staticColumn.Value
+	}
+
+	transformedData, err := transformData(data, tc, encryptionKey)
+	if err != nil {
+		return Event{}, fmt.Errorf("failed to transform data: %w", err)
 	}
 
 	sort.Strings(pks)
@@ -149,7 +155,7 @@ func ToMemoryEvent(ctx context.Context, dest destination.Destination, event cdc.
 		tableID:        cdc.NewTableID(tc.Schema, tblName),
 		optionalSchema: optionalSchema,
 		columns:        cols,
-		data:           transformData(data, tc),
+		data:           transformedData,
 		deleted:        event.DeletePayload(),
 	}, nil
 }
@@ -162,6 +168,10 @@ func (e Event) GetData() map[string]any {
 // SetData - This will set the data for the event. This is used by Reader.
 func (e *Event) SetData(key string, value any) {
 	e.data[key] = value
+}
+
+func (e *Event) GetExecutionTime() time.Time {
+	return e.executionTime
 }
 
 // EmitExecutionTimeLag - This will check against the current time and the event execution time and emit the lag.

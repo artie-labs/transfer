@@ -164,6 +164,27 @@ func TestParseTimestampNTZFromAny(t *testing.T) {
 		assert.Equal(t, tsString, ts.Format(RFC3339NoTZ))
 	}
 	{
+		// Space-separated (PostgreSQL style), 5 fractional digits
+		tsString := "2025-06-09 15:31:48.80298"
+		ts, err := ParseTimestampNTZFromAny(tsString)
+		assert.NoError(t, err)
+		assert.Equal(t, "2025-06-09T15:31:48.80298", ts.Format(RFC3339NoTZ))
+	}
+	{
+		// Space-separated, no fractional seconds
+		tsString := "2025-06-09 15:31:48"
+		ts, err := ParseTimestampNTZFromAny(tsString)
+		assert.NoError(t, err)
+		assert.Equal(t, "2025-06-09T15:31:48", ts.Format(RFC3339NoTZ))
+	}
+	{
+		// Space-separated, microseconds
+		tsString := "2025-06-09 15:31:48.123456"
+		ts, err := ParseTimestampNTZFromAny(tsString)
+		assert.NoError(t, err)
+		assert.Equal(t, "2025-06-09T15:31:48.123456", ts.Format(RFC3339NoTZ))
+	}
+	{
 		// int64 - milliseconds
 		value, err := ParseTimestampNTZFromAny(int64(1703123456789))
 		assert.NoError(t, err)

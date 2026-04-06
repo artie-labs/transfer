@@ -9,6 +9,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/artie-labs/transfer/lib/config/constants"
+	"github.com/artie-labs/transfer/lib/cryptography"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/numbers"
 	"github.com/artie-labs/transfer/lib/stringutil"
@@ -29,8 +30,14 @@ func (s *S3Settings) Validate() error {
 		return fmt.Errorf("s3 settings are nil")
 	}
 
-	if empty := stringutil.Empty(s.Bucket, s.AwsSecretAccessKey, s.AwsAccessKeyID); empty {
-		return fmt.Errorf("one of s3 settings is empty")
+	if s.Bucket == "" {
+		return fmt.Errorf("s3 bucket is empty")
+	}
+
+	hasStaticCreds := s.AwsAccessKeyID != "" && s.AwsSecretAccessKey != ""
+	hasRoleARN := s.RoleARN != ""
+	if !hasStaticCreds && !hasRoleARN {
+		return fmt.Errorf("either awsAccessKeyID and awsSecretAccessKey or roleARN is required")
 	}
 
 	if !constants.IsValidS3OutputFormat(s.OutputFormat) {
@@ -88,6 +95,11 @@ func readFileToConfig(pathToConfig string) (*Config, error) {
 	config.FlushSizeKb = cmp.Or(config.FlushSizeKb, defaultFlushSizeKb)
 	config.Mode = cmp.Or(config.Mode, Replication)
 	config.KafkaClient = cmp.Or(config.KafkaClient, FranzGoClient)
+
+	// If mode is not included in WebhookSettings, use the mode from the main config.
+	if config.WebhookSettings != nil && config.WebhookSettings.Mode == "" {
+		config.WebhookSettings.Mode = config.Mode.String()
+	}
 
 	return &config, nil
 }
@@ -288,9 +300,14 @@ func (c Config) Validate() error {
 		return fmt.Errorf("no topic configs found")
 	}
 
+	var hasColumnsToEncrypt bool
 	for _, topicConfig := range tcs {
 		if err := topicConfig.Validate(); err != nil {
 			return fmt.Errorf("failed to validate topic config: %w", err)
+		}
+
+		if len(topicConfig.ColumnsToEncrypt) > 0 {
+			hasColumnsToEncrypt = true
 		}
 
 		// History Mode Validation
@@ -307,7 +324,31 @@ func (c Config) Validate() error {
 				return fmt.Errorf("soft partitioning is not supported in history mode, topic: %s", topicConfig.String())
 			}
 		}
+	}
 
+	if hasColumnsToEncrypt {
+		hasPassphrase := !stringutil.Empty(c.SharedDestinationSettings.EncryptionPassphrase)
+		hasKMSConfig := c.SharedDestinationSettings.EncryptionKMSConfig != nil
+
+		if hasPassphrase && hasKMSConfig {
+			return fmt.Errorf("encryptionPassphrase and encryptionKMSConfig are mutually exclusive")
+		}
+
+		if !hasPassphrase && !hasKMSConfig {
+			return fmt.Errorf("encryptionPassphrase or encryptionKMSConfig is required when columnsToEncrypt is specified")
+		}
+
+		if hasPassphrase {
+			if _, err := cryptography.DecodePassphrase(c.SharedDestinationSettings.EncryptionPassphrase, true); err != nil {
+				return fmt.Errorf("invalid encryption passphrase: %w", err)
+			}
+		}
+
+		if hasKMSConfig {
+			if err := c.SharedDestinationSettings.EncryptionKMSConfig.Validate(); err != nil {
+				return fmt.Errorf("invalid encryption KMS config: %w", err)
+			}
+		}
 	}
 
 	return nil

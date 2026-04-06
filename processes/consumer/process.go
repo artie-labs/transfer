@@ -10,7 +10,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
-	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
+	"github.com/artie-labs/transfer/lib/webhooks"
 	"github.com/artie-labs/transfer/models"
 	"github.com/artie-labs/transfer/models/event"
 )
@@ -19,7 +19,8 @@ type processArgs struct {
 	Msg                    artie.Message
 	GroupID                string
 	TopicToConfigFormatMap *TcFmtMap
-	WhClient               *webhooksclient.Client
+	WhClient               *webhooks.Client
+	EncryptionKey          []byte
 }
 
 func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client) (cdc.TableID, error) {
@@ -61,7 +62,7 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 	}
 
 	tags["op"] = string(_event.Operation())
-	evt, err := event.ToMemoryEvent(ctx, dest, _event, pkMap, topicConfig.tc, cfg.Mode, cfg.SharedDestinationSettings)
+	evt, err := event.ToMemoryEvent(ctx, dest, _event, pkMap, topicConfig.tc, cfg.Mode, cfg.SharedDestinationSettings, p.EncryptionKey)
 	if err != nil {
 		tags["what"] = "to_mem_event_err"
 		return cdc.TableID{}, fmt.Errorf("cannot convert to memory event: %w", err)
@@ -87,7 +88,8 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 	}
 
 	if shouldFlush {
-		err = FlushSingleTopic(ctx, inMemDB, dest, metricsClient, p.WhClient, Args{Reason: flushReason}, topicConfig.tc.Topic, false)
+		executionTime := evt.GetExecutionTime()
+		err = FlushSingleTopic(ctx, inMemDB, dest, metricsClient, p.WhClient, Args{Reason: flushReason, ReportDBExecutionTime: cfg.Reporting.EmitDBExecutionTime, EventExecutionTime: &executionTime}, topicConfig.tc.Topic, false)
 		if err != nil {
 			tags["what"] = "flush_fail"
 		}

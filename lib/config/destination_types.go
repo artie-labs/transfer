@@ -16,6 +16,8 @@ type BigQuery struct {
 	Location          string `yaml:"location"`
 	// [Priority] - This is used to specify the priority of the BigQuery job. By default, it'll be set to "INTERACTIVE".
 	Priority string `yaml:"priority,omitempty"`
+	// [Reservation] - This is used to specify the reservation to use for the BigQuery job.
+	Reservation string `yaml:"reservation,omitempty"`
 }
 
 type Databricks struct {
@@ -49,6 +51,8 @@ type MSSQL struct {
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
 	Database string `yaml:"database"`
+	// [ReadOnlyIntent] - This is used to specify the read only intent for the MSSQL job.
+	ReadOnlyIntent bool `yaml:"readOnlyIntent,omitempty"`
 }
 
 type MySQL struct {
@@ -78,6 +82,8 @@ type S3Settings struct {
 	AwsAccessKeyID     string                   `yaml:"awsAccessKeyID"`
 	AwsSecretAccessKey string                   `yaml:"awsSecretAccessKey"`
 	AwsRegion          string                   `yaml:"awsRegion"`
+	RoleARN            string                   `yaml:"roleARN,omitempty"`
+	ExternalID         string                   `yaml:"externalID,omitempty"`
 	OutputFormat       constants.S3OutputFormat `yaml:"outputFormat"`
 	TableNameSeparator string                   `yaml:"tableNameSeparator"`
 }

@@ -12,9 +12,11 @@ import (
 	"github.com/artie-labs/transfer/lib/array"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
+	"github.com/artie-labs/transfer/lib/retry"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/artie-labs/transfer/lib/typing/converters"
 	"github.com/artie-labs/transfer/lib/typing/values"
 )
 
@@ -77,28 +79,30 @@ func appendRows(ctx context.Context, store Store, tableData *optimization.TableD
 			}
 		}
 	}
-
-	resp, err := store.client.Append(
-		ctx,
-		store.dsn,
-		castedTableID.Database(),
-		castedTableID.Schema(),
-		castedTableID.Table(),
-		streamIterator,
-		func(r ducktape.RowMessage) ([]byte, error) {
-			return json.Marshal(r)
-		},
-		func(r []byte) (*ducktape.AppendResponse, error) {
-			var resp ducktape.AppendResponse
-			if err := json.Unmarshal(r, &resp); err != nil {
-				return nil, err
-			}
-			return &resp, nil
-		},
-	)
+	resp, err := retry.WithRetriesAndResult(store.retryConfig, func(_ int, _ error) (*ducktape.AppendResponse, error) {
+		return store.client.Append(
+			ctx,
+			store.dsn,
+			castedTableID.Database(),
+			castedTableID.Schema(),
+			castedTableID.Table(),
+			streamIterator,
+			func(r ducktape.RowMessage) ([]byte, error) {
+				return json.Marshal(r)
+			},
+			func(r []byte) (*ducktape.AppendResponse, error) {
+				var appendResp ducktape.AppendResponse
+				if err := json.Unmarshal(r, &appendResp); err != nil {
+					return nil, err
+				}
+				return &appendResp, nil
+			},
+		)
+	})
 	if err != nil {
 		return fmt.Errorf("failure on client side to append rows: %w", err)
 	}
+
 	if resp.Error != nil {
 		return fmt.Errorf("failure on server side to append rows: %s", *resp.Error)
 	}
@@ -117,11 +121,13 @@ func convertValue(value any, kd typing.KindDetails) (driver.Value, error) {
 
 	switch kd.Kind {
 	case typing.String.Kind:
-		castedValue, err := typing.AssertType[string](value)
+		str, err := values.ToStringOpts(value, kd, converters.GetStringConverterOpts{
+			UseNewStringMethod: true,
+		})
 		if err != nil {
-			return "", err
+			return nil, err
 		}
-		return castedValue, nil
+		return str, nil
 	case typing.Boolean.Kind:
 		castedValue, err := typing.AssertType[bool](value)
 		if err != nil {

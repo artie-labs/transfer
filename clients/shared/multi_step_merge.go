@@ -5,21 +5,16 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/artie-labs/transfer/clients/snowflake/dialect"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing/columns"
-	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
+	"github.com/artie-labs/transfer/lib/webhooks"
 )
 
-func MultiStepMerge(ctx context.Context, dest destination.SQLDestination, tableData *optimization.TableData, opts types.MergeOpts, _ *webhooksclient.Client) (bool, error) {
-	if _, ok := dest.Dialect().(dialect.SnowflakeDialect); !ok {
-		return false, fmt.Errorf("multi-step merge is only supported on Snowflake")
-	}
-
+func MultiStepMerge(ctx context.Context, dest destination.SQLDestination, tableData *optimization.TableData, opts types.MergeOpts, _ *webhooks.Client) (bool, error) {
 	msmSettings := tableData.MultiStepMergeSettings()
 	if !msmSettings.Enabled {
 		return false, fmt.Errorf("multi-step merge is not enabled")
@@ -55,6 +50,8 @@ func MultiStepMerge(ctx context.Context, dest destination.SQLDestination, tableD
 	if err != nil {
 		return false, fmt.Errorf("failed to get table config: %w", err)
 	}
+	columnSettings := opts.ColumnSettings
+	columnSettings.SkipPrimaryKeyCreation = tableData.TopicConfig().SkipPrimaryKeyCreation
 	{
 		// Apply schema evolution for the MSM table
 		resp := columns.Diff(
@@ -63,11 +60,11 @@ func MultiStepMerge(ctx context.Context, dest destination.SQLDestination, tableD
 		)
 
 		if msmTableConfig.CreateTable() {
-			if err = CreateTable(ctx, dest, tableData.Mode(), msmTableConfig, opts.ColumnSettings, msmTableID, true, resp.TargetColumnsMissing); err != nil {
+			if err = CreateTable(ctx, dest, tableData.Mode(), msmTableConfig, columnSettings, msmTableID, true, resp.TargetColumnsMissing); err != nil {
 				return false, fmt.Errorf("failed to create table: %w", err)
 			}
 		} else {
-			if err = AlterTableAddColumns(ctx, dest, msmTableConfig, opts.ColumnSettings, msmTableID, resp.TargetColumnsMissing); err != nil {
+			if err = AlterTableAddColumns(ctx, dest, msmTableConfig, columnSettings, msmTableID, resp.TargetColumnsMissing); err != nil {
 				return false, fmt.Errorf("failed to add columns for table %q: %w", msmTableID.Table(), err)
 			}
 		}
@@ -82,11 +79,11 @@ func MultiStepMerge(ctx context.Context, dest destination.SQLDestination, tableD
 		)
 
 		if targetTableConfig.CreateTable() {
-			if err = CreateTable(ctx, dest, tableData.Mode(), targetTableConfig, opts.ColumnSettings, targetTableID, false, targetKeysMissing); err != nil {
+			if err = CreateTable(ctx, dest, tableData.Mode(), targetTableConfig, columnSettings, targetTableID, false, targetKeysMissing); err != nil {
 				return false, fmt.Errorf("failed to create table: %w", err)
 			}
 		} else {
-			if err = AlterTableAddColumns(ctx, dest, targetTableConfig, opts.ColumnSettings, targetTableID, targetKeysMissing); err != nil {
+			if err = AlterTableAddColumns(ctx, dest, targetTableConfig, columnSettings, targetTableID, targetKeysMissing); err != nil {
 				return false, fmt.Errorf("failed to add columns for table %q: %w", targetTableID.Table(), err)
 			}
 		}

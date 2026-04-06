@@ -23,8 +23,18 @@ func (b *BigQuery) DSN() string {
 		dsn = fmt.Sprintf("bigquery://%s/%s/%s", b.ProjectID, b.Location, b.DefaultDataset)
 	}
 
+	queryParams := url.Values{}
+
 	if b.Priority != "" {
-		dsn = fmt.Sprintf("%s?priority=%s", dsn, b.Priority)
+		queryParams.Add("priority", b.Priority)
+	}
+	if b.Reservation != "" {
+		queryParams.Add("reservation", b.Reservation)
+	}
+
+	queryString := queryParams.Encode()
+	if queryString != "" {
+		dsn = fmt.Sprintf("%s?%s", dsn, queryString)
 	}
 
 	return dsn
@@ -42,6 +52,9 @@ func (p Postgres) DSN() string {
 func (m MSSQL) DSN() string {
 	query := url.Values{}
 	query.Add("database", m.Database)
+	if m.ReadOnlyIntent {
+		query.Add("applicationintent", "ReadOnly")
+	}
 
 	u := &url.URL{
 		Scheme:   "sqlserver",

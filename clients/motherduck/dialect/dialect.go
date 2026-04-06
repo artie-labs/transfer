@@ -137,9 +137,18 @@ func (DuckDBDialect) IsTableDoesNotExistErr(err error) bool {
 }
 
 func (DuckDBDialect) BuildCreateTableQuery(tableID sql.TableIdentifier, temporary bool, _ config.Mode, colSQLParts []string) string {
+	// Don't create any primary keys to avoid errors like:
+	// "failed to flush appender: database/sql/driver: could not flush appender: Failed to append: Duplicate key "id: 1880224217" violates primary key constraint.: appended and not yet flushed data has been invalidated due to error"
+	// Can't drop primary keys after the table is created. https://duckdb.org/docs/stable/sql/statements/alter_table#add--drop-constraint
+	finalColSQLParts := make([]string, 0, len(colSQLParts))
+	for _, colSQLPart := range colSQLParts {
+		if !strings.Contains(colSQLPart, "PRIMARY KEY") {
+			finalColSQLParts = append(finalColSQLParts, colSQLPart)
+		}
+	}
 	// We will create temporary tables in DuckDB the exact same way as we do for permanent tables.
 	// This is because temporary tables are session scoped and this will not work for us as we leverage connection pooling.
-	return fmt.Sprintf("CREATE TABLE %s (%s);", tableID.FullyQualifiedName(), strings.Join(colSQLParts, ","))
+	return fmt.Sprintf("CREATE TABLE %s (%s);", tableID.FullyQualifiedName(), strings.Join(finalColSQLParts, ","))
 }
 
 func (DuckDBDialect) BuildDropTableQuery(tableID sql.TableIdentifier) string {
@@ -236,8 +245,28 @@ func (d DuckDBDialect) BuildIsNotToastValueExpression(tableAlias constants.Table
 	return fmt.Sprintf("COALESCE(%s NOT LIKE '%s', TRUE)", colName, toastedValue)
 }
 
-func (DuckDBDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string {
-	panic("not implemented")
+func (d DuckDBDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string {
+	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, d)
+	if len(additionalEqualityStrings) > 0 {
+		equalitySQLParts = append(equalitySQLParts, additionalEqualityStrings...)
+	}
+
+	source := subQuery
+	if !strings.Contains(strings.ToUpper(subQuery), "SELECT") {
+		source = fmt.Sprintf("SELECT * FROM %s", subQuery)
+	}
+
+	baseQuery := fmt.Sprintf(`MERGE INTO %s AS %s USING (%s) AS %s ON %s`,
+		tableID.FullyQualifiedName(), constants.TargetAlias, source, constants.StagingAlias, strings.Join(equalitySQLParts, " AND "),
+	)
+
+	return []string{baseQuery + fmt.Sprintf(`
+WHEN MATCHED THEN UPDATE SET %s
+WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s)`,
+		sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, d),
+		strings.Join(sql.QuoteColumns(cols, d), ","),
+		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, d), ","),
+	)}
 }
 
 // buildSoftDeleteMergeQuery builds a single MERGE query for soft delete operations

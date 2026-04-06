@@ -2,6 +2,7 @@ package consumer
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"sync"
 	"time"
@@ -16,12 +17,19 @@ import (
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
-	webhooksclient "github.com/artie-labs/transfer/lib/webhooksClient"
-	"github.com/artie-labs/transfer/lib/webhooksutil"
+	"github.com/artie-labs/transfer/lib/webhooks"
 	"github.com/artie-labs/transfer/models"
 )
 
-func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client, whClient *webhooksclient.Client) {
+func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client, whClient *webhooks.Client) {
+	encryptionKey, err := cfg.SharedDestinationSettings.BuildEncryptionKey(ctx)
+	if err != nil {
+		whClient.SendEvent(ctx, webhooks.EventReplicationFailed, webhooks.EventProperties{
+			Error: fmt.Sprintf("Failed to build encryption key: %s", err),
+		})
+		logger.Fatal("Failed to build encryption key", slog.Any("err", err))
+	}
+
 	tcFmtMap := NewTcFmtMap()
 	var topics []string
 	for _, topicConfig := range cfg.Kafka.TopicConfigs {
@@ -39,11 +47,19 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 			defer logger.RecoverFatal()
 			kafkaConsumer, err := kafkalib.GetConsumerFromContext(ctx, topic)
 			if err != nil {
+				whClient.SendEvent(ctx, webhooks.EventReplicationFailed, webhooks.EventProperties{
+					Error: fmt.Sprintf("Failed to start Kafka consumer: %s", err),
+					Topic: topic,
+				})
 				logger.Fatal("Failed to get consumer from context", slog.Any("err", err))
 			}
 
 			if cfg.Kafka.WaitForTopics {
 				if err := kafkaConsumer.WaitForTopic(ctx); err != nil {
+					whClient.SendEvent(ctx, webhooks.EventReplicationFailed, webhooks.EventProperties{
+						Error: fmt.Sprintf("Failed waiting for Kafka topic to exist: %s", err),
+						Topic: topic,
+					})
 					logger.Fatal("Failed waiting for topic to exist", slog.Any("err", err), slog.String("topic", topic))
 				}
 			}
@@ -60,14 +76,14 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 						GroupID:                kafkaConsumer.GetGroupID(),
 						TopicToConfigFormatMap: tcFmtMap,
 						WhClient:               whClient,
+						EncryptionKey:          encryptionKey,
 					}
 
 					tableID, err := args.process(ctx, cfg, inMemDB, dest, metricsClient)
 					if err != nil {
-						whClient.SendEvent(ctx, webhooksutil.UnableToReplicate, map[string]any{
-							"error":   "Failed to process message",
-							"details": err.Error(),
-							"topic":   msg.Topic(),
+						whClient.SendEvent(ctx, webhooks.EventReplicationFailed, webhooks.EventProperties{
+							Error: fmt.Sprintf("Failed to process message: %s", err),
+							Topic: msg.Topic(),
 						})
 						logger.Fatal("Failed to process message", slog.Any("err", err), slog.String("topic", msg.Topic()))
 					}
@@ -82,7 +98,11 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 						time.Sleep(500 * time.Millisecond)
 						continue
 					} else {
-						logger.Fatal("Failed to process message", slog.Any("err", err), slog.String("topic", topic))
+						whClient.SendEvent(ctx, webhooks.EventReplicationFailed, webhooks.EventProperties{
+							Error: fmt.Sprintf("Failed to fetch and process message: %s", err),
+							Topic: topic,
+						})
+						logger.Fatal("Failed to fetch and process message", slog.Any("err", err), slog.String("topic", topic))
 					}
 				}
 			}

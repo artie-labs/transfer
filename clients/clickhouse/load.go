@@ -106,7 +106,6 @@ func parseValue(value any, col columns.Column) (any, error) {
 		}
 		return nil, nil
 	}
-
 	switch col.KindDetails.Kind {
 	case typing.Date.Kind:
 		parsedTime, err := typing.ParseDateFromAny(value)
@@ -122,7 +121,6 @@ func parseValue(value any, col columns.Column) (any, error) {
 		}
 		// TODO: revisit this when we support native Time type instead of String
 		return parsedTime.Format(typing.PostgresTimeFormatNoTZ), nil
-
 	case typing.TimestampNTZ.Kind:
 		parsedTime, err := typing.ParseTimestampNTZFromAny(value)
 		if err != nil {
@@ -136,7 +134,6 @@ func parseValue(value any, col columns.Column) (any, error) {
 			return nil, fmt.Errorf("failed to parse timestamp with timezone: %w", err)
 		}
 		return parsedTime.UTC(), nil
-
 	case typing.String.Kind:
 		stringVal, err := typing.AssertType[string](value)
 		if err != nil {
@@ -151,7 +148,6 @@ func parseValue(value any, col columns.Column) (any, error) {
 			return fmt.Sprint(value), nil
 		}
 		return stringVal, nil
-
 	case typing.Struct.Kind:
 		if value == constants.ToastUnavailableValuePlaceholder {
 			return fmt.Sprintf(`{"key":%q}`, constants.ToastUnavailableValuePlaceholder), nil
@@ -167,17 +163,14 @@ func parseValue(value any, col columns.Column) (any, error) {
 			return nil, fmt.Errorf("failed to marshal struct to JSON: %w", err)
 		}
 		return string(jsonBytes), nil
-
 	case typing.Array.Kind:
 		return array.InterfaceToArrayString(value, true)
-
 	case typing.Boolean.Kind:
 		boolVal, ok := value.(bool)
 		if !ok {
 			return nil, fmt.Errorf("expected bool, got %T", value)
 		}
 		return boolVal, nil
-
 	case typing.Integer.Kind:
 		switch v := value.(type) {
 		case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
@@ -193,7 +186,6 @@ func parseValue(value any, col columns.Column) (any, error) {
 		default:
 			return value, nil
 		}
-
 	case typing.Float.Kind:
 		switch v := value.(type) {
 		case float32, float64:
@@ -207,7 +199,6 @@ func parseValue(value any, col columns.Column) (any, error) {
 		default:
 			return value, nil
 		}
-
 	case typing.EDecimal.Kind:
 		if dec, ok := value.(*decimal.Decimal); ok {
 			return dec.String(), nil
@@ -221,7 +212,6 @@ func parseValue(value any, col columns.Column) (any, error) {
 		default:
 			return fmt.Sprint(value), nil
 		}
-
 	default:
 		return value, nil
 	}

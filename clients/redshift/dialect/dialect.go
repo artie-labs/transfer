@@ -121,16 +121,23 @@ func (rd RedshiftDialect) buildMergeInsertQuery(
 	subQuery string,
 	primaryKeys []columns.Column,
 	cols []columns.Column,
+	softDelete bool,
 ) string {
-	return fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s AS %s LEFT JOIN %s AS %s ON %s WHERE %s IS NULL;`,
+	// Only reference the first primary key here since the ON clause (equalitySQL) already covers all PKs.
+	whereClause := fmt.Sprintf("%s IS NULL", sql.QuoteTableAliasColumn(constants.TargetAlias, primaryKeys[0], rd))
+	if !softDelete {
+		whereClause += fmt.Sprintf(" AND COALESCE(%s, false) = false", sql.QuotedDeleteColumnMarker(constants.StagingAlias, rd))
+	}
+
+	return fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s AS %s LEFT JOIN %s AS %s ON %s WHERE %s;`,
 		// INSERT INTO %s (%s)
 		tableID.FullyQualifiedName(), strings.Join(sql.QuoteColumns(cols, rd), ","),
 		// SELECT %s FROM %s AS %s
 		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, rd), ","), subQuery, constants.StagingAlias,
 		// LEFT JOIN %s AS %s ON %s
 		tableID.FullyQualifiedName(), constants.TargetAlias, strings.Join(sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, rd), " AND "),
-		// WHERE %s IS NULL; (we only need to specify one primary key since it's covered with equalitySQL parts)
-		sql.QuoteTableAliasColumn(constants.TargetAlias, primaryKeys[0], rd),
+		// WHERE %s
+		whereClause,
 	)
 }
 
@@ -207,7 +214,7 @@ func (rd RedshiftDialect) BuildMergeQueries(
 	// We want to issue the update first, then the insert, then the delete.
 	// This order is important for us to avoid no-ops, where rows get inserted and then immediately updated.
 	parts := rd.buildMergeUpdateQueries(tableID, subQuery, primaryKeys, cols, softDelete)
-	parts = append(parts, rd.buildMergeInsertQuery(tableID, subQuery, primaryKeys, cols))
+	parts = append(parts, rd.buildMergeInsertQuery(tableID, subQuery, primaryKeys, cols, softDelete))
 	if !softDelete && containsHardDeletes {
 		parts = append(parts, rd.buildMergeDeleteQuery(tableID, subQuery, primaryKeys))
 	}
