@@ -7,6 +7,7 @@ import (
 
 	bqDialect "github.com/artie-labs/transfer/clients/bigquery/dialect"
 	duckDBDialect "github.com/artie-labs/transfer/clients/motherduck/dialect"
+	mssqlDialect "github.com/artie-labs/transfer/clients/mssql/dialect"
 	"github.com/artie-labs/transfer/clients/redshift/dialect"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/typing"
@@ -21,25 +22,29 @@ func TestShouldCreatePrimaryKey(t *testing.T) {
 		{
 			// Column is not a primary key
 			col := columns.NewColumn("foo", typing.String)
-			assert.False(t, shouldCreatePrimaryKey(col, config.Replication, true))
+			assert.False(t, shouldCreatePrimaryKey(col, config.Replication, true, config.SharedDestinationColumnSettings{}))
 		}
 		{
 			// Column is a primary key
-			assert.True(t, shouldCreatePrimaryKey(pk, config.Replication, true))
+			assert.True(t, shouldCreatePrimaryKey(pk, config.Replication, true, config.SharedDestinationColumnSettings{}))
 		}
 	}
 	{
 		// False because it's history mode
 		// It should be false because we are appending rows to this table.
-		assert.False(t, shouldCreatePrimaryKey(pk, config.History, true))
+		assert.False(t, shouldCreatePrimaryKey(pk, config.History, true, config.SharedDestinationColumnSettings{}))
 	}
 	{
 		// False because it's not a create table operation
-		assert.False(t, shouldCreatePrimaryKey(pk, config.Replication, false))
+		assert.False(t, shouldCreatePrimaryKey(pk, config.Replication, false, config.SharedDestinationColumnSettings{}))
 	}
 	{
 		// True because it's a primary key, replication mode, and create table operation
-		assert.True(t, shouldCreatePrimaryKey(pk, config.Replication, true))
+		assert.True(t, shouldCreatePrimaryKey(pk, config.Replication, true, config.SharedDestinationColumnSettings{}))
+	}
+	{
+		// False because SkipPrimaryKeyCreation is true
+		assert.False(t, shouldCreatePrimaryKey(pk, config.Replication, true, config.SharedDestinationColumnSettings{SkipPrimaryKeyCreation: true}))
 	}
 }
 
@@ -148,6 +153,28 @@ func TestBuildCreateTableSQL(t *testing.T) {
 				assert.Equal(t, "CREATE TABLE IF NOT EXISTS `projectID`.`dataset`.`table` (`pk` string,`bar` string,PRIMARY KEY (`pk`) NOT ENFORCED)", sql)
 			}
 		}
+	}
+	{
+		// SkipPrimaryKeyCreation should skip PK constraint
+		pk := columns.NewColumn("pk", typing.String)
+		pk.SetPrimaryKeyForTest(true)
+		sql, err := BuildCreateTableSQL(config.SharedDestinationColumnSettings{SkipPrimaryKeyCreation: true}, dialect.RedshiftDialect{}, dialect.NewTableIdentifier("schema", "table"), false, config.Replication, []columns.Column{
+			pk,
+			columns.NewColumn("bar", typing.String),
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, `CREATE TABLE IF NOT EXISTS schema."table" ("pk" VARCHAR(MAX),"bar" VARCHAR(MAX));`, sql)
+	}
+	{
+		// SkipPrimaryKeyCreation should also use non-PK column types (MSSQL uses VARCHAR(MAX) for non-PK strings vs VARCHAR(900) for PK strings)
+		pk := columns.NewColumn("pk", typing.String)
+		pk.SetPrimaryKeyForTest(true)
+		sql, err := BuildCreateTableSQL(config.SharedDestinationColumnSettings{SkipPrimaryKeyCreation: true}, mssqlDialect.MSSQLDialect{}, mssqlDialect.NewTableIdentifier("schema", "table"), false, config.Replication, []columns.Column{
+			pk,
+			columns.NewColumn("bar", typing.String),
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, `CREATE TABLE [schema].[table] ([pk] VARCHAR(MAX),[bar] VARCHAR(MAX));`, sql)
 	}
 }
 

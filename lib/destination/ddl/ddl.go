@@ -14,8 +14,8 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-func shouldCreatePrimaryKey(col columns.Column, mode config.Mode, createTable bool) bool {
-	return col.PrimaryKey() && mode == config.Replication && createTable
+func shouldCreatePrimaryKey(col columns.Column, mode config.Mode, createTable bool, settings config.SharedDestinationColumnSettings) bool {
+	return col.PrimaryKey() && mode == config.Replication && createTable && !settings.SkipPrimaryKeyCreation
 }
 
 func BuildCreateTableSQL(settings config.SharedDestinationColumnSettings, dialect sql.Dialect, tableIdentifier sql.TableIdentifier, temporaryTable bool, mode config.Mode, columns []columns.Column) (string, error) {
@@ -32,11 +32,12 @@ func BuildCreateTableSQL(settings config.SharedDestinationColumnSettings, dialec
 		}
 
 		colName := dialect.QuoteIdentifier(col.Name())
-		if shouldCreatePrimaryKey(col, mode, true) {
+		isPk := shouldCreatePrimaryKey(col, mode, true, settings)
+		if isPk {
 			primaryKeys = append(primaryKeys, colName)
 		}
 
-		dataType, err := dialect.DataTypeForKind(col.KindDetails, col.PrimaryKey(), settings)
+		dataType, err := dialect.DataTypeForKind(col.KindDetails, col.PrimaryKey() && !settings.SkipPrimaryKeyCreation, settings)
 		if err != nil {
 			return "", fmt.Errorf("failed to get data type for column %q: %w", col.Name(), err)
 		}
@@ -85,7 +86,7 @@ func BuildAlterTableAddColumns(settings config.SharedDestinationColumnSettings, 
 			return nil, fmt.Errorf("received an invalid column %q", col.Name())
 		}
 
-		dataType, err := dialect.DataTypeForKind(col.KindDetails, col.PrimaryKey(), settings)
+		dataType, err := dialect.DataTypeForKind(col.KindDetails, col.PrimaryKey() && !settings.SkipPrimaryKeyCreation, settings)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get data type for column %q: %w", col.Name(), err)
 		}

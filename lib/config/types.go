@@ -45,6 +45,9 @@ type SharedDestinationColumnSettings struct {
 	// [WriteRawBinaryValues] - If enabled, we will write raw binary values to the destination (e.g. BINARY column type)
 	// instead of storing them as Base64 encoded strings.
 	WriteRawBinaryValues bool `yaml:"writeRawBinaryValues,omitempty"`
+	// [SkipPrimaryKeyCreation] - If enabled, we'll skip creating a primary key constraint on the destination table.
+	// This is useful when using PrimaryKeysOverride with columns that may contain NULLs.
+	SkipPrimaryKeyCreation bool `yaml:"-"`
 }
 
 type SharedDestinationSettings struct {

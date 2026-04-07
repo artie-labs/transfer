@@ -51,6 +51,8 @@ type MSSQL struct {
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
 	Database string `yaml:"database"`
+	// [ReadOnlyIntent] - This is used to specify the read only intent for the MSSQL job.
+	ReadOnlyIntent bool `yaml:"readOnlyIntent,omitempty"`
 }
 
 type MySQL struct {
@@ -81,6 +83,7 @@ type S3Settings struct {
 	AwsSecretAccessKey string                   `yaml:"awsSecretAccessKey"`
 	AwsRegion          string                   `yaml:"awsRegion"`
 	RoleARN            string                   `yaml:"roleARN,omitempty"`
+	ExternalID         string                   `yaml:"externalID,omitempty"`
 	OutputFormat       constants.S3OutputFormat `yaml:"outputFormat"`
 	TableNameSeparator string                   `yaml:"tableNameSeparator"`
 }

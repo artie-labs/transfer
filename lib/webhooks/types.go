@@ -3,6 +3,8 @@ package webhooks
 import (
 	"log/slog"
 	"time"
+
+	"github.com/artie-labs/transfer/lib/redact"
 )
 
 type EventType string
@@ -20,6 +22,12 @@ const (
 	EventReplicationFailed  EventType = "replication.failed"
 	EventConnectionFailed   EventType = "connection.failed"
 	EventRowSkipped         EventType = "row.skipped"
+
+	// Source specific events
+	EventDDLSeen EventType = "ddl.seen"
+
+	// Dashboard specific events
+	EventDEKGenerated EventType = "dek.generated"
 )
 
 // AllEventTypes contains all defined event types.
@@ -36,6 +44,8 @@ var AllEventTypes = []EventType{
 	EventReplicationFailed,
 	EventConnectionFailed,
 	EventRowSkipped,
+	EventDDLSeen,
+	EventDEKGenerated,
 }
 
 type Severity string
@@ -45,6 +55,15 @@ const (
 	SeverityWarning Severity = "warning"
 	SeverityError   Severity = "error"
 )
+
+// Enum implements https://pkg.go.dev/github.com/swaggest/jsonschema-go#Enum
+func (s Severity) Enum() []any {
+	return []any{
+		SeverityInfo,
+		SeverityWarning,
+		SeverityError,
+	}
+}
 
 type EventMetadata struct {
 	Severity Severity
@@ -67,6 +86,10 @@ var eventMetadataMap = map[EventType]EventMetadata{
 	EventRowSkipped:         {SeverityWarning, "replication", "Row skipped"},
 	// Connection events
 	EventConnectionFailed: {SeverityError, "connection", "Connection failed"},
+	// Source specific events
+	EventDDLSeen: {SeverityInfo, "ddl", "DDL seen"},
+	// Dashboard specific events:
+	EventDEKGenerated: {SeverityInfo, "dashboard", "Data Encryption Key (DEK) generated"},
 }
 
 func GetEventMetadata(eventType EventType) EventMetadata {
@@ -108,12 +131,12 @@ type WebhooksEvent struct {
 	Properties WebhookProperties `json:"properties"`
 }
 
-// WebhookProperties is the source of truth for all webhook event fields.
+// [WebhookProperties] is the source of truth for all webhook event fields.
 // In transfer/reader: marshaled as the "properties" field of WebhooksEvent.
 // In dashboard: embedded at the top level of WebhookEvent (matching the flat
 // Redis message after unfurling).
 type WebhookProperties struct {
-	// Properties set when client is initialized
+	// Config-level properties (set when client is initialized):
 	CompanyUUID      string  `json:"company_uuid"`
 	PipelineUUID     string  `json:"pipeline_uuid,omitempty"`
 	SourceReaderUUID string  `json:"source_reader_uuid,omitempty"`
@@ -123,7 +146,14 @@ type WebhookProperties struct {
 	Version          string  `json:"version,omitempty"`     // service version (e.g. "v1.0.0")
 	Mode             string  `json:"mode,omitempty"`        // transfer run mode (replication/history)
 
-	// Properties specified when SendEvent is called
+	// Event-specific properties:
+	EventProperties
+
+	// Deprecated - include full error string in Error field instead
+	Details string `json:"details,omitempty"`
+}
+
+type EventProperties struct {
 	Error           string         `json:"error,omitempty"`
 	Table           string         `json:"table,omitempty"`
 	Schema          string         `json:"schema,omitempty"`
@@ -134,20 +164,24 @@ type WebhookProperties struct {
 	Reason          string         `json:"reason,omitempty"`
 	PrimaryKeys     map[string]any `json:"primary_keys,omitempty"`
 
-	// Deprecated - include full error string in Error field instead
-	Details string `json:"details,omitempty"`
+	// DDL related properties:
+	Query string `json:"query,omitempty"`
+	// DDLEvent contains the parsed ANTLR events from the DDL query.
+	DDLEvent []map[string]any `json:"ddl_event,omitempty"`
+
+	// DEK related properties:
+	EncryptionKeyUUID string `json:"encryption_key_uuid,omitempty"`
+	EncryptionKeyName string `json:"encryption_key_name,omitempty"`
+	AWSKMSKeyARN      string `json:"aws_kms_key_arn,omitempty"`
 }
 
-// SendEventArgs is passed by call sites to SendEvent.
-// The client fills in config-level and metadata fields automatically.
-type SendEventArgs struct {
-	Error           string
-	Table           string
-	Schema          string
-	Database        string
-	Topic           string
-	RowsWritten     int64
-	DurationSeconds float64
-	Reason          string
-	PrimaryKeys     map[string]any
+// Scrub returns a copy with sensitive string fields redacted.
+func (e EventProperties) Scrub() EventProperties {
+	e.Error = redact.ScrubString(e.Error)
+	e.Database = redact.ScrubString(e.Database)
+	e.Table = redact.ScrubString(e.Table)
+	e.Schema = redact.ScrubString(e.Schema)
+	e.Topic = redact.ScrubString(e.Topic)
+	e.Reason = redact.ScrubString(e.Reason)
+	return e
 }

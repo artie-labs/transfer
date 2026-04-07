@@ -12,7 +12,6 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/artie-labs/transfer/lib/config"
-	"github.com/artie-labs/transfer/lib/redact"
 	"github.com/artie-labs/transfer/lib/stringutil"
 )
 
@@ -55,11 +54,11 @@ func (c *Client) IsEnabled() bool {
 
 // SendEvent sends a webhook event. Errors are logged and never returned;
 // webhook delivery failures should never interrupt the main data pipeline.
-func (c *Client) SendEvent(ctx context.Context, eventType EventType, args SendEventArgs) {
+func (c *Client) SendEvent(ctx context.Context, eventType EventType, props EventProperties) {
 	if !c.IsEnabled() {
 		return
 	}
-	if err := c.inner.SendEvent(ctx, eventType, args); err != nil {
+	if err := c.inner.SendEvent(ctx, eventType, props); err != nil {
 		slog.Error("Failed to send webhook event", slog.String("event", string(eventType)), slog.Any("err", err))
 	}
 }
@@ -95,7 +94,7 @@ func newWebhooksClient(cfg webhooksClientConfig) (webhooksClient, error) {
 	}, nil
 }
 
-func (w webhooksClient) buildProperties(args SendEventArgs) WebhookProperties {
+func (w webhooksClient) buildProperties(props EventProperties) WebhookProperties {
 	return WebhookProperties{
 		CompanyUUID:      w.cfg.CompanyUUID,
 		PipelineUUID:     w.cfg.PipelineUUID,
@@ -105,24 +104,16 @@ func (w webhooksClient) buildProperties(args SendEventArgs) WebhookProperties {
 		Service:          w.cfg.Service,
 		Mode:             w.cfg.Mode,
 		Version:          w.cfg.Version,
-		Error:            redact.ScrubString(args.Error),
-		Database:         redact.ScrubString(args.Database),
-		Table:            redact.ScrubString(args.Table),
-		Schema:           redact.ScrubString(args.Schema),
-		Topic:            redact.ScrubString(args.Topic),
-		RowsWritten:      args.RowsWritten,
-		DurationSeconds:  args.DurationSeconds,
-		Reason:           redact.ScrubString(args.Reason),
-		PrimaryKeys:      args.PrimaryKeys,
+		EventProperties:  props.Scrub(),
 	}
 }
 
-func (w webhooksClient) SendEvent(ctx context.Context, eventType EventType, args SendEventArgs) error {
+func (w webhooksClient) SendEvent(ctx context.Context, eventType EventType, props EventProperties) error {
 	event := WebhooksEvent{
 		Event:      string(eventType),
 		Timestamp:  time.Now().UTC(),
 		MessageID:  uuid.New().String(),
-		Properties: w.buildProperties(args),
+		Properties: w.buildProperties(props),
 	}
 
 	body, err := json.Marshal(event)

@@ -52,6 +52,9 @@ func (p Postgres) DSN() string {
 func (m MSSQL) DSN() string {
 	query := url.Values{}
 	query.Add("database", m.Database)
+	if m.ReadOnlyIntent {
+		query.Add("applicationintent", "ReadOnly")
+	}
 
 	u := &url.URL{
 		Scheme:   "sqlserver",

@@ -32,6 +32,7 @@ func getValidColumns(cols []columns.Column) []columns.Column {
 }
 
 func CreateTempTable(ctx context.Context, dest destination.SQLDestination, tableData *optimization.TableData, tc *types.DestinationTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier) error {
+	settings.SkipPrimaryKeyCreation = tableData.TopicConfig().SkipPrimaryKeyCreation
 	return CreateTable(ctx, dest, tableData.Mode(), tc, settings, tableID, true, tableData.ReadOnlyInMemoryCols().GetColumns())
 }
 

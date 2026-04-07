@@ -80,6 +80,16 @@ func TestS3Settings_Validate(t *testing.T) {
 		}
 		assert.NoError(t, s3.Validate())
 	}
+	{
+		// valid with role ARN and external ID
+		s3 := &S3Settings{
+			Bucket:       "bucket",
+			RoleARN:      "arn:aws:iam::123456789:role/my-role",
+			ExternalID:   "my-external-id",
+			OutputFormat: constants.ParquetFormat,
+		}
+		assert.NoError(t, s3.Validate())
+	}
 }
 
 func TestGCSSettings_Validate(t *testing.T) {
