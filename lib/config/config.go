@@ -64,7 +64,13 @@ func (g *GCSSettings) Validate() error {
 }
 
 func (c Config) TopicConfigs() []*kafkalib.TopicConfig {
-	return c.Kafka.TopicConfigs
+	if c.Queue == constants.Kinesis && c.Kinesis != nil {
+		return c.Kinesis.TopicConfigs
+	}
+	if c.Kafka != nil {
+		return c.Kafka.TopicConfigs
+	}
+	return nil
 }
 
 func (m Mode) String() string {
@@ -292,6 +298,10 @@ func (c Config) Validate() error {
 		// Username and password may not be required if this is connecting to a private Kafka cluster.
 		if stringutil.Empty(c.Kafka.GroupID, c.Kafka.BootstrapServer) {
 			return fmt.Errorf("kafka group or bootstrap server is empty")
+		}
+	case constants.Kinesis:
+		if err := c.Kinesis.Validate(); err != nil {
+			return err
 		}
 	}
 
