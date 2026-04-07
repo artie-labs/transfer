@@ -78,7 +78,8 @@ type QueueKind string
 const (
 	Kafka QueueKind = "kafka"
 	// Reader - This is when Reader is directly importing code from Transfer and skipping Kafka.
-	Reader QueueKind = "reader"
+	Reader  QueueKind = "reader"
+	Kinesis QueueKind = "kinesis"
 )
 
 type DestinationKind string
@@ -91,13 +92,14 @@ const (
 	Iceberg    DestinationKind = "iceberg"
 	MSSQL      DestinationKind = "mssql"
 	MotherDuck DestinationKind = "motherduck"
-	MySQL      DestinationKind = "mysql"
-	Postgres   DestinationKind = "postgres"
-	Redshift   DestinationKind = "redshift"
-	S3         DestinationKind = "s3"
-	Snowflake  DestinationKind = "snowflake"
-	Redis      DestinationKind = "redis"
-	SQS        DestinationKind = "sqs"
+	MySQL         DestinationKind = "mysql"
+	Postgres      DestinationKind = "postgres"
+	Redshift      DestinationKind = "redshift"
+	S3            DestinationKind = "s3"
+	Snowflake     DestinationKind = "snowflake"
+	Redis         DestinationKind = "redis"
+	SQS           DestinationKind = "sqs"
+	Elasticsearch DestinationKind = "elasticsearch"
 )
 
 var ValidDestinations = []DestinationKind{
@@ -115,6 +117,7 @@ var ValidDestinations = []DestinationKind{
 	Snowflake,
 	Redis,
 	SQS,
+	Elasticsearch,
 }
 
 func IsValidDestination(destination DestinationKind) bool {

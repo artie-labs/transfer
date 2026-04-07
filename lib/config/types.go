@@ -202,7 +202,8 @@ type Config struct {
 	BufferRows           uint `yaml:"bufferRows"`
 
 	// Supported message queues
-	Kafka *kafkalib.Kafka `yaml:"kafka,omitempty"`
+	Kafka   *kafkalib.Kafka `yaml:"kafka,omitempty"`
+	Kinesis *Kinesis        `yaml:"kinesis,omitempty"`
 
 	// Supported destinations
 	BigQuery   *BigQuery    `yaml:"bigquery,omitempty"`
@@ -217,8 +218,9 @@ type Config struct {
 	Iceberg    *Iceberg     `yaml:"iceberg,omitempty"`
 	MotherDuck *MotherDuck  `yaml:"motherduck,omitempty"`
 	Redis      *Redis       `yaml:"redis,omitempty"`
-	Clickhouse *Clickhouse  `yaml:"clickhouse,omitempty"`
-	SQS        *SQSSettings `yaml:"sqs,omitempty"`
+	Clickhouse *Clickhouse    `yaml:"clickhouse,omitempty"`
+	SQS        *SQSSettings   `yaml:"sqs,omitempty"`
+	Elasticsearch *Elasticsearch `yaml:"elasticsearch,omitempty"`
 
 	SharedDestinationSettings SharedDestinationSettings `yaml:"sharedDestinationSettings"`
 	StagingTableReuse         *StagingTableReuseConfig  `yaml:"stagingTableReuse,omitempty"`
