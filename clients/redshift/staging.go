@@ -68,10 +68,12 @@ func (s *Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.T
 
 	copyStmt := s.dialect().BuildCopyStatement(tableID, cols, s3Uri, credentialsClause)
 	if err = retry.WithRetries(s.retryCfg, func(attempt int, _ error) error {
-		if attempt > 0 {
-			// clear the table before retrying.
-			if _, truncateErr := s.ExecContext(ctx, s.Dialect().BuildTruncateTableQuery(tableID)); truncateErr != nil {
-				return fmt.Errorf("failed to truncate table before retrying COPY: %w", truncateErr)
+		if createTempTable {
+			if attempt > 0 {
+				// We should not try to clear the table before retrying if this is not a temporary table.
+				if _, truncateErr := s.ExecContext(ctx, s.Dialect().BuildTruncateTableQuery(tableID)); truncateErr != nil {
+					return fmt.Errorf("failed to truncate table before retrying COPY: %w", truncateErr)
+				}
 			}
 		}
 
