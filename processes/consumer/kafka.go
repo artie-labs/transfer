@@ -64,6 +64,7 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 				}
 			}
 
+			var fetchRetries int
 			for {
 				err = kafkaConsumer.FetchMessageAndProcess(ctx, func(msg artie.Message) error {
 					if len(msg.Value()) == 0 {
@@ -94,8 +95,11 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 					return nil
 				})
 				if err != nil {
-					if fetchErr, ok := kafkalib.IsFetchMessageError(err); ok && db.IsRetryableError(fetchErr.Err, context.DeadlineExceeded) {
-						time.Sleep(500 * time.Millisecond)
+					_, isFetchErr := kafkalib.AsFetchMessageError(err)
+					if isFetchErr && db.IsRetryableError(err, context.DeadlineExceeded, kafkalib.ErrNoMessages) {
+						sleepDuration := jitter.Jitter(500, jitter.DefaultMaxMs, fetchRetries)
+						time.Sleep(sleepDuration)
+						fetchRetries++
 						continue
 					} else {
 						whClient.SendEvent(ctx, webhooks.EventReplicationFailed, webhooks.EventProperties{
@@ -105,6 +109,7 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 						logger.Fatal("Failed to fetch and process message", slog.Any("err", err), slog.String("topic", topic))
 					}
 				}
+				fetchRetries = 0
 			}
 		}(topic)
 	}
