@@ -86,7 +86,7 @@ func (g GetTableCfgArgs) buildColumnFromRow(row map[string]any) (columns.Column,
 
 	kindDetails, err := g.Destination.Dialect().KindForDataType(kindColName)
 	if err != nil {
-		return columns.Column{}, fmt.Errorf("failed to get kind details: %w", err)
+		return columns.Column{}, fmt.Errorf("failed to get kind details row: %v, err: %w", row, err)
 	}
 
 	if kindDetails.Kind == typing.Invalid.Kind {
