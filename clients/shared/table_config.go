@@ -54,7 +54,7 @@ func (g GetTableCfgArgs) query(ctx context.Context) ([]columns.Column, error) {
 	for _, row := range rows {
 		col, err := g.buildColumnFromRow(row)
 		if err != nil {
-			return nil, fmt.Errorf("failed to build column from row: %w", err)
+			return nil, fmt.Errorf("failed to build column from row for table %q: %w", g.TableID.Table(), err)
 		}
 
 		cols = append(cols, col)
@@ -86,11 +86,11 @@ func (g GetTableCfgArgs) buildColumnFromRow(row map[string]any) (columns.Column,
 
 	kindDetails, err := g.Destination.Dialect().KindForDataType(kindColName)
 	if err != nil {
-		return columns.Column{}, fmt.Errorf("failed to get kind details: %w", err)
+		return columns.Column{}, fmt.Errorf("failed to get kind details for column %q (data_type=%q): %w", row[g.ColumnNameForName], kindColName, err)
 	}
 
 	if kindDetails.Kind == typing.Invalid.Kind {
-		return columns.Column{}, fmt.Errorf("failed to get kind details: unable to map type: %q to dwh type", row[g.ColumnNameForDataType])
+		return columns.Column{}, fmt.Errorf("failed to get kind details: unable to map type: %q to dwh type for column %q", row[g.ColumnNameForDataType], row[g.ColumnNameForName])
 	}
 
 	colName, err := asString(row[g.ColumnNameForName])
