@@ -19,15 +19,16 @@ const (
 	EventDedupeFailed      EventType = "dedupe.failed"
 
 	EventReplicationStarted EventType = "replication.started"
-	EventReplicationFailed  EventType = "replication.failed"
-	EventConnectionFailed   EventType = "connection.failed"
+	EventReplicationError   EventType = "replication.error"
 	EventRowSkipped         EventType = "row.skipped"
-
-	// Source specific events
-	EventDDLSeen EventType = "ddl.seen"
+	EventDDLSeen            EventType = "ddl.seen"
 
 	// Dashboard specific events
 	EventDEKGenerated EventType = "dek.generated"
+
+	// Moving away from using these - use EventReplicationError instead
+	EventReplicationFailed EventType = "replication.failed"
+	EventConnectionFailed  EventType = "connection.failed"
 )
 
 // AllEventTypes contains all defined event types.
@@ -41,11 +42,13 @@ var AllEventTypes = []EventType{
 	EventDedupeCompleted,
 	EventDedupeFailed,
 	EventReplicationStarted,
-	EventReplicationFailed,
-	EventConnectionFailed,
+	EventReplicationError,
 	EventRowSkipped,
 	EventDDLSeen,
 	EventDEKGenerated,
+
+	EventReplicationFailed,
+	EventConnectionFailed,
 }
 
 type Severity string
@@ -82,14 +85,15 @@ var eventMetadataMap = map[EventType]EventMetadata{
 	EventDedupeFailed:      {SeverityError, "backfill", "Deduplication failed"},
 	// Replication events
 	EventReplicationStarted: {SeverityInfo, "replication", "Replication started"},
-	EventReplicationFailed:  {SeverityError, "replication", "Replication failed"},
+	EventReplicationError:   {SeverityError, "replication", "Replication error"},
 	EventRowSkipped:         {SeverityWarning, "replication", "Row skipped"},
-	// Connection events
-	EventConnectionFailed: {SeverityError, "connection", "Connection failed"},
-	// Source specific events
-	EventDDLSeen: {SeverityInfo, "ddl", "DDL seen"},
-	// Dashboard specific events:
+	EventDDLSeen:            {SeverityInfo, "replication", "DDL seen"},
+	// Dashboard specific events
 	EventDEKGenerated: {SeverityInfo, "dashboard", "Data Encryption Key (DEK) generated"},
+
+	// Deprecated
+	EventReplicationFailed: {SeverityError, "replication", "Replication failed"},
+	EventConnectionFailed:  {SeverityError, "connection", "Connection failed"},
 }
 
 func GetEventMetadata(eventType EventType) EventMetadata {

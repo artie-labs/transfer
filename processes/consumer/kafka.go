@@ -24,7 +24,7 @@ import (
 func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client, whClient *webhooks.Client) {
 	encryptionKey, err := cfg.SharedDestinationSettings.BuildEncryptionKey(ctx)
 	if err != nil {
-		whClient.SendEvent(ctx, webhooks.EventReplicationFailed, webhooks.EventProperties{
+		whClient.SendEvent(ctx, webhooks.EventReplicationError, webhooks.EventProperties{
 			Error: fmt.Sprintf("Failed to build encryption key: %s", err),
 		})
 		logger.Fatal("Failed to build encryption key", slog.Any("err", err))
@@ -47,7 +47,7 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 			defer logger.RecoverFatal()
 			kafkaConsumer, err := kafkalib.GetConsumerFromContext(ctx, topic)
 			if err != nil {
-				whClient.SendEvent(ctx, webhooks.EventReplicationFailed, webhooks.EventProperties{
+				whClient.SendEvent(ctx, webhooks.EventReplicationError, webhooks.EventProperties{
 					Error: fmt.Sprintf("Failed to start Kafka consumer: %s", err),
 					Topic: topic,
 				})
@@ -56,7 +56,7 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 
 			if cfg.Kafka.WaitForTopics {
 				if err := kafkaConsumer.WaitForTopic(ctx); err != nil {
-					whClient.SendEvent(ctx, webhooks.EventReplicationFailed, webhooks.EventProperties{
+					whClient.SendEvent(ctx, webhooks.EventReplicationError, webhooks.EventProperties{
 						Error: fmt.Sprintf("Failed waiting for Kafka topic to exist: %s", err),
 						Topic: topic,
 					})
@@ -82,7 +82,7 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 
 					tableID, err := args.process(ctx, cfg, inMemDB, dest, metricsClient)
 					if err != nil {
-						whClient.SendEvent(ctx, webhooks.EventReplicationFailed, webhooks.EventProperties{
+						whClient.SendEvent(ctx, webhooks.EventReplicationError, webhooks.EventProperties{
 							Error: fmt.Sprintf("Failed to process message: %s", err),
 							Topic: msg.Topic(),
 						})
@@ -102,7 +102,7 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 						fetchRetries++
 						continue
 					} else {
-						whClient.SendEvent(ctx, webhooks.EventReplicationFailed, webhooks.EventProperties{
+						whClient.SendEvent(ctx, webhooks.EventReplicationError, webhooks.EventProperties{
 							Error: fmt.Sprintf("Failed to fetch and process message: %s", err),
 							Topic: topic,
 						})
