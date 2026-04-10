@@ -3,7 +3,9 @@ package redshift
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
+	"strings"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 
@@ -13,15 +15,17 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
-	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/environ"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/retry"
 	"github.com/artie-labs/transfer/lib/sql"
+	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/webhooks"
 )
+
+const dedupeBatchSize = 10_000_000
 
 type Store struct {
 	credentialsClause string
@@ -127,11 +131,98 @@ func (s *Store) SweepTemporaryTables(ctx context.Context) error {
 }
 
 func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kafkalib.DatabaseAndSchemaPair, primaryKeys []string, includeArtieUpdatedAt bool) error {
-	stagingTableID := shared.BuildStagingTableID(s, pair, tableID)
-	dedupeQueries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt)
+	if len(primaryKeys) == 0 {
+		return fmt.Errorf("primary keys cannot be empty")
+	}
 
-	if _, err := destination.ExecContextStatements(ctx, s, dedupeQueries); err != nil {
-		return fmt.Errorf("failed to dedupe: %w", err)
+	rd := s.dialect()
+	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, rd)
+	pkCSV := strings.Join(primaryKeysEscaped, ", ")
+
+	orderCols := make([]string, len(primaryKeysEscaped))
+	copy(orderCols, primaryKeysEscaped)
+	if includeArtieUpdatedAt {
+		orderCols = append(orderCols, rd.QuoteIdentifier(constants.UpdateColumnMarker))
+	}
+
+	var orderByCols []string
+	for _, col := range orderCols {
+		orderByCols = append(orderByCols, fmt.Sprintf("%s ASC", col))
+	}
+	orderByCSV := strings.Join(orderByCols, ", ")
+
+	baseTableID := s.IdentifierFor(pair, tableID.Table())
+
+	var joinClauses []string
+	for _, pk := range primaryKeysEscaped {
+		joinClauses = append(joinClauses, fmt.Sprintf("%s.%s = stg.%s", tableID.EscapedTable(), pk, pk))
+	}
+	joinClause := strings.Join(joinClauses, " AND ")
+
+	for batch := 0; ; batch++ {
+		suffix := fmt.Sprintf("dedupe_%d_%s", batch, strings.ToLower(stringutil.Random(5)))
+		batchTableID := shared.TempTableIDWithSuffix(s, baseTableID, suffix)
+
+		// Temp table holds the one row we want to *keep* per duplicate PK group (rn = 1).
+		// We then delete all rows for those PKs and re-insert the keepers.
+		createTemp := fmt.Sprintf(
+			`CREATE TEMPORARY TABLE %s AS (SELECT * FROM %s WHERE (%s) IN (SELECT %s FROM %s GROUP BY %s HAVING COUNT(*) > 1 LIMIT %d) QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 1)`,
+			batchTableID.EscapedTable(),
+			tableID.FullyQualifiedName(),
+			pkCSV,
+			pkCSV, tableID.FullyQualifiedName(), pkCSV, dedupeBatchSize,
+			pkCSV, orderByCSV,
+		)
+
+		if _, err := s.ExecContext(ctx, createTemp); err != nil {
+			return fmt.Errorf("failed to create dedupe staging table (batch %d): %w", batch, err)
+		}
+
+		var count int64
+		if err := s.QueryRowContext(ctx, fmt.Sprintf("SELECT COUNT(*) FROM %s", batchTableID.EscapedTable())).Scan(&count); err != nil {
+			return fmt.Errorf("failed to count staging rows (batch %d): %w", batch, err)
+		}
+
+		if count == 0 {
+			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", batchTableID.EscapedTable()))
+			break
+		}
+
+		tx, err := s.Begin(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to begin transaction (batch %d): %w", batch, err)
+		}
+
+		deleteQuery := fmt.Sprintf("DELETE FROM %s USING %s stg WHERE %s",
+			tableID.FullyQualifiedName(),
+			batchTableID.EscapedTable(),
+			joinClause,
+		)
+
+		if _, err := tx.ExecContext(ctx, deleteQuery); err != nil {
+			_ = tx.Rollback()
+			return fmt.Errorf("failed to delete dupes (batch %d): %w", batch, err)
+		}
+
+		insertQuery := fmt.Sprintf("INSERT INTO %s SELECT * FROM %s",
+			tableID.FullyQualifiedName(),
+			batchTableID.EscapedTable(),
+		)
+
+		if _, err := tx.ExecContext(ctx, insertQuery); err != nil {
+			_ = tx.Rollback()
+			return fmt.Errorf("failed to re-insert deduped rows (batch %d): %w", batch, err)
+		}
+
+		if err := tx.Commit(); err != nil {
+			return fmt.Errorf("failed to commit dedupe (batch %d): %w", batch, err)
+		}
+
+		if _, err := s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", batchTableID.EscapedTable())); err != nil {
+			return fmt.Errorf("failed to drop staging table (batch %d): %w", batch, err)
+		}
+
+		slog.Info("Dedupe batch complete", slog.Int("batch", batch), slog.Int64("pkGroupsDeduped", count))
 	}
 
 	return nil
