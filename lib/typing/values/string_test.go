@@ -177,8 +177,8 @@ func TestToString(t *testing.T) {
 		{
 			// Float64 value
 			val, err := ToString(45452.999991, typing.Integer)
-			assert.NoError(t, err)
-			assert.Equal(t, "45452.999991", val)
+			assert.ErrorContains(t, err, "unexpected value: '45452.999991', type: float64")
+			assert.Empty(t, val)
 		}
 		{
 			// Integer value

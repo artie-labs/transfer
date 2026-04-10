@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"math"
 	"reflect"
 	"strconv"
 	"strings"
@@ -253,8 +254,15 @@ type IntegerConverter struct{}
 func (IntegerConverter) Convert(value any) (string, error) {
 	switch parsedVal := value.(type) {
 	case float32:
+		f64Val := float64(parsedVal)
+		if math.IsInf(f64Val, 0) || f64Val != math.Trunc(f64Val) {
+			return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.UnexpectedValue)
+		}
 		return Float32ToString(parsedVal), nil
 	case float64:
+		if math.IsInf(parsedVal, 0) || parsedVal != math.Trunc(parsedVal) {
+			return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.UnexpectedValue)
+		}
 		return Float64ToString(parsedVal), nil
 	case bool:
 		return fmt.Sprint(BooleanToBit(parsedVal)), nil
