@@ -147,7 +147,7 @@ func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair ka
 
 	var orderByCols []string
 	for _, col := range orderCols {
-		orderByCols = append(orderByCols, fmt.Sprintf("%s ASC", col))
+		orderByCols = append(orderByCols, fmt.Sprintf("%s DESC", col))
 	}
 	orderByCSV := strings.Join(orderByCols, ", ")
 
