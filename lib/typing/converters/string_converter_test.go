@@ -251,6 +251,30 @@ func TestIntegerConverter_Convert(t *testing.T) {
 		}
 	}
 	{
+		// Whole number floats should be accepted
+		for _, tc := range []struct {
+			input    any
+			expected string
+		}{
+			{float32(1.0), "1"},
+			{float64(1.0), "1"},
+			{float32(-5.0), "-5"},
+			{float64(-5.0), "-5"},
+			{float64(0.0), "0"},
+		} {
+			parsedVal, err := IntegerConverter{}.Convert(tc.input)
+			assert.NoError(t, err, "input: %v", tc.input)
+			assert.Equal(t, tc.expected, parsedVal, "input: %v", tc.input)
+		}
+	}
+	{
+		// Floats with fractional parts should be rejected
+		for _, val := range []any{float32(0.731), float64(0.731), float32(123.45), float64(123.45)} {
+			_, err := IntegerConverter{}.Convert(val)
+			assert.ErrorContains(t, err, "unexpected value", "val: %v", val)
+		}
+	}
+	{
 		// Test decimal.Decimal
 		val, err := IntegerConverter{}.Convert(decimal.NewDecimal(numbers.MustParseDecimal("123")))
 		assert.NoError(t, err)
