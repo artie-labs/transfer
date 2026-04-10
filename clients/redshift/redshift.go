@@ -160,34 +160,51 @@ func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair ka
 	joinClause := strings.Join(joinClauses, " AND ")
 
 	for batch := 0; ; batch++ {
-		suffix := fmt.Sprintf("dedupe_%d_%s", batch, strings.ToLower(stringutil.Random(5)))
-		batchTableID := shared.TempTableIDWithSuffix(s, baseTableID, suffix)
+		dupPKsSuffix := fmt.Sprintf("dup_pks_%d_%s", batch, strings.ToLower(stringutil.Random(5)))
+		dupPKsTableID := shared.TempTableIDWithSuffix(s, baseTableID, dupPKsSuffix)
 
-		// Temp table holds the one row we want to *keep* per duplicate PK group (rn = 1).
-		// We then delete all rows for those PKs and re-insert the keepers.
-		createTemp := fmt.Sprintf(
-			`CREATE TEMPORARY TABLE %s AS (SELECT * FROM %s WHERE (%s) IN (SELECT %s FROM %s GROUP BY %s HAVING COUNT(*) > 1 LIMIT %d) QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 1)`,
-			batchTableID.EscapedTable(),
-			tableID.FullyQualifiedName(),
-			pkCSV,
+		keepersSuffix := fmt.Sprintf("keepers_%d_%s", batch, strings.ToLower(stringutil.Random(5)))
+		keepersTableID := shared.TempTableIDWithSuffix(s, baseTableID, keepersSuffix)
+
+		// Step 1: Lightweight query — only reads the PK column(s) to find which groups have duplicates.
+		createDupPKs := fmt.Sprintf(
+			`CREATE TEMPORARY TABLE %s AS (SELECT %s FROM %s GROUP BY %s HAVING COUNT(*) > 1 LIMIT %d)`,
+			dupPKsTableID.EscapedTable(),
 			pkCSV, tableID.FullyQualifiedName(), pkCSV, dedupeBatchSize,
-			pkCSV, orderByCSV,
 		)
 
-		if _, err := s.ExecContext(ctx, createTemp); err != nil {
-			return fmt.Errorf("failed to create dedupe staging table (batch %d): %w", batch, err)
+		if _, err := s.ExecContext(ctx, createDupPKs); err != nil {
+			return fmt.Errorf("failed to find duplicate PKs (batch %d): %w", batch, err)
 		}
 
 		var count int64
-		if err := s.QueryRowContext(ctx, fmt.Sprintf("SELECT COUNT(*) FROM %s", batchTableID.EscapedTable())).Scan(&count); err != nil {
-			return fmt.Errorf("failed to count staging rows (batch %d): %w", batch, err)
+		if err := s.QueryRowContext(ctx, fmt.Sprintf("SELECT COUNT(*) FROM %s", dupPKsTableID.EscapedTable())).Scan(&count); err != nil {
+			return fmt.Errorf("failed to count duplicate PKs (batch %d): %w", batch, err)
 		}
 
 		if count == 0 {
-			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", batchTableID.EscapedTable()))
+			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", dupPKsTableID.EscapedTable()))
 			break
 		}
 
+		slog.Info("Found duplicate PK groups", slog.Int("batch", batch), slog.Int64("pkGroups", count))
+
+		// Step 2: Scoped query — only reads rows matching the duplicate PKs (small set), then picks the keeper.
+		createKeepers := fmt.Sprintf(
+			`CREATE TEMPORARY TABLE %s AS (SELECT * FROM %s WHERE (%s) IN (SELECT %s FROM %s) QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 1)`,
+			keepersTableID.EscapedTable(),
+			tableID.FullyQualifiedName(),
+			pkCSV,
+			pkCSV, dupPKsTableID.EscapedTable(),
+			pkCSV, orderByCSV,
+		)
+
+		if _, err := s.ExecContext(ctx, createKeepers); err != nil {
+			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", dupPKsTableID.EscapedTable()))
+			return fmt.Errorf("failed to create keepers table (batch %d): %w", batch, err)
+		}
+
+		// Step 3: Atomic delete + re-insert scoped to the duplicate PKs.
 		tx, err := s.Begin(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to begin transaction (batch %d): %w", batch, err)
@@ -195,7 +212,7 @@ func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair ka
 
 		deleteQuery := fmt.Sprintf("DELETE FROM %s USING %s stg WHERE %s",
 			tableID.FullyQualifiedName(),
-			batchTableID.EscapedTable(),
+			dupPKsTableID.EscapedTable(),
 			joinClause,
 		)
 
@@ -206,7 +223,7 @@ func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair ka
 
 		insertQuery := fmt.Sprintf("INSERT INTO %s SELECT * FROM %s",
 			tableID.FullyQualifiedName(),
-			batchTableID.EscapedTable(),
+			keepersTableID.EscapedTable(),
 		)
 
 		if _, err := tx.ExecContext(ctx, insertQuery); err != nil {
@@ -218,9 +235,8 @@ func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair ka
 			return fmt.Errorf("failed to commit dedupe (batch %d): %w", batch, err)
 		}
 
-		if _, err := s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", batchTableID.EscapedTable())); err != nil {
-			return fmt.Errorf("failed to drop staging table (batch %d): %w", batch, err)
-		}
+		_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", dupPKsTableID.EscapedTable()))
+		_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", keepersTableID.EscapedTable()))
 
 		slog.Info("Dedupe batch complete", slog.Int("batch", batch), slog.Int64("pkGroupsDeduped", count))
 	}
