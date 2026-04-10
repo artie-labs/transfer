@@ -139,6 +139,10 @@ func (s *Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier,
 }
 
 func (s *Store) describeTable(ctx context.Context, tableID sql.TableIdentifier) ([]columns.Column, error) {
+	if s.bqClient == nil {
+		return nil, fmt.Errorf("bigquery client is not initialized")
+	}
+
 	query, args, err := s.Dialect().BuildDescribeTableQuery(tableID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build describe table query: %w", err)
@@ -170,7 +174,7 @@ func (s *Store) describeTable(ctx context.Context, tableID sql.TableIdentifier) 
 			return nil, fmt.Errorf("failed to iterate over describe table rows: %w", err)
 		}
 
-		col, err := s.buildColumn(row)
+		col, err := buildColumn(s.Dialect(), row)
 		if err != nil {
 			return nil, fmt.Errorf("failed to build column from row for table %q: %w", tableID.Table(), err)
 		}
@@ -187,8 +191,8 @@ type describeTableRow struct {
 	Description *string `bigquery:"description"`
 }
 
-func (s *Store) buildColumn(row describeTableRow) (columns.Column, error) {
-	kindDetails, err := s.Dialect().KindForDataType(row.DataType)
+func buildColumn(dialect sql.Dialect, row describeTableRow) (columns.Column, error) {
+	kindDetails, err := dialect.KindForDataType(row.DataType)
 	if err != nil {
 		return columns.Column{}, fmt.Errorf("failed to get kind details for column %q (data_type=%q): %w", row.ColumnName, row.DataType, err)
 	}
