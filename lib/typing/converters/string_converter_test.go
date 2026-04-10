@@ -2,6 +2,7 @@ package converters
 
 import (
 	"encoding/json"
+	"math"
 	"testing"
 	"time"
 
@@ -251,28 +252,53 @@ func TestIntegerConverter_Convert(t *testing.T) {
 		}
 	}
 	{
-		// Whole number floats should be accepted
-		for _, tc := range []struct {
-			input    any
-			expected string
-		}{
-			{float32(1.0), "1"},
-			{float64(1.0), "1"},
-			{float32(-5.0), "-5"},
-			{float64(-5.0), "-5"},
-			{float64(0.0), "0"},
-		} {
-			parsedVal, err := IntegerConverter{}.Convert(tc.input)
-			assert.NoError(t, err, "input: %v", tc.input)
-			assert.Equal(t, tc.expected, parsedVal, "input: %v", tc.input)
-		}
+		// float32 - whole number
+		parsedVal, err := IntegerConverter{}.Convert(float32(1.0))
+		assert.NoError(t, err)
+		assert.Equal(t, "1", parsedVal)
 	}
 	{
-		// Floats with fractional parts should be rejected
-		for _, val := range []any{float32(0.731), float64(0.731), float32(123.45), float64(123.45)} {
-			_, err := IntegerConverter{}.Convert(val)
-			assert.ErrorContains(t, err, "unexpected value", "val: %v", val)
-		}
+		// float64 - whole number
+		parsedVal, err := IntegerConverter{}.Convert(float64(1.0))
+		assert.NoError(t, err)
+		assert.Equal(t, "1", parsedVal)
+	}
+	{
+		// float32 - negative whole number
+		parsedVal, err := IntegerConverter{}.Convert(float32(-5.0))
+		assert.NoError(t, err)
+		assert.Equal(t, "-5", parsedVal)
+	}
+	{
+		// float64 - zero
+		parsedVal, err := IntegerConverter{}.Convert(float64(0.0))
+		assert.NoError(t, err)
+		assert.Equal(t, "0", parsedVal)
+	}
+	{
+		// float32 - fractional part should be rejected
+		_, err := IntegerConverter{}.Convert(float32(0.731))
+		assert.ErrorContains(t, err, "unexpected value")
+	}
+	{
+		// float64 - fractional part should be rejected
+		_, err := IntegerConverter{}.Convert(float64(123.45))
+		assert.ErrorContains(t, err, "unexpected value")
+	}
+	{
+		// float64 - positive infinity should be rejected
+		_, err := IntegerConverter{}.Convert(math.Inf(1))
+		assert.ErrorContains(t, err, "unexpected value")
+	}
+	{
+		// float64 - negative infinity should be rejected
+		_, err := IntegerConverter{}.Convert(math.Inf(-1))
+		assert.ErrorContains(t, err, "unexpected value")
+	}
+	{
+		// float64 - NaN should be rejected
+		_, err := IntegerConverter{}.Convert(math.NaN())
+		assert.ErrorContains(t, err, "unexpected value")
 	}
 	{
 		// Test decimal.Decimal
