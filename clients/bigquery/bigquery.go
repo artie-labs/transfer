@@ -186,9 +186,9 @@ func (s *Store) describeTable(ctx context.Context, tableID sql.TableIdentifier) 
 }
 
 type describeTableRow struct {
-	ColumnName  string  `bigquery:"column_name"`
-	DataType    string  `bigquery:"data_type"`
-	Description *string `bigquery:"description"`
+	ColumnName  string              `bigquery:"column_name"`
+	DataType    string              `bigquery:"data_type"`
+	Description bigquery.NullString `bigquery:"description"`
 }
 
 func buildColumn(dialect sql.Dialect, row describeTableRow) (columns.Column, error) {
@@ -202,12 +202,12 @@ func buildColumn(dialect sql.Dialect, row describeTableRow) (columns.Column, err
 	}
 
 	col := columns.NewColumn(strings.ToLower(row.ColumnName), kindDetails)
-	if row.Description != nil && *row.Description != "" {
+	if row.Description.Valid && row.Description.StringVal != "" {
 		var payload constants.ColComment
-		if err = json.Unmarshal([]byte(*row.Description), &payload); err != nil {
+		if err = json.Unmarshal([]byte(row.Description.StringVal), &payload); err != nil {
 			slog.Warn("Failed to unmarshal comment, marking as backfilled so we don't try to overwrite it",
 				slog.Any("err", err),
-				slog.String("comment", *row.Description),
+				slog.String("comment", row.Description.StringVal),
 			)
 			col.SetBackfilled(true)
 		} else {
