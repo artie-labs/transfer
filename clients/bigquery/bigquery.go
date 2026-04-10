@@ -3,6 +3,7 @@ package bigquery
 import (
 	"cmp"
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
@@ -13,6 +14,7 @@ import (
 	"cloud.google.com/go/bigquery/storage/managedwriter"
 	"cloud.google.com/go/bigquery/storage/managedwriter/adapt"
 	_ "github.com/viant/bigquery"
+	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 	"google.golang.org/protobuf/proto"
 
@@ -26,10 +28,10 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/ddl"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing"
+	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/webhooks"
 )
 
@@ -122,15 +124,94 @@ func (s *Store) IdentifierFor(databaseAndSchema kafkalib.DatabaseAndSchemaPair, 
 }
 
 func (s *Store) GetTableConfig(ctx context.Context, tableID sql.TableIdentifier, dropDeletedColumns bool) (*types.DestinationTableConfig, error) {
-	return shared.GetTableCfgArgs{
-		Destination:           s,
-		TableID:               tableID,
-		ConfigMap:             s.configMap,
-		ColumnNameForName:     "column_name",
-		ColumnNameForDataType: "data_type",
-		ColumnNameForComment:  "description",
-		DropDeletedColumns:    dropDeletedColumns,
-	}.GetTableConfig(ctx)
+	if tableConfig := s.configMap.GetTableConfig(tableID); tableConfig != nil {
+		return tableConfig, nil
+	}
+
+	cols, err := s.describeTable(ctx, tableID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to describe table: %w", err)
+	}
+
+	tableCfg := types.NewDestinationTableConfig(cols, dropDeletedColumns)
+	s.configMap.AddTable(tableID, tableCfg)
+	return tableCfg, nil
+}
+
+func (s *Store) describeTable(ctx context.Context, tableID sql.TableIdentifier) ([]columns.Column, error) {
+	query, args, err := s.Dialect().BuildDescribeTableQuery(tableID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build describe table query: %w", err)
+	}
+
+	q := s.bqClient.Query(query)
+	for _, arg := range args {
+		q.Parameters = append(q.Parameters, bigquery.QueryParameter{Value: arg})
+	}
+
+	it, err := q.Read(ctx)
+	if err != nil {
+		if s.Dialect().IsTableDoesNotExistErr(err) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("failed to run describe table query: %w", err)
+	}
+
+	var cols []columns.Column
+	for {
+		var row describeTableRow
+		if err = it.Next(&row); err != nil {
+			if err == iterator.Done {
+				break
+			}
+			if s.Dialect().IsTableDoesNotExistErr(err) {
+				return nil, nil
+			}
+			return nil, fmt.Errorf("failed to iterate over describe table rows: %w", err)
+		}
+
+		col, err := s.buildColumn(row)
+		if err != nil {
+			return nil, fmt.Errorf("failed to build column from row for table %q: %w", tableID.Table(), err)
+		}
+
+		cols = append(cols, col)
+	}
+
+	return cols, nil
+}
+
+type describeTableRow struct {
+	ColumnName  string  `bigquery:"column_name"`
+	DataType    string  `bigquery:"data_type"`
+	Description *string `bigquery:"description"`
+}
+
+func (s *Store) buildColumn(row describeTableRow) (columns.Column, error) {
+	kindDetails, err := s.Dialect().KindForDataType(row.DataType)
+	if err != nil {
+		return columns.Column{}, fmt.Errorf("failed to get kind details for column %q (data_type=%q): %w", row.ColumnName, row.DataType, err)
+	}
+
+	if kindDetails.Kind == typing.Invalid.Kind {
+		return columns.Column{}, fmt.Errorf("unable to map type %q to a supported type for column %q", row.DataType, row.ColumnName)
+	}
+
+	col := columns.NewColumn(strings.ToLower(row.ColumnName), kindDetails)
+	if row.Description != nil && *row.Description != "" {
+		var payload constants.ColComment
+		if err = json.Unmarshal([]byte(*row.Description), &payload); err != nil {
+			slog.Warn("Failed to unmarshal comment, marking as backfilled so we don't try to overwrite it",
+				slog.Any("err", err),
+				slog.String("comment", *row.Description),
+			)
+			col.SetBackfilled(true)
+		} else {
+			col.SetBackfilled(payload.Backfilled)
+		}
+	}
+
+	return col, nil
 }
 
 func (s *Store) GetConfigMap() *types.DestinationTableConfigMap {
@@ -145,13 +226,8 @@ func (s *Store) Dialect() sql.Dialect {
 	return dialect.BigQueryDialect{}
 }
 
-func (s *Store) GetClient(ctx context.Context) *bigquery.Client {
-	client, err := bigquery.NewClient(ctx, s.config.BigQuery.ProjectID)
-	if err != nil {
-		logger.Panic("Failed to get bigquery client", slog.Any("err", err))
-	}
-
-	return client
+func (s *Store) GetClient() *bigquery.Client {
+	return s.bqClient
 }
 
 func (s *Store) putTable(ctx context.Context, bqTableID dialect.TableIdentifier, tableData *optimization.TableData) error {
