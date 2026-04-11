@@ -1,7 +1,6 @@
 package converters
 
 import (
-	"fmt"
 	"math"
 	"testing"
 
@@ -14,10 +13,12 @@ func TestBooleanToBit(t *testing.T) {
 }
 
 func TestFloat32ToString(t *testing.T) {
-	tests := []struct {
-		input    float32
-		expected string
-	}{
+	type ioPair struct {
+		input  float32
+		output string
+	}
+
+	ioPairs := []ioPair{
 		{123.456, "123.456"},
 		{0.0, "0"},
 		{-1.0, "-1"},
@@ -35,18 +36,18 @@ func TestFloat32ToString(t *testing.T) {
 		{-3.14159, "-3.14159"},
 	}
 
-	for _, tc := range tests {
-		t.Run(fmt.Sprint(tc.input), func(t *testing.T) {
-			assert.Equal(t, tc.expected, Float32ToString(tc.input))
-		})
+	for _, pair := range ioPairs {
+		assert.Equal(t, pair.output, Float32ToString(pair.input), pair.input)
 	}
 }
 
 func TestFloat64ToString(t *testing.T) {
-	tests := []struct {
-		input    float64
-		expected string
-	}{
+	type ioPair struct {
+		input  float64
+		output string
+	}
+
+	ioPairs := []ioPair{
 		{123.456, "123.456"},
 		{0.0, "0"},
 		{-1.0, "-1"},
@@ -61,9 +62,7 @@ func TestFloat64ToString(t *testing.T) {
 		{-3.141592653589793, "-3.141592653589793"},
 	}
 
-	for _, tc := range tests {
-		t.Run(fmt.Sprint(tc.input), func(t *testing.T) {
-			assert.Equal(t, tc.expected, Float64ToString(tc.input))
-		})
+	for _, pair := range ioPairs {
+		assert.Equal(t, pair.output, Float64ToString(pair.input), pair.input)
 	}
 }
