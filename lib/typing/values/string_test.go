@@ -101,7 +101,7 @@ func TestToString(t *testing.T) {
 			// String
 			value, err := ToString("2021-01-01T17:33:04.150001123", typing.TimestampNTZ)
 			assert.NoError(t, err)
-			assert.Equal(t, time.Date(2021, time.January, 1, 17, 33, 4, 150_001_123, time.UTC).Format(typing.RFC3339NoTZ), value)
+			assert.Equal(t, "2021-01-01T17:33:04.150001123", value)
 		}
 	}
 	{
@@ -116,25 +116,29 @@ func TestToString(t *testing.T) {
 			// String
 			value, err := ToString("2019-12-31T01:02:33.400999991Z", typing.TimestampTZ)
 			assert.NoError(t, err)
-			assert.Equal(t, time.Date(2019, time.December, 31, 1, 2, 33, 400_999_991, time.UTC).Format(time.RFC3339Nano), value)
+			assert.Equal(t, "2019-12-31T01:02:33.400999991Z", value)
 		}
 	}
 	{
 		// String
-		// JSON
-		val, err := ToString(map[string]any{"foo": "bar"}, typing.String)
-		assert.NoError(t, err)
-		assert.Equal(t, `{"foo":"bar"}`, val)
-
-		// Array
-		val, err = ToString([]string{"foo", "bar"}, typing.String)
-		assert.NoError(t, err)
-		assert.Equal(t, `["foo","bar"]`, val)
-
-		// Normal strings
-		val, err = ToString("foo", typing.String)
-		assert.NoError(t, err)
-		assert.Equal(t, "foo", val)
+		{
+			// JSON
+			val, err := ToString(map[string]any{"foo": "bar"}, typing.String)
+			assert.NoError(t, err)
+			assert.Equal(t, `{"foo":"bar"}`, val)
+		}
+		{
+			// Array
+			val, err := ToString([]string{"foo", "bar"}, typing.String)
+			assert.NoError(t, err)
+			assert.Equal(t, `["foo","bar"]`, val)
+		}
+		{
+			// Normal strings
+			val, err := ToString("foo", typing.String)
+			assert.NoError(t, err)
+			assert.Equal(t, "foo", val)
+		}
 	}
 	{
 		// Struct
