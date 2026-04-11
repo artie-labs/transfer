@@ -59,7 +59,7 @@ func (RedshiftDialect) DataTypeForKind(kd typing.KindDetails, _ bool, _ config.S
 		return "VARCHAR(MAX)", nil
 	}
 
-	return kd.Kind, nil
+	return kd.Kind.String(), nil
 }
 
 func (RedshiftDialect) KindForDataType(rawType string) (typing.KindDetails, error) {

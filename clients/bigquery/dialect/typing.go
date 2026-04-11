@@ -49,7 +49,7 @@ func (BigQueryDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, s
 		return "string", nil
 	}
 
-	return kindDetails.Kind, nil
+	return kindDetails.Kind.String(), nil
 }
 
 func (BigQueryDialect) KindForDataType(rawBqType string) (typing.KindDetails, error) {

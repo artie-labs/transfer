@@ -1,6 +1,8 @@
 package typing
 
 import (
+	"fmt"
+
 	"github.com/artie-labs/transfer/lib/typing/decimal"
 )
 
@@ -13,9 +15,66 @@ const (
 	BigIntegerKind
 )
 
+type KindType int
+
+const (
+	KindInvalid KindType = iota
+	KindFloat
+	KindInteger
+	KindDecimal
+	KindBoolean
+	KindArray
+	KindStruct
+	KindString
+	KindBytes
+	KindDate
+	KindTime
+	KindTimestampNTZ
+	KindTimestampTZ
+	KindUUID
+	KindInterval
+)
+
+func (k KindType) String() string {
+	switch k {
+	case KindInvalid:
+		return "invalid"
+	case KindFloat:
+		return "float"
+	case KindInteger:
+		return "int"
+	case KindDecimal:
+		return "decimal"
+	case KindBoolean:
+		return "bool"
+	case KindArray:
+		return "array"
+	case KindStruct:
+		return "struct"
+	case KindString:
+		return "string"
+	case KindBytes:
+		return "bytes"
+	case KindDate:
+		return "date"
+	case KindTime:
+		return "time"
+	case KindTimestampNTZ:
+		return "timestamp_ntz"
+	case KindTimestampTZ:
+		return "timestamp_tz"
+	case KindUUID:
+		return "uuid"
+	case KindInterval:
+		return "interval"
+	default:
+		return fmt.Sprintf("unknown(%d)", int(k))
+	}
+}
+
 // TODO: KindDetails should store the raw data type from the target table (if exists).
 type KindDetails struct {
-	Kind                   string
+	Kind                   KindType
 	ExtendedDecimalDetails *decimal.Details
 
 	// Optional kind details metadata
@@ -38,67 +97,67 @@ func BuildIntegerKind(optionalKind OptionalIntegerKind) KindDetails {
 
 var (
 	Invalid = KindDetails{
-		Kind: "invalid",
+		Kind: KindInvalid,
 	}
 
 	Float = KindDetails{
-		Kind: "float",
+		Kind: KindFloat,
 	}
 
 	Integer = KindDetails{
-		Kind:                "int",
+		Kind:                KindInteger,
 		OptionalIntegerKind: ToPtr(NotSpecifiedKind),
 	}
 
 	EDecimal = KindDetails{
-		Kind: "decimal",
+		Kind: KindDecimal,
 	}
 
 	Boolean = KindDetails{
-		Kind: "bool",
+		Kind: KindBoolean,
 	}
 
 	Array = KindDetails{
-		Kind: "array",
+		Kind: KindArray,
 	}
 
 	Struct = KindDetails{
-		Kind: "struct",
+		Kind: KindStruct,
 	}
 
 	String = KindDetails{
-		Kind: "string",
+		Kind: KindString,
 	}
 
 	Bytes = KindDetails{
-		Kind: "bytes",
+		Kind: KindBytes,
 	}
 
 	// Time data types
 	Date = KindDetails{
-		Kind: "date",
+		Kind: KindDate,
 	}
 
 	TimeKindDetails = KindDetails{
-		Kind: "time",
+		Kind: KindTime,
 	}
 
 	TimestampNTZ = KindDetails{
-		Kind: "timestamp_ntz",
+		Kind: KindTimestampNTZ,
 	}
 
 	TimestampTZ = KindDetails{
-		Kind: "timestamp_tz",
+		Kind: KindTimestampTZ,
 	}
 
 	// [UUID] - This is only populated for Postgres for now.
 	UUID = KindDetails{
-		Kind: "uuid",
+		Kind: KindUUID,
 	}
 
 	// [Interval] - This is only populated for Postgres for now.
 	Interval = KindDetails{
-		Kind: "interval",
+		Kind: KindInterval,
 	}
 )
 

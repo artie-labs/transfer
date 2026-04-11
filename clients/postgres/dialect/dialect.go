@@ -318,7 +318,7 @@ func (pd PostgresDialect) buildNoMergeDeleteQuery(tableID sql.TableIdentifier, s
 	)
 }
 
-var kindDetailsMap = map[string]string{
+var kindDetailsMap = map[typing.KindType]string{
 	typing.UUID.Kind:            "uuid",
 	typing.Interval.Kind:        "interval",
 	typing.Float.Kind:           "double precision",

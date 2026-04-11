@@ -32,7 +32,7 @@ func (SnowflakeDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, 
 		return "string", nil
 	}
 
-	return kindDetails.Kind, nil
+	return kindDetails.Kind.String(), nil
 }
 
 // KindForDataType converts a Snowflake type to a KindDetails.

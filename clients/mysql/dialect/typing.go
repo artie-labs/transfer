@@ -54,7 +54,7 @@ func (MySQLDialect) DataTypeForKind(kindDetails typing.KindDetails, isPk bool, _
 		return "TEXT", nil
 	}
 
-	return kindDetails.Kind, nil
+	return kindDetails.Kind.String(), nil
 }
 
 func (MySQLDialect) KindForDataType(rawType string) (typing.KindDetails, error) {

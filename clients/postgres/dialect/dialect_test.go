@@ -266,7 +266,7 @@ func TestDataTypeForKind(t *testing.T) {
 		{
 			name: "unsupported kind",
 			kd: typing.KindDetails{
-				Kind: "unsupported_kind",
+				Kind: typing.KindType(999),
 			},
 			wantErr: true,
 		},
