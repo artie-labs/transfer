@@ -68,7 +68,7 @@ func TestBytesConverter_Convert(t *testing.T) {
 	{
 		// Unsupported type
 		_, err := BytesConverter{}.Convert(42)
-		assert.ErrorContains(t, err, "unexpected value: '42', type: int")
+		assert.ErrorContains(t, err, "unexpected value '42' of type int")
 	}
 }
 
@@ -76,7 +76,7 @@ func TestBooleanConverter_Convert(t *testing.T) {
 	{
 		// Not boolean
 		_, err := BooleanConverter{}.Convert("foo")
-		assert.ErrorContains(t, err, `unexpected value: 'foo', type: string`)
+		assert.ErrorContains(t, err, `unexpected value 'foo' of type string`)
 
 		// Should be a ParseError with UnexpectedBooleanValue kind
 		parseError, ok := typing.BuildParseError(err)
@@ -129,7 +129,7 @@ func TestFloatConverter_Convert(t *testing.T) {
 	{
 		// Unexpected type
 		_, err := FloatConverter{}.Convert(true)
-		assert.ErrorContains(t, err, `unexpected value: 'true', type: bool`)
+		assert.ErrorContains(t, err, `unexpected value 'true' of type bool`)
 
 		// Should be a ParseError with UnexpectedValue kind
 		parseError, ok := typing.BuildParseError(err)
@@ -139,7 +139,7 @@ func TestFloatConverter_Convert(t *testing.T) {
 	{
 		// Invalid string that can't be parsed as a float
 		_, err := FloatConverter{}.Convert("tNLc2OHz")
-		assert.ErrorContains(t, err, `unexpected value: 'tNLc2OHz', type: string`)
+		assert.ErrorContains(t, err, `unexpected value 'tNLc2OHz' of type string`)
 
 		// Should be a ParseError with UnexpectedValue kind
 		parseError, ok := typing.BuildParseError(err)
@@ -356,7 +356,7 @@ func TestDecimalConverter_Convert(t *testing.T) {
 	{
 		// Invalid string that can't be parsed as a number
 		_, err := DecimalConverter{}.Convert("tNLc2OHz")
-		assert.ErrorContains(t, err, `unexpected value: 'tNLc2OHz', type: string`)
+		assert.ErrorContains(t, err, `unexpected value 'tNLc2OHz' of type string`)
 
 		// Should be a ParseError with UnexpectedValue kind
 		parseError, ok := typing.BuildParseError(err)
@@ -366,7 +366,7 @@ func TestDecimalConverter_Convert(t *testing.T) {
 	{
 		// Unexpected type
 		_, err := DecimalConverter{}.Convert(true)
-		assert.ErrorContains(t, err, `unexpected value: 'true', type: bool`)
+		assert.ErrorContains(t, err, `unexpected value 'true' of type bool`)
 
 		// Should be a ParseError with UnexpectedValue kind
 		parseError, ok := typing.BuildParseError(err)

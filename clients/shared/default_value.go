@@ -34,28 +34,28 @@ func DefaultValue(column columns.Column, dialect sql.Dialect) (any, error) {
 	case typing.Date.Kind:
 		_time, err := typing.ParseDateFromAny(column.DefaultValue())
 		if err != nil {
-			return nil, fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", column.DefaultValue(), err)
+			return nil, fmt.Errorf("failed to convert default value to date: %w", err)
 		}
 
 		return sql.QuoteLiteral(_time.Format(time.DateOnly)), nil
 	case typing.TimeKindDetails.Kind:
 		_time, err := typing.ParseTimeFromAny(column.DefaultValue())
 		if err != nil {
-			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", column.DefaultValue(), err)
+			return "", fmt.Errorf("failed to convert default value to time: %w", err)
 		}
 
 		return sql.QuoteLiteral(_time.Format(typing.PostgresTimeFormatNoTZ)), nil
 	case typing.TimestampNTZ.Kind:
 		_time, err := typing.ParseTimestampNTZFromAny(column.DefaultValue())
 		if err != nil {
-			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", column.DefaultValue(), err)
+			return "", fmt.Errorf("failed to convert default value to timestampNTZ: %w", err)
 		}
 
 		return sql.QuoteLiteral(_time.Format(typing.RFC3339NoTZ)), nil
 	case typing.TimestampTZ.Kind:
 		_time, err := typing.ParseTimestampTZFromAny(column.DefaultValue())
 		if err != nil {
-			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", column.DefaultValue(), err)
+			return "", fmt.Errorf("failed to convert default value to timestampTZ: %w", err)
 		}
 
 		return sql.QuoteLiteral(_time.Format(time.RFC3339Nano)), nil

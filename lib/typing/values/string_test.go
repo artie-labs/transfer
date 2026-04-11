@@ -170,7 +170,7 @@ func TestToString(t *testing.T) {
 		{
 			// Invalid (string value)
 			_, err := ToString("foo", typing.Integer)
-			assert.ErrorContains(t, err, `converter converters.IntegerConverter failed to convert value: unexpected value: 'foo', type: string`)
+			assert.ErrorContains(t, err, `converter converters.IntegerConverter failed to convert value: unexpected value 'foo' of type string`)
 		}
 		{
 			// Float32 value
@@ -181,7 +181,7 @@ func TestToString(t *testing.T) {
 		{
 			// Float64 value
 			val, err := ToString(45452.999991, typing.Integer)
-			assert.ErrorContains(t, err, "unexpected value: '45452.999991', type: float64")
+			assert.ErrorContains(t, err, "unexpected value '45452.999991' of type float64")
 			assert.Empty(t, val)
 		}
 		{
