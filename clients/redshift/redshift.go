@@ -198,8 +198,8 @@ func (s *Store) dedupeByRange(
 	pkCSV, orderByCSV, joinClause, firstPK string,
 	minPK, maxPK, totalRows int64,
 ) error {
-	pkSpan := maxPK - minPK + 1
 	numChunks := max((totalRows+dedupeBatchSize-1)/dedupeBatchSize, 1)
+	pkSpan := maxPK - minPK + 1
 	rangeSize := max((pkSpan+numChunks-1)/numChunks, 1)
 
 	slog.Info("Starting range-based dedupe",
@@ -210,14 +210,14 @@ func (s *Store) dedupeByRange(
 		slog.Int64("rangeSize", rangeSize),
 	)
 
-	for chunk, rangeStart := 0, minPK; rangeStart <= maxPK; chunk, rangeStart = chunk+1, rangeStart+rangeSize {
-		rangeEnd := rangeStart + rangeSize
-		if rangeEnd < rangeStart {
-			rangeEnd = maxPK + 1
+	for chunk, rangeStart := int64(0), minPK; rangeStart <= maxPK; chunk++ {
+		rangeEnd := rangeStart + rangeSize - 1
+		if rangeEnd > maxPK || rangeEnd < rangeStart {
+			rangeEnd = maxPK
 		}
 
-		rangeFilter := fmt.Sprintf("%s >= %d AND %s < %d", firstPK, rangeStart, firstPK, rangeEnd)
-		qualifiedRangeFilter := fmt.Sprintf("%s.%s >= %d AND %s.%s < %d",
+		rangeFilter := fmt.Sprintf("%s >= %d AND %s <= %d", firstPK, rangeStart, firstPK, rangeEnd)
+		qualifiedRangeFilter := fmt.Sprintf("%s.%s >= %d AND %s.%s <= %d",
 			tableID.EscapedTable(), firstPK, rangeStart,
 			tableID.EscapedTable(), firstPK, rangeEnd,
 		)
@@ -225,6 +225,11 @@ func (s *Store) dedupeByRange(
 		if err := s.dedupeSubBatched(ctx, tableID, baseTableID, pkCSV, orderByCSV, joinClause, rangeFilter, qualifiedRangeFilter, fmt.Sprintf("chunk %d", chunk)); err != nil {
 			return err
 		}
+
+		if rangeEnd == maxPK {
+			break
+		}
+		rangeStart = rangeEnd + 1
 	}
 
 	return nil
