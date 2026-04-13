@@ -27,8 +27,8 @@ import (
 )
 
 const (
-	dedupeBatchSize = 10_000_000
-	dedupeMaxRows   = 500_000
+	dedupeBatchSize       = 10_000_000
+	dedupeSubBatchMaxRows = 150_000
 )
 
 type Store struct {
@@ -235,117 +235,130 @@ func (s *Store) dedupeByRange(
 	return nil
 }
 
-// dedupeSubBatched finds duplicate PK groups within the given range and processes them in sub-batches
-// sized to keep total touched rows under dedupeMaxRows.
-// rangeFilter scopes step 1 (GROUP BY) and step 2 (keepers). Use "true" for no scoping.
-// qualifiedRangeFilter scopes the DELETE (columns prefixed with table name for USING disambiguation). Use "true" for no scoping.
+// dedupeSubBatched deduplicates rows within a PK range by processing them in sub-batches.
+//
+// Redshift can't distinguish physical rows with identical column values, so deduplication
+// requires a delete-all + re-insert-one pattern: for each duplicate PK group, save the most
+// recent row to a temp table ("keepers"), delete every row matching that PK, then re-insert
+// the keeper. The keepers query uses QUALIFY ROW_NUMBER() which is expensive on wide tables,
+// so we cap each sub-batch at dedupeSubBatchMaxRows to avoid exhausting Redshift resources
+// (SQLSTATE XX000). The GROUP BY to find duplicate PKs runs once upfront; sub-batches drain
+// from the resulting temp table to avoid re-scanning the main table every iteration.
+//
+// rangeFilter scopes the GROUP BY and keepers queries (e.g. "pk >= 100 AND pk <= 200").
+// qualifiedRangeFilter is the same condition with table-qualified column names for the
+// DELETE ... USING ... WHERE clause. Pass "true" for both to skip range scoping.
 func (s *Store) dedupeSubBatched(
 	ctx context.Context,
 	tableID sql.TableIdentifier,
 	baseTableID sql.TableIdentifier,
 	pkCSV, orderByCSV, joinClause, rangeFilter, qualifiedRangeFilter, logPrefix string,
 ) error {
-	totalDeduped := int64(0)
+	allDupsSuffix := strings.ToLower(stringutil.Random(5))
+	allDupPKsTableID := shared.TempTableIDWithSuffix(s, baseTableID, fmt.Sprintf("alldups_%s", allDupsSuffix))
 
-	for {
+	// Single scan: find all duplicate PKs in the range.
+	createAllDupPKs := fmt.Sprintf(
+		`CREATE TEMPORARY TABLE %s AS (SELECT %s, COUNT(*) AS cnt FROM %s WHERE %s GROUP BY %s HAVING COUNT(*) > 1)`,
+		allDupPKsTableID.EscapedTable(),
+		pkCSV, tableID.FullyQualifiedName(), rangeFilter, pkCSV,
+	)
+
+	if _, err := s.ExecContext(ctx, createAllDupPKs); err != nil {
+		_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.EscapedTable()))
+		return fmt.Errorf("failed to find duplicate PKs (%s): %w", logPrefix, err)
+	}
+
+	var totalPKGroups int64
+	if err := s.QueryRowContext(ctx, fmt.Sprintf("SELECT COUNT(*) FROM %s", allDupPKsTableID.EscapedTable())).Scan(&totalPKGroups); err != nil {
+		_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.EscapedTable()))
+		return fmt.Errorf("failed to count duplicate PK groups (%s): %w", logPrefix, err)
+	}
+
+	if totalPKGroups == 0 {
+		_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.EscapedTable()))
+		return nil
+	}
+
+	slog.Info("Found duplicate PK groups",
+		slog.String("scope", logPrefix),
+		slog.Int64("pkGroups", totalPKGroups),
+	)
+
+	totalDeduped := int64(0)
+	for batch := 0; ; batch++ {
 		suffix := strings.ToLower(stringutil.Random(5))
-		dupPKsTableID := shared.TempTableIDWithSuffix(s, baseTableID, fmt.Sprintf("dup_%s", suffix))
+		batchPKsTableID := shared.TempTableIDWithSuffix(s, baseTableID, fmt.Sprintf("batch_%s", suffix))
 		keepersTableID := shared.TempTableIDWithSuffix(s, baseTableID, fmt.Sprintf("keep_%s", suffix))
 
 		cleanup := func() {
-			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", dupPKsTableID.EscapedTable()))
+			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", batchPKsTableID.EscapedTable()))
 			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", keepersTableID.EscapedTable()))
 		}
 
-		// Step 1: Find duplicate PKs with their row counts. We use SUM(cnt) on this
-		// small temp table to know exactly how many rows the keepers query will touch,
-		// and LIMIT to keep that under dedupeMaxRows.
-		createDupPKs := fmt.Sprintf(
-			`CREATE TEMPORARY TABLE %s AS (SELECT %s, COUNT(*) AS cnt FROM %s WHERE %s GROUP BY %s HAVING COUNT(*) > 1)`,
-			dupPKsTableID.EscapedTable(),
-			pkCSV, tableID.FullyQualifiedName(), rangeFilter, pkCSV,
+		// Take the next sub-batch: PK groups whose cumulative row count fits within the limit.
+		// The "running_total - cnt < limit" condition guarantees at least one group is always taken.
+		createBatchPKs := fmt.Sprintf(
+			`CREATE TEMPORARY TABLE %s AS (SELECT %s FROM (SELECT %s, cnt, SUM(cnt) OVER (ORDER BY cnt ASC ROWS UNBOUNDED PRECEDING) AS running_total FROM %s) WHERE running_total - cnt < %d)`,
+			batchPKsTableID.EscapedTable(),
+			pkCSV,
+			pkCSV,
+			allDupPKsTableID.EscapedTable(),
+			dedupeSubBatchMaxRows,
 		)
 
-		if _, err := s.ExecContext(ctx, createDupPKs); err != nil {
+		if _, err := s.ExecContext(ctx, createBatchPKs); err != nil {
 			cleanup()
-			return fmt.Errorf("failed to find duplicate PKs (%s): %w", logPrefix, err)
+			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.EscapedTable()))
+			return fmt.Errorf("failed to create batch PKs (%s, batch %d): %w", logPrefix, batch, err)
 		}
 
-		var totalDupRows int64
-		if err := s.QueryRowContext(ctx, fmt.Sprintf("SELECT COALESCE(SUM(cnt), 0) FROM %s", dupPKsTableID.EscapedTable())).Scan(&totalDupRows); err != nil {
+		var batchPKGroups int64
+		if err := s.QueryRowContext(ctx, fmt.Sprintf("SELECT COUNT(*) FROM %s", batchPKsTableID.EscapedTable())).Scan(&batchPKGroups); err != nil {
 			cleanup()
-			return fmt.Errorf("failed to sum duplicate rows (%s): %w", logPrefix, err)
+			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.EscapedTable()))
+			return fmt.Errorf("failed to count batch PK groups (%s, batch %d): %w", logPrefix, batch, err)
 		}
 
-		if totalDupRows == 0 {
+		if batchPKGroups == 0 {
 			cleanup()
 			break
 		}
 
-		// If total rows exceed the threshold, trim the dup PKs table down to a subset
-		// whose cumulative row count fits within dedupeMaxRows. The condition
-		// "running_total - cnt < dedupeMaxRows" keeps a group if all *prior* groups
-		// sum to less than the limit, guaranteeing at least one group is always kept.
-		if totalDupRows > dedupeMaxRows {
-			trimQuery := fmt.Sprintf(
-				`DELETE FROM %s WHERE (%s) NOT IN (SELECT %s FROM (SELECT %s, cnt, SUM(cnt) OVER (ORDER BY cnt ASC ROWS UNBOUNDED PRECEDING) AS running_total FROM %s) WHERE running_total - cnt < %d)`,
-				dupPKsTableID.EscapedTable(),
-				pkCSV,
-				pkCSV,
-				pkCSV,
-				dupPKsTableID.EscapedTable(),
-				dedupeMaxRows,
-			)
-
-			if _, err := s.ExecContext(ctx, trimQuery); err != nil {
-				cleanup()
-				return fmt.Errorf("failed to trim duplicate PKs (%s): %w", logPrefix, err)
-			}
-
-			if err := s.QueryRowContext(ctx, fmt.Sprintf("SELECT COALESCE(SUM(cnt), 0) FROM %s", dupPKsTableID.EscapedTable())).Scan(&totalDupRows); err != nil {
-				cleanup()
-				return fmt.Errorf("failed to re-sum duplicate rows (%s): %w", logPrefix, err)
-			}
-		}
-
-		var pkGroups int64
-		if err := s.QueryRowContext(ctx, fmt.Sprintf("SELECT COUNT(*) FROM %s", dupPKsTableID.EscapedTable())).Scan(&pkGroups); err != nil {
-			cleanup()
-			return fmt.Errorf("failed to count PK groups (%s): %w", logPrefix, err)
-		}
-
 		slog.Info("Processing duplicate PK groups",
 			slog.String("scope", logPrefix),
-			slog.Int64("pkGroups", pkGroups),
-			slog.Int64("totalDupRows", totalDupRows),
+			slog.Int("batch", batch),
+			slog.Int64("pkGroups", batchPKGroups),
 		)
 
-		// Step 2: Build keepers — range filter lets Redshift skip blocks via zone maps.
+		// Build keepers — range filter lets Redshift skip blocks via zone maps.
 		createKeepers := fmt.Sprintf(
 			`CREATE TEMPORARY TABLE %s AS (SELECT * FROM %s WHERE %s AND (%s) IN (SELECT %s FROM %s) QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 1)`,
 			keepersTableID.EscapedTable(),
 			tableID.FullyQualifiedName(),
 			rangeFilter,
 			pkCSV,
-			pkCSV, dupPKsTableID.EscapedTable(),
+			pkCSV, batchPKsTableID.EscapedTable(),
 			pkCSV, orderByCSV,
 		)
 
 		if _, err := s.ExecContext(ctx, createKeepers); err != nil {
 			cleanup()
-			return fmt.Errorf("failed to create keepers table (%s): %w", logPrefix, err)
+			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.EscapedTable()))
+			return fmt.Errorf("failed to create keepers table (%s, batch %d): %w", logPrefix, batch, err)
 		}
 
-		// Step 3: Atomic delete + re-insert.
+		// Atomic delete + re-insert.
 		tx, err := s.Begin(ctx)
 		if err != nil {
 			cleanup()
-			return fmt.Errorf("failed to begin transaction (%s): %w", logPrefix, err)
+			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.EscapedTable()))
+			return fmt.Errorf("failed to begin transaction (%s, batch %d): %w", logPrefix, batch, err)
 		}
 
 		deleteQuery := fmt.Sprintf("DELETE FROM %s USING %s stg WHERE %s AND %s",
 			tableID.FullyQualifiedName(),
-			dupPKsTableID.EscapedTable(),
+			batchPKsTableID.EscapedTable(),
 			joinClause,
 			qualifiedRangeFilter,
 		)
@@ -353,7 +366,8 @@ func (s *Store) dedupeSubBatched(
 		if _, err := tx.ExecContext(ctx, deleteQuery); err != nil {
 			_ = tx.Rollback()
 			cleanup()
-			return fmt.Errorf("failed to delete dupes (%s): %w", logPrefix, err)
+			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.EscapedTable()))
+			return fmt.Errorf("failed to delete dupes (%s, batch %d): %w", logPrefix, batch, err)
 		}
 
 		insertQuery := fmt.Sprintf("INSERT INTO %s SELECT * FROM %s",
@@ -364,23 +378,40 @@ func (s *Store) dedupeSubBatched(
 		if _, err := tx.ExecContext(ctx, insertQuery); err != nil {
 			_ = tx.Rollback()
 			cleanup()
-			return fmt.Errorf("failed to re-insert deduped rows (%s): %w", logPrefix, err)
+			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.EscapedTable()))
+			return fmt.Errorf("failed to re-insert deduped rows (%s, batch %d): %w", logPrefix, batch, err)
 		}
 
 		if err := tx.Commit(); err != nil {
 			cleanup()
-			return fmt.Errorf("failed to commit dedupe (%s): %w", logPrefix, err)
+			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.EscapedTable()))
+			return fmt.Errorf("failed to commit dedupe (%s, batch %d): %w", logPrefix, batch, err)
+		}
+
+		// Remove processed PKs from the all-dups table.
+		removePKs := fmt.Sprintf("DELETE FROM %s WHERE (%s) IN (SELECT %s FROM %s)",
+			allDupPKsTableID.EscapedTable(),
+			pkCSV,
+			pkCSV, batchPKsTableID.EscapedTable(),
+		)
+
+		if _, err := s.ExecContext(ctx, removePKs); err != nil {
+			cleanup()
+			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.EscapedTable()))
+			return fmt.Errorf("failed to remove processed PKs (%s, batch %d): %w", logPrefix, batch, err)
 		}
 
 		cleanup()
-		totalDeduped += pkGroups
+		totalDeduped += batchPKGroups
 		slog.Info("Dedupe sub-batch complete",
 			slog.String("scope", logPrefix),
-			slog.Int64("pkGroupsDeduped", pkGroups),
+			slog.Int("batch", batch),
+			slog.Int64("pkGroupsDeduped", batchPKGroups),
 			slog.Int64("totalDeduped", totalDeduped),
 		)
 	}
 
+	_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.EscapedTable()))
 	return nil
 }
 
