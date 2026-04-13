@@ -283,10 +283,12 @@ func (s *Store) dedupeSubBatched(
 		}
 
 		// If total rows exceed the threshold, trim the dup PKs table down to a subset
-		// whose cumulative row count fits within dedupeMaxRows.
+		// whose cumulative row count fits within dedupeMaxRows. The condition
+		// "running_total - cnt < dedupeMaxRows" keeps a group if all *prior* groups
+		// sum to less than the limit, guaranteeing at least one group is always kept.
 		if totalDupRows > dedupeMaxRows {
 			trimQuery := fmt.Sprintf(
-				`DELETE FROM %s WHERE (%s) NOT IN (SELECT %s FROM (SELECT %s, cnt, SUM(cnt) OVER (ORDER BY cnt ASC ROWS UNBOUNDED PRECEDING) AS running_total FROM %s) WHERE running_total <= %d)`,
+				`DELETE FROM %s WHERE (%s) NOT IN (SELECT %s FROM (SELECT %s, cnt, SUM(cnt) OVER (ORDER BY cnt ASC ROWS UNBOUNDED PRECEDING) AS running_total FROM %s) WHERE running_total - cnt < %d)`,
 				dupPKsTableID.EscapedTable(),
 				pkCSV,
 				pkCSV,
@@ -300,15 +302,9 @@ func (s *Store) dedupeSubBatched(
 				return fmt.Errorf("failed to trim duplicate PKs (%s): %w", logPrefix, err)
 			}
 
-			// Re-check after trim
 			if err := s.QueryRowContext(ctx, fmt.Sprintf("SELECT COALESCE(SUM(cnt), 0) FROM %s", dupPKsTableID.EscapedTable())).Scan(&totalDupRows); err != nil {
 				cleanup()
 				return fmt.Errorf("failed to re-sum duplicate rows (%s): %w", logPrefix, err)
-			}
-
-			if totalDupRows == 0 {
-				cleanup()
-				break
 			}
 		}
 
