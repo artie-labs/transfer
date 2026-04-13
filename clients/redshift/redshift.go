@@ -28,7 +28,7 @@ import (
 
 const (
 	dedupeBatchSize       = 1_000_000
-	dedupeSubBatchMaxRows = 150_000
+	dedupeRangeBatchMaxRows = 150_000
 )
 
 type Store struct {
@@ -222,7 +222,7 @@ func (s *Store) dedupeByRange(
 			tableID.EscapedTable(), firstPK, rangeEnd,
 		)
 
-		if err := s.dedupeSubBatched(ctx, tableID, baseTableID, pkCSV, orderByCSV, joinClause, rangeFilter, qualifiedRangeFilter, fmt.Sprintf("chunk %d", chunk)); err != nil {
+		if err := s.dedupeRange(ctx, tableID, baseTableID, pkCSV, orderByCSV, joinClause, rangeFilter, qualifiedRangeFilter, fmt.Sprintf("chunk %d", chunk)); err != nil {
 			return err
 		}
 
@@ -235,20 +235,20 @@ func (s *Store) dedupeByRange(
 	return nil
 }
 
-// dedupeSubBatched deduplicates rows within a PK range by processing them in sub-batches.
+// dedupeRange deduplicates rows within a PK range by processing them in sub-batches.
 //
 // Redshift can't distinguish physical rows with identical column values, so deduplication
 // requires a delete-all + re-insert-one pattern: for each duplicate PK group, save the most
 // recent row to a temp table ("keepers"), delete every row matching that PK, then re-insert
 // the keeper. The keepers query uses QUALIFY ROW_NUMBER() which is expensive on wide tables,
-// so we cap each sub-batch at dedupeSubBatchMaxRows to avoid exhausting Redshift resources
+// so we cap each sub-batch at dedupeRangeBatchMaxRows to avoid exhausting Redshift resources
 // (SQLSTATE XX000). The GROUP BY to find duplicate PKs runs once upfront; sub-batches drain
 // from the resulting temp table to avoid re-scanning the main table every iteration.
 //
 // rangeFilter scopes the GROUP BY and keepers queries (e.g. "pk >= 100 AND pk <= 200").
 // qualifiedRangeFilter is the same condition with table-qualified column names for the
 // DELETE ... USING ... WHERE clause. Pass "true" for both to skip range scoping.
-func (s *Store) dedupeSubBatched(
+func (s *Store) dedupeRange(
 	ctx context.Context,
 	tableID sql.TableIdentifier,
 	baseTableID sql.TableIdentifier,
@@ -304,7 +304,7 @@ func (s *Store) dedupeSubBatched(
 			pkCSV,
 			pkCSV,
 			allDupPKsTableID.EscapedTable(),
-			dedupeSubBatchMaxRows,
+			dedupeRangeBatchMaxRows,
 		)
 
 		if _, err := s.ExecContext(ctx, createBatchPKs); err != nil {
