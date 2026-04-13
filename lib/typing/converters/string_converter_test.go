@@ -17,82 +17,32 @@ import (
 
 func TestGetStringConverter(t *testing.T) {
 	{
-		// Boolean
-		converter, err := GetStringConverter(typing.Boolean, GetStringConverterOpts{})
-		assert.NoError(t, err)
-		assert.IsType(t, BooleanConverter{}, converter)
-	}
-	{
-		// String
-		converter, err := GetStringConverter(typing.String, GetStringConverterOpts{})
-		assert.NoError(t, err)
-		assert.IsType(t, StringConverter{}, converter)
-	}
-	{
-		// Date
-		converter, err := GetStringConverter(typing.Date, GetStringConverterOpts{})
-		assert.NoError(t, err)
-		assert.IsType(t, DateConverter{}, converter)
-	}
-	{
-		// Time
-		converter, err := GetStringConverter(typing.TimeKindDetails, GetStringConverterOpts{})
-		assert.NoError(t, err)
-		assert.IsType(t, TimeConverter{}, converter)
-	}
-	{
-		// TimestampNTZ
-		converter, err := GetStringConverter(typing.TimestampNTZ, GetStringConverterOpts{})
-		assert.NoError(t, err)
-		assert.IsType(t, TimestampNTZConverter{}, converter)
-	}
-	{
-		// TimestampTZ
-		converter, err := GetStringConverter(typing.TimestampTZ, GetStringConverterOpts{})
-		assert.NoError(t, err)
-		assert.IsType(t, TimestampTZConverter{}, converter)
-	}
-	{
-		// Array
-		converter, err := GetStringConverter(typing.Array, GetStringConverterOpts{})
-		assert.NoError(t, err)
-		assert.IsType(t, ArrayConverter{}, converter)
-	}
-	{
-		// Struct
-		converter, err := GetStringConverter(typing.Struct, GetStringConverterOpts{})
-		assert.NoError(t, err)
-		assert.IsType(t, StructConverter{}, converter)
-	}
-	{
-		// EDecimal
-		converter, err := GetStringConverter(typing.EDecimal, GetStringConverterOpts{})
-		assert.NoError(t, err)
-		assert.IsType(t, DecimalConverter{}, converter)
-	}
-	{
-		// Integer
-		converter, err := GetStringConverter(typing.Integer, GetStringConverterOpts{})
-		assert.NoError(t, err)
-		assert.IsType(t, IntegerConverter{}, converter)
-	}
-	{
-		// Float
-		converter, err := GetStringConverter(typing.Float, GetStringConverterOpts{})
-		assert.NoError(t, err)
-		assert.IsType(t, FloatConverter{}, converter)
-	}
-	{
-		// Bytes
-		converter, err := GetStringConverter(typing.Bytes, GetStringConverterOpts{})
-		assert.NoError(t, err)
-		assert.IsType(t, BytesConverter{}, converter)
-	}
-	{
-		// Interval
-		converter, err := GetStringConverter(typing.Interval, GetStringConverterOpts{})
-		assert.NoError(t, err)
-		assert.IsType(t, StringConverter{}, converter)
+		// Valid types
+		for _, tc := range []struct {
+			name         string
+			kind         typing.KindDetails
+			expectedType Converter
+		}{
+			{"Boolean", typing.Boolean, BooleanConverter{}},
+			{"String", typing.String, StringConverter{}},
+			{"Date", typing.Date, DateConverter{}},
+			{"Time", typing.TimeKindDetails, TimeConverter{}},
+			{"TimestampNTZ", typing.TimestampNTZ, TimestampNTZConverter{}},
+			{"TimestampTZ", typing.TimestampTZ, TimestampTZConverter{}},
+			{"Array", typing.Array, ArrayConverter{}},
+			{"Struct", typing.Struct, StructConverter{}},
+			{"EDecimal", typing.EDecimal, DecimalConverter{}},
+			{"Integer", typing.Integer, IntegerConverter{}},
+			{"Float", typing.Float, FloatConverter{}},
+			{"Bytes", typing.Bytes, BytesConverter{}},
+			{"Interval", typing.Interval, StringConverter{}},
+		} {
+			t.Run(tc.name, func(t *testing.T) {
+				converter, err := GetStringConverter(tc.kind, GetStringConverterOpts{})
+				assert.NoError(t, err)
+				assert.IsType(t, tc.expectedType, converter)
+			})
+		}
 	}
 	{
 		// Invalid
@@ -118,7 +68,7 @@ func TestBytesConverter_Convert(t *testing.T) {
 	{
 		// Unsupported type
 		_, err := BytesConverter{}.Convert(42)
-		assert.ErrorContains(t, err, "unexpected value: '42', type: int")
+		assert.ErrorContains(t, err, "unexpected value '42' of type int")
 	}
 }
 
@@ -126,7 +76,7 @@ func TestBooleanConverter_Convert(t *testing.T) {
 	{
 		// Not boolean
 		_, err := BooleanConverter{}.Convert("foo")
-		assert.ErrorContains(t, err, `unexpected value: 'foo', type: string`)
+		assert.ErrorContains(t, err, `unexpected value 'foo' of type string`)
 
 		// Should be a ParseError with UnexpectedBooleanValue kind
 		parseError, ok := typing.BuildParseError(err)
@@ -137,16 +87,16 @@ func TestBooleanConverter_Convert(t *testing.T) {
 		// True
 		for _, possibleValue := range []any{1, true, "1", "true", "TRUE", "True"} {
 			val, err := BooleanConverter{}.Convert(possibleValue)
-			assert.NoError(t, err)
-			assert.Equal(t, "true", val)
+			assert.NoError(t, err, "input: %v", possibleValue)
+			assert.Equal(t, "true", val, "input: %v", possibleValue)
 		}
 	}
 	{
 		// False
 		for _, possibleValue := range []any{0, false, "0", "false", "FALSE", "False"} {
 			val, err := BooleanConverter{}.Convert(possibleValue)
-			assert.NoError(t, err)
-			assert.Equal(t, "false", val)
+			assert.NoError(t, err, "input: %v", possibleValue)
+			assert.Equal(t, "false", val, "input: %v", possibleValue)
 		}
 	}
 }
@@ -172,14 +122,14 @@ func TestFloatConverter_Convert(t *testing.T) {
 		// json.Number
 		for _, variant := range []json.Number{"123.45", "42", "-1.5", "1.23e10"} {
 			val, err := FloatConverter{}.Convert(variant)
-			assert.NoError(t, err)
-			assert.Equal(t, variant.String(), val)
+			assert.NoError(t, err, "input: %v", variant)
+			assert.Equal(t, variant.String(), val, "input: %v", variant)
 		}
 	}
 	{
 		// Unexpected type
 		_, err := FloatConverter{}.Convert(true)
-		assert.ErrorContains(t, err, `unexpected value: 'true', type: bool`)
+		assert.ErrorContains(t, err, `unexpected value 'true' of type bool`)
 
 		// Should be a ParseError with UnexpectedValue kind
 		parseError, ok := typing.BuildParseError(err)
@@ -189,7 +139,7 @@ func TestFloatConverter_Convert(t *testing.T) {
 	{
 		// Invalid string that can't be parsed as a float
 		_, err := FloatConverter{}.Convert("tNLc2OHz")
-		assert.ErrorContains(t, err, `unexpected value: 'tNLc2OHz', type: string`)
+		assert.ErrorContains(t, err, `unexpected value 'tNLc2OHz' of type string`)
 
 		// Should be a ParseError with UnexpectedValue kind
 		parseError, ok := typing.BuildParseError(err)
@@ -236,8 +186,8 @@ func TestFloatConverter_Convert(t *testing.T) {
 		// Integers
 		for _, input := range []any{42, int8(42), int16(42), int32(42), int64(42), float32(42), float64(42)} {
 			val, err := FloatConverter{}.Convert(input)
-			assert.NoError(t, err)
-			assert.Equal(t, "42", val)
+			assert.NoError(t, err, "input: %v (%T)", input, input)
+			assert.Equal(t, "42", val, "input: %v (%T)", input, input)
 		}
 	}
 }
@@ -247,8 +197,8 @@ func TestIntegerConverter_Convert(t *testing.T) {
 		// Various numbers
 		for _, val := range []any{42, int8(42), int16(42), int32(42), int64(42), float32(42), float64(42), "42", json.Number("42")} {
 			parsedVal, err := IntegerConverter{}.Convert(val)
-			assert.NoError(t, err)
-			assert.Equal(t, "42", parsedVal)
+			assert.NoError(t, err, "input: %v (%T)", val, val)
+			assert.Equal(t, "42", parsedVal, "input: %v (%T)", val, val)
 		}
 	}
 	{
@@ -363,32 +313,32 @@ func TestDecimalConverter_Convert(t *testing.T) {
 		// Floats
 		for _, input := range []any{float32(123.45), float64(123.45)} {
 			val, err := DecimalConverter{}.Convert(input)
-			assert.NoError(t, err)
-			assert.Equal(t, "123.45", val)
+			assert.NoError(t, err, "input: %v (%T)", input, input)
+			assert.Equal(t, "123.45", val, "input: %v (%T)", input, input)
 		}
 	}
 	{
 		// Integers
 		for _, input := range []any{42, int8(42), int16(42), int32(42), int64(42), float32(42), float64(42)} {
 			val, err := DecimalConverter{}.Convert(input)
-			assert.NoError(t, err)
-			assert.Equal(t, "42", val)
+			assert.NoError(t, err, "input: %v (%T)", input, input)
+			assert.Equal(t, "42", val, "input: %v (%T)", input, input)
 		}
 	}
 	{
 		// json.Number
 		for _, input := range []json.Number{"123.45", "-123.45", "42", "1.23e10"} {
 			val, err := DecimalConverter{}.Convert(input)
-			assert.NoError(t, err)
-			assert.Equal(t, input.String(), val)
+			assert.NoError(t, err, "input: %v", input)
+			assert.Equal(t, input.String(), val, "input: %v", input)
 		}
 	}
 	{
 		// Valid numeric strings
 		for _, input := range []string{"123.45", "-123.45", "1.23e10", "42"} {
 			val, err := DecimalConverter{}.Convert(input)
-			assert.NoError(t, err)
-			assert.Equal(t, input, val)
+			assert.NoError(t, err, "input: %s", input)
+			assert.Equal(t, input, val, "input: %s", input)
 		}
 	}
 	{
@@ -406,7 +356,7 @@ func TestDecimalConverter_Convert(t *testing.T) {
 	{
 		// Invalid string that can't be parsed as a number
 		_, err := DecimalConverter{}.Convert("tNLc2OHz")
-		assert.ErrorContains(t, err, `unexpected value: 'tNLc2OHz', type: string`)
+		assert.ErrorContains(t, err, `unexpected value 'tNLc2OHz' of type string`)
 
 		// Should be a ParseError with UnexpectedValue kind
 		parseError, ok := typing.BuildParseError(err)
@@ -416,7 +366,7 @@ func TestDecimalConverter_Convert(t *testing.T) {
 	{
 		// Unexpected type
 		_, err := DecimalConverter{}.Convert(true)
-		assert.ErrorContains(t, err, `unexpected value: 'true', type: bool`)
+		assert.ErrorContains(t, err, `unexpected value 'true' of type bool`)
 
 		// Should be a ParseError with UnexpectedValue kind
 		parseError, ok := typing.BuildParseError(err)
@@ -638,24 +588,24 @@ func TestStringConverter_Convert(t *testing.T) {
 		// Integers
 		for _, value := range []any{42, int8(42), int16(42), int32(42), int64(42), float32(42), float64(42)} {
 			val, err := conv.Convert(value)
-			assert.NoError(t, err)
-			assert.Equal(t, "42", val)
+			assert.NoError(t, err, "input: %v (%T)", value, value)
+			assert.Equal(t, "42", val, "input: %v (%T)", value, value)
 		}
 	}
 	{
 		// Floats
 		for _, value := range []any{123.45, float32(123.45), float64(123.45)} {
 			val, err := conv.Convert(value)
-			assert.NoError(t, err)
-			assert.Equal(t, "123.45", val)
+			assert.NoError(t, err, "input: %v (%T)", value, value)
+			assert.Equal(t, "123.45", val, "input: %v (%T)", value, value)
 		}
 	}
 	{
 		// json.Number
 		for _, variant := range []json.Number{"42", "123.45", "-1.5"} {
 			val, err := conv.Convert(variant)
-			assert.NoError(t, err)
-			assert.Equal(t, variant.String(), val)
+			assert.NoError(t, err, "input: %v", variant)
+			assert.Equal(t, variant.String(), val, "input: %v", variant)
 		}
 	}
 	{

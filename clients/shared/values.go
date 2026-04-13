@@ -28,28 +28,28 @@ func ParseValue(colVal any, colKind columns.Column) (any, error) {
 	case typing.Date.Kind:
 		_time, err := typing.ParseDateFromAny(colVal)
 		if err != nil {
-			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", colVal, err)
+			return "", fmt.Errorf("failed to convert value to date: %w", err)
 		}
 
 		return _time, nil
 	case typing.TimeKindDetails.Kind:
 		_time, err := typing.ParseTimeFromAny(colVal)
 		if err != nil {
-			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", colVal, err)
+			return "", fmt.Errorf("failed to convert value to time: %w", err)
 		}
 
 		return _time, nil
 	case typing.TimestampNTZ.Kind:
 		_time, err := typing.ParseTimestampNTZFromAny(colVal)
 		if err != nil {
-			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", colVal, err)
+			return "", fmt.Errorf("failed to convert value to timestampNTZ: %w", err)
 		}
 
 		return _time, nil
 	case typing.TimestampTZ.Kind:
 		_time, err := typing.ParseTimestampTZFromAny(colVal)
 		if err != nil {
-			return "", fmt.Errorf("failed to cast colVal as time.Time, colVal: '%v', err: %w", colVal, err)
+			return "", fmt.Errorf("failed to convert value to timestampTZ: %w", err)
 		}
 
 		return _time, nil
