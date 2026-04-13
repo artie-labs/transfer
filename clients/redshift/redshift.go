@@ -15,6 +15,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
+	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/environ"
 	"github.com/artie-labs/transfer/lib/kafkalib"
@@ -140,6 +141,22 @@ func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair ka
 
 	rd := s.dialect()
 	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, rd)
+	firstPK := primaryKeysEscaped[0]
+
+	var minPK, maxPK int64
+	boundsErr := s.QueryRowContext(ctx, fmt.Sprintf("SELECT MIN(%s), MAX(%s) FROM %s",
+		firstPK, firstPK, tableID.FullyQualifiedName(),
+	)).Scan(&minPK, &maxPK)
+	if boundsErr != nil {
+		// Non-numeric PK or empty table — use the original unoptimized dedupe.
+		stagingTableID := shared.BuildStagingTableID(s, pair, tableID)
+		dedupeQueries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt)
+		if _, err := destination.ExecContextStatements(ctx, s, dedupeQueries); err != nil {
+			return fmt.Errorf("failed to dedupe: %w", err)
+		}
+		return nil
+	}
+
 	pkCSV := strings.Join(primaryKeysEscaped, ", ")
 
 	orderCols := make([]string, len(primaryKeysEscaped))
@@ -155,7 +172,6 @@ func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair ka
 	orderByCSV := strings.Join(orderByCols, ", ")
 
 	baseTableID := s.IdentifierFor(pair, tableID.Table())
-	firstPK := primaryKeysEscaped[0]
 
 	var joinClauses []string
 	for _, pk := range primaryKeysEscaped {
@@ -172,16 +188,7 @@ func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair ka
 		return nil
 	}
 
-	// Try range-based dedupe (requires numeric first PK for range arithmetic).
-	var minPK, maxPK int64
-	boundsErr := s.QueryRowContext(ctx, fmt.Sprintf("SELECT MIN(%s), MAX(%s) FROM %s", firstPK, firstPK, tableID.FullyQualifiedName())).Scan(&minPK, &maxPK)
-	if boundsErr == nil {
-		return s.dedupeByRange(ctx, tableID, baseTableID, pkCSV, orderByCSV, joinClause, firstPK, minPK, maxPK, totalRows)
-	}
-
-	// Non-integer PK — fall back to sub-batched dedupe without range partitioning.
-	slog.Warn("First primary key is not numeric, falling back to non-range dedupe", slog.Any("err", boundsErr))
-	return s.dedupeSubBatched(ctx, tableID, baseTableID, pkCSV, orderByCSV, joinClause, "true", "true", "")
+	return s.dedupeByRange(ctx, tableID, baseTableID, pkCSV, orderByCSV, joinClause, firstPK, minPK, maxPK, totalRows)
 }
 
 func (s *Store) dedupeByRange(
