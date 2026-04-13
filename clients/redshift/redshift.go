@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	dedupeBatchSize       = 10_000_000
+	dedupeBatchSize       = 1_000_000
 	dedupeSubBatchMaxRows = 150_000
 )
 
