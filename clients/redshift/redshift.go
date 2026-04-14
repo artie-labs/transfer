@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	dedupeBatchSize       = 1_000_000
+	dedupeBatchSize         = 1_000_000
 	dedupeRangeBatchMaxRows = 150_000
 )
 
@@ -155,6 +155,23 @@ func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair ka
 			return fmt.Errorf("failed to dedupe: %w", err)
 		}
 		return nil
+	}
+
+	if includeArtieUpdatedAt {
+		var colExists bool
+		err := s.QueryRowContext(ctx, fmt.Sprintf(
+			`SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = %s AND table_name = %s AND column_name = %s)`,
+			sql.QuoteLiteral(tableID.Schema()),
+			sql.QuoteLiteral(tableID.Table()),
+			sql.QuoteLiteral(constants.UpdateColumnMarker),
+		)).Scan(&colExists)
+		if err != nil || !colExists {
+			slog.Info("Column not found, incremental dedupe will pick an arbitrary row per PK group",
+				slog.String("column", constants.UpdateColumnMarker),
+				slog.String("table", tableID.FullyQualifiedName()),
+			)
+			includeArtieUpdatedAt = false
+		}
 	}
 
 	pkCSV := strings.Join(primaryKeysEscaped, ", ")
