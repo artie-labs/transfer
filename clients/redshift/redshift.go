@@ -28,7 +28,7 @@ import (
 
 const (
 	dedupeBatchSize         = 1_000_000
-	dedupeRangeBatchMaxRows = 20_000
+	dedupeRangeBatchMaxRows = 150_000
 )
 
 type Store struct {
@@ -348,9 +348,22 @@ func (s *Store) dedupeRange(
 			slog.Int64("pkGroups", batchPKGroups),
 		)
 
-		// Build keepers — range filter lets Redshift skip blocks via zone maps.
-		createKeepers := fmt.Sprintf(
-			`CREATE TEMPORARY TABLE %s AS (SELECT * FROM %s WHERE %s AND (%s) IN (SELECT %s FROM %s) QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 1)`,
+		// Build keepers via empty-schema clone + INSERT to avoid CTAS encoding analysis,
+		// which fails on tables with large column values (e.g. big JSON blobs).
+		createEmptyKeepers := fmt.Sprintf(
+			`CREATE TEMPORARY TABLE %s AS SELECT * FROM %s WHERE 1 = 0`,
+			keepersTableID.EscapedTable(),
+			tableID.FullyQualifiedName(),
+		)
+
+		if _, err := s.ExecContext(ctx, createEmptyKeepers); err != nil {
+			cleanup()
+			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.EscapedTable()))
+			return fmt.Errorf("failed to create empty keepers table (%s, batch %d): %w", logPrefix, batch, err)
+		}
+
+		insertKeepers := fmt.Sprintf(
+			`INSERT INTO %s SELECT * FROM %s WHERE %s AND (%s) IN (SELECT %s FROM %s) QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 1`,
 			keepersTableID.EscapedTable(),
 			tableID.FullyQualifiedName(),
 			rangeFilter,
@@ -359,10 +372,10 @@ func (s *Store) dedupeRange(
 			pkCSV, orderByCSV,
 		)
 
-		if _, err := s.ExecContext(ctx, createKeepers); err != nil {
+		if _, err := s.ExecContext(ctx, insertKeepers); err != nil {
 			cleanup()
 			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.EscapedTable()))
-			return fmt.Errorf("failed to create keepers table (%s, batch %d): %w", logPrefix, batch, err)
+			return fmt.Errorf("failed to insert keepers (%s, batch %d): %w", logPrefix, batch, err)
 		}
 
 		// Atomic delete + re-insert.
