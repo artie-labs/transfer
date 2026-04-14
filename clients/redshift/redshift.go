@@ -28,7 +28,7 @@ import (
 
 const (
 	dedupeBatchSize         = 1_000_000
-	dedupeRangeBatchMaxRows = 150_000
+	dedupeRangeBatchMaxRows = 20_000
 )
 
 type Store struct {
