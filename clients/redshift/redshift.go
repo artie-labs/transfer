@@ -276,7 +276,7 @@ func (s *Store) dedupeRange(
 
 	// Single scan: find all duplicate PKs in the range.
 	createAllDupPKs := fmt.Sprintf(
-		`CREATE TEMPORARY TABLE %s AS (SELECT %s, COUNT(*) AS cnt FROM %s WHERE %s GROUP BY %s HAVING COUNT(*) > 1)`,
+		`CREATE TEMPORARY TABLE %s AS (SELECT %s, COUNT(*) AS __artie_cnt FROM %s WHERE %s GROUP BY %s HAVING COUNT(*) > 1)`,
 		allDupPKsTableID.EscapedTable(),
 		pkCSV, tableID.FullyQualifiedName(), rangeFilter, pkCSV,
 	)
@@ -314,9 +314,9 @@ func (s *Store) dedupeRange(
 		}
 
 		// Take the next sub-batch: PK groups whose cumulative row count fits within the limit.
-		// The "running_total - cnt < limit" condition guarantees at least one group is always taken.
+		// The "__artie_running - __artie_cnt < limit" condition guarantees at least one group is always taken.
 		createBatchPKs := fmt.Sprintf(
-			`CREATE TEMPORARY TABLE %s AS (SELECT %s FROM (SELECT %s, cnt, SUM(cnt) OVER (ORDER BY cnt ASC ROWS UNBOUNDED PRECEDING) AS running_total FROM %s) AS sub WHERE sub.running_total - sub.cnt < %d)`,
+			`CREATE TEMPORARY TABLE %s AS (SELECT %s FROM (SELECT %s, __artie_cnt, SUM(__artie_cnt) OVER (ORDER BY __artie_cnt ASC ROWS UNBOUNDED PRECEDING) AS __artie_running FROM %s) AS sub WHERE sub.__artie_running - sub.__artie_cnt < %d)`,
 			batchPKsTableID.EscapedTable(),
 			pkCSV,
 			pkCSV,
