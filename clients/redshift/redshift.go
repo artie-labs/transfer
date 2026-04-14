@@ -316,7 +316,7 @@ func (s *Store) dedupeRange(
 		// Take the next sub-batch: PK groups whose cumulative row count fits within the limit.
 		// The "running_total - cnt < limit" condition guarantees at least one group is always taken.
 		createBatchPKs := fmt.Sprintf(
-			`CREATE TEMPORARY TABLE %s AS (SELECT %s FROM (SELECT %s, cnt, SUM(cnt) OVER (ORDER BY cnt ASC ROWS UNBOUNDED PRECEDING) AS running_total FROM %s) WHERE running_total - cnt < %d)`,
+			`CREATE TEMPORARY TABLE %s AS (SELECT %s FROM (SELECT %s, cnt, SUM(cnt) OVER (ORDER BY cnt ASC ROWS UNBOUNDED PRECEDING) AS running_total FROM %s) AS sub WHERE sub.running_total - sub.cnt < %d)`,
 			batchPKsTableID.EscapedTable(),
 			pkCSV,
 			pkCSV,
