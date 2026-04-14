@@ -276,24 +276,24 @@ func (s *Store) dedupeRange(
 
 	// Single scan: find all duplicate PKs in the range.
 	createAllDupPKs := fmt.Sprintf(
-		`CREATE TEMPORARY TABLE %s AS (SELECT %s, COUNT(*) AS __artie_cnt FROM %s WHERE %s GROUP BY %s HAVING COUNT(*) > 1)`,
-		allDupPKsTableID.EscapedTable(),
+		`CREATE TABLE %s AS (SELECT %s, COUNT(*) AS __artie_cnt FROM %s WHERE %s GROUP BY %s HAVING COUNT(*) > 1)`,
+		allDupPKsTableID.FullyQualifiedName(),
 		pkCSV, tableID.FullyQualifiedName(), rangeFilter, pkCSV,
 	)
 
 	if _, err := s.ExecContext(ctx, createAllDupPKs); err != nil {
-		_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.EscapedTable()))
+		_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.FullyQualifiedName()))
 		return fmt.Errorf("failed to find duplicate PKs (%s): %w", logPrefix, err)
 	}
 
 	var totalPKGroups int64
-	if err := s.QueryRowContext(ctx, fmt.Sprintf("SELECT COUNT(*) FROM %s", allDupPKsTableID.EscapedTable())).Scan(&totalPKGroups); err != nil {
-		_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.EscapedTable()))
+	if err := s.QueryRowContext(ctx, fmt.Sprintf("SELECT COUNT(*) FROM %s", allDupPKsTableID.FullyQualifiedName())).Scan(&totalPKGroups); err != nil {
+		_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.FullyQualifiedName()))
 		return fmt.Errorf("failed to count duplicate PK groups (%s): %w", logPrefix, err)
 	}
 
 	if totalPKGroups == 0 {
-		_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.EscapedTable()))
+		_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.FullyQualifiedName()))
 		return nil
 	}
 
@@ -309,31 +309,31 @@ func (s *Store) dedupeRange(
 		keepersTableID := shared.TempTableIDWithSuffix(s, baseTableID, fmt.Sprintf("keep_%s", suffix))
 
 		cleanup := func() {
-			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", batchPKsTableID.EscapedTable()))
-			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", keepersTableID.EscapedTable()))
+			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", batchPKsTableID.FullyQualifiedName()))
+			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", keepersTableID.FullyQualifiedName()))
 		}
 
 		// Take the next sub-batch: PK groups whose cumulative row count fits within the limit.
 		// The "__artie_running - __artie_cnt < limit" condition guarantees at least one group is always taken.
 		createBatchPKs := fmt.Sprintf(
-			`CREATE TEMPORARY TABLE %s AS (SELECT %s FROM (SELECT %s, __artie_cnt, SUM(__artie_cnt) OVER (ORDER BY __artie_cnt ASC ROWS UNBOUNDED PRECEDING) AS __artie_running FROM %s) AS sub WHERE sub.__artie_running - sub.__artie_cnt < %d)`,
-			batchPKsTableID.EscapedTable(),
+			`CREATE TABLE %s AS (SELECT %s FROM (SELECT %s, __artie_cnt, SUM(__artie_cnt) OVER (ORDER BY __artie_cnt ASC ROWS UNBOUNDED PRECEDING) AS __artie_running FROM %s) AS sub WHERE sub.__artie_running - sub.__artie_cnt < %d)`,
+			batchPKsTableID.FullyQualifiedName(),
 			pkCSV,
 			pkCSV,
-			allDupPKsTableID.EscapedTable(),
+			allDupPKsTableID.FullyQualifiedName(),
 			dedupeRangeBatchMaxRows,
 		)
 
 		if _, err := s.ExecContext(ctx, createBatchPKs); err != nil {
 			cleanup()
-			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.EscapedTable()))
+			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.FullyQualifiedName()))
 			return fmt.Errorf("failed to create batch PKs (%s, batch %d): %w", logPrefix, batch, err)
 		}
 
 		var batchPKGroups int64
-		if err := s.QueryRowContext(ctx, fmt.Sprintf("SELECT COUNT(*) FROM %s", batchPKsTableID.EscapedTable())).Scan(&batchPKGroups); err != nil {
+		if err := s.QueryRowContext(ctx, fmt.Sprintf("SELECT COUNT(*) FROM %s", batchPKsTableID.FullyQualifiedName())).Scan(&batchPKGroups); err != nil {
 			cleanup()
-			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.EscapedTable()))
+			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.FullyQualifiedName()))
 			return fmt.Errorf("failed to count batch PK groups (%s, batch %d): %w", logPrefix, batch, err)
 		}
 
@@ -351,30 +351,30 @@ func (s *Store) dedupeRange(
 		// Build keepers via empty-schema clone + INSERT to avoid CTAS encoding analysis,
 		// which fails on tables with large column values (e.g. big JSON blobs).
 		createEmptyKeepers := fmt.Sprintf(
-			`CREATE TEMPORARY TABLE %s AS SELECT * FROM %s WHERE 1 = 0`,
-			keepersTableID.EscapedTable(),
+			`CREATE TABLE %s AS SELECT * FROM %s WHERE 1 = 0`,
+			keepersTableID.FullyQualifiedName(),
 			tableID.FullyQualifiedName(),
 		)
 
 		if _, err := s.ExecContext(ctx, createEmptyKeepers); err != nil {
 			cleanup()
-			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.EscapedTable()))
+			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.FullyQualifiedName()))
 			return fmt.Errorf("failed to create empty keepers table (%s, batch %d): %w", logPrefix, batch, err)
 		}
 
 		insertKeepers := fmt.Sprintf(
 			`INSERT INTO %s SELECT * FROM %s WHERE %s AND (%s) IN (SELECT %s FROM %s) QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 1`,
-			keepersTableID.EscapedTable(),
+			keepersTableID.FullyQualifiedName(),
 			tableID.FullyQualifiedName(),
 			rangeFilter,
 			pkCSV,
-			pkCSV, batchPKsTableID.EscapedTable(),
+			pkCSV, batchPKsTableID.FullyQualifiedName(),
 			pkCSV, orderByCSV,
 		)
 
 		if _, err := s.ExecContext(ctx, insertKeepers); err != nil {
 			cleanup()
-			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.EscapedTable()))
+			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.FullyQualifiedName()))
 			return fmt.Errorf("failed to insert keepers (%s, batch %d): %w", logPrefix, batch, err)
 		}
 
@@ -382,13 +382,13 @@ func (s *Store) dedupeRange(
 		tx, err := s.Begin(ctx)
 		if err != nil {
 			cleanup()
-			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.EscapedTable()))
+			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.FullyQualifiedName()))
 			return fmt.Errorf("failed to begin transaction (%s, batch %d): %w", logPrefix, batch, err)
 		}
 
 		deleteQuery := fmt.Sprintf("DELETE FROM %s USING %s stg WHERE %s AND %s",
 			tableID.FullyQualifiedName(),
-			batchPKsTableID.EscapedTable(),
+			batchPKsTableID.FullyQualifiedName(),
 			joinClause,
 			qualifiedRangeFilter,
 		)
@@ -396,38 +396,38 @@ func (s *Store) dedupeRange(
 		if _, err := tx.ExecContext(ctx, deleteQuery); err != nil {
 			_ = tx.Rollback()
 			cleanup()
-			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.EscapedTable()))
+			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.FullyQualifiedName()))
 			return fmt.Errorf("failed to delete dupes (%s, batch %d): %w", logPrefix, batch, err)
 		}
 
 		insertQuery := fmt.Sprintf("INSERT INTO %s SELECT * FROM %s",
 			tableID.FullyQualifiedName(),
-			keepersTableID.EscapedTable(),
+			keepersTableID.FullyQualifiedName(),
 		)
 
 		if _, err := tx.ExecContext(ctx, insertQuery); err != nil {
 			_ = tx.Rollback()
 			cleanup()
-			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.EscapedTable()))
+			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.FullyQualifiedName()))
 			return fmt.Errorf("failed to re-insert deduped rows (%s, batch %d): %w", logPrefix, batch, err)
 		}
 
 		if err := tx.Commit(); err != nil {
 			cleanup()
-			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.EscapedTable()))
+			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.FullyQualifiedName()))
 			return fmt.Errorf("failed to commit dedupe (%s, batch %d): %w", logPrefix, batch, err)
 		}
 
 		// Remove processed PKs from the all-dups table.
 		removePKs := fmt.Sprintf("DELETE FROM %s WHERE (%s) IN (SELECT %s FROM %s)",
-			allDupPKsTableID.EscapedTable(),
+			allDupPKsTableID.FullyQualifiedName(),
 			pkCSV,
-			pkCSV, batchPKsTableID.EscapedTable(),
+			pkCSV, batchPKsTableID.FullyQualifiedName(),
 		)
 
 		if _, err := s.ExecContext(ctx, removePKs); err != nil {
 			cleanup()
-			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.EscapedTable()))
+			_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.FullyQualifiedName()))
 			return fmt.Errorf("failed to remove processed PKs (%s, batch %d): %w", logPrefix, batch, err)
 		}
 
@@ -441,7 +441,7 @@ func (s *Store) dedupeRange(
 		)
 	}
 
-	_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.EscapedTable()))
+	_, _ = s.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", allDupPKsTableID.FullyQualifiedName()))
 	return nil
 }
 
