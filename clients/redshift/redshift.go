@@ -2,6 +2,7 @@ package redshift
 
 import (
 	"context"
+	gosql "database/sql"
 	"fmt"
 	"log/slog"
 	"os"
@@ -135,6 +136,26 @@ func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair ka
 		if _, err := s.ExecContext(ctx, query); err != nil {
 			return fmt.Errorf("failed to dedupe — query: %s, err: %w", query, err)
 		}
+	}
+
+	// Swap the tables atomically so there's no window where the target table doesn't exist.
+	tx, err := s.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to start transaction for table swap: %w", err)
+	}
+
+	if err = db.CommitOrRollback(tx, func(tx *gosql.Tx) error {
+		if _, err := tx.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", tableID.FullyQualifiedName())); err != nil {
+			return fmt.Errorf("failed to drop original table: %w", err)
+		}
+
+		if _, err := tx.ExecContext(ctx, fmt.Sprintf("ALTER TABLE %s RENAME TO %s", newTableID.FullyQualifiedName(), tableID.EscapedTable())); err != nil {
+			return fmt.Errorf("failed to rename table: %w", err)
+		}
+
+		return nil
+	}); err != nil {
+		return fmt.Errorf("failed to swap tables: %w", err)
 	}
 
 	return nil

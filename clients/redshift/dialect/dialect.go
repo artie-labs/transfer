@@ -149,9 +149,6 @@ func (rd RedshiftDialect) BuildDedupeChunkedQueries(tableID, newTableID sql.Tabl
 		))
 	}
 
-	parts = append(parts, fmt.Sprintf("DROP TABLE IF EXISTS %s", tableID.FullyQualifiedName()))
-	parts = append(parts, fmt.Sprintf("ALTER TABLE %s RENAME TO %s", newTableID.FullyQualifiedName(), tableID.EscapedTable()))
-
 	return parts
 }
 
