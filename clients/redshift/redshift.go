@@ -3,6 +3,7 @@ package redshift
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
 
@@ -14,7 +15,6 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
-	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/environ"
 	"github.com/artie-labs/transfer/lib/kafkalib"
@@ -132,8 +132,11 @@ func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair ka
 	newTableID := dialect.NewTableIdentifier(tableID.Schema(), fmt.Sprintf("%s_%s_%s", tableID.Table(), constants.ArtiePrefix, strings.ToLower(stringutil.Random(5))))
 	dedupeQueries := s.dialect().BuildDedupeChunkedQueries(tableID, newTableID, primaryKeys, includeArtieUpdatedAt, 10)
 
-	if _, err := destination.ExecContextStatements(ctx, s, dedupeQueries); err != nil {
-		return fmt.Errorf("failed to dedupe: %w", err)
+	for _, query := range dedupeQueries {
+		slog.Info("Executing dedupe step...", slog.String("query", query))
+		if _, err := s.ExecContext(ctx, query); err != nil {
+			return fmt.Errorf("failed to dedupe — query: %s, err: %w", query, err)
+		}
 	}
 
 	return nil
