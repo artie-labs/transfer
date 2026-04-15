@@ -134,7 +134,7 @@ func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair ka
 	for _, query := range dedupeQueries {
 		slog.Info("Executing dedupe step...", slog.String("query", query))
 		if _, err := s.ExecContext(ctx, query); err != nil {
-			return fmt.Errorf("failed to dedupe — query: %s, err: %w", query, err)
+			return fmt.Errorf("failed to dedupe, query: %s, err: %w", query, err)
 		}
 	}
 

@@ -119,7 +119,8 @@ func (rd RedshiftDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableId
 func (rd RedshiftDialect) BuildDedupeChunkedQueries(tableID, newTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool, numChunks int) []string {
 	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, rd)
 
-	orderColsToIterate := primaryKeysEscaped
+	orderColsToIterate := make([]string, len(primaryKeysEscaped))
+	copy(orderColsToIterate, primaryKeysEscaped)
 	if includeArtieUpdatedAt {
 		orderColsToIterate = append(orderColsToIterate, rd.QuoteIdentifier(constants.UpdateColumnMarker))
 	}
