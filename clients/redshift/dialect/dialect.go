@@ -133,6 +133,7 @@ func (rd RedshiftDialect) BuildDedupeChunkedQueries(tableID sql.TableIdentifier,
 	orderBy := strings.Join(orderByCols, ", ")
 
 	var parts []string
+	parts = append(parts, fmt.Sprintf("DROP TABLE IF EXISTS %s", newTableID.FullyQualifiedName()))
 	parts = append(parts, fmt.Sprintf("CREATE TABLE %s (LIKE %s)", newTableID.FullyQualifiedName(), tableID.FullyQualifiedName()))
 
 	for i := 1; i <= numChunks; i++ {

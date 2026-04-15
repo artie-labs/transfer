@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"strings"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 
@@ -21,7 +20,6 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/retry"
 	"github.com/artie-labs/transfer/lib/sql"
-	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/webhooks"
 )
 
@@ -129,7 +127,7 @@ func (s *Store) SweepTemporaryTables(ctx context.Context) error {
 }
 
 func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kafkalib.DatabaseAndSchemaPair, primaryKeys []string, includeArtieUpdatedAt bool) error {
-	newTableID := dialect.NewTableIdentifier(tableID.Schema(), fmt.Sprintf("%s_%s_%s", tableID.Table(), constants.ArtiePrefix, strings.ToLower(stringutil.Random(5))))
+	newTableID := dialect.NewTableIdentifier(tableID.Schema(), fmt.Sprintf("%s_%s_dedupe", tableID.Table(), constants.ArtiePrefix))
 	dedupeQueries := s.dialect().BuildDedupeChunkedQueries(tableID, newTableID, primaryKeys, includeArtieUpdatedAt, 10)
 
 	for _, query := range dedupeQueries {
