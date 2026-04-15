@@ -126,7 +126,7 @@ func (rd RedshiftDialect) BuildDedupeChunkedQueries(tableID, newTableID sql.Tabl
 
 	var orderByCols []string
 	for _, orderByCol := range orderColsToIterate {
-		orderByCols = append(orderByCols, fmt.Sprintf("%s ASC", orderByCol))
+		orderByCols = append(orderByCols, fmt.Sprintf("%s DESC", orderByCol))
 	}
 
 	partitionBy := strings.Join(primaryKeysEscaped, ", ")
