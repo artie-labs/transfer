@@ -2,7 +2,6 @@ package redshift
 
 import (
 	"context"
-	gosql "database/sql"
 	"fmt"
 	"log/slog"
 	"os"
@@ -15,6 +14,7 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/db"
+	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/types"
 	"github.com/artie-labs/transfer/lib/environ"
 	"github.com/artie-labs/transfer/lib/kafkalib"
@@ -139,21 +139,9 @@ func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair ka
 	}
 
 	// Swap the tables atomically so there's no window where the target table doesn't exist.
-	tx, err := s.Begin(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to start transaction for table swap: %w", err)
-	}
-
-	if err = db.CommitOrRollback(tx, func(tx *gosql.Tx) error {
-		if _, err := tx.ExecContext(ctx, fmt.Sprintf("DROP TABLE IF EXISTS %s", tableID.FullyQualifiedName())); err != nil {
-			return fmt.Errorf("failed to drop original table: %w", err)
-		}
-
-		if _, err := tx.ExecContext(ctx, fmt.Sprintf("ALTER TABLE %s RENAME TO %s", newTableID.FullyQualifiedName(), tableID.EscapedTable())); err != nil {
-			return fmt.Errorf("failed to rename table: %w", err)
-		}
-
-		return nil
+	if _, err := destination.ExecContextStatements(ctx, s, []string{
+		fmt.Sprintf("DROP TABLE IF EXISTS %s", tableID.FullyQualifiedName()),
+		fmt.Sprintf("ALTER TABLE %s RENAME TO %s", newTableID.FullyQualifiedName(), tableID.EscapedTable()),
 	}); err != nil {
 		return fmt.Errorf("failed to swap tables: %w", err)
 	}

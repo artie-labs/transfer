@@ -55,7 +55,7 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeChunkedQueries() {
 			assert.Equal(
 				r.T(),
 				fmt.Sprintf(
-					`INSERT INTO public."customers__artie_dedupe" SELECT * FROM public."customers" WHERE true QUALIFY NTILE(3) OVER (ORDER BY "id") = %d AND ROW_NUMBER() OVER (PARTITION BY "id" ORDER BY "id" ASC) = 1`,
+					`INSERT INTO public."customers__artie_dedupe" SELECT * FROM public."customers" WHERE true QUALIFY NTILE(3) OVER (ORDER BY "id") = %d AND ROW_NUMBER() OVER (PARTITION BY "id" ORDER BY "id" DESC) = 1`,
 					i,
 				),
 				parts[i+1],
@@ -75,7 +75,7 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeChunkedQueries() {
 			assert.Equal(
 				r.T(),
 				fmt.Sprintf(
-					`INSERT INTO public."customers__artie_dedupe" SELECT * FROM public."customers" WHERE true QUALIFY NTILE(2) OVER (ORDER BY "id") = %d AND ROW_NUMBER() OVER (PARTITION BY "id" ORDER BY "id" ASC, "__artie_updated_at" ASC) = 1`,
+					`INSERT INTO public."customers__artie_dedupe" SELECT * FROM public."customers" WHERE true QUALIFY NTILE(2) OVER (ORDER BY "id") = %d AND ROW_NUMBER() OVER (PARTITION BY "id" ORDER BY "id" DESC, "__artie_updated_at" DESC) = 1`,
 					i,
 				),
 				parts[i+1],
@@ -95,7 +95,7 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeChunkedQueries() {
 			assert.Equal(
 				r.T(),
 				fmt.Sprintf(
-					`INSERT INTO public."user_settings__artie_dedupe" SELECT * FROM public."user_settings" WHERE true QUALIFY NTILE(2) OVER (ORDER BY "user_id", "settings") = %d AND ROW_NUMBER() OVER (PARTITION BY "user_id", "settings" ORDER BY "user_id" ASC, "settings" ASC) = 1`,
+					`INSERT INTO public."user_settings__artie_dedupe" SELECT * FROM public."user_settings" WHERE true QUALIFY NTILE(2) OVER (ORDER BY "user_id", "settings") = %d AND ROW_NUMBER() OVER (PARTITION BY "user_id", "settings" ORDER BY "user_id" DESC, "settings" DESC) = 1`,
 					i,
 				),
 				parts[i+1],
