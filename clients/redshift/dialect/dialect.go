@@ -116,7 +116,7 @@ func (rd RedshiftDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableId
 	return parts
 }
 
-func (rd RedshiftDialect) BuildDedupeChunkedQueries(tableID sql.TableIdentifier, newTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool, numChunks int) []string {
+func (rd RedshiftDialect) BuildDedupeChunkedQueries(tableID, newTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool, numChunks int) []string {
 	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, rd)
 
 	orderColsToIterate := primaryKeysEscaped
