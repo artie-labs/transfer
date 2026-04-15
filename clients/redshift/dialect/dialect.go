@@ -116,6 +116,44 @@ func (rd RedshiftDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableId
 	return parts
 }
 
+func (rd RedshiftDialect) BuildDedupeChunkedQueries(tableID sql.TableIdentifier, newTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool, numChunks int) []string {
+	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, rd)
+
+	orderColsToIterate := primaryKeysEscaped
+	if includeArtieUpdatedAt {
+		orderColsToIterate = append(orderColsToIterate, rd.QuoteIdentifier(constants.UpdateColumnMarker))
+	}
+
+	var orderByCols []string
+	for _, orderByCol := range orderColsToIterate {
+		orderByCols = append(orderByCols, fmt.Sprintf("%s ASC", orderByCol))
+	}
+
+	partitionBy := strings.Join(primaryKeysEscaped, ", ")
+	orderBy := strings.Join(orderByCols, ", ")
+
+	var parts []string
+	parts = append(parts, fmt.Sprintf("CREATE TABLE %s (LIKE %s)", newTableID.FullyQualifiedName(), tableID.FullyQualifiedName()))
+
+	for i := 1; i <= numChunks; i++ {
+		parts = append(parts, fmt.Sprintf(
+			"INSERT INTO %s SELECT * FROM %s WHERE true QUALIFY NTILE(%d) OVER (ORDER BY %s) = %d AND ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 1",
+			newTableID.FullyQualifiedName(),
+			tableID.FullyQualifiedName(),
+			numChunks,
+			partitionBy,
+			i,
+			partitionBy,
+			orderBy,
+		))
+	}
+
+	parts = append(parts, fmt.Sprintf("DROP TABLE IF EXISTS %s", tableID.FullyQualifiedName()))
+	parts = append(parts, fmt.Sprintf("ALTER TABLE %s RENAME TO %s", newTableID.FullyQualifiedName(), tableID.EscapedTable()))
+
+	return parts
+}
+
 func (rd RedshiftDialect) buildMergeInsertQuery(
 	tableID sql.TableIdentifier,
 	subQuery string,
