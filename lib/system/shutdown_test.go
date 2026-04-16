@@ -1,3 +1,5 @@
+//go:build unix
+
 package system
 
 import (
@@ -10,21 +12,23 @@ import (
 	"time"
 )
 
-func TestShutdownOnSignal_runsCleanupAndCancelsContext(t *testing.T) {
-	t.Parallel()
-
+func TestShutdownHook_runsCleanupAndCancelsContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	var cleaned atomic.Bool
 	cleanup := func() { cleaned.Store(true) }
 
-	sigCh := make(chan os.Signal, 1)
 	logger := slog.New(slog.DiscardHandler)
 
-	shutdownOnSignal(sigCh, logger, cleanup, cancel)
+	ShutdownHook(logger, cleanup, cancel)
 
-	sigCh <- syscall.SIGINT
+	// Let the goroutine register with signal.Notify before we signal.
+	time.Sleep(50 * time.Millisecond)
+
+	if err := syscall.Kill(os.Getpid(), syscall.SIGINT); err != nil {
+		t.Fatalf("send SIGINT: %v", err)
+	}
 
 	select {
 	case <-ctx.Done():
