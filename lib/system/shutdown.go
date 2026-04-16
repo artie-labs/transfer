@@ -8,7 +8,7 @@ import (
 	"syscall"
 )
 
-func ShutdownHook(logger *slog.Logger, cleanUpHandlers func(), cancel context.CancelFunc) {
+func ShutdownHook(cleanUpHandlers func(), cancel context.CancelFunc) {
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGTERM, syscall.SIGINT)
 	go func() {

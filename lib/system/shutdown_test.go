@@ -4,7 +4,6 @@ package system
 
 import (
 	"context"
-	"log/slog"
 	"os"
 	"sync/atomic"
 	"syscall"
@@ -19,9 +18,7 @@ func TestShutdownHook_runsCleanupAndCancelsContext(t *testing.T) {
 	var cleaned atomic.Bool
 	cleanup := func() { cleaned.Store(true) }
 
-	logger := slog.New(slog.DiscardHandler)
-
-	ShutdownHook(logger, cleanup, cancel)
+	ShutdownHook(cleanup, cancel)
 
 	// Let the goroutine register with signal.Notify before we signal.
 	time.Sleep(50 * time.Millisecond)
