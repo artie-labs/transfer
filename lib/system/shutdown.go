@@ -14,6 +14,7 @@ func ShutdownHook(logger *slog.Logger, cleanUpHandlers func(), cancel context.Ca
 	go func() {
 		sig := <-sigCh
 		slog.Info("Received shutdown signal, initiating graceful shutdown...", slog.String("signal", sig.String()))
+
 		cleanUpHandlers()
 		cancel()
 	}()
