@@ -200,7 +200,7 @@ func (s *Store) dedupeRangeChunked(ctx context.Context, tableID sql.TableIdentif
 	}
 
 	if boundaries == nil {
-		slog.Info("Source table is empty, skipping dedupe chunk inserts",
+		slog.Info("No non-NULL boundary key values, skipping range chunks",
 			slog.String("table", tableID.FullyQualifiedName()))
 	} else {
 		for i := 0; i < numChunks; i++ {
@@ -216,6 +216,15 @@ func (s *Store) dedupeRangeChunked(ctx context.Context, tableID sql.TableIdentif
 				return fmt.Errorf("failed to dedupe chunk %d [%s, %s], err: %w", i, boundaries[i], boundaries[i+1], err)
 			}
 		}
+	}
+
+	// Range chunks only cover non-NULL boundary key values, so run a separate
+	// pass for NULL-keyed rows to avoid silently dropping them on swap. This is
+	// a no-op when the column is NOT NULL.
+	nullQuery := s.dialect().BuildDedupeNullChunkInsertQuery(tableID, newTableID, primaryKeys, includeArtieUpdatedAt, boundaryKey)
+	slog.Info("Executing NULL-key dedupe chunk...", slog.String("query", nullQuery))
+	if _, err := s.ExecContext(ctx, nullQuery); err != nil {
+		return fmt.Errorf("failed to dedupe NULL-key chunk: %w", err)
 	}
 
 	// Swap the tables atomically so there's no window where the target table doesn't exist.

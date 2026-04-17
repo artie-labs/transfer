@@ -137,6 +137,25 @@ func (rd RedshiftDialect) BuildDedupeBoundaryQuery(tableID sql.TableIdentifier, 
 	return fmt.Sprintf("SELECT %s FROM %s", strings.Join(selectParts, ", "), tableID.FullyQualifiedName())
 }
 
+// dedupeWindow returns the PARTITION BY and ORDER BY clause fragments shared
+// by the chunk insert queries.
+func (rd RedshiftDialect) dedupeWindow(primaryKeys []string, includeArtieUpdatedAt bool) (partitionBy, orderBy string) {
+	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, rd)
+
+	orderCols := make([]string, len(primaryKeysEscaped))
+	copy(orderCols, primaryKeysEscaped)
+	if includeArtieUpdatedAt {
+		orderCols = append(orderCols, rd.QuoteIdentifier(constants.UpdateColumnMarker))
+	}
+
+	orderByCols := make([]string, len(orderCols))
+	for i, col := range orderCols {
+		orderByCols[i] = fmt.Sprintf("%s DESC", col)
+	}
+
+	return strings.Join(primaryKeysEscaped, ", "), strings.Join(orderByCols, ", ")
+}
+
 // BuildDedupeChunkInsertQuery returns an INSERT ... SELECT that copies a range
 // of rows (bounded by placeholders $1 and $2 on boundaryKey) from the source
 // table into the dedupe table, collapsing duplicates with ROW_NUMBER. The upper
@@ -147,21 +166,7 @@ func (rd RedshiftDialect) BuildDedupeBoundaryQuery(tableID sql.TableIdentifier, 
 // boundaryKey is (or correlates with) the sort key, so each chunk only reads a
 // fraction of the underlying data instead of rescanning the whole table.
 func (rd RedshiftDialect) BuildDedupeChunkInsertQuery(tableID, newTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool, boundaryKey string, inclusiveUpper bool) string {
-	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, rd)
-
-	orderColsToIterate := make([]string, len(primaryKeysEscaped))
-	copy(orderColsToIterate, primaryKeysEscaped)
-	if includeArtieUpdatedAt {
-		orderColsToIterate = append(orderColsToIterate, rd.QuoteIdentifier(constants.UpdateColumnMarker))
-	}
-
-	orderByCols := make([]string, 0, len(orderColsToIterate))
-	for _, col := range orderColsToIterate {
-		orderByCols = append(orderByCols, fmt.Sprintf("%s DESC", col))
-	}
-
-	partitionBy := strings.Join(primaryKeysEscaped, ", ")
-	orderBy := strings.Join(orderByCols, ", ")
+	partitionBy, orderBy := rd.dedupeWindow(primaryKeys, includeArtieUpdatedAt)
 
 	boundaryCol := rd.QuoteIdentifier(boundaryKey)
 	upperOp := "<"
@@ -174,6 +179,23 @@ func (rd RedshiftDialect) BuildDedupeChunkInsertQuery(tableID, newTableID sql.Ta
 		newTableID.FullyQualifiedName(),
 		tableID.FullyQualifiedName(),
 		boundaryCol, boundaryCol, upperOp,
+		partitionBy, orderBy,
+	)
+}
+
+// BuildDedupeNullChunkInsertQuery returns an INSERT ... SELECT that copies rows
+// where the boundary key is NULL. MIN/MAX/percentile boundaries only cover
+// non-NULL values, so these rows would otherwise be silently dropped on swap.
+// Redshift does not enforce PK NOT NULL, so this needs to run whenever the
+// boundary column is nullable.
+func (rd RedshiftDialect) BuildDedupeNullChunkInsertQuery(tableID, newTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool, boundaryKey string) string {
+	partitionBy, orderBy := rd.dedupeWindow(primaryKeys, includeArtieUpdatedAt)
+
+	return fmt.Sprintf(
+		"INSERT INTO %s SELECT * FROM %s WHERE %s IS NULL QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 1",
+		newTableID.FullyQualifiedName(),
+		tableID.FullyQualifiedName(),
+		rd.QuoteIdentifier(boundaryKey),
 		partitionBy, orderBy,
 	)
 }

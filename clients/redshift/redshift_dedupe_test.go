@@ -94,3 +94,28 @@ func (r *RedshiftTestSuite) Test_BuildDedupeChunkInsertQuery() {
 		)
 	}
 }
+
+func (r *RedshiftTestSuite) Test_BuildDedupeNullChunkInsertQuery() {
+	tableID := dialect.NewTableIdentifier("public", "customers")
+	newTableID := dialect.NewTableIdentifier("public", "customers__artie_dedupe")
+	{
+		// Single PK, no __artie_updated_at.
+		query := dialect.RedshiftDialect{}.BuildDedupeNullChunkInsertQuery(tableID, newTableID, []string{"id"}, false, "id")
+		assert.Equal(
+			r.T(),
+			`INSERT INTO public."customers__artie_dedupe" SELECT * FROM public."customers" WHERE "id" IS NULL QUALIFY ROW_NUMBER() OVER (PARTITION BY "id" ORDER BY "id" DESC) = 1`,
+			query,
+		)
+	}
+	{
+		// Composite PK with __artie_updated_at.
+		settingsTableID := dialect.NewTableIdentifier("public", "user_settings")
+		newSettingsTableID := dialect.NewTableIdentifier("public", "user_settings__artie_dedupe")
+		query := dialect.RedshiftDialect{}.BuildDedupeNullChunkInsertQuery(settingsTableID, newSettingsTableID, []string{"user_id", "settings"}, true, "user_id")
+		assert.Equal(
+			r.T(),
+			`INSERT INTO public."user_settings__artie_dedupe" SELECT * FROM public."user_settings" WHERE "user_id" IS NULL QUALIFY ROW_NUMBER() OVER (PARTITION BY "user_id", "settings" ORDER BY "user_id" DESC, "settings" DESC, "__artie_updated_at" DESC) = 1`,
+			query,
+		)
+	}
+}
