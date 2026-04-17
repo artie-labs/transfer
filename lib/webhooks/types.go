@@ -22,6 +22,7 @@ const (
 	EventReplicationError   EventType = "replication.error"
 	EventRowSkipped         EventType = "row.skipped"
 	EventDDLSeen            EventType = "ddl.seen"
+	EventDDLApplied         EventType = "ddl.applied"
 
 	// Dashboard specific events
 	EventDEKGenerated EventType = "dek.generated"
@@ -45,6 +46,7 @@ var AllEventTypes = []EventType{
 	EventReplicationError,
 	EventRowSkipped,
 	EventDDLSeen,
+	EventDDLApplied,
 	EventDEKGenerated,
 
 	EventReplicationFailed,
@@ -88,6 +90,7 @@ var eventMetadataMap = map[EventType]EventMetadata{
 	EventReplicationError:   {SeverityError, "replication", "Replication error"},
 	EventRowSkipped:         {SeverityWarning, "replication", "Row skipped"},
 	EventDDLSeen:            {SeverityInfo, "replication", "DDL seen"},
+	EventDDLApplied:         {SeverityInfo, "replication", "DDL applied"},
 	// Dashboard specific events
 	EventDEKGenerated: {SeverityInfo, "dashboard", "Data Encryption Key (DEK) generated"},
 

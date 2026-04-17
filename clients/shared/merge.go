@@ -25,7 +25,7 @@ const (
 	heartbeatsInterval     = 2 * time.Minute
 )
 
-func Merge(ctx context.Context, dest destination.SQLDestination, tableData *optimization.TableData, opts types.MergeOpts, _ *webhooks.Client) error {
+func Merge(ctx context.Context, dest destination.SQLDestination, tableData *optimization.TableData, opts types.MergeOpts, whClient *webhooks.Client) error {
 	if tableData.ShouldSkipUpdate() {
 		return nil
 	}
@@ -53,16 +53,16 @@ func Merge(ctx context.Context, dest destination.SQLDestination, tableData *opti
 	columnSettings := opts.ColumnSettings
 	columnSettings.SkipPrimaryKeyCreation = tableData.TopicConfig().SkipPrimaryKeyCreation
 	if tableConfig.CreateTable() {
-		if err = CreateTable(ctx, dest, tableData.Mode(), tableConfig, columnSettings, tableID, false, targetKeysMissing); err != nil {
+		if err = CreateTable(ctx, dest, tableData.Mode(), tableConfig, columnSettings, tableID, false, targetKeysMissing, whClient); err != nil {
 			return fmt.Errorf("failed to create table: %w", err)
 		}
 	} else {
-		if err = AlterTableAddColumns(ctx, dest, tableConfig, columnSettings, tableID, targetKeysMissing); err != nil {
+		if err = AlterTableAddColumns(ctx, dest, tableConfig, columnSettings, tableID, targetKeysMissing, whClient); err != nil {
 			return fmt.Errorf("failed to add columns for table %q: %w", tableID.Table(), err)
 		}
 	}
 
-	if err = AlterTableDropColumns(ctx, dest, tableConfig, tableID, srcKeysMissing, tableData.GetLatestTimestamp(), tableData.ContainsOtherOperations()); err != nil {
+	if err = AlterTableDropColumns(ctx, dest, tableConfig, tableID, srcKeysMissing, tableData.GetLatestTimestamp(), tableData.ContainsOtherOperations(), whClient); err != nil {
 		return fmt.Errorf("failed to drop columns for table %q: %w", tableID.Table(), err)
 	}
 

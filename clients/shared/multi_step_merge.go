@@ -14,7 +14,7 @@ import (
 	"github.com/artie-labs/transfer/lib/webhooks"
 )
 
-func MultiStepMerge(ctx context.Context, dest destination.SQLDestination, tableData *optimization.TableData, opts types.MergeOpts, _ *webhooks.Client) (bool, error) {
+func MultiStepMerge(ctx context.Context, dest destination.SQLDestination, tableData *optimization.TableData, opts types.MergeOpts, whClient *webhooks.Client) (bool, error) {
 	msmSettings := tableData.MultiStepMergeSettings()
 	if !msmSettings.Enabled {
 		return false, fmt.Errorf("multi-step merge is not enabled")
@@ -60,11 +60,11 @@ func MultiStepMerge(ctx context.Context, dest destination.SQLDestination, tableD
 		)
 
 		if msmTableConfig.CreateTable() {
-			if err = CreateTable(ctx, dest, tableData.Mode(), msmTableConfig, columnSettings, msmTableID, true, resp.TargetColumnsMissing); err != nil {
+			if err = CreateTable(ctx, dest, tableData.Mode(), msmTableConfig, columnSettings, msmTableID, true, resp.TargetColumnsMissing, whClient); err != nil {
 				return false, fmt.Errorf("failed to create table: %w", err)
 			}
 		} else {
-			if err = AlterTableAddColumns(ctx, dest, msmTableConfig, columnSettings, msmTableID, resp.TargetColumnsMissing); err != nil {
+			if err = AlterTableAddColumns(ctx, dest, msmTableConfig, columnSettings, msmTableID, resp.TargetColumnsMissing, whClient); err != nil {
 				return false, fmt.Errorf("failed to add columns for table %q: %w", msmTableID.Table(), err)
 			}
 		}
@@ -79,11 +79,11 @@ func MultiStepMerge(ctx context.Context, dest destination.SQLDestination, tableD
 		)
 
 		if targetTableConfig.CreateTable() {
-			if err = CreateTable(ctx, dest, tableData.Mode(), targetTableConfig, columnSettings, targetTableID, false, targetKeysMissing); err != nil {
+			if err = CreateTable(ctx, dest, tableData.Mode(), targetTableConfig, columnSettings, targetTableID, false, targetKeysMissing, whClient); err != nil {
 				return false, fmt.Errorf("failed to create table: %w", err)
 			}
 		} else {
-			if err = AlterTableAddColumns(ctx, dest, targetTableConfig, columnSettings, targetTableID, targetKeysMissing); err != nil {
+			if err = AlterTableAddColumns(ctx, dest, targetTableConfig, columnSettings, targetTableID, targetKeysMissing, whClient); err != nil {
 				return false, fmt.Errorf("failed to add columns for table %q: %w", targetTableID.Table(), err)
 			}
 		}
