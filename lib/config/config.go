@@ -300,6 +300,10 @@ func (c Config) Validate() error {
 		return fmt.Errorf("no topic configs found")
 	}
 
+	if err := kafkalib.ValidateReferenceIDs(tcs); err != nil {
+		return err
+	}
+
 	var hasColumnsToEncrypt bool
 	for _, topicConfig := range tcs {
 		if err := topicConfig.Validate(); err != nil {
