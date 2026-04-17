@@ -8,6 +8,40 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestValidateReferenceIDs(t *testing.T) {
+	{
+		assert.NoError(t, ValidateReferenceIDs(nil))
+	}
+	{
+		assert.NoError(t, ValidateReferenceIDs([]*TopicConfig{}))
+	}
+	{
+		tcs := []*TopicConfig{
+			{ReferenceID: "a", Topic: "t1", Schema: "s", CDCFormat: "f", CDCKeyFormat: JSONKeyFmt},
+			{ReferenceID: "b", Topic: "t2", Schema: "s", CDCFormat: "f", CDCKeyFormat: JSONKeyFmt},
+		}
+		assert.NoError(t, ValidateReferenceIDs(tcs))
+	}
+	{
+		// Empty referenceID is ignored for uniqueness
+		tcs := []*TopicConfig{
+			{Topic: "t1", Schema: "s", CDCFormat: "f", CDCKeyFormat: JSONKeyFmt},
+			{Topic: "t2", Schema: "s", CDCFormat: "f", CDCKeyFormat: JSONKeyFmt},
+		}
+		assert.NoError(t, ValidateReferenceIDs(tcs))
+	}
+	{
+		tcs := []*TopicConfig{
+			{ReferenceID: "dup", Topic: "first", Schema: "s", CDCFormat: "f", CDCKeyFormat: JSONKeyFmt},
+			{ReferenceID: "dup", Topic: "second", Schema: "s", CDCFormat: "f", CDCKeyFormat: JSONKeyFmt},
+		}
+		err := ValidateReferenceIDs(tcs)
+		assert.ErrorContains(t, err, `duplicate referenceID "dup"`)
+		assert.ErrorContains(t, err, "first")
+		assert.ErrorContains(t, err, "second")
+	}
+}
+
 func TestGetUniqueStagingDatabaseAndSchemaPairs(t *testing.T) {
 	{
 		// No topic configs
