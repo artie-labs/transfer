@@ -51,6 +51,25 @@ func GetAllUniqueSchemas(tcs []*TopicConfig) []string {
 	return slices.Collect(maps.Keys(seenMap))
 }
 
+// ValidateReferenceIDs returns an error if any non-empty referenceID appears more than once across topic configs.
+func ValidateReferenceIDs(tcs []*TopicConfig) error {
+	firstTopicByRef := make(map[string]string)
+	for _, tc := range tcs {
+		if tc == nil {
+			continue
+		}
+		ref := tc.ReferenceID
+		if ref == "" {
+			continue
+		}
+		if firstTopic, dup := firstTopicByRef[ref]; dup {
+			return fmt.Errorf("duplicate referenceID %q (topics %q and %q)", ref, firstTopic, tc.Topic)
+		}
+		firstTopicByRef[ref] = tc.Topic
+	}
+	return nil
+}
+
 type MultiStepMergeSettings struct {
 	Enabled bool `yaml:"enabled"`
 	// FlushCount is the number of times we will flush to the multi-step merge table before merging into the destination table.
@@ -149,8 +168,10 @@ func (sp SoftPartitioning) Validate() error {
 }
 
 type TopicConfig struct {
-	Database string `yaml:"db"`
-	Schema   string `yaml:"schema"`
+	// [ReferenceID] - This is a unique identifier for the topic config. This is used for services that are built on top of Transfer to reference this specific topic config.
+	ReferenceID string `yaml:"referenceID,omitempty"`
+	Database    string `yaml:"db"`
+	Schema      string `yaml:"schema"`
 	// [StagingSchema] - Optional schema to use for staging tables. If not specified, Schema will be used.
 	StagingSchema string `yaml:"stagingSchema,omitempty"`
 	// [TableName] - if left empty, the table name will be deduced from each event.
