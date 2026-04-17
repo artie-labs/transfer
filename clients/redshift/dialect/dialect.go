@@ -116,7 +116,37 @@ func (rd RedshiftDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableId
 	return parts
 }
 
-func (rd RedshiftDialect) BuildDedupeChunkedQueries(tableID, newTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool, numChunks int) []string {
+// BuildDedupeBoundaryQuery returns a single-row query whose columns are the
+// chunk boundaries for the leading primary key: MIN, approximate percentiles at
+// 1/numChunks, 2/numChunks, ..., (numChunks-1)/numChunks, and MAX. The resulting
+// numChunks+1 values define numChunks half-open ranges (the last range is
+// inclusive on the upper bound) used by BuildDedupeChunkInsertQuery.
+//
+// APPROXIMATE PERCENTILE_DISC uses sketches, so this runs in a single pass over
+// the table without a global sort.
+func (rd RedshiftDialect) BuildDedupeBoundaryQuery(tableID sql.TableIdentifier, boundaryKey string, numChunks int) string {
+	pk := rd.QuoteIdentifier(boundaryKey)
+
+	selectParts := []string{fmt.Sprintf("MIN(%s)", pk)}
+	for i := 1; i < numChunks; i++ {
+		pct := float64(i) / float64(numChunks)
+		selectParts = append(selectParts, fmt.Sprintf("APPROXIMATE PERCENTILE_DISC(%g) WITHIN GROUP (ORDER BY %s)", pct, pk))
+	}
+	selectParts = append(selectParts, fmt.Sprintf("MAX(%s)", pk))
+
+	return fmt.Sprintf("SELECT %s FROM %s", strings.Join(selectParts, ", "), tableID.FullyQualifiedName())
+}
+
+// BuildDedupeChunkInsertQuery returns an INSERT ... SELECT that copies a range
+// of rows (bounded by placeholders $1 and $2 on boundaryKey) from the source
+// table into the dedupe table, collapsing duplicates with ROW_NUMBER. The upper
+// bound is exclusive unless inclusiveUpper is true (used for the final chunk so
+// the maximum value is included).
+//
+// Bounding on boundaryKey lets Redshift skip blocks via zone maps when
+// boundaryKey is (or correlates with) the sort key, so each chunk only reads a
+// fraction of the underlying data instead of rescanning the whole table.
+func (rd RedshiftDialect) BuildDedupeChunkInsertQuery(tableID, newTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool, boundaryKey string, inclusiveUpper bool) string {
 	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, rd)
 
 	orderColsToIterate := make([]string, len(primaryKeysEscaped))
@@ -125,32 +155,27 @@ func (rd RedshiftDialect) BuildDedupeChunkedQueries(tableID, newTableID sql.Tabl
 		orderColsToIterate = append(orderColsToIterate, rd.QuoteIdentifier(constants.UpdateColumnMarker))
 	}
 
-	var orderByCols []string
-	for _, orderByCol := range orderColsToIterate {
-		orderByCols = append(orderByCols, fmt.Sprintf("%s DESC", orderByCol))
+	orderByCols := make([]string, 0, len(orderColsToIterate))
+	for _, col := range orderColsToIterate {
+		orderByCols = append(orderByCols, fmt.Sprintf("%s DESC", col))
 	}
 
 	partitionBy := strings.Join(primaryKeysEscaped, ", ")
 	orderBy := strings.Join(orderByCols, ", ")
 
-	var parts []string
-	parts = append(parts, fmt.Sprintf("DROP TABLE IF EXISTS %s", newTableID.FullyQualifiedName()))
-	parts = append(parts, fmt.Sprintf("CREATE TABLE %s (LIKE %s)", newTableID.FullyQualifiedName(), tableID.FullyQualifiedName()))
-
-	for i := 1; i <= numChunks; i++ {
-		parts = append(parts, fmt.Sprintf(
-			"INSERT INTO %s SELECT * FROM %s WHERE true QUALIFY NTILE(%d) OVER (ORDER BY %s) = %d AND ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 1",
-			newTableID.FullyQualifiedName(),
-			tableID.FullyQualifiedName(),
-			numChunks,
-			partitionBy,
-			i,
-			partitionBy,
-			orderBy,
-		))
+	boundaryCol := rd.QuoteIdentifier(boundaryKey)
+	upperOp := "<"
+	if inclusiveUpper {
+		upperOp = "<="
 	}
 
-	return parts
+	return fmt.Sprintf(
+		"INSERT INTO %s SELECT * FROM %s WHERE %s >= $1 AND %s %s $2 QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 1",
+		newTableID.FullyQualifiedName(),
+		tableID.FullyQualifiedName(),
+		boundaryCol, boundaryCol, upperOp,
+		partitionBy, orderBy,
+	)
 }
 
 func (rd RedshiftDialect) buildMergeInsertQuery(

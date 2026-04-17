@@ -2,9 +2,12 @@ package redshift
 
 import (
 	"context"
+	gosql "database/sql"
 	"fmt"
 	"log/slog"
 	"os"
+	"slices"
+	"strings"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 
@@ -128,13 +131,90 @@ func (s *Store) SweepTemporaryTables(ctx context.Context) error {
 }
 
 func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kafkalib.DatabaseAndSchemaPair, primaryKeys []string, includeArtieUpdatedAt bool) error {
-	newTableID := dialect.NewTableIdentifier(tableID.Schema(), fmt.Sprintf("%s_%s_dedupe", tableID.Table(), constants.ArtiePrefix))
-	dedupeQueries := s.dialect().BuildDedupeChunkedQueries(tableID, newTableID, primaryKeys, includeArtieUpdatedAt, 10)
+	if len(primaryKeys) == 0 {
+		return fmt.Errorf("cannot dedupe %s without primary keys", tableID.FullyQualifiedName())
+	}
 
-	for _, query := range dedupeQueries {
-		slog.Info("Executing dedupe step...", slog.String("query", query))
-		if _, err := s.ExecContext(ctx, query); err != nil {
-			return fmt.Errorf("failed to dedupe, query: %s, err: %w", query, err)
+	// Boundary key is the first primary key; chunks are defined as ranges on it.
+	// The ROW_NUMBER() inside each chunk still partitions by the full PK, so
+	// composite PKs are deduped correctly.
+	boundaryKey := primaryKeys[0]
+
+	// Range chunking via APPROXIMATE PERCENTILE_DISC only makes sense for
+	// numeric PKs - percentiles on strings aren't meaningful and MIN/MAX would
+	// happily return varchar values. For anything else, fall back.
+	numeric, err := s.isBoundaryKeyNumeric(ctx, tableID, boundaryKey)
+	if err != nil {
+		return fmt.Errorf("failed to look up boundary key type for %s: %w", tableID.FullyQualifiedName(), err)
+	}
+	if !numeric {
+		slog.Info("Boundary key is not numeric, falling back to standard dedupe",
+			slog.String("table", tableID.FullyQualifiedName()),
+			slog.String("boundary_key", boundaryKey),
+		)
+		stagingTableID := shared.BuildStagingTableID(s, pair, tableID)
+		dedupeQueries := s.dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt)
+		if _, err := destination.ExecContextStatements(ctx, s, dedupeQueries); err != nil {
+			return fmt.Errorf("failed to dedupe: %w", err)
+		}
+		return nil
+	}
+
+	return s.dedupeRangeChunked(ctx, tableID, primaryKeys, includeArtieUpdatedAt, boundaryKey)
+}
+
+// numericDataTypes are the lower-cased information_schema.data_type values
+// for Redshift's numeric column types.
+// https://docs.aws.amazon.com/redshift/latest/dg/c_Supported_data_types.html
+var numericDataTypes = []string{"smallint", "integer", "bigint", "numeric", "decimal", "real", "double precision"}
+
+func (s *Store) isBoundaryKeyNumeric(ctx context.Context, tableID sql.TableIdentifier, boundaryKey string) (bool, error) {
+	const query = `SELECT data_type FROM information_schema.columns WHERE table_schema = $1 AND table_name = $2 AND column_name = $3`
+
+	var dataType string
+	if err := s.QueryRowContext(ctx, query, tableID.Schema(), tableID.Table(), boundaryKey).Scan(&dataType); err != nil {
+		return false, fmt.Errorf("failed to read data_type for %s.%s: %w", tableID.FullyQualifiedName(), boundaryKey, err)
+	}
+
+	return slices.Contains(numericDataTypes, strings.ToLower(dataType)), nil
+}
+
+func (s *Store) dedupeRangeChunked(ctx context.Context, tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool, boundaryKey string) error {
+	const numChunks = 10
+
+	newTableID := dialect.NewTableIdentifier(tableID.Schema(), fmt.Sprintf("%s_%s_dedupe", tableID.Table(), constants.ArtiePrefix))
+
+	for _, q := range []string{
+		fmt.Sprintf("DROP TABLE IF EXISTS %s", newTableID.FullyQualifiedName()),
+		fmt.Sprintf("CREATE TABLE %s (LIKE %s)", newTableID.FullyQualifiedName(), tableID.FullyQualifiedName()),
+	} {
+		slog.Info("Executing dedupe step...", slog.String("query", q))
+		if _, err := s.ExecContext(ctx, q); err != nil {
+			return fmt.Errorf("failed to prepare dedupe table, query: %s, err: %w", q, err)
+		}
+	}
+
+	boundaries, err := s.computeDedupeBoundaries(ctx, tableID, boundaryKey, numChunks)
+	if err != nil {
+		return fmt.Errorf("failed to compute dedupe boundaries for %s: %w", tableID.FullyQualifiedName(), err)
+	}
+
+	if boundaries == nil {
+		slog.Info("Source table is empty, skipping dedupe chunk inserts",
+			slog.String("table", tableID.FullyQualifiedName()))
+	} else {
+		for i := 0; i < numChunks; i++ {
+			inclusiveUpper := i == numChunks-1
+			query := s.dialect().BuildDedupeChunkInsertQuery(tableID, newTableID, primaryKeys, includeArtieUpdatedAt, boundaryKey, inclusiveUpper)
+			slog.Info("Executing dedupe chunk...",
+				slog.Int("chunk", i),
+				slog.String("lo", boundaries[i]),
+				slog.String("hi", boundaries[i+1]),
+				slog.String("query", query),
+			)
+			if _, err := s.ExecContext(ctx, query, boundaries[i], boundaries[i+1]); err != nil {
+				return fmt.Errorf("failed to dedupe chunk %d [%s, %s], err: %w", i, boundaries[i], boundaries[i+1], err)
+			}
 		}
 	}
 
@@ -147,6 +227,55 @@ func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair ka
 	}
 
 	return nil
+}
+
+// computeDedupeBoundaries returns numChunks+1 boundary values for the given
+// boundary key. Returns (nil, nil) if the source table is empty (MIN is NULL).
+// Values are scanned as strings so that any numeric PK type (int, bigint,
+// decimal, etc.) can be passed back to Redshift as a parameter without float
+// precision loss.
+func (s *Store) computeDedupeBoundaries(ctx context.Context, tableID sql.TableIdentifier, boundaryKey string, numChunks int) ([]string, error) {
+	query := s.dialect().BuildDedupeBoundaryQuery(tableID, boundaryKey, numChunks)
+	slog.Info("Computing dedupe chunk boundaries...", slog.String("query", query))
+
+	rows, err := s.QueryContext(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("boundary query failed: %w", err)
+	}
+	defer rows.Close()
+
+	if !rows.Next() {
+		if err := rows.Err(); err != nil {
+			return nil, fmt.Errorf("boundary query iteration failed: %w", err)
+		}
+		return nil, fmt.Errorf("boundary query returned no rows")
+	}
+
+	scanned := make([]gosql.NullString, numChunks+1)
+	scanArgs := make([]any, numChunks+1)
+	for i := range scanned {
+		scanArgs[i] = &scanned[i]
+	}
+	if err := rows.Scan(scanArgs...); err != nil {
+		return nil, fmt.Errorf("failed to scan boundary row: %w", err)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, fmt.Errorf("failed to close boundary rows: %w", err)
+	}
+
+	// If MIN is NULL the table is empty (percentiles and MAX will be NULL too).
+	if !scanned[0].Valid {
+		return nil, nil
+	}
+
+	boundaries := make([]string, numChunks+1)
+	for i, v := range scanned {
+		if !v.Valid {
+			return nil, fmt.Errorf("boundary %d came back NULL; cannot chunk dedupe", i)
+		}
+		boundaries[i] = v.String
+	}
+	return boundaries, nil
 }
 
 func LoadStore(ctx context.Context, cfg config.Config, _store *db.Store) (*Store, error) {
