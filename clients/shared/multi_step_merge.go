@@ -60,11 +60,11 @@ func MultiStepMerge(ctx context.Context, dest destination.SQLDestination, tableD
 		)
 
 		if msmTableConfig.CreateTable() {
-			if err = CreateTable(ctx, dest, tableData.Mode(), msmTableConfig, columnSettings, msmTableID, true, resp.TargetColumnsMissing, whClient); err != nil {
+			if err = CreateTable(ctx, dest, tableData.Mode(), msmTableConfig, columnSettings, msmTableID, true, resp.TargetColumnsMissing, nil); err != nil {
 				return false, fmt.Errorf("failed to create table: %w", err)
 			}
 		} else {
-			if err = AlterTableAddColumns(ctx, dest, msmTableConfig, columnSettings, msmTableID, resp.TargetColumnsMissing, whClient); err != nil {
+			if err = AlterTableAddColumns(ctx, dest, msmTableConfig, columnSettings, msmTableID, resp.TargetColumnsMissing, nil); err != nil {
 				return false, fmt.Errorf("failed to add columns for table %q: %w", msmTableID.Table(), err)
 			}
 		}
