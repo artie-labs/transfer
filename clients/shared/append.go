@@ -11,7 +11,7 @@ import (
 	"github.com/artie-labs/transfer/lib/webhooks"
 )
 
-func Append(ctx context.Context, dest destination.SQLDestination, tableData *optimization.TableData, _ *webhooks.Client, opts types.AdditionalSettings) error {
+func Append(ctx context.Context, dest destination.SQLDestination, tableData *optimization.TableData, whClient *webhooks.Client, opts types.AdditionalSettings) error {
 	if tableData.ShouldSkipUpdate() {
 		return nil
 	}
@@ -32,11 +32,11 @@ func Append(ctx context.Context, dest destination.SQLDestination, tableData *opt
 	columnSettings := opts.ColumnSettings
 	columnSettings.SkipPrimaryKeyCreation = tableData.TopicConfig().SkipPrimaryKeyCreation
 	if tableConfig.CreateTable() {
-		if err = CreateTable(ctx, dest, tableData.Mode(), tableConfig, columnSettings, tableID, false, targetKeysMissing); err != nil {
+		if err = CreateTable(ctx, dest, tableData.Mode(), tableConfig, columnSettings, tableID, false, targetKeysMissing, whClient); err != nil {
 			return fmt.Errorf("failed to create table: %w", err)
 		}
 	} else {
-		if err = AlterTableAddColumns(ctx, dest, tableConfig, columnSettings, tableID, targetKeysMissing); err != nil {
+		if err = AlterTableAddColumns(ctx, dest, tableConfig, columnSettings, tableID, targetKeysMissing, whClient); err != nil {
 			return fmt.Errorf("failed to alter table: %w", err)
 		}
 	}

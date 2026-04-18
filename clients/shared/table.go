@@ -16,7 +16,20 @@ import (
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/sql"
 	"github.com/artie-labs/transfer/lib/typing/columns"
+	"github.com/artie-labs/transfer/lib/webhooks"
 )
+
+func emitDDLApplied(ctx context.Context, whClient *webhooks.Client, tableID sql.TableIdentifier, query string) {
+	if whClient == nil {
+		return
+	}
+
+	whClient.SendEvent(ctx, webhooks.EventDDLApplied, webhooks.EventProperties{
+		Query:  query,
+		Table:  tableID.Table(),
+		Schema: tableID.Schema(),
+	})
+}
 
 func getValidColumns(cols []columns.Column) []columns.Column {
 	var validCols []columns.Column
@@ -33,10 +46,10 @@ func getValidColumns(cols []columns.Column) []columns.Column {
 
 func CreateTempTable(ctx context.Context, dest destination.SQLDestination, tableData *optimization.TableData, tc *types.DestinationTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier) error {
 	settings.SkipPrimaryKeyCreation = tableData.TopicConfig().SkipPrimaryKeyCreation
-	return CreateTable(ctx, dest, tableData.Mode(), tc, settings, tableID, true, tableData.ReadOnlyInMemoryCols().GetColumns())
+	return CreateTable(ctx, dest, tableData.Mode(), tc, settings, tableID, true, tableData.ReadOnlyInMemoryCols().GetColumns(), nil)
 }
 
-func CreateTable(ctx context.Context, dest destination.SQLDestination, mode config.Mode, tc *types.DestinationTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier, tempTable bool, cols []columns.Column) error {
+func CreateTable(ctx context.Context, dest destination.SQLDestination, mode config.Mode, tc *types.DestinationTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier, tempTable bool, cols []columns.Column, whClient *webhooks.Client) error {
 	cols = getValidColumns(cols)
 	if len(cols) == 0 {
 		return nil
@@ -52,12 +65,16 @@ func CreateTable(ctx context.Context, dest destination.SQLDestination, mode conf
 		return fmt.Errorf("failed to create temp table: %w", err)
 	}
 
+	if !tempTable {
+		emitDDLApplied(ctx, whClient, tableID, query)
+	}
+
 	// Update cache with the new columns that we've added.
 	tc.MutateInMemoryColumns(constants.AddColumn, cols)
 	return nil
 }
 
-func addColumn(ctx context.Context, dest destination.SQLDestination, sqlPart string, attempts int) error {
+func addColumn(ctx context.Context, dest destination.SQLDestination, tableID sql.TableIdentifier, sqlPart string, attempts int, whClient *webhooks.Client) error {
 	if attempts >= 100 {
 		return fmt.Errorf("failed to add column after 100 attempts")
 	}
@@ -79,16 +96,17 @@ func addColumn(ctx context.Context, dest destination.SQLDestination, sqlPart str
 			case <-time.After(sleepDuration):
 			}
 
-			return addColumn(ctx, dest, sqlPart, attempts+1)
+			return addColumn(ctx, dest, tableID, sqlPart, attempts+1, whClient)
 		}
 
 		return fmt.Errorf("failed to alter table: %w", err)
 	}
 
+	emitDDLApplied(ctx, whClient, tableID, sqlPart)
 	return nil
 }
 
-func AlterTableAddColumns(ctx context.Context, dest destination.SQLDestination, tc *types.DestinationTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier, cols []columns.Column) error {
+func AlterTableAddColumns(ctx context.Context, dest destination.SQLDestination, tc *types.DestinationTableConfig, settings config.SharedDestinationColumnSettings, tableID sql.TableIdentifier, cols []columns.Column, whClient *webhooks.Client) error {
 	cols = getValidColumns(cols)
 	if len(cols) == 0 {
 		return nil
@@ -100,7 +118,7 @@ func AlterTableAddColumns(ctx context.Context, dest destination.SQLDestination, 
 	}
 
 	for _, sqlPart := range sqlParts {
-		if err := addColumn(ctx, dest, sqlPart, 0); err != nil {
+		if err := addColumn(ctx, dest, tableID, sqlPart, 0, whClient); err != nil {
 			return fmt.Errorf("failed to add column: %w", err)
 		}
 	}
@@ -109,7 +127,7 @@ func AlterTableAddColumns(ctx context.Context, dest destination.SQLDestination, 
 	return nil
 }
 
-func AlterTableDropColumns(ctx context.Context, dest destination.SQLDestination, tc *types.DestinationTableConfig, tableID sql.TableIdentifier, cols []columns.Column, cdcTime time.Time, containsOtherOperations bool) error {
+func AlterTableDropColumns(ctx context.Context, dest destination.SQLDestination, tc *types.DestinationTableConfig, tableID sql.TableIdentifier, cols []columns.Column, cdcTime time.Time, containsOtherOperations bool, whClient *webhooks.Client) error {
 	if len(cols) == 0 {
 		return nil
 	}
@@ -135,6 +153,8 @@ func AlterTableDropColumns(ctx context.Context, dest destination.SQLDestination,
 		if _, err = dest.ExecContext(ctx, query); err != nil {
 			return fmt.Errorf("failed to alter table: %w", err)
 		}
+
+		emitDDLApplied(ctx, whClient, tableID, query)
 	}
 
 	tc.MutateInMemoryColumns(constants.DropColumn, colsToDrop)
