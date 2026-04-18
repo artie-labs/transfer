@@ -258,19 +258,6 @@ func (s *Store) computeDedupeBoundaries(ctx context.Context, tableID sql.TableId
 	query := s.dialect().BuildDedupeBoundaryQuery(tableID, boundaryKey, numChunks)
 	slog.Info("Computing dedupe chunk boundaries...", slog.String("query", query))
 
-	rows, err := s.QueryContext(ctx, query)
-	if err != nil {
-		return nil, fmt.Errorf("boundary query failed: %w", err)
-	}
-	defer rows.Close()
-
-	if !rows.Next() {
-		if err := rows.Err(); err != nil {
-			return nil, fmt.Errorf("boundary query iteration failed: %w", err)
-		}
-		return nil, fmt.Errorf("boundary query returned no rows")
-	}
-
 	scanned := make([]gosql.NullString, numChunks+1)
 	scanArgs := make([]any, numChunks+1)
 	for i := range scanned {
