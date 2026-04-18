@@ -179,7 +179,8 @@ func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair ka
 var numericDataTypes = []string{"smallint", "integer", "bigint", "numeric", "decimal", "real", "double precision"}
 
 func (s *Store) isBoundaryKeyNumeric(ctx context.Context, tableID sql.TableIdentifier, boundaryKey string) (bool, error) {
-	const query = `SELECT data_type FROM information_schema.columns WHERE table_schema = $1 AND table_name = $2 AND column_name = $3`
+	// LOWER() to stay consistent with the BuildDescribeTableQuery query.
+	const query = `SELECT data_type FROM information_schema.columns WHERE LOWER(table_schema) = LOWER($1) AND LOWER(table_name) = LOWER($2) AND LOWER(column_name) = LOWER($3)`
 
 	var dataType string
 	if err := s.QueryRowContext(ctx, query, tableID.Schema(), tableID.Table(), boundaryKey).Scan(&dataType); err != nil {
