@@ -130,6 +130,16 @@ func (s *Store) SweepTemporaryTables(ctx context.Context) error {
 	return shared.Sweep(ctx, s, s.config.TopicConfigs(), s.dialect().BuildSweepQuery)
 }
 
+// Dedupe rewrites tableID in-place with duplicates on primaryKeys collapsed.
+//
+// The numeric-PK fast path is NOT snapshot-isolated: it captures MIN/MAX and
+// approximate percentiles of the first PK, copies each range into a sibling
+// table in separate statements, then atomically swaps the tables. Rows written
+// to tableID after boundary capture but before the swap can be silently lost
+// (new PK > observed MAX, new PK < observed MIN, or new PK inside the observed
+// range but past the chunk that covered it). Callers must ensure no concurrent
+// writers to tableID between invocation and return - today this is only called
+// during snapshot/backfill, where CDC is not running yet.
 func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kafkalib.DatabaseAndSchemaPair, primaryKeys []string, includeArtieUpdatedAt bool) error {
 	if len(primaryKeys) == 0 {
 		return fmt.Errorf("cannot dedupe %s without primary keys", tableID.FullyQualifiedName())
@@ -265,11 +275,9 @@ func (s *Store) computeDedupeBoundaries(ctx context.Context, tableID sql.TableId
 	for i := range scanned {
 		scanArgs[i] = &scanned[i]
 	}
-	if err := rows.Scan(scanArgs...); err != nil {
-		return nil, fmt.Errorf("failed to scan boundary row: %w", err)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, fmt.Errorf("failed to close boundary rows: %w", err)
+
+	if err := s.QueryRowContext(ctx, query).Scan(scanArgs...); err != nil {
+		return nil, fmt.Errorf("boundary query failed: %w", err)
 	}
 
 	// If MIN is NULL the table is empty (percentiles and MAX will be NULL too).

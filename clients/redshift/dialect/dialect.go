@@ -186,8 +186,6 @@ func (rd RedshiftDialect) BuildDedupeChunkInsertQuery(tableID, newTableID sql.Ta
 // BuildDedupeNullChunkInsertQuery returns an INSERT ... SELECT that copies rows
 // where the boundary key is NULL. MIN/MAX/percentile boundaries only cover
 // non-NULL values, so these rows would otherwise be silently dropped on swap.
-// Redshift does not enforce PK NOT NULL, so this needs to run whenever the
-// boundary column is nullable.
 func (rd RedshiftDialect) BuildDedupeNullChunkInsertQuery(tableID, newTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool, boundaryKey string) string {
 	partitionBy, orderBy := rd.dedupeWindow(primaryKeys, includeArtieUpdatedAt)
 

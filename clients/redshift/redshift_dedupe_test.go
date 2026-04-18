@@ -37,6 +37,36 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeQueries() {
 		assert.Equal(r.T(), `DELETE FROM public."customers" USING "customers__artie_stg" t2 WHERE "customers"."id" = t2."id"`, parts[1])
 		assert.Equal(r.T(), `INSERT INTO public."customers" SELECT * FROM "customers__artie_stg"`, parts[2])
 	}
+	{
+		// Dedupe with composite keys + no `__artie_updated_at` flag.
+		tableID := dialect.NewTableIdentifier("public", "user_settings")
+		stagingTableID := dialect.NewTableIdentifier("public", "user_settings__artie_stg")
+
+		parts := dialect.RedshiftDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"user_id", "settings"}, false)
+		assert.Len(r.T(), parts, 3)
+		assert.Equal(
+			r.T(),
+			`CREATE TEMPORARY TABLE "user_settings__artie_stg" AS (SELECT * FROM public."user_settings" WHERE true QUALIFY ROW_NUMBER() OVER (PARTITION BY "user_id", "settings" ORDER BY "user_id" ASC, "settings" ASC) = 2)`,
+			parts[0],
+		)
+		assert.Equal(r.T(), `DELETE FROM public."user_settings" USING "user_settings__artie_stg" t2 WHERE "user_settings"."user_id" = t2."user_id" AND "user_settings"."settings" = t2."settings"`, parts[1])
+		assert.Equal(r.T(), `INSERT INTO public."user_settings" SELECT * FROM "user_settings__artie_stg"`, parts[2])
+	}
+	{
+		// Dedupe with composite keys + `__artie_updated_at` flag.
+		tableID := dialect.NewTableIdentifier("public", "user_settings")
+		stagingTableID := dialect.NewTableIdentifier("public", "user_settings__artie_stg")
+
+		parts := dialect.RedshiftDialect{}.BuildDedupeQueries(tableID, stagingTableID, []string{"user_id", "settings"}, true)
+		assert.Len(r.T(), parts, 3)
+		assert.Equal(
+			r.T(),
+			`CREATE TEMPORARY TABLE "user_settings__artie_stg" AS (SELECT * FROM public."user_settings" WHERE true QUALIFY ROW_NUMBER() OVER (PARTITION BY "user_id", "settings" ORDER BY "user_id" ASC, "settings" ASC, "__artie_updated_at" ASC) = 2)`,
+			parts[0],
+		)
+		assert.Equal(r.T(), `DELETE FROM public."user_settings" USING "user_settings__artie_stg" t2 WHERE "user_settings"."user_id" = t2."user_id" AND "user_settings"."settings" = t2."settings"`, parts[1])
+		assert.Equal(r.T(), `INSERT INTO public."user_settings" SELECT * FROM "user_settings__artie_stg"`, parts[2])
+	}
 }
 
 func (r *RedshiftTestSuite) Test_BuildDedupeBoundaryQuery() {
