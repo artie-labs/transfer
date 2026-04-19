@@ -85,6 +85,13 @@ func (s *Store) LoadDataIntoTable(ctx context.Context, tableData *optimization.T
 		return err
 	}
 
+	// Skip the row count check when appending directly into the target table. The target table may
+	// already contain rows from prior loads, so pg_last_copy_count() is the only signal we have, but
+	// it can be unreliable when other sessions are also running COPY against the same table.
+	if !createTempTable && tableID.FullyQualifiedName() == parentTableID.FullyQualifiedName() {
+		return nil
+	}
+
 	// Ref: https://docs.aws.amazon.com/redshift/latest/dg/PG_LAST_COPY_COUNT.html
 	var rowsLoaded int64
 	if err = s.QueryRowContext(ctx, `SELECT pg_last_copy_count();`).Scan(&rowsLoaded); err != nil {
