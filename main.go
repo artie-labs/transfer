@@ -16,6 +16,7 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/utils"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
+	"github.com/artie-labs/transfer/lib/system"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"github.com/artie-labs/transfer/lib/webhooks"
 	"github.com/artie-labs/transfer/models"
@@ -27,7 +28,8 @@ var version = "dev" // this will be set by the goreleaser configuration to appro
 
 func main() {
 	// Parse args into settings
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	settings, err := config.LoadSettings(os.Args, true)
 	var webhookSettings *config.WebhookSettings
 	if settings != nil {
@@ -51,7 +53,12 @@ func main() {
 	_logger, cleanUpHandlers := logger.NewLogger(settings.VerboseLogging, settings.Config.Reporting.Sentry, version)
 	slog.SetDefault(_logger)
 
-	defer cleanUpHandlers()
+	// Flush logger handlers and cancel the root context when we receive SIGINT/SIGTERM so
+	// running goroutines (pool flusher, Kafka consumers) can exit cleanly.
+	// TODO: split this into an intake context (cancelled on signal to stop Kafka fetches)
+	// and a separate work context passed to destination flushes, so in-flight merges aren't
+	// aborted mid-way when a shutdown signal arrives.
+	system.ShutdownHook(cleanUpHandlers, cancel)
 
 	// This is used to prevent all the instances from starting at the same time and causing a thundering herd problem
 	if value := os.Getenv("MAX_INIT_SLEEP_SECONDS"); value != "" {
