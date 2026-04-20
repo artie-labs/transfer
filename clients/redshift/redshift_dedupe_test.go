@@ -97,7 +97,7 @@ func (r *RedshiftTestSuite) Test_BuildDedupeStageCreateQuery() {
 	query := dialect.RedshiftDialect{}.BuildDedupeStageCreateQuery(stageID, tableID)
 	assert.Equal(
 		r.T(),
-		`CREATE TEMPORARY TABLE "customers__artie_dedupe_stg" (LIKE public."customers", "_artie_dedupe_rn" BIGINT IDENTITY(1,1))`,
+		`CREATE TABLE "customers__artie_dedupe_stg" (LIKE public."customers", "_artie_dedupe_rn" BIGINT IDENTITY(1,1))`,
 		query,
 	)
 }
