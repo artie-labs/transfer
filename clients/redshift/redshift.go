@@ -129,46 +129,28 @@ func (s *Store) SweepTemporaryTables(ctx context.Context) error {
 func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kafkalib.DatabaseAndSchemaPair, primaryKeys []string, includeArtieUpdatedAt bool) error {
 	stagingTableID := shared.BuildStagingTableID(s, pair, tableID)
 
-	columns, err := s.getSourceColumns(ctx, tableID)
+	tableCfg, err := s.GetTableConfig(ctx, tableID, false)
 	if err != nil {
-		return fmt.Errorf("failed to list columns for %s: %w", tableID.FullyQualifiedName(), err)
+		return fmt.Errorf("failed to get table config for %s: %w", tableID.FullyQualifiedName(), err)
 	}
 
-	dedupeQueries := s.dialect().BuildDedupeQueriesFixed(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt, columns)
+	cols := tableCfg.GetColumns()
+	if len(cols) == 0 {
+		return fmt.Errorf("no columns found for %s", tableID.FullyQualifiedName())
+	}
+
+	columnNames := make([]string, 0, len(cols))
+	for _, col := range cols {
+		columnNames = append(columnNames, col.Name())
+	}
+
+	dedupeQueries := s.dialect().BuildDedupeQueriesFixed(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt, columnNames)
 
 	if _, err := destination.ExecContextStatements(ctx, s, dedupeQueries); err != nil {
 		return fmt.Errorf("failed to dedupe: %w", err)
 	}
 
 	return nil
-}
-
-func (s *Store) getSourceColumns(ctx context.Context, tableID sql.TableIdentifier) ([]string, error) {
-	const query = `SELECT column_name FROM information_schema.columns WHERE LOWER(table_schema) = LOWER($1) AND LOWER(table_name) = LOWER($2) ORDER BY ordinal_position`
-
-	rows, err := s.QueryContext(ctx, query, tableID.Schema(), tableID.Table())
-	if err != nil {
-		return nil, fmt.Errorf("failed to query columns for %s: %w", tableID.FullyQualifiedName(), err)
-	}
-	defer rows.Close()
-
-	var out []string
-	for rows.Next() {
-		var name string
-		if err := rows.Scan(&name); err != nil {
-			return nil, fmt.Errorf("failed to scan column name: %w", err)
-		}
-		out = append(out, name)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("failed to iterate columns for %s: %w", tableID.FullyQualifiedName(), err)
-	}
-
-	if len(out) == 0 {
-		return nil, fmt.Errorf("no columns found for %s", tableID.FullyQualifiedName())
-	}
-
-	return out, nil
 }
 
 func LoadStore(ctx context.Context, cfg config.Config, _store *db.Store) (*Store, error) {
