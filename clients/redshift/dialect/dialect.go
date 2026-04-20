@@ -124,18 +124,35 @@ const DedupeStageRowIDColumn = "_artie_dedupe_rn"
 
 // BuildDedupeQueriesFixed is a SUPER-safe variant of BuildDedupeQueries.
 //
-// Background: the original `SELECT * ... QUALIFY` routes every source column
-// through a window operator. Redshift implicitly converts SUPER values (and
-// VARCHAR > 64KB) to VARCHAR(65535) inside window / PartiQL operators, so any
-// row whose serialized SUPER exceeds 64KB fails the whole dedupe with
-// `Invalid input (8001): String value exceeds the max size of 65535 bytes`.
-// Wide tables with a JSON-shaped SUPER column hit this routinely.
+// Background: two distinct Redshift behaviors trip the `Invalid input (8001):
+// String value exceeds the max size of 65535 bytes` error on any table with a
+// SUPER (or VARCHAR > 64KB) column:
 //
-// This variant stages only duplicated-PK rows via a plain `INSERT ... SELECT`
-// (no window, so SUPER flows through at its native ~1MB cap), then picks a
-// winner per PK with a QUALIFY whose ORDER BY references only the PKs,
-// optional __artie_updated_at, and a BIGINT IDENTITY tiebreaker. SUPER never
-// touches the window, and the final re-insert is a plain projection.
+//  1. Window / PartiQL operators implicitly serialize SUPER to VARCHAR(65535).
+//     The legacy `SELECT * ... QUALIFY ROW_NUMBER()` hits this on every wide
+//     row because every column is routed through the window.
+//  2. Cross-slice row redistribution also serializes SUPER to the same
+//     VARCHAR(65535) wire form. Any query shape that forces the outer
+//     (SUPER-bearing) rows to be redistributed — `WHERE (pk) IN (<subquery>)`
+//     against the same large source being the canonical offender — hits the
+//     identical error without any window in sight.
+//
+// This variant dodges both by (a) never routing SUPER through a window and
+// (b) pinning SUPER-bearing rows to their home slice by joining only against
+// small `DISTSTYLE ALL` helper temp tables. The five statements are:
+//
+//  1. CREATE the main stage: mirrors the source plus a BIGINT IDENTITY.
+//  2. CREATE a `_pks` temp table with DISTSTYLE ALL holding every duplicated
+//     PK tuple (GROUP BY PK, HAVING COUNT(*) > 1). Small, replicated to every
+//     slice.
+//  3. Populate the main stage via `source INNER JOIN _pks` on the PKs. With
+//     _pks on every slice the planner can do a local colocated join; source
+//     rows (including SUPER) never leave their slice.
+//  4. DELETE duplicated-PK rows from source using _pks (not the main stage),
+//     so the DELETE plan never touches SUPER columns.
+//  5. Reinsert one winner per PK from the main stage. The inner QUALIFY
+//     projects only rn and references only PKs + __artie_updated_at + rn,
+//     so SUPER never enters the window.
 //
 // `columns` must list every source column in ordinal order (the caller pulls
 // them from information_schema.columns). The IDENTITY column is auto-populated
@@ -149,8 +166,11 @@ const DedupeStageRowIDColumn = "_artie_dedupe_rn"
 func (rd RedshiftDialect) BuildDedupeQueriesFixed(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool, columns []string) []string {
 	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, rd)
 	pkTuple := strings.Join(primaryKeysEscaped, ", ")
-	colList := strings.Join(sql.QuoteIdentifiers(columns, rd), ", ")
+	escapedColumns := sql.QuoteIdentifiers(columns, rd)
+	colList := strings.Join(escapedColumns, ", ")
 	rnCol := rd.QuoteIdentifier(DedupeStageRowIDColumn)
+
+	dupPKsID := stagingTableID.WithTable(stagingTableID.Table() + "_pks")
 
 	// 1. Stage table mirrors the source plus a BIGINT IDENTITY tiebreaker.
 	createStage := fmt.Sprintf(
@@ -160,36 +180,54 @@ func (rd RedshiftDialect) BuildDedupeQueriesFixed(tableID, stagingTableID sql.Ta
 		rnCol,
 	)
 
-	// 2. Stage only rows whose PK has duplicates. Plain INSERT ... SELECT so
-	//    SUPER and wide VARCHAR values bypass the 64KB PartiQL cap. Tables
-	//    without duplicates stage zero rows and the rest is a near no-op.
-	populate := fmt.Sprintf(
-		"INSERT INTO %s (%s) SELECT %s FROM %s WHERE (%s) IN (SELECT %s FROM %s GROUP BY %s HAVING COUNT(*) > 1)",
-		stagingTableID.EscapedTable(),
-		colList,
-		colList,
-		tableID.FullyQualifiedName(),
-		pkTuple,
+	// 2. Duplicated-PK list as a DISTSTYLE ALL temp table. Replicated to every
+	//    slice so the step-3 join is colocated and source rows (with SUPER)
+	//    stay put.
+	createDupPKs := fmt.Sprintf(
+		"CREATE TEMPORARY TABLE %s DISTSTYLE ALL AS SELECT %s FROM %s GROUP BY %s HAVING COUNT(*) > 1",
+		dupPKsID.EscapedTable(),
 		pkTuple,
 		tableID.FullyQualifiedName(),
 		pkTuple,
 	)
 
-	// 3. Remove all duplicated-PK rows from the main table. Same shape as the
-	//    legacy step 2.
-	var whereClauses []string
-	for _, primaryKeyEscaped := range primaryKeysEscaped {
-		whereClauses = append(whereClauses, fmt.Sprintf("%s.%s = t2.%s", tableID.EscapedTable(), primaryKeyEscaped, primaryKeyEscaped))
+	// 3. Populate the main stage via INNER JOIN against dup_pks. Plain
+	//    projection, no window, no subquery — SUPER flows at its native ~1MB
+	//    cap.
+	var joinPreds []string
+	for _, pk := range primaryKeysEscaped {
+		joinPreds = append(joinPreds, fmt.Sprintf("s.%s = d.%s", pk, pk))
 	}
-	deleteDupes := fmt.Sprintf("DELETE FROM %s USING %s t2 WHERE %s",
-		tableID.FullyQualifiedName(),
+	sColumnList := make([]string, 0, len(escapedColumns))
+	for _, col := range escapedColumns {
+		sColumnList = append(sColumnList, fmt.Sprintf("s.%s", col))
+	}
+	populate := fmt.Sprintf(
+		"INSERT INTO %s (%s) SELECT %s FROM %s s INNER JOIN %s d ON %s",
 		stagingTableID.EscapedTable(),
-		strings.Join(whereClauses, " AND "),
+		colList,
+		strings.Join(sColumnList, ", "),
+		tableID.FullyQualifiedName(),
+		dupPKsID.EscapedTable(),
+		strings.Join(joinPreds, " AND "),
 	)
 
-	// 4. Reinsert one winner per PK. The inner QUALIFY sees only PKs,
-	//    __artie_updated_at, and the IDENTITY tiebreaker — no SUPER / wide
-	//    VARCHAR flows through the window.
+	// 4. Remove every duplicated-PK row from the main table. Using dup_pks
+	//    (no SUPER columns at all) keeps the DELETE plan narrow.
+	var deletePreds []string
+	for _, pk := range primaryKeysEscaped {
+		deletePreds = append(deletePreds, fmt.Sprintf("%s.%s = d.%s", tableID.EscapedTable(), pk, pk))
+	}
+	deleteDupes := fmt.Sprintf("DELETE FROM %s USING %s d WHERE %s",
+		tableID.FullyQualifiedName(),
+		dupPKsID.EscapedTable(),
+		strings.Join(deletePreds, " AND "),
+	)
+
+	// 5. Reinsert one winner per PK. The inner subquery projects only rn and
+	//    the window references only PKs + __artie_updated_at + rn, so SUPER
+	//    never touches the window. The IN list is a set of BIGINTs (small);
+	//    broadcast is cheap and the outer rows stay colocated with stage.
 	var orderCols []string
 	for _, pk := range primaryKeysEscaped {
 		orderCols = append(orderCols, fmt.Sprintf("%s ASC", pk))
@@ -213,7 +251,7 @@ func (rd RedshiftDialect) BuildDedupeQueriesFixed(tableID, stagingTableID sql.Ta
 		strings.Join(orderCols, ", "),
 	)
 
-	return []string{createStage, populate, deleteDupes, insertWinners}
+	return []string{createStage, createDupPKs, populate, deleteDupes, insertWinners}
 }
 
 func (rd RedshiftDialect) buildMergeInsertQuery(
