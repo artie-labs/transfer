@@ -224,7 +224,7 @@ func (rd RedshiftDialect) BuildDedupeStagePopulateNullQuery(stageID, sourceID sq
 // and the IDENTITY column, so wide VARCHAR and SUPER columns are never
 // routed through a window operator. They ride along only in the outer
 // SELECT, which is a plain projection.
-func (rd RedshiftDialect) BuildDedupeStageWinnersInsertQuery(targetID, stageID sql.TableIdentifier, columns []string, primaryKeys []string, includeArtieUpdatedAt bool) string {
+func (rd RedshiftDialect) BuildDedupeStageWinnersInsertQuery(targetID, stageID sql.TableIdentifier, columns, primaryKeys []string, includeArtieUpdatedAt bool) string {
 	colList := strings.Join(sql.QuoteIdentifiers(columns, rd), ", ")
 	pks := strings.Join(sql.QuoteIdentifiers(primaryKeys, rd), ", ")
 	rnCol := rd.QuoteIdentifier(DedupeStageRowIDColumn)

@@ -143,7 +143,7 @@ func (s *Store) SweepTemporaryTables(ctx context.Context) error {
 // writers to tableID between invocation and return - today this is only called
 // during snapshot/backfill, where CDC is not running yet.
 //
-// Each chunk is deduped via a two-step stage: INSERT the chunk into a 
+// Each chunk is deduped via a two-step stage: INSERT the chunk into a
 // table with an IDENTITY tiebreaker, then SELECT one row per PK using a
 // QUALIFY over only the PK + __artie_updated_at + IDENTITY columns. This keeps
 // wide VARCHAR and SUPER columns out of the window operator, avoiding
