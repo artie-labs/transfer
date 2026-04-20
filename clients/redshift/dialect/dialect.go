@@ -116,118 +116,112 @@ func (rd RedshiftDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableId
 	return parts
 }
 
-// DedupeStageRowIDColumn is the IDENTITY tiebreaker appended to the dedupe
-// staging table built by BuildDedupeQueriesFixed. Having it lets the winner
-// QUALIFY reference only primary keys + __artie_updated_at + this BIGINT,
-// so wide VARCHAR and SUPER columns never flow through a window operator.
+// DedupeStageRowIDColumn is the BIGINT IDENTITY column temporarily added to the
+// permanent _dedupe table. It's the only row-identifier available in Redshift
+// user tables, so it's how step 4's window picks winners and step 5's DELETE
+// finds losers — all without ever reading SUPER columns like `meta`.
 const DedupeStageRowIDColumn = "_artie_dedupe_rn"
 
-// BuildDedupeQueriesFixed is a SUPER-safe variant of BuildDedupeQueries.
+// BuildDedupeQueriesFixed is a SUPER-safe replacement for BuildDedupeQueries.
 //
-// Background: two distinct Redshift behaviors trip the `Invalid input (8001):
-// String value exceeds the max size of 65535 bytes` error on any table with a
-// SUPER (or VARCHAR > 64KB) column:
+// Background: rows whose SUPER value exceeds 64KB in its text form blow up
+// with `Invalid input (8001): String value exceeds the max size of 65535
+// bytes` on every query shape that routes those rows through PartiQL. In
+// production we've now seen this error trigger on:
 //
-//  1. Window / PartiQL operators implicitly serialize SUPER to VARCHAR(65535).
-//     The legacy `SELECT * ... QUALIFY ROW_NUMBER()` hits this on every wide
-//     row because every column is routed through the window.
-//  2. Cross-slice row redistribution also serializes SUPER to the same
-//     VARCHAR(65535) wire form. Any query shape that forces the outer
-//     (SUPER-bearing) rows to be redistributed — `WHERE (pk) IN (<subquery>)`
-//     against the same large source being the canonical offender — hits the
-//     identical error without any window in sight.
+//   - `SELECT * ... QUALIFY ROW_NUMBER()` (window function)
+//   - `WHERE (pk) IN (SELECT pk FROM source GROUP BY pk HAVING ...)` (hash
+//     semi-join with subquery)
+//   - `SELECT s.cols FROM source s INNER JOIN <DISTSTYLE ALL helper> d ON pk`
+//     (hash join even when the build side is replicated to every slice)
 //
-// This variant dodges both by (a) never routing SUPER through a window and
-// (b) pinning SUPER-bearing rows to their home slice by joining only against
-// small `DISTSTYLE ALL` helper temp tables. The five statements are:
+// The only shapes we've seen survive on wide-SUPER data are:
 //
-//  1. CREATE the main stage: mirrors the source plus a BIGINT IDENTITY.
-//  2. CREATE a `_pks` temp table with DISTSTYLE ALL holding every duplicated
-//     PK tuple (GROUP BY PK, HAVING COUNT(*) > 1). Small, replicated to every
-//     slice.
-//  3. Populate the main stage via `source INNER JOIN _pks` on the PKs. With
-//     _pks on every slice the planner can do a local colocated join; source
-//     rows (including SUPER) never leave their slice.
-//  4. DELETE duplicated-PK rows from source using _pks (not the main stage),
-//     so the DELETE plan never touches SUPER columns.
-//  5. Reinsert one winner per PK from the main stage. The inner QUALIFY
-//     projects only rn and references only PKs + __artie_updated_at + rn,
-//     so SUPER never enters the window.
+//   a. `INSERT INTO <t2> (cols) SELECT cols FROM <t1>` — plain full-table
+//      copy, no filter / join / window.
+//   b. `CREATE ... AS SELECT non_super_cols FROM <t> QUALIFY ...` — Redshift's
+//      columnar storage doesn't load `meta` when the projection doesn't
+//      mention it, so no text conversion happens.
+//   c. `DELETE FROM <t> USING <helper> WHERE <t>.key = <helper>.key` — a
+//      DELETE never materializes the row payload; it only marks tombstones,
+//      so SUPER stays on disk.
 //
-// `columns` must list every source column in ordinal order (the caller pulls
-// them from information_schema.columns). The IDENTITY column is auto-populated
-// by Redshift and is intentionally omitted from `columns` and from the
-// explicit INSERT column lists.
+// This function's 8-statement plan is built exclusively from those three
+// shapes, plus DDL:
 //
-// Ordering and row selection exactly mirror the original: ORDER BY … ASC
-// with `= 2`, so the produced row per duplicated PK is the same one the
-// legacy query would have kept. The IDENTITY is appended as a deterministic
-// final tiebreaker — the legacy query had no tiebreaker at all.
+//  1. Idempotent cleanup of any leftover _dedupe table from a prior failure.
+//  2. Create the permanent _dedupe (LIKE source + BIGINT IDENTITY rn column).
+//     LIKE preserves distkey / sortkey / column encoding / NOT NULL.
+//  3. Full-table copy of source into _dedupe via shape (a). rn auto-populates.
+//  4. Into a DISTSTYLE ALL temp `_losers` table, project the rn values whose
+//     ROW_NUMBER() within each PK partition is > 1 — shape (b). Window sees
+//     only PKs + __artie_updated_at + rn; `meta` is never read.
+//  5. DELETE loser rows from _dedupe via shape (c). rn match, no SUPER I/O.
+//  6. ALTER TABLE _dedupe DROP COLUMN rn — metadata-only in Redshift, near
+//     instant regardless of table size.
+//  7. DROP the original source.
+//  8. Promote _dedupe to source's name via ALTER TABLE ... RENAME TO.
+//
+// `ExecContextStatements` runs all eight in a single transaction, so a failure
+// anywhere rolls back — source is preserved intact. Callers must hold an
+// exclusive-ish position (concurrent writers during the transaction will lose
+// their changes when _dedupe is promoted).
+//
+// Trade-offs vs. the legacy in-place DELETE/INSERT:
+//
+//   - Peak storage is ~2x the source table during the dedupe.
+//   - GRANTs, views, and FKs that reference the original source table survive
+//     the RENAME (they attach by OID, not name), but any object created
+//     against the _dedupe name during the window is visible only until the
+//     rename.
+//   - The stagingTableID argument is repurposed as the _losers temp table —
+//     the legacy SELECT-style staging is no longer needed.
+//
+// Ordering and row selection mirror the original's ASC direction with the
+// IDENTITY rn as a deterministic final tiebreaker. The legacy `= 2` quirk is
+// dropped here in favor of `> 1` (identifies every loser per PK) which is
+// semantically cleaner; the row retained per PK is identical whenever there's
+// no __artie_updated_at tie.
 func (rd RedshiftDialect) BuildDedupeQueriesFixed(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool, columns []string) []string {
 	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, rd)
 	pkTuple := strings.Join(primaryKeysEscaped, ", ")
-	escapedColumns := sql.QuoteIdentifiers(columns, rd)
-	colList := strings.Join(escapedColumns, ", ")
+	colList := strings.Join(sql.QuoteIdentifiers(columns, rd), ", ")
 	rnCol := rd.QuoteIdentifier(DedupeStageRowIDColumn)
 
-	dupPKsID := stagingTableID.WithTable(stagingTableID.Table() + "_pks")
+	dedupeNewID := tableID.WithTable(fmt.Sprintf("%s_%s_dedupe", tableID.Table(), constants.ArtiePrefix))
+	losersID := stagingTableID
 
-	// 1. Stage table mirrors the source plus a BIGINT IDENTITY tiebreaker.
-	createStage := fmt.Sprintf(
-		"CREATE TEMPORARY TABLE %s (LIKE %s, %s BIGINT IDENTITY(1,1))",
-		stagingTableID.EscapedTable(),
+	// 1. Idempotent cleanup in case a prior dedupe died between CREATE and
+	//    RENAME. Safe no-op on the happy path.
+	dropPrev := fmt.Sprintf("DROP TABLE IF EXISTS %s", dedupeNewID.FullyQualifiedName())
+
+	// 2. Permanent _dedupe that mirrors source plus a BIGINT IDENTITY
+	//    tiebreaker. CREATE TABLE LIKE preserves distkey / sortkey / encoding
+	//    / NOT NULL so the swapped-in table matches the original's physical
+	//    layout.
+	createDedupeNew := fmt.Sprintf(
+		"CREATE TABLE %s (LIKE %s, %s BIGINT IDENTITY(1,1))",
+		dedupeNewID.FullyQualifiedName(),
 		tableID.FullyQualifiedName(),
 		rnCol,
 	)
 
-	// 2. Duplicated-PK list as a DISTSTYLE ALL temp table. Replicated to every
-	//    slice so the step-3 join is colocated and source rows (with SUPER)
-	//    stay put.
-	createDupPKs := fmt.Sprintf(
-		"CREATE TEMPORARY TABLE %s DISTSTYLE ALL AS SELECT %s FROM %s GROUP BY %s HAVING COUNT(*) > 1",
-		dupPKsID.EscapedTable(),
-		pkTuple,
-		tableID.FullyQualifiedName(),
-		pkTuple,
-	)
-
-	// 3. Populate the main stage via INNER JOIN against dup_pks. Plain
-	//    projection, no window, no subquery — SUPER flows at its native ~1MB
-	//    cap.
-	var joinPreds []string
-	for _, pk := range primaryKeysEscaped {
-		joinPreds = append(joinPreds, fmt.Sprintf("s.%s = d.%s", pk, pk))
-	}
-	sColumnList := make([]string, 0, len(escapedColumns))
-	for _, col := range escapedColumns {
-		sColumnList = append(sColumnList, fmt.Sprintf("s.%s", col))
-	}
-	populate := fmt.Sprintf(
-		"INSERT INTO %s (%s) SELECT %s FROM %s s INNER JOIN %s d ON %s",
-		stagingTableID.EscapedTable(),
+	// 3. Full-table copy. Plain INSERT ... SELECT — the ONE query shape
+	//    Redshift handles safely for SUPER values larger than 64KB. rn
+	//    auto-populates from the IDENTITY.
+	copyAll := fmt.Sprintf(
+		"INSERT INTO %s (%s) SELECT %s FROM %s",
+		dedupeNewID.FullyQualifiedName(),
 		colList,
-		strings.Join(sColumnList, ", "),
+		colList,
 		tableID.FullyQualifiedName(),
-		dupPKsID.EscapedTable(),
-		strings.Join(joinPreds, " AND "),
 	)
 
-	// 4. Remove every duplicated-PK row from the main table. Using dup_pks
-	//    (no SUPER columns at all) keeps the DELETE plan narrow.
-	var deletePreds []string
-	for _, pk := range primaryKeysEscaped {
-		deletePreds = append(deletePreds, fmt.Sprintf("%s.%s = d.%s", tableID.EscapedTable(), pk, pk))
-	}
-	deleteDupes := fmt.Sprintf("DELETE FROM %s USING %s d WHERE %s",
-		tableID.FullyQualifiedName(),
-		dupPKsID.EscapedTable(),
-		strings.Join(deletePreds, " AND "),
-	)
-
-	// 5. Reinsert one winner per PK. The inner subquery projects only rn and
-	//    the window references only PKs + __artie_updated_at + rn, so SUPER
-	//    never touches the window. The IN list is a set of BIGINTs (small);
-	//    broadcast is cheap and the outer rows stay colocated with stage.
+	// 4. Identify the rn of every non-winner. Projection is rn only; window
+	//    references PKs + __artie_updated_at + rn. Columnar storage means
+	//    `meta` is never loaded, so no text serialization happens.
+	//    DISTSTYLE ALL keeps _losers colocated with _dedupe on every slice
+	//    for the step-5 DELETE.
 	var orderCols []string
 	for _, pk := range primaryKeysEscaped {
 		orderCols = append(orderCols, fmt.Sprintf("%s ASC", pk))
@@ -238,20 +232,50 @@ func (rd RedshiftDialect) BuildDedupeQueriesFixed(tableID, stagingTableID sql.Ta
 	orderCols = append(orderCols, fmt.Sprintf("%s ASC", rnCol))
 
 	// `WHERE true` is required before QUALIFY for Redshift.
-	insertWinners := fmt.Sprintf(
-		"INSERT INTO %s (%s) SELECT %s FROM %s WHERE %s IN (SELECT %s FROM %s WHERE true QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 2)",
-		tableID.FullyQualifiedName(),
-		colList,
-		colList,
-		stagingTableID.EscapedTable(),
+	findLosers := fmt.Sprintf(
+		"CREATE TEMPORARY TABLE %s DISTSTYLE ALL AS SELECT %s FROM %s WHERE true QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) > 1",
+		losersID.EscapedTable(),
 		rnCol,
-		rnCol,
-		stagingTableID.EscapedTable(),
+		dedupeNewID.FullyQualifiedName(),
 		pkTuple,
 		strings.Join(orderCols, ", "),
 	)
 
-	return []string{createStage, createDupPKs, populate, deleteDupes, insertWinners}
+	// 5. Delete every loser row from _dedupe. DELETE never materializes the
+	//    row payload; it only marks tombstones. SUPER stays on disk. Match
+	//    is on the BIGINT rn alone, so the join is cheap.
+	deleteLosers := fmt.Sprintf(
+		"DELETE FROM %s USING %s l WHERE %s.%s = l.%s",
+		dedupeNewID.FullyQualifiedName(),
+		losersID.EscapedTable(),
+		dedupeNewID.EscapedTable(),
+		rnCol,
+		rnCol,
+	)
+
+	// 6. Drop the IDENTITY helper column. Redshift implements DROP COLUMN as
+	//    a metadata-only catalog update (space is reclaimed by the next
+	//    VACUUM), so this is effectively instant regardless of table size.
+	dropCol := fmt.Sprintf(
+		"ALTER TABLE %s DROP COLUMN %s",
+		dedupeNewID.FullyQualifiedName(),
+		rnCol,
+	)
+
+	// 7 + 8. Atomic swap. DROP the old source then rename _dedupe into place.
+	dropSource := fmt.Sprintf("DROP TABLE %s", tableID.FullyQualifiedName())
+	rename := fmt.Sprintf("ALTER TABLE %s RENAME TO %s", dedupeNewID.FullyQualifiedName(), tableID.EscapedTable())
+
+	return []string{
+		dropPrev,
+		createDedupeNew,
+		copyAll,
+		findLosers,
+		deleteLosers,
+		dropCol,
+		dropSource,
+		rename,
+	}
 }
 
 func (rd RedshiftDialect) buildMergeInsertQuery(
