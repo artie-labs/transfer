@@ -120,7 +120,7 @@ func (rd RedshiftDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableId
 // chunk boundaries for the leading primary key: MIN, approximate percentiles at
 // 1/numChunks, 2/numChunks, ..., (numChunks-1)/numChunks, and MAX. The resulting
 // numChunks+1 values define numChunks half-open ranges (the last range is
-// inclusive on the upper bound) used by BuildDedupeChunkInsertQuery.
+// inclusive on the upper bound) used by BuildDedupeStagePopulateRangeQuery.
 //
 // APPROXIMATE PERCENTILE_DISC uses sketches, so this runs in a single pass over
 // the table without a global sort.
@@ -137,37 +137,52 @@ func (rd RedshiftDialect) BuildDedupeBoundaryQuery(tableID sql.TableIdentifier, 
 	return fmt.Sprintf("SELECT %s FROM %s", strings.Join(selectParts, ", "), tableID.FullyQualifiedName())
 }
 
-// dedupeWindow returns the PARTITION BY and ORDER BY clause fragments shared
-// by the chunk insert queries.
-func (rd RedshiftDialect) dedupeWindow(primaryKeys []string, includeArtieUpdatedAt bool) (partitionBy, orderBy string) {
-	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, rd)
+// DedupeStageRowIDColumn is the IDENTITY column we append to the dedupe
+// stage table. Using its value as the per-partition tiebreaker lets us run
+// the winner-selection QUALIFY over only PK columns, __artie_updated_at, and
+// this BIGINT - never through wide/SUPER columns.
+//
+// Why this matters: Redshift implicitly converts SUPER and wide VARCHAR
+// values to VARCHAR(65535) when routing them through window/PartiQL
+// operators. Any row whose serialized value exceeds that limit dies with
+// "Invalid input (8001)". The original SELECT * ... QUALIFY path hit this
+// whenever a table had a SUPER column > 64KB; the two-step stage + winners
+// shape avoids it entirely.
+const DedupeStageRowIDColumn = "_artie_dedupe_rn"
 
-	orderCols := make([]string, len(primaryKeysEscaped))
-	copy(orderCols, primaryKeysEscaped)
-	if includeArtieUpdatedAt {
-		orderCols = append(orderCols, rd.QuoteIdentifier(constants.UpdateColumnMarker))
-	}
-
-	orderByCols := make([]string, len(orderCols))
-	for i, col := range orderCols {
-		orderByCols[i] = fmt.Sprintf("%s DESC", col)
-	}
-
-	return strings.Join(primaryKeysEscaped, ", "), strings.Join(orderByCols, ", ")
+// BuildDedupeStageCreateQuery returns a CREATE TABLE mirroring the
+// source schema plus an IDENTITY tiebreaker column.
+func (rd RedshiftDialect) BuildDedupeStageCreateQuery(stageID, sourceID sql.TableIdentifier) string {
+	return fmt.Sprintf(
+		"CREATE TABLE %s (LIKE %s, %s BIGINT IDENTITY(1,1))",
+		stageID.EscapedTable(),
+		sourceID.FullyQualifiedName(),
+		rd.QuoteIdentifier(DedupeStageRowIDColumn),
+	)
 }
 
-// BuildDedupeChunkInsertQuery returns an INSERT ... SELECT that copies a range
-// of rows (bounded by placeholders $1 and $2 on boundaryKey) from the source
-// table into the dedupe table, collapsing duplicates with ROW_NUMBER. The upper
-// bound is exclusive unless inclusiveUpper is true (used for the final chunk so
-// the maximum value is included).
-//
-// Bounding on boundaryKey lets Redshift skip blocks via zone maps when
-// boundaryKey is (or correlates with) the sort key, so each chunk only reads a
-// fraction of the underlying data instead of rescanning the whole table.
-func (rd RedshiftDialect) BuildDedupeChunkInsertQuery(tableID, newTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool, boundaryKey string, inclusiveUpper bool) string {
-	partitionBy, orderBy := rd.dedupeWindow(primaryKeys, includeArtieUpdatedAt)
+// BuildDedupeStageDropQuery returns a DROP TABLE IF EXISTS for the stage.
+func (RedshiftDialect) BuildDedupeStageDropQuery(stageID sql.TableIdentifier) string {
+	return fmt.Sprintf("DROP TABLE IF EXISTS %s", stageID.EscapedTable())
+}
 
+// BuildDedupeStageTruncateQuery returns a TRUNCATE for the stage. Used
+// between chunks to recycle a single stage table instead of dropping and
+// recreating it.
+func (RedshiftDialect) BuildDedupeStageTruncateQuery(stageID sql.TableIdentifier) string {
+	return fmt.Sprintf("TRUNCATE TABLE %s", stageID.EscapedTable())
+}
+
+// BuildDedupeStagePopulateRangeQuery copies rows bounded by placeholders $1
+// and $2 on boundaryKey from sourceID into stageID. columns must list every
+// source column in ordinal order; the IDENTITY column is auto-populated.
+// Upper bound is exclusive unless inclusiveUpper is true (used for the final
+// chunk so the MAX value is included).
+//
+// Plain INSERT ... SELECT (no window) means SUPER values up to their natural
+// 1MB cap flow through directly, without the 64KB PartiQL serialization cap.
+func (rd RedshiftDialect) BuildDedupeStagePopulateRangeQuery(stageID, sourceID sql.TableIdentifier, columns []string, boundaryKey string, inclusiveUpper bool) string {
+	colList := strings.Join(sql.QuoteIdentifiers(columns, rd), ", ")
 	boundaryCol := rd.QuoteIdentifier(boundaryKey)
 	upperOp := "<"
 	if inclusiveUpper {
@@ -175,26 +190,62 @@ func (rd RedshiftDialect) BuildDedupeChunkInsertQuery(tableID, newTableID sql.Ta
 	}
 
 	return fmt.Sprintf(
-		"INSERT INTO %s SELECT * FROM %s WHERE %s >= $1 AND %s %s $2 QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 1",
-		newTableID.FullyQualifiedName(),
-		tableID.FullyQualifiedName(),
+		"INSERT INTO %s (%s) SELECT %s FROM %s WHERE %s >= $1 AND %s %s $2",
+		stageID.EscapedTable(),
+		colList,
+		colList,
+		sourceID.FullyQualifiedName(),
 		boundaryCol, boundaryCol, upperOp,
-		partitionBy, orderBy,
 	)
 }
 
-// BuildDedupeNullChunkInsertQuery returns an INSERT ... SELECT that copies rows
-// where the boundary key is NULL. MIN/MAX/percentile boundaries only cover
-// non-NULL values, so these rows would otherwise be silently dropped on swap.
-func (rd RedshiftDialect) BuildDedupeNullChunkInsertQuery(tableID, newTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool, boundaryKey string) string {
-	partitionBy, orderBy := rd.dedupeWindow(primaryKeys, includeArtieUpdatedAt)
+// BuildDedupeStagePopulateNullQuery copies rows where boundaryKey IS NULL
+// into the stage table. Range-chunk queries only catch non-NULL boundary
+// values, so these rows would otherwise be silently dropped on swap.
+func (rd RedshiftDialect) BuildDedupeStagePopulateNullQuery(stageID, sourceID sql.TableIdentifier, columns []string, boundaryKey string) string {
+	colList := strings.Join(sql.QuoteIdentifiers(columns, rd), ", ")
 
 	return fmt.Sprintf(
-		"INSERT INTO %s SELECT * FROM %s WHERE %s IS NULL QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 1",
-		newTableID.FullyQualifiedName(),
-		tableID.FullyQualifiedName(),
+		"INSERT INTO %s (%s) SELECT %s FROM %s WHERE %s IS NULL",
+		stageID.EscapedTable(),
+		colList,
+		colList,
+		sourceID.FullyQualifiedName(),
 		rd.QuoteIdentifier(boundaryKey),
-		partitionBy, orderBy,
+	)
+}
+
+// BuildDedupeStageWinnersInsertQuery inserts one row per primary key from
+// the stage table into targetID. Winner per PK is the row with the greatest
+// __artie_updated_at (when includeArtieUpdatedAt) breaking ties by lowest
+// IDENTITY value; otherwise simply the lowest IDENTITY value.
+//
+// The inner QUALIFY references only primary key columns, __artie_updated_at,
+// and the IDENTITY column, so wide VARCHAR and SUPER columns are never
+// routed through a window operator. They ride along only in the outer
+// SELECT, which is a plain projection.
+func (rd RedshiftDialect) BuildDedupeStageWinnersInsertQuery(targetID, stageID sql.TableIdentifier, columns []string, primaryKeys []string, includeArtieUpdatedAt bool) string {
+	colList := strings.Join(sql.QuoteIdentifiers(columns, rd), ", ")
+	pks := strings.Join(sql.QuoteIdentifiers(primaryKeys, rd), ", ")
+	rnCol := rd.QuoteIdentifier(DedupeStageRowIDColumn)
+
+	var orderCols []string
+	if includeArtieUpdatedAt {
+		orderCols = append(orderCols, fmt.Sprintf("%s DESC", rd.QuoteIdentifier(constants.UpdateColumnMarker)))
+	}
+	orderCols = append(orderCols, fmt.Sprintf("%s ASC", rnCol))
+
+	return fmt.Sprintf(
+		"INSERT INTO %s (%s) SELECT %s FROM %s WHERE %s IN (SELECT %s FROM %s QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 1)",
+		targetID.FullyQualifiedName(),
+		colList,
+		colList,
+		stageID.EscapedTable(),
+		rnCol,
+		rnCol,
+		stageID.EscapedTable(),
+		pks,
+		strings.Join(orderCols, ", "),
 	)
 }
 

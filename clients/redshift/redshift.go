@@ -27,6 +27,8 @@ import (
 	"github.com/artie-labs/transfer/lib/webhooks"
 )
 
+const dedupeChunkCount = 10
+
 type Store struct {
 	credentialsClause string
 	bucket            string
@@ -140,6 +142,14 @@ func (s *Store) SweepTemporaryTables(ctx context.Context) error {
 // range but past the chunk that covered it). Callers must ensure no concurrent
 // writers to tableID between invocation and return - today this is only called
 // during snapshot/backfill, where CDC is not running yet.
+//
+// Each chunk is deduped via a two-step stage: INSERT the chunk into a 
+// table with an IDENTITY tiebreaker, then SELECT one row per PK using a
+// QUALIFY over only the PK + __artie_updated_at + IDENTITY columns. This keeps
+// wide VARCHAR and SUPER columns out of the window operator, avoiding
+// "Invalid input errcode:8001 error:String value exceeds the max size of 65535 bytes"
+// which is due to Redshift's 64KB PartiQL serialization cap that otherwise blows up SELECT *
+// ... QUALIFY on tables with large SUPER values.
 func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kafkalib.DatabaseAndSchemaPair, primaryKeys []string, includeArtieUpdatedAt bool) error {
 	if len(primaryKeys) == 0 {
 		return fmt.Errorf("cannot dedupe %s without primary keys", tableID.FullyQualifiedName())
@@ -191,40 +201,71 @@ func (s *Store) isBoundaryKeyNumeric(ctx context.Context, tableID sql.TableIdent
 }
 
 func (s *Store) dedupeRangeChunked(ctx context.Context, tableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool, boundaryKey string) error {
-	const numChunks = 10
-
 	newTableID := dialect.NewTableIdentifier(tableID.Schema(), fmt.Sprintf("%s_%s_dedupe", tableID.Table(), constants.ArtiePrefix))
+	stageID := dialect.NewTableIdentifier(tableID.Schema(), fmt.Sprintf("%s_%s_dedupe_stg", tableID.Table(), constants.ArtiePrefix))
 
+	columns, err := s.getSourceColumns(ctx, tableID)
+	if err != nil {
+		return fmt.Errorf("failed to list columns for %s: %w", tableID.FullyQualifiedName(), err)
+	}
+
+	rd := s.dialect()
 	for _, q := range []string{
 		fmt.Sprintf("DROP TABLE IF EXISTS %s", newTableID.FullyQualifiedName()),
 		fmt.Sprintf("CREATE TABLE %s (LIKE %s)", newTableID.FullyQualifiedName(), tableID.FullyQualifiedName()),
+		rd.BuildDedupeStageDropQuery(stageID),
+		rd.BuildDedupeStageCreateQuery(stageID, tableID),
 	} {
-		slog.Info("Executing dedupe step...", slog.String("query", q))
+		slog.Info("Executing dedupe setup step...", slog.String("query", q))
 		if _, err := s.ExecContext(ctx, q); err != nil {
-			return fmt.Errorf("failed to prepare dedupe table, query: %s, err: %w", q, err)
+			return fmt.Errorf("failed to prepare dedupe tables, query: %s, err: %w", q, err)
 		}
 	}
+	defer func() {
+		if _, err := s.ExecContext(ctx, rd.BuildDedupeStageDropQuery(stageID)); err != nil {
+			slog.Warn("Failed to drop dedupe stage table",
+				slog.String("table", stageID.FullyQualifiedName()),
+				slog.Any("err", err),
+			)
+		}
+	}()
 
-	boundaries, err := s.computeDedupeBoundaries(ctx, tableID, boundaryKey, numChunks)
+	boundaries, err := s.computeDedupeBoundaries(ctx, tableID, boundaryKey, dedupeChunkCount)
 	if err != nil {
 		return fmt.Errorf("failed to compute dedupe boundaries for %s: %w", tableID.FullyQualifiedName(), err)
+	}
+
+	runChunk := func(label, populateQuery string, populateArgs ...any) error {
+		truncateQuery := rd.BuildDedupeStageTruncateQuery(stageID)
+		winnersQuery := rd.BuildDedupeStageWinnersInsertQuery(newTableID, stageID, columns, primaryKeys, includeArtieUpdatedAt)
+
+		slog.Info("Truncating dedupe stage...", slog.String("label", label), slog.String("query", truncateQuery))
+		if _, err := s.ExecContext(ctx, truncateQuery); err != nil {
+			return fmt.Errorf("failed to truncate stage for %s: %w", label, err)
+		}
+
+		slog.Info("Populating dedupe stage...", slog.String("label", label), slog.String("query", populateQuery))
+		if _, err := s.ExecContext(ctx, populateQuery, populateArgs...); err != nil {
+			return fmt.Errorf("failed to populate stage for %s: %w", label, err)
+		}
+
+		slog.Info("Inserting winners...", slog.String("label", label), slog.String("query", winnersQuery))
+		if _, err := s.ExecContext(ctx, winnersQuery); err != nil {
+			return fmt.Errorf("failed to insert winners for %s: %w", label, err)
+		}
+		return nil
 	}
 
 	if boundaries == nil {
 		slog.Info("No non-NULL boundary key values, skipping range chunks",
 			slog.String("table", tableID.FullyQualifiedName()))
 	} else {
-		for i := 0; i < numChunks; i++ {
-			inclusiveUpper := i == numChunks-1
-			query := s.dialect().BuildDedupeChunkInsertQuery(tableID, newTableID, primaryKeys, includeArtieUpdatedAt, boundaryKey, inclusiveUpper)
-			slog.Info("Executing dedupe chunk...",
-				slog.Int("chunk", i),
-				slog.String("lo", boundaries[i]),
-				slog.String("hi", boundaries[i+1]),
-				slog.String("query", query),
-			)
-			if _, err := s.ExecContext(ctx, query, boundaries[i], boundaries[i+1]); err != nil {
-				return fmt.Errorf("failed to dedupe chunk %d [%s, %s], err: %w", i, boundaries[i], boundaries[i+1], err)
+		for i := 0; i < dedupeChunkCount; i++ {
+			inclusiveUpper := i == dedupeChunkCount-1
+			populateQuery := rd.BuildDedupeStagePopulateRangeQuery(stageID, tableID, columns, boundaryKey, inclusiveUpper)
+			label := fmt.Sprintf("chunk %d [%s, %s]", i, boundaries[i], boundaries[i+1])
+			if err := runChunk(label, populateQuery, boundaries[i], boundaries[i+1]); err != nil {
+				return err
 			}
 		}
 	}
@@ -232,10 +273,9 @@ func (s *Store) dedupeRangeChunked(ctx context.Context, tableID sql.TableIdentif
 	// Range chunks only cover non-NULL boundary key values, so run a separate
 	// pass for NULL-keyed rows to avoid silently dropping them on swap. This is
 	// a no-op when the column is NOT NULL.
-	nullQuery := s.dialect().BuildDedupeNullChunkInsertQuery(tableID, newTableID, primaryKeys, includeArtieUpdatedAt, boundaryKey)
-	slog.Info("Executing NULL-key dedupe chunk...", slog.String("query", nullQuery))
-	if _, err := s.ExecContext(ctx, nullQuery); err != nil {
-		return fmt.Errorf("failed to dedupe NULL-key chunk: %w", err)
+	nullPopulateQuery := rd.BuildDedupeStagePopulateNullQuery(stageID, tableID, columns, boundaryKey)
+	if err := runChunk("NULL-key chunk", nullPopulateQuery); err != nil {
+		return err
 	}
 
 	// Swap the tables atomically so there's no window where the target table doesn't exist.
@@ -247,6 +287,38 @@ func (s *Store) dedupeRangeChunked(ctx context.Context, tableID sql.TableIdentif
 	}
 
 	return nil
+}
+
+// getSourceColumns returns the source table's column names in ordinal order,
+// lowercased to match Redshift's identifier normalization. These feed the
+// explicit column lists used when populating the stage table (the IDENTITY
+// column is appended to the end of the stage, so SELECT * wouldn't line up).
+func (s *Store) getSourceColumns(ctx context.Context, tableID sql.TableIdentifier) ([]string, error) {
+	const query = `SELECT column_name FROM information_schema.columns WHERE LOWER(table_schema) = LOWER($1) AND LOWER(table_name) = LOWER($2) ORDER BY ordinal_position`
+
+	rows, err := s.QueryContext(ctx, query, tableID.Schema(), tableID.Table())
+	if err != nil {
+		return nil, fmt.Errorf("failed to query columns for %s: %w", tableID.FullyQualifiedName(), err)
+	}
+	defer rows.Close()
+
+	var out []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, fmt.Errorf("failed to scan column name: %w", err)
+		}
+		out = append(out, name)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed to iterate columns for %s: %w", tableID.FullyQualifiedName(), err)
+	}
+
+	if len(out) == 0 {
+		return nil, fmt.Errorf("no columns found for %s", tableID.FullyQualifiedName())
+	}
+
+	return out, nil
 }
 
 // computeDedupeBoundaries returns numChunks+1 boundary values for the given

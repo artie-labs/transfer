@@ -91,60 +91,98 @@ func (r *RedshiftTestSuite) Test_BuildDedupeBoundaryQuery() {
 	}
 }
 
-func (r *RedshiftTestSuite) Test_BuildDedupeChunkInsertQuery() {
+func (r *RedshiftTestSuite) Test_BuildDedupeStageCreateQuery() {
 	tableID := dialect.NewTableIdentifier("public", "customers")
-	newTableID := dialect.NewTableIdentifier("public", "customers__artie_dedupe")
+	stageID := dialect.NewTableIdentifier("public", "customers__artie_dedupe_stg")
+	query := dialect.RedshiftDialect{}.BuildDedupeStageCreateQuery(stageID, tableID)
+	assert.Equal(
+		r.T(),
+		`CREATE TEMPORARY TABLE "customers__artie_dedupe_stg" (LIKE public."customers", "_artie_dedupe_rn" BIGINT IDENTITY(1,1))`,
+		query,
+	)
+}
+
+func (r *RedshiftTestSuite) Test_BuildDedupeStageDropAndTruncateQueries() {
+	stageID := dialect.NewTableIdentifier("public", "customers__artie_dedupe_stg")
+	assert.Equal(
+		r.T(),
+		`DROP TABLE IF EXISTS "customers__artie_dedupe_stg"`,
+		dialect.RedshiftDialect{}.BuildDedupeStageDropQuery(stageID),
+	)
+	assert.Equal(
+		r.T(),
+		`TRUNCATE TABLE "customers__artie_dedupe_stg"`,
+		dialect.RedshiftDialect{}.BuildDedupeStageTruncateQuery(stageID),
+	)
+}
+
+func (r *RedshiftTestSuite) Test_BuildDedupeStagePopulateRangeQuery() {
+	tableID := dialect.NewTableIdentifier("public", "customers")
+	stageID := dialect.NewTableIdentifier("public", "customers__artie_dedupe_stg")
+	columns := []string{"id", "name", "meta"}
 	{
-		// Single PK, exclusive upper.
-		query := dialect.RedshiftDialect{}.BuildDedupeChunkInsertQuery(tableID, newTableID, []string{"id"}, false, "id", false)
+		// Exclusive upper bound.
+		query := dialect.RedshiftDialect{}.BuildDedupeStagePopulateRangeQuery(stageID, tableID, columns, "id", false)
 		assert.Equal(
 			r.T(),
-			`INSERT INTO public."customers__artie_dedupe" SELECT * FROM public."customers" WHERE "id" >= $1 AND "id" < $2 QUALIFY ROW_NUMBER() OVER (PARTITION BY "id" ORDER BY "id" DESC) = 1`,
+			`INSERT INTO "customers__artie_dedupe_stg" ("id", "name", "meta") SELECT "id", "name", "meta" FROM public."customers" WHERE "id" >= $1 AND "id" < $2`,
 			query,
 		)
 	}
 	{
-		// Single PK with __artie_updated_at, inclusive upper (last chunk).
-		query := dialect.RedshiftDialect{}.BuildDedupeChunkInsertQuery(tableID, newTableID, []string{"id"}, true, "id", true)
+		// Inclusive upper bound (last chunk).
+		query := dialect.RedshiftDialect{}.BuildDedupeStagePopulateRangeQuery(stageID, tableID, columns, "id", true)
 		assert.Equal(
 			r.T(),
-			`INSERT INTO public."customers__artie_dedupe" SELECT * FROM public."customers" WHERE "id" >= $1 AND "id" <= $2 QUALIFY ROW_NUMBER() OVER (PARTITION BY "id" ORDER BY "id" DESC, "__artie_updated_at" DESC) = 1`,
-			query,
-		)
-	}
-	{
-		// Composite PK; boundary key is the first PK, PARTITION BY covers the full PK.
-		settingsTableID := dialect.NewTableIdentifier("public", "user_settings")
-		newSettingsTableID := dialect.NewTableIdentifier("public", "user_settings__artie_dedupe")
-		query := dialect.RedshiftDialect{}.BuildDedupeChunkInsertQuery(settingsTableID, newSettingsTableID, []string{"user_id", "settings"}, false, "user_id", false)
-		assert.Equal(
-			r.T(),
-			`INSERT INTO public."user_settings__artie_dedupe" SELECT * FROM public."user_settings" WHERE "user_id" >= $1 AND "user_id" < $2 QUALIFY ROW_NUMBER() OVER (PARTITION BY "user_id", "settings" ORDER BY "user_id" DESC, "settings" DESC) = 1`,
+			`INSERT INTO "customers__artie_dedupe_stg" ("id", "name", "meta") SELECT "id", "name", "meta" FROM public."customers" WHERE "id" >= $1 AND "id" <= $2`,
 			query,
 		)
 	}
 }
 
-func (r *RedshiftTestSuite) Test_BuildDedupeNullChunkInsertQuery() {
+func (r *RedshiftTestSuite) Test_BuildDedupeStagePopulateNullQuery() {
 	tableID := dialect.NewTableIdentifier("public", "customers")
+	stageID := dialect.NewTableIdentifier("public", "customers__artie_dedupe_stg")
+	columns := []string{"id", "name", "meta"}
+	query := dialect.RedshiftDialect{}.BuildDedupeStagePopulateNullQuery(stageID, tableID, columns, "id")
+	assert.Equal(
+		r.T(),
+		`INSERT INTO "customers__artie_dedupe_stg" ("id", "name", "meta") SELECT "id", "name", "meta" FROM public."customers" WHERE "id" IS NULL`,
+		query,
+	)
+}
+
+func (r *RedshiftTestSuite) Test_BuildDedupeStageWinnersInsertQuery() {
 	newTableID := dialect.NewTableIdentifier("public", "customers__artie_dedupe")
+	stageID := dialect.NewTableIdentifier("public", "customers__artie_dedupe_stg")
+	columns := []string{"id", "name", "meta"}
 	{
 		// Single PK, no __artie_updated_at.
-		query := dialect.RedshiftDialect{}.BuildDedupeNullChunkInsertQuery(tableID, newTableID, []string{"id"}, false, "id")
+		query := dialect.RedshiftDialect{}.BuildDedupeStageWinnersInsertQuery(newTableID, stageID, columns, []string{"id"}, false)
 		assert.Equal(
 			r.T(),
-			`INSERT INTO public."customers__artie_dedupe" SELECT * FROM public."customers" WHERE "id" IS NULL QUALIFY ROW_NUMBER() OVER (PARTITION BY "id" ORDER BY "id" DESC) = 1`,
+			`INSERT INTO public."customers__artie_dedupe" ("id", "name", "meta") SELECT "id", "name", "meta" FROM "customers__artie_dedupe_stg" WHERE "_artie_dedupe_rn" IN (SELECT "_artie_dedupe_rn" FROM "customers__artie_dedupe_stg" QUALIFY ROW_NUMBER() OVER (PARTITION BY "id" ORDER BY "_artie_dedupe_rn" ASC) = 1)`,
+			query,
+		)
+	}
+	{
+		// Single PK with __artie_updated_at.
+		query := dialect.RedshiftDialect{}.BuildDedupeStageWinnersInsertQuery(newTableID, stageID, columns, []string{"id"}, true)
+		assert.Equal(
+			r.T(),
+			`INSERT INTO public."customers__artie_dedupe" ("id", "name", "meta") SELECT "id", "name", "meta" FROM "customers__artie_dedupe_stg" WHERE "_artie_dedupe_rn" IN (SELECT "_artie_dedupe_rn" FROM "customers__artie_dedupe_stg" QUALIFY ROW_NUMBER() OVER (PARTITION BY "id" ORDER BY "__artie_updated_at" DESC, "_artie_dedupe_rn" ASC) = 1)`,
 			query,
 		)
 	}
 	{
 		// Composite PK with __artie_updated_at.
-		settingsTableID := dialect.NewTableIdentifier("public", "user_settings")
-		newSettingsTableID := dialect.NewTableIdentifier("public", "user_settings__artie_dedupe")
-		query := dialect.RedshiftDialect{}.BuildDedupeNullChunkInsertQuery(settingsTableID, newSettingsTableID, []string{"user_id", "settings"}, true, "user_id")
+		settingsTableID := dialect.NewTableIdentifier("public", "user_settings__artie_dedupe")
+		settingsStageID := dialect.NewTableIdentifier("public", "user_settings__artie_dedupe_stg")
+		cols := []string{"user_id", "settings", "value"}
+		query := dialect.RedshiftDialect{}.BuildDedupeStageWinnersInsertQuery(settingsTableID, settingsStageID, cols, []string{"user_id", "settings"}, true)
 		assert.Equal(
 			r.T(),
-			`INSERT INTO public."user_settings__artie_dedupe" SELECT * FROM public."user_settings" WHERE "user_id" IS NULL QUALIFY ROW_NUMBER() OVER (PARTITION BY "user_id", "settings" ORDER BY "user_id" DESC, "settings" DESC, "__artie_updated_at" DESC) = 1`,
+			`INSERT INTO public."user_settings__artie_dedupe" ("user_id", "settings", "value") SELECT "user_id", "settings", "value" FROM "user_settings__artie_dedupe_stg" WHERE "_artie_dedupe_rn" IN (SELECT "_artie_dedupe_rn" FROM "user_settings__artie_dedupe_stg" QUALIFY ROW_NUMBER() OVER (PARTITION BY "user_id", "settings" ORDER BY "__artie_updated_at" DESC, "_artie_dedupe_rn" ASC) = 1)`,
 			query,
 		)
 	}
