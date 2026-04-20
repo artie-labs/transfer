@@ -116,6 +116,105 @@ func (rd RedshiftDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableId
 	return parts
 }
 
+// DedupeStageRowIDColumn is the IDENTITY tiebreaker appended to the dedupe
+// staging table built by BuildDedupeQueriesFixed. Having it lets the winner
+// QUALIFY reference only primary keys + __artie_updated_at + this BIGINT,
+// so wide VARCHAR and SUPER columns never flow through a window operator.
+const DedupeStageRowIDColumn = "_artie_dedupe_rn"
+
+// BuildDedupeQueriesFixed is a SUPER-safe variant of BuildDedupeQueries.
+//
+// Background: the original `SELECT * ... QUALIFY` routes every source column
+// through a window operator. Redshift implicitly converts SUPER values (and
+// VARCHAR > 64KB) to VARCHAR(65535) inside window / PartiQL operators, so any
+// row whose serialized SUPER exceeds 64KB fails the whole dedupe with
+// `Invalid input (8001): String value exceeds the max size of 65535 bytes`.
+// Wide tables with a JSON-shaped SUPER column hit this routinely.
+//
+// This variant stages only duplicated-PK rows via a plain `INSERT ... SELECT`
+// (no window, so SUPER flows through at its native ~1MB cap), then picks a
+// winner per PK with a QUALIFY whose ORDER BY references only the PKs,
+// optional __artie_updated_at, and a BIGINT IDENTITY tiebreaker. SUPER never
+// touches the window, and the final re-insert is a plain projection.
+//
+// `columns` must list every source column in ordinal order (the caller pulls
+// them from information_schema.columns). The IDENTITY column is auto-populated
+// by Redshift and is intentionally omitted from `columns` and from the
+// explicit INSERT column lists.
+//
+// Ordering and row selection exactly mirror the original: ORDER BY … ASC
+// with `= 2`, so the produced row per duplicated PK is the same one the
+// legacy query would have kept. The IDENTITY is appended as a deterministic
+// final tiebreaker — the legacy query had no tiebreaker at all.
+func (rd RedshiftDialect) BuildDedupeQueriesFixed(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool, columns []string) []string {
+	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, rd)
+	pkTuple := strings.Join(primaryKeysEscaped, ", ")
+	colList := strings.Join(sql.QuoteIdentifiers(columns, rd), ", ")
+	rnCol := rd.QuoteIdentifier(DedupeStageRowIDColumn)
+
+	// 1. Stage table mirrors the source plus a BIGINT IDENTITY tiebreaker.
+	createStage := fmt.Sprintf(
+		"CREATE TEMPORARY TABLE %s (LIKE %s, %s BIGINT IDENTITY(1,1))",
+		stagingTableID.EscapedTable(),
+		tableID.FullyQualifiedName(),
+		rnCol,
+	)
+
+	// 2. Stage only rows whose PK has duplicates. Plain INSERT ... SELECT so
+	//    SUPER and wide VARCHAR values bypass the 64KB PartiQL cap. Tables
+	//    without duplicates stage zero rows and the rest is a near no-op.
+	populate := fmt.Sprintf(
+		"INSERT INTO %s (%s) SELECT %s FROM %s WHERE (%s) IN (SELECT %s FROM %s GROUP BY %s HAVING COUNT(*) > 1)",
+		stagingTableID.EscapedTable(),
+		colList,
+		colList,
+		tableID.FullyQualifiedName(),
+		pkTuple,
+		pkTuple,
+		tableID.FullyQualifiedName(),
+		pkTuple,
+	)
+
+	// 3. Remove all duplicated-PK rows from the main table. Same shape as the
+	//    legacy step 2.
+	var whereClauses []string
+	for _, primaryKeyEscaped := range primaryKeysEscaped {
+		whereClauses = append(whereClauses, fmt.Sprintf("%s.%s = t2.%s", tableID.EscapedTable(), primaryKeyEscaped, primaryKeyEscaped))
+	}
+	deleteDupes := fmt.Sprintf("DELETE FROM %s USING %s t2 WHERE %s",
+		tableID.FullyQualifiedName(),
+		stagingTableID.EscapedTable(),
+		strings.Join(whereClauses, " AND "),
+	)
+
+	// 4. Reinsert one winner per PK. The inner QUALIFY sees only PKs,
+	//    __artie_updated_at, and the IDENTITY tiebreaker — no SUPER / wide
+	//    VARCHAR flows through the window.
+	var orderCols []string
+	for _, pk := range primaryKeysEscaped {
+		orderCols = append(orderCols, fmt.Sprintf("%s ASC", pk))
+	}
+	if includeArtieUpdatedAt {
+		orderCols = append(orderCols, fmt.Sprintf("%s ASC", rd.QuoteIdentifier(constants.UpdateColumnMarker)))
+	}
+	orderCols = append(orderCols, fmt.Sprintf("%s ASC", rnCol))
+
+	insertWinners := fmt.Sprintf(
+		"INSERT INTO %s (%s) SELECT %s FROM %s WHERE %s IN (SELECT %s FROM %s QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 2)",
+		tableID.FullyQualifiedName(),
+		colList,
+		colList,
+		stagingTableID.EscapedTable(),
+		rnCol,
+		rnCol,
+		stagingTableID.EscapedTable(),
+		pkTuple,
+		strings.Join(orderCols, ", "),
+	)
+
+	return []string{createStage, populate, deleteDupes, insertWinners}
+}
+
 func (rd RedshiftDialect) buildMergeInsertQuery(
 	tableID sql.TableIdentifier,
 	subQuery string,
