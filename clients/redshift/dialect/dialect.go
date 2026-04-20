@@ -199,8 +199,9 @@ func (rd RedshiftDialect) BuildDedupeQueriesFixed(tableID, stagingTableID sql.Ta
 	}
 	orderCols = append(orderCols, fmt.Sprintf("%s ASC", rnCol))
 
+	// `WHERE true` is required before QUALIFY for Redshift.
 	insertWinners := fmt.Sprintf(
-		"INSERT INTO %s (%s) SELECT %s FROM %s WHERE %s IN (SELECT %s FROM %s QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 2)",
+		"INSERT INTO %s (%s) SELECT %s FROM %s WHERE %s IN (SELECT %s FROM %s WHERE true QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) = 2)",
 		tableID.FullyQualifiedName(),
 		colList,
 		colList,

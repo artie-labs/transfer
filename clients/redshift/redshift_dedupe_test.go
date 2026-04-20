@@ -98,7 +98,7 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeQueriesFixed() {
 		)
 		assert.Equal(
 			r.T(),
-			fmt.Sprintf(`INSERT INTO public."customers" ("id", "first_name", "last_name") SELECT "id", "first_name", "last_name" FROM "%s" WHERE "_artie_dedupe_rn" IN (SELECT "_artie_dedupe_rn" FROM "%s" QUALIFY ROW_NUMBER() OVER (PARTITION BY "id" ORDER BY "id" ASC, "_artie_dedupe_rn" ASC) = 2)`, stagingTableID.Table(), stagingTableID.Table()),
+			fmt.Sprintf(`INSERT INTO public."customers" ("id", "first_name", "last_name") SELECT "id", "first_name", "last_name" FROM "%s" WHERE "_artie_dedupe_rn" IN (SELECT "_artie_dedupe_rn" FROM "%s" WHERE true QUALIFY ROW_NUMBER() OVER (PARTITION BY "id" ORDER BY "id" ASC, "_artie_dedupe_rn" ASC) = 2)`, stagingTableID.Table(), stagingTableID.Table()),
 			parts[3],
 		)
 	}
@@ -127,7 +127,7 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeQueriesFixed() {
 		)
 		assert.Equal(
 			r.T(),
-			fmt.Sprintf(`INSERT INTO public."customers" ("id", "first_name", "last_name", "__artie_updated_at") SELECT "id", "first_name", "last_name", "__artie_updated_at" FROM "%s" WHERE "_artie_dedupe_rn" IN (SELECT "_artie_dedupe_rn" FROM "%s" QUALIFY ROW_NUMBER() OVER (PARTITION BY "id" ORDER BY "id" ASC, "__artie_updated_at" ASC, "_artie_dedupe_rn" ASC) = 2)`, stagingTableID.Table(), stagingTableID.Table()),
+			fmt.Sprintf(`INSERT INTO public."customers" ("id", "first_name", "last_name", "__artie_updated_at") SELECT "id", "first_name", "last_name", "__artie_updated_at" FROM "%s" WHERE "_artie_dedupe_rn" IN (SELECT "_artie_dedupe_rn" FROM "%s" WHERE true QUALIFY ROW_NUMBER() OVER (PARTITION BY "id" ORDER BY "id" ASC, "__artie_updated_at" ASC, "_artie_dedupe_rn" ASC) = 2)`, stagingTableID.Table(), stagingTableID.Table()),
 			parts[3],
 		)
 	}
@@ -156,7 +156,7 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeQueriesFixed() {
 		)
 		assert.Equal(
 			r.T(),
-			fmt.Sprintf(`INSERT INTO public."user_settings" ("user_id", "settings", "value") SELECT "user_id", "settings", "value" FROM "%s" WHERE "_artie_dedupe_rn" IN (SELECT "_artie_dedupe_rn" FROM "%s" QUALIFY ROW_NUMBER() OVER (PARTITION BY "user_id", "settings" ORDER BY "user_id" ASC, "settings" ASC, "_artie_dedupe_rn" ASC) = 2)`, stagingTableID.Table(), stagingTableID.Table()),
+			fmt.Sprintf(`INSERT INTO public."user_settings" ("user_id", "settings", "value") SELECT "user_id", "settings", "value" FROM "%s" WHERE "_artie_dedupe_rn" IN (SELECT "_artie_dedupe_rn" FROM "%s" WHERE true QUALIFY ROW_NUMBER() OVER (PARTITION BY "user_id", "settings" ORDER BY "user_id" ASC, "settings" ASC, "_artie_dedupe_rn" ASC) = 2)`, stagingTableID.Table(), stagingTableID.Table()),
 			parts[3],
 		)
 	}
@@ -185,7 +185,7 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeQueriesFixed() {
 		)
 		assert.Equal(
 			r.T(),
-			fmt.Sprintf(`INSERT INTO public."user_settings" ("user_id", "settings", "value", "__artie_updated_at") SELECT "user_id", "settings", "value", "__artie_updated_at" FROM "%s" WHERE "_artie_dedupe_rn" IN (SELECT "_artie_dedupe_rn" FROM "%s" QUALIFY ROW_NUMBER() OVER (PARTITION BY "user_id", "settings" ORDER BY "user_id" ASC, "settings" ASC, "__artie_updated_at" ASC, "_artie_dedupe_rn" ASC) = 2)`, stagingTableID.Table(), stagingTableID.Table()),
+			fmt.Sprintf(`INSERT INTO public."user_settings" ("user_id", "settings", "value", "__artie_updated_at") SELECT "user_id", "settings", "value", "__artie_updated_at" FROM "%s" WHERE "_artie_dedupe_rn" IN (SELECT "_artie_dedupe_rn" FROM "%s" WHERE true QUALIFY ROW_NUMBER() OVER (PARTITION BY "user_id", "settings" ORDER BY "user_id" ASC, "settings" ASC, "__artie_updated_at" ASC, "_artie_dedupe_rn" ASC) = 2)`, stagingTableID.Table(), stagingTableID.Table()),
 			parts[3],
 		)
 	}
