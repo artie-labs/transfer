@@ -137,14 +137,14 @@ const DedupeStageRowIDColumn = "_artie_dedupe_rn"
 //
 // The only shapes we've seen survive on wide-SUPER data are:
 //
-//   a. `INSERT INTO <t2> (cols) SELECT cols FROM <t1>` — plain full-table
-//      copy, no filter / join / window.
-//   b. `CREATE ... AS SELECT non_super_cols FROM <t> QUALIFY ...` — Redshift's
-//      columnar storage doesn't load `meta` when the projection doesn't
-//      mention it, so no text conversion happens.
-//   c. `DELETE FROM <t> USING <helper> WHERE <t>.key = <helper>.key` — a
-//      DELETE never materializes the row payload; it only marks tombstones,
-//      so SUPER stays on disk.
+//	a. `INSERT INTO <t2> (cols) SELECT cols FROM <t1>` — plain full-table
+//	   copy, no filter / join / window.
+//	b. `CREATE ... AS SELECT non_super_cols FROM <t> QUALIFY ...` — Redshift's
+//	   columnar storage doesn't load `meta` when the projection doesn't
+//	   mention it, so no text conversion happens.
+//	c. `DELETE FROM <t> USING <helper> WHERE <t>.key = <helper>.key` — a
+//	   DELETE never materializes the row payload; it only marks tombstones,
+//	   so SUPER stays on disk.
 //
 // This function's 8-statement plan is built exclusively from those three
 // shapes, plus DDL:
