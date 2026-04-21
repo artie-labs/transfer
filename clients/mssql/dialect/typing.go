@@ -54,7 +54,7 @@ func (MSSQLDialect) DataTypeForKind(kindDetails typing.KindDetails, isPk bool, _
 		return "NVARCHAR(MAX)", nil
 	}
 
-	return kindDetails.Kind, nil
+	return kindDetails.Kind.String(), nil
 }
 
 func (MSSQLDialect) KindForDataType(rawType string) (typing.KindDetails, error) {

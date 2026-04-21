@@ -40,7 +40,7 @@ func (IcebergDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, _ 
 	case typing.TimestampTZ.Kind:
 		return "TIMESTAMP", nil
 	default:
-		return kindDetails.Kind, nil
+		return kindDetails.Kind.String(), nil
 	}
 }
 

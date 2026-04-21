@@ -45,7 +45,7 @@ func (DatabricksDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool,
 		return "STRING", nil
 	}
 
-	return kindDetails.Kind, nil
+	return kindDetails.Kind.String(), nil
 }
 
 func (DatabricksDialect) KindForDataType(rawType string) (typing.KindDetails, error) {

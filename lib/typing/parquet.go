@@ -20,7 +20,7 @@ func millisecondsAfterMidnight(t time.Time) int32 {
 	return int32(t.Sub(midnight).Milliseconds())
 }
 
-var kindToArrowType = map[string]arrow.DataType{
+var kindToArrowType = map[KindType]arrow.DataType{
 	String.Kind:  arrow.BinaryTypes.String,
 	Boolean.Kind: arrow.FixedWidthTypes.Boolean,
 	// Number data types:
