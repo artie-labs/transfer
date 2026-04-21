@@ -177,11 +177,12 @@ const DedupeStageRowIDColumn = "_artie_dedupe_rn"
 //   - The stagingTableID argument is repurposed as the _losers temp table —
 //     the legacy SELECT-style staging is no longer needed.
 //
-// Ordering and row selection mirror the original's ASC direction with the
-// IDENTITY rn as a deterministic final tiebreaker. The legacy `= 2` quirk is
-// dropped here in favor of `> 1` (identifies every loser per PK) which is
-// semantically cleaner; the row retained per PK is identical whenever there's
-// no __artie_updated_at tie.
+// Ordering is DESC on __artie_updated_at (and the IDENTITY rn tiebreaker) so
+// that ROW_NUMBER() = 1 is the newest event per PK and everything with
+// ROW_NUMBER() > 1 is a loser. This matches CDC semantics: the latest event
+// represents the current row state and wins. The legacy `= 2` / ASC quirk
+// kept the newer row by coincidence for the common 2-duplicate case; here we
+// make that intent explicit.
 func (rd RedshiftDialect) BuildDedupeQueriesFixed(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool, columns []string) []string {
 	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, rd)
 	pkTuple := strings.Join(primaryKeysEscaped, ", ")
@@ -222,14 +223,17 @@ func (rd RedshiftDialect) BuildDedupeQueriesFixed(tableID, stagingTableID sql.Ta
 	//    `meta` is never loaded, so no text serialization happens.
 	//    DISTSTYLE ALL keeps _losers colocated with _dedupe on every slice
 	//    for the step-5 DELETE.
+	// DESC so ROW_NUMBER() = 1 is the newest event per PK (CDC wants the
+	// latest write to win). PK direction inside the PARTITION BY is a no-op
+	// but kept DESC for visual consistency with the intent.
 	var orderCols []string
 	for _, pk := range primaryKeysEscaped {
-		orderCols = append(orderCols, fmt.Sprintf("%s ASC", pk))
+		orderCols = append(orderCols, fmt.Sprintf("%s DESC", pk))
 	}
 	if includeArtieUpdatedAt {
-		orderCols = append(orderCols, fmt.Sprintf("%s ASC", rd.QuoteIdentifier(constants.UpdateColumnMarker)))
+		orderCols = append(orderCols, fmt.Sprintf("%s DESC", rd.QuoteIdentifier(constants.UpdateColumnMarker)))
 	}
-	orderCols = append(orderCols, fmt.Sprintf("%s ASC", rnCol))
+	orderCols = append(orderCols, fmt.Sprintf("%s DESC", rnCol))
 
 	// `WHERE true` is required before QUALIFY for Redshift.
 	findLosers := fmt.Sprintf(

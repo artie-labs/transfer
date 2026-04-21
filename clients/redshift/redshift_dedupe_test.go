@@ -85,7 +85,7 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeQueriesFixed() {
 		assert.Equal(r.T(), `CREATE TABLE public."customers___artie_dedupe" (LIKE public."customers", "_artie_dedupe_rn" BIGINT IDENTITY(1,1))`, parts[1])
 		assert.Equal(r.T(), `INSERT INTO public."customers___artie_dedupe" ("id", "first_name", "last_name") SELECT "id", "first_name", "last_name" FROM public."customers"`, parts[2])
 		assert.Equal(r.T(),
-			fmt.Sprintf(`CREATE TEMPORARY TABLE "%s" DISTSTYLE ALL AS SELECT "_artie_dedupe_rn" FROM public."customers___artie_dedupe" WHERE true QUALIFY ROW_NUMBER() OVER (PARTITION BY "id" ORDER BY "id" ASC, "_artie_dedupe_rn" ASC) > 1`, stagingTableID.Table()),
+			fmt.Sprintf(`CREATE TEMPORARY TABLE "%s" DISTSTYLE ALL AS SELECT "_artie_dedupe_rn" FROM public."customers___artie_dedupe" WHERE true QUALIFY ROW_NUMBER() OVER (PARTITION BY "id" ORDER BY "id" DESC, "_artie_dedupe_rn" DESC) > 1`, stagingTableID.Table()),
 			parts[3])
 		assert.Equal(r.T(),
 			fmt.Sprintf(`DELETE FROM public."customers___artie_dedupe" USING "%s" l WHERE "customers___artie_dedupe"."_artie_dedupe_rn" = l."_artie_dedupe_rn"`, stagingTableID.Table()),
@@ -106,7 +106,7 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeQueriesFixed() {
 		assert.Equal(r.T(), `CREATE TABLE public."customers___artie_dedupe" (LIKE public."customers", "_artie_dedupe_rn" BIGINT IDENTITY(1,1))`, parts[1])
 		assert.Equal(r.T(), `INSERT INTO public."customers___artie_dedupe" ("id", "first_name", "last_name", "__artie_updated_at") SELECT "id", "first_name", "last_name", "__artie_updated_at" FROM public."customers"`, parts[2])
 		assert.Equal(r.T(),
-			fmt.Sprintf(`CREATE TEMPORARY TABLE "%s" DISTSTYLE ALL AS SELECT "_artie_dedupe_rn" FROM public."customers___artie_dedupe" WHERE true QUALIFY ROW_NUMBER() OVER (PARTITION BY "id" ORDER BY "id" ASC, "__artie_updated_at" ASC, "_artie_dedupe_rn" ASC) > 1`, stagingTableID.Table()),
+			fmt.Sprintf(`CREATE TEMPORARY TABLE "%s" DISTSTYLE ALL AS SELECT "_artie_dedupe_rn" FROM public."customers___artie_dedupe" WHERE true QUALIFY ROW_NUMBER() OVER (PARTITION BY "id" ORDER BY "id" DESC, "__artie_updated_at" DESC, "_artie_dedupe_rn" DESC) > 1`, stagingTableID.Table()),
 			parts[3])
 		assert.Equal(r.T(),
 			fmt.Sprintf(`DELETE FROM public."customers___artie_dedupe" USING "%s" l WHERE "customers___artie_dedupe"."_artie_dedupe_rn" = l."_artie_dedupe_rn"`, stagingTableID.Table()),
@@ -127,7 +127,7 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeQueriesFixed() {
 		assert.Equal(r.T(), `CREATE TABLE public."user_settings___artie_dedupe" (LIKE public."user_settings", "_artie_dedupe_rn" BIGINT IDENTITY(1,1))`, parts[1])
 		assert.Equal(r.T(), `INSERT INTO public."user_settings___artie_dedupe" ("user_id", "settings", "value") SELECT "user_id", "settings", "value" FROM public."user_settings"`, parts[2])
 		assert.Equal(r.T(),
-			fmt.Sprintf(`CREATE TEMPORARY TABLE "%s" DISTSTYLE ALL AS SELECT "_artie_dedupe_rn" FROM public."user_settings___artie_dedupe" WHERE true QUALIFY ROW_NUMBER() OVER (PARTITION BY "user_id", "settings" ORDER BY "user_id" ASC, "settings" ASC, "_artie_dedupe_rn" ASC) > 1`, stagingTableID.Table()),
+			fmt.Sprintf(`CREATE TEMPORARY TABLE "%s" DISTSTYLE ALL AS SELECT "_artie_dedupe_rn" FROM public."user_settings___artie_dedupe" WHERE true QUALIFY ROW_NUMBER() OVER (PARTITION BY "user_id", "settings" ORDER BY "user_id" DESC, "settings" DESC, "_artie_dedupe_rn" DESC) > 1`, stagingTableID.Table()),
 			parts[3])
 		assert.Equal(r.T(),
 			fmt.Sprintf(`DELETE FROM public."user_settings___artie_dedupe" USING "%s" l WHERE "user_settings___artie_dedupe"."_artie_dedupe_rn" = l."_artie_dedupe_rn"`, stagingTableID.Table()),
@@ -148,7 +148,7 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeQueriesFixed() {
 		assert.Equal(r.T(), `CREATE TABLE public."user_settings___artie_dedupe" (LIKE public."user_settings", "_artie_dedupe_rn" BIGINT IDENTITY(1,1))`, parts[1])
 		assert.Equal(r.T(), `INSERT INTO public."user_settings___artie_dedupe" ("user_id", "settings", "value", "__artie_updated_at") SELECT "user_id", "settings", "value", "__artie_updated_at" FROM public."user_settings"`, parts[2])
 		assert.Equal(r.T(),
-			fmt.Sprintf(`CREATE TEMPORARY TABLE "%s" DISTSTYLE ALL AS SELECT "_artie_dedupe_rn" FROM public."user_settings___artie_dedupe" WHERE true QUALIFY ROW_NUMBER() OVER (PARTITION BY "user_id", "settings" ORDER BY "user_id" ASC, "settings" ASC, "__artie_updated_at" ASC, "_artie_dedupe_rn" ASC) > 1`, stagingTableID.Table()),
+			fmt.Sprintf(`CREATE TEMPORARY TABLE "%s" DISTSTYLE ALL AS SELECT "_artie_dedupe_rn" FROM public."user_settings___artie_dedupe" WHERE true QUALIFY ROW_NUMBER() OVER (PARTITION BY "user_id", "settings" ORDER BY "user_id" DESC, "settings" DESC, "__artie_updated_at" DESC, "_artie_dedupe_rn" DESC) > 1`, stagingTableID.Table()),
 			parts[3])
 		assert.Equal(r.T(),
 			fmt.Sprintf(`DELETE FROM public."user_settings___artie_dedupe" USING "%s" l WHERE "user_settings___artie_dedupe"."_artie_dedupe_rn" = l."_artie_dedupe_rn"`, stagingTableID.Table()),
