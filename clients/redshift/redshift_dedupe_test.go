@@ -84,8 +84,7 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeQueriesFixed() {
 		assert.Len(r.T(), plan.Prep, 1)
 		assert.Equal(r.T(), `CREATE TABLE public."customers___artie_dedupe" (LIKE public."customers" INCLUDING DEFAULTS, "_artie_dedupe_rn" BIGINT IDENTITY(1,1))`, plan.Prep[0])
 		// Append: single statement, auto-commit (ALTER TABLE APPEND cannot run in a txn).
-		assert.Len(r.T(), plan.Append, 1)
-		assert.Equal(r.T(), `ALTER TABLE public."customers___artie_dedupe" APPEND FROM public."customers" FILLTARGET`, plan.Append[0])
+		assert.Equal(r.T(), `ALTER TABLE public."customers___artie_dedupe" APPEND FROM public."customers" FILLTARGET`, plan.Append)
 		// Swap: 5 statements (txn).
 		assert.Len(r.T(), plan.Swap, 5)
 		assert.Equal(r.T(),
@@ -106,8 +105,7 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeQueriesFixed() {
 		plan := dialect.RedshiftDialect{}.BuildDedupeQueriesFixed(tableID, stagingTableID, []string{"user_id", "settings"})
 		assert.Len(r.T(), plan.Prep, 1)
 		assert.Equal(r.T(), `CREATE TABLE public."user_settings___artie_dedupe" (LIKE public."user_settings" INCLUDING DEFAULTS, "_artie_dedupe_rn" BIGINT IDENTITY(1,1))`, plan.Prep[0])
-		assert.Len(r.T(), plan.Append, 1)
-		assert.Equal(r.T(), `ALTER TABLE public."user_settings___artie_dedupe" APPEND FROM public."user_settings" FILLTARGET`, plan.Append[0])
+		assert.Equal(r.T(), `ALTER TABLE public."user_settings___artie_dedupe" APPEND FROM public."user_settings" FILLTARGET`, plan.Append)
 		assert.Len(r.T(), plan.Swap, 5)
 		assert.Equal(r.T(),
 			fmt.Sprintf(`CREATE TEMPORARY TABLE "%s" DISTSTYLE ALL AS SELECT "_artie_dedupe_rn" FROM public."user_settings___artie_dedupe" WHERE "_artie_dedupe_rn" NOT IN (SELECT MAX("_artie_dedupe_rn") FROM public."user_settings___artie_dedupe" GROUP BY "user_id", "settings")`, stagingTableID.Table()),
