@@ -1,6 +1,7 @@
 package cryptography
 
 import (
+	"crypto/hmac"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
@@ -8,22 +9,29 @@ import (
 	"encoding/hex"
 	"encoding/pem"
 	"fmt"
+	"hash"
 	"math/big"
 	"os"
 
 	"github.com/artie-labs/transfer/lib/typing"
 )
 
-// HashValue - Hashes a value using SHA256
-func HashValue(value any) any {
+// HashValue hashes a value using SHA-256. If [salt] is non-empty, HMAC-SHA256 is used with the salt as the key.
+func HashValue(value any, salt string) any {
 	if value == nil {
 		return nil
 	}
 
-	hash := sha256.New()
+	var h hash.Hash
+	if salt == "" {
+		h = sha256.New()
+	} else {
+		h = hmac.New(sha256.New, []byte(salt))
+	}
+
 	// hash.Hash.Write never returns an error, so we can safely ignore the error from fmt.Fprint.
-	_, _ = fmt.Fprint(hash, value)
-	return hex.EncodeToString(hash.Sum(nil))
+	_, _ = fmt.Fprint(h, value)
+	return hex.EncodeToString(h.Sum(nil))
 }
 
 func LoadRSAKey(filePath string) (*rsa.PrivateKey, error) {
