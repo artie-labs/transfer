@@ -116,10 +116,10 @@ func (rd RedshiftDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableId
 	return parts
 }
 
-// DedupeStageRowIDColumn is the BIGINT IDENTITY column temporarily added to the
-// permanent _dedupe table. It's the only row-identifier available in Redshift
-// user tables, so it's how step 4's window picks winners and step 5's DELETE
-// finds losers — all without ever reading SUPER columns like `meta`.
+// DedupeStageRowIDColumn is the BIGINT IDENTITY helper column temporarily added
+// to the _dedupe table. Redshift user tables have no stable row identifier, so
+// this is how step 4's GROUP BY picks winners and step 5's DELETE targets
+// losers — all without ever reading SUPER columns like `meta`.
 const DedupeStageRowIDColumn = "_artie_dedupe_rn"
 
 // BuildDedupeQueriesFixed is a SUPER-safe replacement for BuildDedupeQueries.
@@ -127,22 +127,23 @@ const DedupeStageRowIDColumn = "_artie_dedupe_rn"
 // Background: rows whose SUPER value exceeds 64KB in its text form blow up
 // with `Invalid input (8001): String value exceeds the max size of 65535
 // bytes` on every query shape that routes those rows through PartiQL. In
-// production we've now seen this error trigger on:
+// production we've seen this error trigger on:
 //
-//   - `SELECT * ... QUALIFY ROW_NUMBER()` (window function)
+//   - `SELECT * ... QUALIFY ROW_NUMBER()` (window function over `SELECT *`)
 //   - `WHERE (pk) IN (SELECT pk FROM source GROUP BY pk HAVING ...)` (hash
-//     semi-join with subquery)
+//     semi-join whose outer scan includes SUPER)
 //   - `SELECT s.cols FROM source s INNER JOIN <DISTSTYLE ALL helper> d ON pk`
 //     (hash join even when the build side is replicated to every slice)
 //
-// The only shapes we've seen survive on wide-SUPER data are:
+// The shapes we've seen survive on wide-SUPER data are:
 //
-//	a. `INSERT INTO <t2> (cols) SELECT cols FROM <t1>` — plain full-table
-//	   copy, no filter / join / window.
-//	b. `CREATE ... AS SELECT non_super_cols FROM <t> QUALIFY ...` — Redshift's
-//	   columnar storage doesn't load `meta` when the projection doesn't
-//	   mention it, so no text conversion happens.
-//	c. `DELETE FROM <t> USING <helper> WHERE <t>.key = <helper>.key` — a
+//	a. `ALTER TABLE <t2> APPEND FROM <t1> FILLTARGET` — block-level move
+//	   between storage files. Data is never deserialized; SUPER blocks are
+//	   relinked from the source table to the target. FILLTARGET auto-
+//	   populates target-only columns (our rn IDENTITY) per their IDENTITY
+//	   clause. Per AWS docs, much faster than INSERT ... SELECT because no
+//	   row payload is rewritten.
+//	b. `DELETE FROM <t> USING <helper> WHERE <t>.key = <helper>.key` — a
 //	   DELETE never materializes the row payload; it only marks tombstones,
 //	   so SUPER stays on disk.
 //
@@ -151,42 +152,48 @@ const DedupeStageRowIDColumn = "_artie_dedupe_rn"
 //
 //  1. Idempotent cleanup of any leftover _dedupe table from a prior failure.
 //  2. Create the permanent _dedupe (LIKE source + BIGINT IDENTITY rn column).
-//     LIKE preserves distkey / sortkey / column encoding / NOT NULL.
-//  3. Full-table copy of source into _dedupe via shape (a). rn auto-populates.
-//  4. Into a DISTSTYLE ALL temp `_losers` table, project the rn values whose
-//     ROW_NUMBER() within each PK partition is > 1 — shape (b). Window sees
-//     only PKs + __artie_updated_at + rn; `meta` is never read.
+//     LIKE preserves distkey / sortkey / column encoding / NOT NULL, which
+//     is exactly what APPEND requires for like-named columns.
+//  3. Block-level move of source into _dedupe via shape (a). APPEND empties
+//     source as it fills _dedupe — rn is populated by FILLTARGET according
+//     to the IDENTITY clause on the target.
+//  4. Into a DISTSTYLE ALL temp `_losers` table, project the rn values that
+//     are NOT the MAX(rn) within their PK group — shape (b). Projection is
+//     rn only; the subquery aggregates rn grouped by PKs. `meta` is never
+//     read.
 //  5. DELETE loser rows from _dedupe via shape (c). rn match, no SUPER I/O.
 //  6. ALTER TABLE _dedupe DROP COLUMN rn — metadata-only in Redshift, near
 //     instant regardless of table size.
-//  7. DROP the original source.
+//  7. DROP the (now-empty-post-APPEND) original source table.
 //  8. Promote _dedupe to source's name via ALTER TABLE ... RENAME TO.
 //
 // `ExecContextStatements` runs all eight in a single transaction, so a failure
-// anywhere rolls back — source is preserved intact. Callers must hold an
-// exclusive-ish position (concurrent writers during the transaction will lose
-// their changes when _dedupe is promoted).
+// anywhere rolls back — source is preserved intact, including the APPEND in
+// step 3. Callers must hold an exclusive-ish position (concurrent writers
+// during the transaction will lose their changes when _dedupe is promoted).
+//
+// Why MAX(rn) GROUP BY pk instead of ROW_NUMBER() ordered by
+// __artie_updated_at? This function only runs during initial snapshot
+// dedupe. CDC streaming starts *after* snapshot completes successfully, so
+// any duplicates present at dedupe time represent either (a) the same
+// snapshot row emitted twice by the source connector, or (b) rows that the
+// subsequent CDC stream will overwrite on its first event for that PK.
+// Either way, which duplicate survives is immaterial — MAX(rn) is simpler
+// and avoids needing the __artie_updated_at column in the query.
 //
 // Trade-offs vs. the legacy in-place DELETE/INSERT:
 //
-//   - Peak storage is ~2x the source table during the dedupe.
-//   - GRANTs, views, and FKs that reference the original source table survive
-//     the RENAME (they attach by OID, not name), but any object created
-//     against the _dedupe name during the window is visible only until the
-//     rename.
-//   - The stagingTableID argument is repurposed as the _losers temp table —
-//     the legacy SELECT-style staging is no longer needed.
-//
-// Ordering is DESC on __artie_updated_at (and the IDENTITY rn tiebreaker) so
-// that ROW_NUMBER() = 1 is the newest event per PK and everything with
-// ROW_NUMBER() > 1 is a loser. This matches CDC semantics: the latest event
-// represents the current row state and wins. The legacy `= 2` / ASC quirk
-// kept the newer row by coincidence for the common 2-duplicate case; here we
-// make that intent explicit.
-func (rd RedshiftDialect) BuildDedupeQueriesFixed(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool, columns []string) []string {
+//   - Peak storage temporarily increases during the APPEND (per AWS docs,
+//     reclaimed by the next VACUUM), but is far less than the 2x of a
+//     plain INSERT ... SELECT copy because APPEND moves blocks.
+//   - GRANTs, views, and FKs that reference the original source table do
+//     NOT survive the DROP + RENAME (they bind by OID, and the OID
+//     changes). If any such objects exist, they must be re-created by the
+//     caller after dedupe — same caveat as the previous implementation.
+//   - The stagingTableID argument is repurposed as the _losers temp table.
+func (rd RedshiftDialect) BuildDedupeQueriesFixed(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string) []string {
 	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, rd)
 	pkTuple := strings.Join(primaryKeysEscaped, ", ")
-	colList := strings.Join(sql.QuoteIdentifiers(columns, rd), ", ")
 	rnCol := rd.QuoteIdentifier(DedupeStageRowIDColumn)
 
 	dedupeNewID := tableID.WithTable(fmt.Sprintf("%s_%s_dedupe", tableID.Table(), constants.ArtiePrefix))
@@ -198,8 +205,8 @@ func (rd RedshiftDialect) BuildDedupeQueriesFixed(tableID, stagingTableID sql.Ta
 
 	// 2. Permanent _dedupe that mirrors source plus a BIGINT IDENTITY
 	//    tiebreaker. CREATE TABLE LIKE preserves distkey / sortkey / encoding
-	//    / NOT NULL so the swapped-in table matches the original's physical
-	//    layout.
+	//    / NOT NULL so the APPEND in step 3 sees matching column attributes
+	//    and so the RENAMEd table matches the original's physical layout.
 	createDedupeNew := fmt.Sprintf(
 		"CREATE TABLE %s (LIKE %s, %s BIGINT IDENTITY(1,1))",
 		dedupeNewID.FullyQualifiedName(),
@@ -207,42 +214,32 @@ func (rd RedshiftDialect) BuildDedupeQueriesFixed(tableID, stagingTableID sql.Ta
 		rnCol,
 	)
 
-	// 3. Full-table copy. Plain INSERT ... SELECT — the ONE query shape
-	//    Redshift handles safely for SUPER values larger than 64KB. rn
-	//    auto-populates from the IDENTITY.
-	copyAll := fmt.Sprintf(
-		"INSERT INTO %s (%s) SELECT %s FROM %s",
+	// 3. Block-level move of every source row into _dedupe. APPEND does not
+	//    read row values; it relinks storage blocks, so SUPER is never
+	//    deserialized. FILLTARGET fills the rn column (present only in the
+	//    target) per its IDENTITY clause. After this statement the source
+	//    table is empty.
+	appendData := fmt.Sprintf(
+		"ALTER TABLE %s APPEND FROM %s FILLTARGET",
 		dedupeNewID.FullyQualifiedName(),
-		colList,
-		colList,
 		tableID.FullyQualifiedName(),
 	)
 
-	// 4. Identify the rn of every non-winner. Projection is rn only; window
-	//    references PKs + __artie_updated_at + rn. Columnar storage means
+	// 4. Identify the rn of every non-winner. Projection is rn only; the
+	//    subquery aggregates rn grouped by PKs. Columnar storage means
 	//    `meta` is never loaded, so no text serialization happens.
 	//    DISTSTYLE ALL keeps _losers colocated with _dedupe on every slice
-	//    for the step-5 DELETE.
-	// DESC so ROW_NUMBER() = 1 is the newest event per PK (CDC wants the
-	// latest write to win). PK direction inside the PARTITION BY is a no-op
-	// but kept DESC for visual consistency with the intent.
-	var orderCols []string
-	for _, pk := range primaryKeysEscaped {
-		orderCols = append(orderCols, fmt.Sprintf("%s DESC", pk))
-	}
-	if includeArtieUpdatedAt {
-		orderCols = append(orderCols, fmt.Sprintf("%s DESC", rd.QuoteIdentifier(constants.UpdateColumnMarker)))
-	}
-	orderCols = append(orderCols, fmt.Sprintf("%s DESC", rnCol))
-
-	// `WHERE true` is required before QUALIFY for Redshift.
+	//    for the step-5 DELETE. rn is NOT NULL (IDENTITY columns default to
+	//    NOT NULL), so NOT IN is free of the usual null-pitfall.
 	findLosers := fmt.Sprintf(
-		"CREATE TEMPORARY TABLE %s DISTSTYLE ALL AS SELECT %s FROM %s WHERE true QUALIFY ROW_NUMBER() OVER (PARTITION BY %s ORDER BY %s) > 1",
+		"CREATE TEMPORARY TABLE %s DISTSTYLE ALL AS SELECT %s FROM %s WHERE %s NOT IN (SELECT MAX(%s) FROM %s GROUP BY %s)",
 		losersID.EscapedTable(),
 		rnCol,
 		dedupeNewID.FullyQualifiedName(),
+		rnCol,
+		rnCol,
+		dedupeNewID.FullyQualifiedName(),
 		pkTuple,
-		strings.Join(orderCols, ", "),
 	)
 
 	// 5. Delete every loser row from _dedupe. DELETE never materializes the
@@ -266,14 +263,15 @@ func (rd RedshiftDialect) BuildDedupeQueriesFixed(tableID, stagingTableID sql.Ta
 		rnCol,
 	)
 
-	// 7 + 8. Atomic swap. DROP the old source then rename _dedupe into place.
+	// 7 + 8. Atomic swap. DROP the (now-empty) original then rename _dedupe
+	// into place.
 	dropSource := fmt.Sprintf("DROP TABLE %s", tableID.FullyQualifiedName())
 	rename := fmt.Sprintf("ALTER TABLE %s RENAME TO %s", dedupeNewID.FullyQualifiedName(), tableID.EscapedTable())
 
 	return []string{
 		dropPrev,
 		createDedupeNew,
-		copyAll,
+		appendData,
 		findLosers,
 		deleteLosers,
 		dropCol,

@@ -126,25 +126,12 @@ func (s *Store) SweepTemporaryTables(ctx context.Context) error {
 	return shared.Sweep(ctx, s, s.config.TopicConfigs(), s.dialect().BuildSweepQuery)
 }
 
-func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kafkalib.DatabaseAndSchemaPair, primaryKeys []string, includeArtieUpdatedAt bool) error {
+func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kafkalib.DatabaseAndSchemaPair, primaryKeys []string, _ bool) error {
 	stagingTableID := shared.BuildStagingTableID(s, pair, tableID)
 
-	tableCfg, err := s.GetTableConfig(ctx, tableID, false)
-	if err != nil {
-		return fmt.Errorf("failed to get table config for %s: %w", tableID.FullyQualifiedName(), err)
-	}
-
-	cols := tableCfg.GetColumns()
-	if len(cols) == 0 {
-		return fmt.Errorf("no columns found for %s", tableID.FullyQualifiedName())
-	}
-
-	columnNames := make([]string, 0, len(cols))
-	for _, col := range cols {
-		columnNames = append(columnNames, col.Name())
-	}
-
-	dedupeQueries := s.dialect().BuildDedupeQueriesFixed(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt, columnNames)
+	// ALTER TABLE APPEND inside `BuildDedupeQueriesFixed` matches columns by
+	// name automatically, so we no longer need to enumerate columns here.
+	dedupeQueries := s.dialect().BuildDedupeQueriesFixed(tableID, stagingTableID, primaryKeys)
 
 	if _, err := destination.ExecContextStatements(ctx, s, dedupeQueries); err != nil {
 		return fmt.Errorf("failed to dedupe: %w", err)
