@@ -141,7 +141,7 @@ func buildPrimaryKeys(tc kafkalib.TopicConfig, pkMap map[string]any, reservedCol
 func transformData(data map[string]any, tc kafkalib.TopicConfig, encryptionKey []byte) (map[string]any, error) {
 	for _, columnToHash := range tc.ColumnsToHash {
 		if value, ok := data[columnToHash]; ok {
-			data[columnToHash] = cryptography.HashValue(value)
+			data[columnToHash] = cryptography.HashValue(value, tc.ColumnsToHashSalt)
 		}
 	}
 
