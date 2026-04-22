@@ -191,6 +191,9 @@ type TopicConfig struct {
 	BigQueryPartitionSettings *partition.BigQuerySettings `yaml:"bigQueryPartitionSettings,omitempty"`
 	AdditionalMergePredicates []partition.MergePredicates `yaml:"additionalMergePredicates,omitempty"`
 	ColumnsToHash             []string                    `yaml:"columnsToHash,omitempty"`
+	// [ColumnsToHashSalt] - Optional customer-provided salt applied to all columns listed in [ColumnsToHash].
+	// When set, columns are hashed with HMAC-SHA256 using this salt as the key. When empty, plain SHA-256 is used.
+	ColumnsToHashSalt string `yaml:"columnsToHashSalt,omitempty"`
 
 	// [ColumnsToInclude] can be used to specify the exact columns that should be written to the destination.
 	ColumnsToInclude []string `yaml:"columnsToInclude,omitempty"`
