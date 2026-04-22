@@ -127,14 +127,34 @@ func (s *Store) SweepTemporaryTables(ctx context.Context) error {
 }
 
 func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kafkalib.DatabaseAndSchemaPair, primaryKeys []string, _ bool) error {
+	// `includeArtieUpdatedAt` is unused: dedupe only runs during snapshot, and
+	// per-PK winner selection via MAX(rn) does not need the timestamp. See the
+	// comment above `BuildDedupeQueriesFixed` for the full rationale.
 	stagingTableID := shared.BuildStagingTableID(s, pair, tableID)
+	plan := s.dialect().BuildDedupeQueriesFixed(tableID, stagingTableID, primaryKeys)
 
-	// ALTER TABLE APPEND inside `BuildDedupeQueriesFixed` matches columns by
-	// name automatically, so we no longer need to enumerate columns here.
-	dedupeQueries := s.dialect().BuildDedupeQueriesFixed(tableID, stagingTableID, primaryKeys)
+	// The plan has three phases that MUST be dispatched as three separate
+	// `ExecContextStatements` calls because Redshift forbids ALTER TABLE APPEND
+	// inside a transaction block. ExecContextStatements wraps 2+-statement
+	// slices in BEGIN/END automatically and runs singletons bare, which lines
+	// up with what we need: Prep bare (single CREATE), Append bare (auto-
+	// commits), Swap in a txn.
+	//
+	// If a previous Dedupe failed after Prep's CREATE, _dedupe still exists
+	// and Prep will fail fast with "already exists" — this is deliberate, as
+	// blindly dropping _dedupe could destroy the only copy of the data in the
+	// post-APPEND failure state. See the BuildDedupeQueriesFixed comment for
+	// recovery procedures.
+	if _, err := destination.ExecContextStatements(ctx, s, plan.Prep); err != nil {
+		return fmt.Errorf("failed to prep dedupe: %w", err)
+	}
 
-	if _, err := destination.ExecContextStatements(ctx, s, dedupeQueries); err != nil {
-		return fmt.Errorf("failed to dedupe: %w", err)
+	if _, err := s.ExecContext(ctx, plan.Append); err != nil {
+		return fmt.Errorf("failed to ALTER TABLE APPEND into dedupe: %w", err)
+	}
+
+	if _, err := destination.ExecContextStatements(ctx, s, plan.Swap); err != nil {
+		return fmt.Errorf("failed to swap dedupe into place: %w", err)
 	}
 
 	return nil

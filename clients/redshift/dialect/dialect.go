@@ -118,9 +118,30 @@ func (rd RedshiftDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableId
 
 // DedupeStageRowIDColumn is the BIGINT IDENTITY helper column temporarily added
 // to the _dedupe table. Redshift user tables have no stable row identifier, so
-// this is how step 4's GROUP BY picks winners and step 5's DELETE targets
+// this is how step 3's GROUP BY picks winners and step 4's DELETE targets
 // losers — all without ever reading SUPER columns like `meta`.
 const DedupeStageRowIDColumn = "_artie_dedupe_rn"
+
+// RedshiftDedupePlan is the three-phase output of [RedshiftDialect.BuildDedupeQueriesFixed].
+// See that function's comment for the full rationale; the TL;DR is that Redshift
+// forbids ALTER TABLE APPEND inside a transaction block, so the plan is split
+// into three groups that the caller must dispatch separately:
+//
+//   - Prep (single statement): CREATE the empty _dedupe table. Will fail fast
+//     if _dedupe already exists — that's deliberate, see the function comment.
+//   - Append (single statement, auto-commits, NOT rollback-able): moves data
+//     blocks from source into _dedupe via ALTER TABLE APPEND FILLTARGET.
+//   - Swap (transactional, rollback-safe): dedupe within _dedupe, DROP source,
+//     RENAME _dedupe into place.
+//
+// Passing each field to [ExecContextStatements] in order does the right thing,
+// because ExecContextStatements wraps 2+-statement slices in BEGIN/END and runs
+// a single statement bare.
+type RedshiftDedupePlan struct {
+	Prep   []string
+	Append string
+	Swap   []string
+}
 
 // BuildDedupeQueriesFixed is a SUPER-safe replacement for BuildDedupeQueries.
 //
@@ -135,42 +156,67 @@ const DedupeStageRowIDColumn = "_artie_dedupe_rn"
 //   - `SELECT s.cols FROM source s INNER JOIN <DISTSTYLE ALL helper> d ON pk`
 //     (hash join even when the build side is replicated to every slice)
 //
-// The shapes we've seen survive on wide-SUPER data are:
+// The query shapes we've confirmed survive on wide-SUPER data are:
 //
-//	a. `ALTER TABLE <t2> APPEND FROM <t1> FILLTARGET` — block-level move
-//	   between storage files. Data is never deserialized; SUPER blocks are
-//	   relinked from the source table to the target. FILLTARGET auto-
-//	   populates target-only columns (our rn IDENTITY) per their IDENTITY
-//	   clause. Per AWS docs, much faster than INSERT ... SELECT because no
-//	   row payload is rewritten.
-//	b. `DELETE FROM <t> USING <helper> WHERE <t>.key = <helper>.key` — a
+//	a. `ALTER TABLE <t2> APPEND FROM <t1> FILLTARGET` — moves data blocks at
+//	   the storage layer without ever re-reading row payloads. SUPER is
+//	   never serialized. This is also dramatically faster than INSERT ...
+//	   SELECT and uses ~0 extra peak storage (blocks move, they aren't
+//	   duplicated).
+//	b. `CREATE ... AS SELECT non_super_cols FROM <t> ...` — Redshift's
+//	   columnar storage doesn't load `meta` when the projection doesn't
+//	   mention it, so no text conversion happens.
+//	c. `DELETE FROM <t> USING <helper> WHERE <t>.key = <helper>.key` — a
 //	   DELETE never materializes the row payload; it only marks tombstones,
 //	   so SUPER stays on disk.
 //
-// This function's 8-statement plan is built exclusively from those three
-// shapes, plus DDL:
+// The plan assembled from those three shapes plus DDL:
 //
-//  1. Idempotent cleanup of any leftover _dedupe table from a prior failure.
-//  2. Create the permanent _dedupe (LIKE source + BIGINT IDENTITY rn column).
-//     LIKE preserves distkey / sortkey / column encoding / NOT NULL, which
-//     is exactly what APPEND requires for like-named columns.
-//  3. Block-level move of source into _dedupe via shape (a). APPEND empties
-//     source as it fills _dedupe — rn is populated by FILLTARGET according
-//     to the IDENTITY clause on the target.
-//  4. Into a DISTSTYLE ALL temp `_losers` table, project the rn values that
+//  1. Create the permanent _dedupe (LIKE source INCLUDING DEFAULTS + BIGINT
+//     IDENTITY rn column). LIKE preserves distkey / sortkey / column encoding
+//     / NOT NULL, and INCLUDING DEFAULTS carries over column DEFAULT
+//     expressions so the swapped-in table is behaviourally identical to the
+//     original for future INSERTs. We deliberately do NOT `DROP TABLE IF
+//     EXISTS` first — see "Failure modes" below.
+//  2. Move data from source into _dedupe via shape (a). FILLTARGET lets
+//     Redshift populate the target-only rn column via its IDENTITY clause
+//     (seed=1, step=1). After this, source is empty and _dedupe has every row.
+//  3. Into a DISTSTYLE ALL temp `_losers` table, project the rn values that
 //     are NOT the MAX(rn) within their PK group — shape (b). Projection is
 //     rn only; the subquery aggregates rn grouped by PKs. `meta` is never
 //     read.
-//  5. DELETE loser rows from _dedupe via shape (c). rn match, no SUPER I/O.
-//  6. ALTER TABLE _dedupe DROP COLUMN rn — metadata-only in Redshift, near
+//  4. DELETE loser rows from _dedupe via shape (c). rn match, no SUPER I/O.
+//  5. ALTER TABLE _dedupe DROP COLUMN rn — metadata-only in Redshift, near
 //     instant regardless of table size.
-//  7. DROP the (now-empty-post-APPEND) original source table.
-//  8. Promote _dedupe to source's name via ALTER TABLE ... RENAME TO.
+//  6. DROP the original (now-empty) source.
+//  7. Promote _dedupe to source's name via ALTER TABLE ... RENAME TO.
 //
-// `ExecContextStatements` runs all eight in a single transaction, so a failure
-// anywhere rolls back — source is preserved intact, including the APPEND in
-// step 3. Callers must hold an exclusive-ish position (concurrent writers
-// during the transaction will lose their changes when _dedupe is promoted).
+// Why three phases instead of one? AWS: "An ALTER TABLE APPEND command
+// automatically commits immediately upon completion of the operation. It can't
+// be rolled back. You can't run ALTER TABLE APPEND within a transaction block
+// (BEGIN ... END)." So step 2 MUST be issued outside any BEGIN/END. Steps 3-7
+// are grouped into one transaction so the final rename is atomic with the
+// dedupe work (rollback leaves _dedupe intact and source empty but recoverable
+// by hand).
+//
+// Failure modes & recovery:
+//
+//   - Fails in Prep (CREATE errored): source untouched. Safe to retry — the
+//     re-CREATE will succeed if _dedupe wasn't actually created, or will fail
+//     fast with "already exists" if it was (operator intervention required).
+//   - Fails at APPEND itself: per AWS docs APPEND is all-or-nothing on failure,
+//     so no blocks moved. source intact, _dedupe exists but empty. Retry will
+//     fail fast at Prep's CREATE ("already exists"); operator must DROP the
+//     empty _dedupe then re-run.
+//   - Fails anywhere in Swap: the Swap transaction rolls back. _dedupe still
+//     holds every source row; source is empty. Retry will fail at Prep's
+//     CREATE; operator must either re-run just the Swap SQL by hand, or DROP
+//     the empty source and RENAME _dedupe into place manually.
+//
+// The fail-fast-on-existing-_dedupe behavior is intentional: blindly dropping
+// a pre-existing _dedupe is unsafe because in the post-APPEND failure state
+// that table is the ONLY copy of the data. We'd rather refuse to proceed and
+// surface the state for human inspection than risk silent data loss.
 //
 // Why MAX(rn) GROUP BY pk instead of ROW_NUMBER() ordered by
 // __artie_updated_at? This function only runs during initial snapshot
@@ -181,55 +227,50 @@ const DedupeStageRowIDColumn = "_artie_dedupe_rn"
 // Either way, which duplicate survives is immaterial — MAX(rn) is simpler
 // and avoids needing the __artie_updated_at column in the query.
 //
-// Trade-offs vs. the legacy in-place DELETE/INSERT:
+// Other trade-offs vs. the legacy in-place DELETE/INSERT:
 //
-//   - Peak storage temporarily increases during the APPEND (per AWS docs,
-//     reclaimed by the next VACUUM), but is far less than the 2x of a
-//     plain INSERT ... SELECT copy because APPEND moves blocks.
 //   - GRANTs, views, and FKs that reference the original source table do
 //     NOT survive the DROP + RENAME (they bind by OID, and the OID
 //     changes). If any such objects exist, they must be re-created by the
-//     caller after dedupe — same caveat as the previous implementation.
-//   - The stagingTableID argument is repurposed as the _losers temp table.
-func (rd RedshiftDialect) BuildDedupeQueriesFixed(tableID, stagingTableID sql.TableIdentifier, primaryKeys []string) []string {
+//     caller after dedupe.
+func (rd RedshiftDialect) BuildDedupeQueriesFixed(tableID, losersID sql.TableIdentifier, primaryKeys []string) RedshiftDedupePlan {
 	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, rd)
 	pkTuple := strings.Join(primaryKeysEscaped, ", ")
 	rnCol := rd.QuoteIdentifier(DedupeStageRowIDColumn)
 
 	dedupeNewID := tableID.WithTable(fmt.Sprintf("%s_%s_dedupe", tableID.Table(), constants.ArtiePrefix))
-	losersID := stagingTableID
 
-	// 1. Idempotent cleanup in case a prior dedupe died between CREATE and
-	//    RENAME. Safe no-op on the happy path.
-	dropPrev := fmt.Sprintf("DROP TABLE IF EXISTS %s", dedupeNewID.FullyQualifiedName())
-
-	// 2. Permanent _dedupe that mirrors source plus a BIGINT IDENTITY
+	// 1. Permanent _dedupe that mirrors source plus a BIGINT IDENTITY
 	//    tiebreaker. CREATE TABLE LIKE preserves distkey / sortkey / encoding
-	//    / NOT NULL so the APPEND in step 3 sees matching column attributes
-	//    and so the RENAMEd table matches the original's physical layout.
+	//    / NOT NULL; INCLUDING DEFAULTS carries over column DEFAULT expressions
+	//    too, so the swapped-in table is behaviourally identical to the
+	//    original for future INSERTs. No `IF NOT EXISTS` on purpose: if a
+	//    prior dedupe left _dedupe behind, we want this to error out rather
+	//    than silently proceed (see the function comment for why).
 	createDedupeNew := fmt.Sprintf(
-		"CREATE TABLE %s (LIKE %s, %s BIGINT IDENTITY(1,1))",
+		"CREATE TABLE %s (LIKE %s INCLUDING DEFAULTS, %s BIGINT IDENTITY(1,1))",
 		dedupeNewID.FullyQualifiedName(),
 		tableID.FullyQualifiedName(),
 		rnCol,
 	)
 
-	// 3. Block-level move of every source row into _dedupe. APPEND does not
-	//    read row values; it relinks storage blocks, so SUPER is never
-	//    deserialized. FILLTARGET fills the rn column (present only in the
-	//    target) per its IDENTITY clause. After this statement the source
-	//    table is empty.
+	// 2. Block-level move. ALTER TABLE APPEND re-points source's storage
+	//    blocks into _dedupe without rewriting rows, so SUPER is never
+	//    serialized. FILLTARGET tells Redshift to populate target-only
+	//    columns (our IDENTITY rn) per their DEFAULT/IDENTITY rules.
+	//    MUST run outside BEGIN/END — caller handles this via a dedicated
+	//    single-statement ExecContextStatements call.
 	appendData := fmt.Sprintf(
 		"ALTER TABLE %s APPEND FROM %s FILLTARGET",
 		dedupeNewID.FullyQualifiedName(),
 		tableID.FullyQualifiedName(),
 	)
 
-	// 4. Identify the rn of every non-winner. Projection is rn only; the
+	// 3. Identify the rn of every non-winner. Projection is rn only; the
 	//    subquery aggregates rn grouped by PKs. Columnar storage means
 	//    `meta` is never loaded, so no text serialization happens.
 	//    DISTSTYLE ALL keeps _losers colocated with _dedupe on every slice
-	//    for the step-5 DELETE. rn is NOT NULL (IDENTITY columns default to
+	//    for the step-4 DELETE. rn is NOT NULL (IDENTITY columns default to
 	//    NOT NULL), so NOT IN is free of the usual null-pitfall.
 	findLosers := fmt.Sprintf(
 		"CREATE TEMPORARY TABLE %s DISTSTYLE ALL AS SELECT %s FROM %s WHERE %s NOT IN (SELECT MAX(%s) FROM %s GROUP BY %s)",
@@ -242,7 +283,7 @@ func (rd RedshiftDialect) BuildDedupeQueriesFixed(tableID, stagingTableID sql.Ta
 		pkTuple,
 	)
 
-	// 5. Delete every loser row from _dedupe. DELETE never materializes the
+	// 4. Delete every loser row from _dedupe. DELETE never materializes the
 	//    row payload; it only marks tombstones. SUPER stays on disk. Match
 	//    is on the BIGINT rn alone, so the join is cheap.
 	deleteLosers := fmt.Sprintf(
@@ -254,7 +295,7 @@ func (rd RedshiftDialect) BuildDedupeQueriesFixed(tableID, stagingTableID sql.Ta
 		rnCol,
 	)
 
-	// 6. Drop the IDENTITY helper column. Redshift implements DROP COLUMN as
+	// 5. Drop the IDENTITY helper column. Redshift implements DROP COLUMN as
 	//    a metadata-only catalog update (space is reclaimed by the next
 	//    VACUUM), so this is effectively instant regardless of table size.
 	dropCol := fmt.Sprintf(
@@ -263,20 +304,16 @@ func (rd RedshiftDialect) BuildDedupeQueriesFixed(tableID, stagingTableID sql.Ta
 		rnCol,
 	)
 
-	// 7 + 8. Atomic swap. DROP the (now-empty) original then rename _dedupe
-	// into place.
+	// 6 + 7. Swap. DROP the (already-empty) source then rename _dedupe into
+	//    place. Both inside the Swap transaction, so rollback on failure
+	//    leaves _dedupe standing with the data still inside.
 	dropSource := fmt.Sprintf("DROP TABLE %s", tableID.FullyQualifiedName())
 	rename := fmt.Sprintf("ALTER TABLE %s RENAME TO %s", dedupeNewID.FullyQualifiedName(), tableID.EscapedTable())
 
-	return []string{
-		dropPrev,
-		createDedupeNew,
-		appendData,
-		findLosers,
-		deleteLosers,
-		dropCol,
-		dropSource,
-		rename,
+	return RedshiftDedupePlan{
+		Prep:   []string{createDedupeNew},
+		Append: appendData,
+		Swap:   []string{findLosers, deleteLosers, dropCol, dropSource, rename},
 	}
 }
 
