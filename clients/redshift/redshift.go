@@ -127,7 +127,6 @@ func (s *Store) SweepTemporaryTables(ctx context.Context) error {
 }
 
 func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kafkalib.DatabaseAndSchemaPair, primaryKeys []string, includeArtieUpdatedAt bool) error {
-
 	if !s.config.SharedDestinationSettings.RedshiftAlterTableAppendDedupe {
 		stagingTableID := shared.BuildStagingTableID(s, pair, tableID)
 		dedupeQueries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt)
