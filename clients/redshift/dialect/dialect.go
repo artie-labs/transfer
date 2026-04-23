@@ -200,13 +200,13 @@ type RedshiftDedupePlan struct {
 //     so GRANTs, views, and FKs that reference it still bind.
 //  6. DROP the (now-empty) _dedupe.
 //
-// Why five phases instead of one? 
+// Why five phases instead of one?
 // https://docs.aws.amazon.com/redshift/latest/dg/r_ALTER_TABLE_APPEND.html
-// AWS: "An ALTER TABLE APPEND command automatically commits immediately upon 
-// completion of the operation. It can't be rolled back. You can't run 
-// ALTER TABLE APPEND within a transaction block (BEGIN ... END)." 
+// AWS: "An ALTER TABLE APPEND command automatically commits immediately upon
+// completion of the operation. It can't be rolled back. You can't run
+// ALTER TABLE APPEND within a transaction block (BEGIN ... END)."
 // Steps 2 and 5 (both APPENDs) MUST therefore be issued outside any BEGIN/END.
-// Steps 3-4 are grouped into one transaction so the _losers temp and the 
+// Steps 3-4 are grouped into one transaction so the _losers temp and the
 // DELETE either both happen or neither does.
 //
 // Failure modes & recovery:
@@ -268,9 +268,9 @@ func (rd RedshiftDialect) BuildDedupeQueriesFixed(tableID, losersID sql.TableIde
 
 	// 3. Identify the rn of every non-winner. Projection is rn only; the
 	//    subquery aggregates rn grouped by PKs. Columnar storage means that
-	//    non-PK SUPER columns are never loaded. DISTSTYLE ALL keeps _losers 
+	//    non-PK SUPER columns are never loaded. DISTSTYLE ALL keeps _losers
 	//    colocated with _dedupe on every slice for the DELETE.
-	//    rn is NOT NULL (IDENTITY columns are implicitly NOT NULL), so NOT IN 
+	//    rn is NOT NULL (IDENTITY columns are implicitly NOT NULL), so NOT IN
 	//    is free of the usual null-pitfall.
 	findLosers := fmt.Sprintf(
 		"CREATE TEMPORARY TABLE %s DISTSTYLE ALL AS SELECT %s FROM %s WHERE %s NOT IN (SELECT MAX(%s) FROM %s GROUP BY %s)",
