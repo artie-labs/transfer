@@ -71,3 +71,52 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeQueries() {
 		assert.Equal(r.T(), fmt.Sprintf(`INSERT INTO public."user_settings" SELECT * FROM "%s"`, stagingTableID.Table()), parts[2])
 	}
 }
+
+func (r *RedshiftTestSuite) Test_GenerateDedupeQueriesAlterTableAppend() {
+	{
+		// Single PK.
+		tableID := dialect.NewTableIdentifier("public", "customers")
+		losersTableID := shared.TempTableID(r.store, tableID)
+
+		plan := dialect.RedshiftDialect{}.BuildDedupeQueriesAlterTableAppend(tableID, losersTableID, []string{"id"})
+		// Prep: single CREATE statement. Intentionally no DROP IF EXISTS —
+		// leftover _dedupe must surface rather than get silently clobbered.
+		assert.Len(r.T(), plan.Prep, 1)
+		assert.Equal(r.T(), `CREATE TABLE public."customers___artie_dedupe" (LIKE public."customers" INCLUDING DEFAULTS, "_artie_dedupe_rn" BIGINT IDENTITY(1,1))`, plan.Prep[0])
+		// AppendIn: source → _dedupe, auto-commit (ALTER TABLE APPEND cannot run in a txn).
+		assert.Equal(r.T(), `ALTER TABLE public."customers___artie_dedupe" APPEND FROM public."customers" FILLTARGET`, plan.AppendIn)
+		// Dedupe: 2 statements (txn).
+		assert.Len(r.T(), plan.Dedupe, 2)
+		assert.Equal(r.T(),
+			fmt.Sprintf(`CREATE TEMPORARY TABLE "%s" DISTSTYLE ALL AS SELECT "_artie_dedupe_rn" FROM public."customers___artie_dedupe" WHERE "_artie_dedupe_rn" NOT IN (SELECT MAX("_artie_dedupe_rn") FROM public."customers___artie_dedupe" GROUP BY "id")`, losersTableID.Table()),
+			plan.Dedupe[0])
+		assert.Equal(r.T(),
+			fmt.Sprintf(`DELETE FROM public."customers___artie_dedupe" USING "%s" l WHERE "customers___artie_dedupe"."_artie_dedupe_rn" = l."_artie_dedupe_rn"`, losersTableID.Table()),
+			plan.Dedupe[1])
+		// AppendOut: _dedupe → source, dropping rn via IGNOREEXTRA, auto-commit.
+		assert.Equal(r.T(), `ALTER TABLE public."customers" APPEND FROM public."customers___artie_dedupe" IGNOREEXTRA`, plan.AppendOut)
+		// Cleanup: drop the now-empty _dedupe.
+		assert.Len(r.T(), plan.Cleanup, 1)
+		assert.Equal(r.T(), `DROP TABLE public."customers___artie_dedupe"`, plan.Cleanup[0])
+	}
+	{
+		// Composite PK.
+		tableID := dialect.NewTableIdentifier("public", "user_settings")
+		losersTableID := shared.TempTableID(r.store, tableID)
+
+		plan := dialect.RedshiftDialect{}.BuildDedupeQueriesAlterTableAppend(tableID, losersTableID, []string{"user_id", "settings"})
+		assert.Len(r.T(), plan.Prep, 1)
+		assert.Equal(r.T(), `CREATE TABLE public."user_settings___artie_dedupe" (LIKE public."user_settings" INCLUDING DEFAULTS, "_artie_dedupe_rn" BIGINT IDENTITY(1,1))`, plan.Prep[0])
+		assert.Equal(r.T(), `ALTER TABLE public."user_settings___artie_dedupe" APPEND FROM public."user_settings" FILLTARGET`, plan.AppendIn)
+		assert.Len(r.T(), plan.Dedupe, 2)
+		assert.Equal(r.T(),
+			fmt.Sprintf(`CREATE TEMPORARY TABLE "%s" DISTSTYLE ALL AS SELECT "_artie_dedupe_rn" FROM public."user_settings___artie_dedupe" WHERE "_artie_dedupe_rn" NOT IN (SELECT MAX("_artie_dedupe_rn") FROM public."user_settings___artie_dedupe" GROUP BY "user_id", "settings")`, losersTableID.Table()),
+			plan.Dedupe[0])
+		assert.Equal(r.T(),
+			fmt.Sprintf(`DELETE FROM public."user_settings___artie_dedupe" USING "%s" l WHERE "user_settings___artie_dedupe"."_artie_dedupe_rn" = l."_artie_dedupe_rn"`, losersTableID.Table()),
+			plan.Dedupe[1])
+		assert.Equal(r.T(), `ALTER TABLE public."user_settings" APPEND FROM public."user_settings___artie_dedupe" IGNOREEXTRA`, plan.AppendOut)
+		assert.Len(r.T(), plan.Cleanup, 1)
+		assert.Equal(r.T(), `DROP TABLE public."user_settings___artie_dedupe"`, plan.Cleanup[0])
+	}
+}

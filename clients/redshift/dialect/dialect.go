@@ -116,6 +116,153 @@ func (rd RedshiftDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableId
 	return parts
 }
 
+// DedupeStageRowIDColumn is the BIGINT IDENTITY helper column temporarily added
+// to the _dedupe table so we can pick winners (MAX(rn) per PK) and DELETE
+// losers without ever reading SUPER columns.
+const DedupeStageRowIDColumn = "_artie_dedupe_rn"
+
+// RedshiftDedupePlan is the output of [RedshiftDialect.BuildDedupeQueriesAlterTableAppend].
+//
+// ALTER TABLE APPEND cannot run inside a transaction block, so the plan is
+// split into five groups the caller dispatches separately. Slices go through
+// [destination.ExecContextStatements] (which wraps 2+ statements in BEGIN/END);
+// the two string fields go through a bare ExecContext so APPEND auto-commits.
+//
+//   - Prep: CREATE _dedupe. Fails fast if _dedupe already exists — deliberate.
+//   - AppendIn: source → _dedupe via APPEND ... FILLTARGET (auto-commit).
+//   - Dedupe (txn): build _losers temp + DELETE dupes from _dedupe.
+//   - AppendOut: _dedupe → source via APPEND ... IGNOREEXTRA, which drops the
+//     rn column along the way (auto-commit).
+//   - Cleanup: DROP the now-empty _dedupe.
+type RedshiftDedupePlan struct {
+	Prep      []string
+	AppendIn  string
+	Dedupe    []string
+	AppendOut string
+	Cleanup   []string
+}
+
+// BuildDedupeQueriesAlterTableAppend is a SUPER-safe replacement for BuildDedupeQueries.
+//
+// Rows whose SUPER value exceeds 64KB in text form blow up with `Invalid input
+// (8001): String value exceeds the max size of 65535 bytes` on any query shape
+// that routes them through PartiQL — including `SELECT * ... QUALIFY
+// ROW_NUMBER()`, IN-subquery semi-joins, and hash joins even against a
+// DISTSTYLE ALL helper. The shapes that survive on wide-SUPER data are:
+//
+//	a. ALTER TABLE APPEND [FILLTARGET | IGNOREEXTRA] — storage-level block
+//	   move, never re-reads row payloads. Also ~free on peak storage.
+//	b. CREATE ... AS SELECT non_super_cols — columnar storage doesn't load
+//	   columns absent from the projection.
+//	c. DELETE ... USING — marks tombstones; never materializes rows.
+//
+// The plan, built from those shapes plus DDL:
+//
+//  1. CREATE _dedupe (LIKE source INCLUDING DEFAULTS, rn BIGINT IDENTITY). LIKE
+//     preserves distkey / sortkey / encoding / NOT NULL; INCLUDING DEFAULTS
+//     carries over column DEFAULT expressions.
+//  2. source → _dedupe via (a) FILLTARGET, which populates rn from its
+//     IDENTITY clause.
+//  3. Into a DISTSTYLE ALL temp _losers, project the rn values that are NOT
+//     MAX(rn) within their PK group — shape (b).
+//  4. DELETE losers from _dedupe by rn — shape (c).
+//  5. _dedupe → source via (a) IGNOREEXTRA, which discards rn. Source's OID
+//     (and therefore its GRANTs / views / FKs) stays intact.
+//  6. DROP the now-empty _dedupe.
+//
+// Why five phases? Per AWS, ALTER TABLE APPEND auto-commits and can't run in a
+// BEGIN/END block, so steps 2 and 5 have to be issued bare. Steps 3-4 are
+// grouped into one transaction so the temp and its DELETE succeed or fail
+// together. See https://docs.aws.amazon.com/redshift/latest/dg/r_ALTER_TABLE_APPEND.html
+//
+// Failure modes & recovery:
+//
+//   - Fails in Prep (or at AppendIn before any blocks move): source intact,
+//     _dedupe may exist but is empty. Operator must DROP _dedupe and retry.
+//   - Fails in Dedupe: _dedupe holds all source data (with dupes); source is
+//     empty. Operator re-runs Dedupe + AppendOut + Cleanup by hand.
+//   - Fails at AppendOut: _dedupe holds deduped data; source empty. Operator
+//     re-runs AppendOut + Cleanup by hand.
+//   - Fails in Cleanup: source has deduped data; _dedupe is empty. Operator
+//     drops _dedupe. No data at risk.
+//
+// We deliberately do NOT `DROP TABLE IF EXISTS` _dedupe in Prep: between
+// AppendIn and AppendOut, _dedupe is the only copy of the data, so blind drops
+// are dangerous. Fail-fast and surface the state for human inspection instead.
+//
+// Why MAX(rn) instead of ROW_NUMBER() ordered by __artie_updated_at? This
+// only runs during initial snapshot dedupe; CDC streaming starts after
+// snapshot completes, so duplicates are either double-emits of the same
+// snapshot row or rows the CDC stream will overwrite. Which one wins doesn't
+// matter — MAX(rn) is simpler.
+func (rd RedshiftDialect) BuildDedupeQueriesAlterTableAppend(tableID, losersID sql.TableIdentifier, primaryKeys []string) RedshiftDedupePlan {
+	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, rd)
+	pkTuple := strings.Join(primaryKeysEscaped, ", ")
+	rnCol := rd.QuoteIdentifier(DedupeStageRowIDColumn)
+
+	dedupeNewID := tableID.WithTable(fmt.Sprintf("%s_%s_dedupe", tableID.Table(), constants.ArtiePrefix))
+
+	// 1. _dedupe mirrors source plus a BIGINT IDENTITY tiebreaker. No
+	//    `IF NOT EXISTS` — see function comment.
+	createDedupeNew := fmt.Sprintf(
+		"CREATE TABLE %s (LIKE %s INCLUDING DEFAULTS, %s BIGINT IDENTITY(1,1))",
+		dedupeNewID.FullyQualifiedName(),
+		tableID.FullyQualifiedName(),
+		rnCol,
+	)
+
+	// 2. source → _dedupe. FILLTARGET fills the target-only rn column.
+	//    MUST run outside BEGIN/END.
+	appendIn := fmt.Sprintf(
+		"ALTER TABLE %s APPEND FROM %s FILLTARGET",
+		dedupeNewID.FullyQualifiedName(),
+		tableID.FullyQualifiedName(),
+	)
+
+	// 3. Project the rn of every non-winner into _losers. DISTSTYLE ALL
+	//    colocates it with _dedupe for the step-4 DELETE. rn is NOT NULL
+	//    (IDENTITY), so NOT IN is null-safe.
+	findLosers := fmt.Sprintf(
+		"CREATE TEMPORARY TABLE %s DISTSTYLE ALL AS SELECT %s FROM %s WHERE %s NOT IN (SELECT MAX(%s) FROM %s GROUP BY %s)",
+		losersID.EscapedTable(),
+		rnCol,
+		dedupeNewID.FullyQualifiedName(),
+		rnCol,
+		rnCol,
+		dedupeNewID.FullyQualifiedName(),
+		pkTuple,
+	)
+
+	// 4. DELETE losers from _dedupe by rn.
+	deleteLosers := fmt.Sprintf(
+		"DELETE FROM %s USING %s l WHERE %s.%s = l.%s",
+		dedupeNewID.FullyQualifiedName(),
+		losersID.EscapedTable(),
+		dedupeNewID.EscapedTable(),
+		rnCol,
+		rnCol,
+	)
+
+	// 5. _dedupe → source. IGNOREEXTRA drops rn so source's schema is
+	//    unchanged by the round-trip. MUST run outside BEGIN/END.
+	appendOut := fmt.Sprintf(
+		"ALTER TABLE %s APPEND FROM %s IGNOREEXTRA",
+		tableID.FullyQualifiedName(),
+		dedupeNewID.FullyQualifiedName(),
+	)
+
+	// 6. _dedupe is empty after step 5, so DROP is near-instant.
+	dropDedupe := fmt.Sprintf("DROP TABLE %s", dedupeNewID.FullyQualifiedName())
+
+	return RedshiftDedupePlan{
+		Prep:      []string{createDedupeNew},
+		AppendIn:  appendIn,
+		Dedupe:    []string{findLosers, deleteLosers},
+		AppendOut: appendOut,
+		Cleanup:   []string{dropDedupe},
+	}
+}
+
 func (rd RedshiftDialect) buildMergeInsertQuery(
 	tableID sql.TableIdentifier,
 	subQuery string,

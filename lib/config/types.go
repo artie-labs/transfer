@@ -81,6 +81,8 @@ type SharedDestinationSettings struct {
 	EncryptionKMSConfig *ColumnEncryptionKMSConfig `yaml:"encryptionKMSConfig,omitempty"`
 	// [CSVConvertUTF8] - If enabled, we will convert all values to UTF-8 when writing to the staging CSV file.
 	CSVConvertUTF8 bool `yaml:"csvConvertUTF8,omitempty"`
+	// [RedshiftAlterTableAppendDedupe] - If enabled, we will use the Redshift ALTER TABLE APPEND DEDUPE syntax when performing deduplication.
+	RedshiftAlterTableAppendDedupe bool `yaml:"redshiftAlterTableAppendDedupe,omitempty"`
 }
 
 // BuildEncryptionKey resolves the encryption key from either a plaintext passphrase or a KMS-encrypted passphrase.
