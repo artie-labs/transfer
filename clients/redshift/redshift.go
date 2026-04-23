@@ -126,7 +126,17 @@ func (s *Store) SweepTemporaryTables(ctx context.Context) error {
 	return shared.Sweep(ctx, s, s.config.TopicConfigs(), s.dialect().BuildSweepQuery)
 }
 
-func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kafkalib.DatabaseAndSchemaPair, primaryKeys []string, _ bool) error {
+func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kafkalib.DatabaseAndSchemaPair, primaryKeys []string, includeArtieUpdatedAt bool) error {
+
+	if !s.config.SharedDestinationSettings.RedshiftAlterTableAppendDedupe {
+		stagingTableID := shared.BuildStagingTableID(s, pair, tableID)
+		dedupeQueries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt)
+		if _, err := destination.ExecContextStatements(ctx, s, dedupeQueries); err != nil {
+			return fmt.Errorf("failed to dedupe: %w", err)
+		}
+		return nil
+	}
+
 	// `includeArtieUpdatedAt` is unused: dedupe only runs during snapshot, and
 	// per-PK winner selection via MAX(rn) does not need the timestamp. See the
 	// comment above `BuildDedupeQueriesFixed` for the full rationale.
