@@ -72,13 +72,13 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeQueries() {
 	}
 }
 
-func (r *RedshiftTestSuite) Test_GenerateDedupeQueriesFixed() {
+func (r *RedshiftTestSuite) Test_GenerateDedupeQueriesAlterTableAppend() {
 	{
 		// Single PK.
 		tableID := dialect.NewTableIdentifier("public", "customers")
 		losersTableID := shared.TempTableID(r.store, tableID)
 
-		plan := dialect.RedshiftDialect{}.BuildDedupeQueriesFixed(tableID, losersTableID, []string{"id"})
+		plan := dialect.RedshiftDialect{}.BuildDedupeQueriesAlterTableAppend(tableID, losersTableID, []string{"id"})
 		// Prep: single CREATE statement. Intentionally no DROP IF EXISTS —
 		// leftover _dedupe must surface rather than get silently clobbered.
 		assert.Len(r.T(), plan.Prep, 1)
@@ -104,7 +104,7 @@ func (r *RedshiftTestSuite) Test_GenerateDedupeQueriesFixed() {
 		tableID := dialect.NewTableIdentifier("public", "user_settings")
 		losersTableID := shared.TempTableID(r.store, tableID)
 
-		plan := dialect.RedshiftDialect{}.BuildDedupeQueriesFixed(tableID, losersTableID, []string{"user_id", "settings"})
+		plan := dialect.RedshiftDialect{}.BuildDedupeQueriesAlterTableAppend(tableID, losersTableID, []string{"user_id", "settings"})
 		assert.Len(r.T(), plan.Prep, 1)
 		assert.Equal(r.T(), `CREATE TABLE public."user_settings___artie_dedupe" (LIKE public."user_settings" INCLUDING DEFAULTS, "_artie_dedupe_rn" BIGINT IDENTITY(1,1))`, plan.Prep[0])
 		assert.Equal(r.T(), `ALTER TABLE public."user_settings___artie_dedupe" APPEND FROM public."user_settings" FILLTARGET`, plan.AppendIn)

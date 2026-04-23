@@ -141,7 +141,7 @@ func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair ka
 	// per-PK winner selection via MAX(rn) does not need the timestamp. See the
 	// comment above `BuildDedupeQueriesFixed` for the full rationale.
 	losersTableID := shared.BuildStagingTableID(s, pair, tableID)
-	plan := s.dialect().BuildDedupeQueriesFixed(tableID, losersTableID, primaryKeys)
+	plan := s.dialect().BuildDedupeQueriesAlterTableAppend(tableID, losersTableID, primaryKeys)
 
 	// The plan has five phases that MUST be dispatched separately because
 	// Redshift forbids ALTER TABLE APPEND inside a transaction block. The two

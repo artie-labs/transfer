@@ -122,7 +122,7 @@ func (rd RedshiftDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableId
 // losers — all without ever reading SUPER columns like `meta`.
 const DedupeStageRowIDColumn = "_artie_dedupe_rn"
 
-// RedshiftDedupePlan is the five-phase output of [RedshiftDialect.BuildDedupeQueriesFixed].
+// RedshiftDedupePlan is the five-phase output of [RedshiftDialect.BuildDedupeQueriesAlterTableAppend].
 // See that function's comment for the full rationale; the TL;DR is that
 // Redshift forbids ALTER TABLE APPEND inside a transaction block, so the plan
 // is split into groups that the caller must dispatch separately:
@@ -150,7 +150,7 @@ type RedshiftDedupePlan struct {
 	Cleanup   []string
 }
 
-// BuildDedupeQueriesFixed is a SUPER-safe replacement for BuildDedupeQueries.
+// BuildDedupeQueriesAlterTableAppend is a SUPER-safe replacement for BuildDedupeQueries.
 //
 // Background: rows whose SUPER value exceeds 64KB in its text form blow up
 // with `Invalid input (8001): String value exceeds the max size of 65535
@@ -241,7 +241,7 @@ type RedshiftDedupePlan struct {
 // subsequent CDC stream will overwrite on its first event for that PK.
 // Either way, which duplicate survives is immaterial — MAX(rn) is simpler
 // and avoids needing the __artie_updated_at column in the query.
-func (rd RedshiftDialect) BuildDedupeQueriesFixed(tableID, losersID sql.TableIdentifier, primaryKeys []string) RedshiftDedupePlan {
+func (rd RedshiftDialect) BuildDedupeQueriesAlterTableAppend(tableID, losersID sql.TableIdentifier, primaryKeys []string) RedshiftDedupePlan {
 	primaryKeysEscaped := sql.QuoteIdentifiers(primaryKeys, rd)
 	pkTuple := strings.Join(primaryKeysEscaped, ", ")
 	rnCol := rd.QuoteIdentifier(DedupeStageRowIDColumn)
