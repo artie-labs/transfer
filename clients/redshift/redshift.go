@@ -130,31 +130,38 @@ func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair ka
 	// `includeArtieUpdatedAt` is unused: dedupe only runs during snapshot, and
 	// per-PK winner selection via MAX(rn) does not need the timestamp. See the
 	// comment above `BuildDedupeQueriesFixed` for the full rationale.
-	stagingTableID := shared.BuildStagingTableID(s, pair, tableID)
-	plan := s.dialect().BuildDedupeQueriesFixed(tableID, stagingTableID, primaryKeys)
+	losersTableID := shared.BuildStagingTableID(s, pair, tableID)
+	plan := s.dialect().BuildDedupeQueriesFixed(tableID, losersTableID, primaryKeys)
 
-	// The plan has three phases that MUST be dispatched as three separate
-	// `ExecContextStatements` calls because Redshift forbids ALTER TABLE APPEND
-	// inside a transaction block. ExecContextStatements wraps 2+-statement
-	// slices in BEGIN/END automatically and runs singletons bare, which lines
-	// up with what we need: Prep bare (single CREATE), Append bare (auto-
-	// commits), Swap in a txn.
+	// The plan has five phases that MUST be dispatched separately because
+	// Redshift forbids ALTER TABLE APPEND inside a transaction block. The two
+	// APPENDs (AppendIn, AppendOut) go through `ExecContext` bare so they
+	// auto-commit; the multi-statement groups go through
+	// `ExecContextStatements` which opens a BEGIN/END for them.
 	//
 	// If a previous Dedupe failed after Prep's CREATE, _dedupe still exists
 	// and Prep will fail fast with "already exists" — this is deliberate, as
 	// blindly dropping _dedupe could destroy the only copy of the data in the
-	// post-APPEND failure state. See the BuildDedupeQueriesFixed comment for
-	// recovery procedures.
+	// post-AppendIn / pre-AppendOut failure states. See the
+	// BuildDedupeQueriesFixed comment for recovery procedures.
 	if _, err := destination.ExecContextStatements(ctx, s, plan.Prep); err != nil {
 		return fmt.Errorf("failed to prep dedupe: %w", err)
 	}
 
-	if _, err := s.ExecContext(ctx, plan.Append); err != nil {
-		return fmt.Errorf("failed to ALTER TABLE APPEND into dedupe: %w", err)
+	if _, err := s.ExecContext(ctx, plan.AppendIn); err != nil {
+		return fmt.Errorf("failed to ALTER TABLE APPEND source into dedupe: %w", err)
 	}
 
-	if _, err := destination.ExecContextStatements(ctx, s, plan.Swap); err != nil {
-		return fmt.Errorf("failed to swap dedupe into place: %w", err)
+	if _, err := destination.ExecContextStatements(ctx, s, plan.Dedupe); err != nil {
+		return fmt.Errorf("failed to dedupe rows in dedupe table: %w", err)
+	}
+
+	if _, err := s.ExecContext(ctx, plan.AppendOut); err != nil {
+		return fmt.Errorf("failed to ALTER TABLE APPEND dedupe back into source: %w", err)
+	}
+
+	if _, err := destination.ExecContextStatements(ctx, s, plan.Cleanup); err != nil {
+		return fmt.Errorf("failed to drop dedupe table: %w", err)
 	}
 
 	return nil
