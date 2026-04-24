@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/artie-labs/transfer/lib/config"
+	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/sql"
 )
 
@@ -64,7 +65,7 @@ func (d *DestinationTableConfigMap) AddTable(tableID sql.TableIdentifier, config
 		d.fqNameToExpiry = make(map[string]time.Time)
 	}
 
-	d.fqNameToExpiry[tableID.FullyQualifiedName()] = time.Now().Add(time.Hour * 24)
+	d.fqNameToExpiry[tableID.FullyQualifiedName()] = time.Now().Add(constants.TableConfigCacheRetention)
 }
 
 type MergeOpts struct {
