@@ -2,6 +2,7 @@ package types
 
 import (
 	"sync"
+	"time"
 
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/sql"
@@ -9,12 +10,13 @@ import (
 
 type DestinationTableConfigMap struct {
 	fqNameToConfigMap map[string]*DestinationTableConfig
+	fqNameToExpiry    map[string]time.Time
 	sync.RWMutex
 }
 
 func (d *DestinationTableConfigMap) GetTableConfig(tableID sql.TableIdentifier) *DestinationTableConfig {
-	d.RLock()
-	defer d.RUnlock()
+	d.Lock()
+	defer d.Unlock()
 
 	if d.fqNameToConfigMap == nil {
 		return nil
@@ -22,6 +24,16 @@ func (d *DestinationTableConfigMap) GetTableConfig(tableID sql.TableIdentifier) 
 
 	tableConfig, ok := d.fqNameToConfigMap[tableID.FullyQualifiedName()]
 	if !ok {
+		return nil
+	}
+
+	expiry, ok := d.fqNameToExpiry[tableID.FullyQualifiedName()]
+	if !ok {
+		return nil
+	}
+	if expiry.Before(time.Now()) {
+		delete(d.fqNameToConfigMap, tableID.FullyQualifiedName())
+		delete(d.fqNameToExpiry, tableID.FullyQualifiedName())
 		return nil
 	}
 
@@ -34,6 +46,7 @@ func (d *DestinationTableConfigMap) RemoveTable(tableID sql.TableIdentifier) {
 
 	if d.fqNameToConfigMap != nil {
 		delete(d.fqNameToConfigMap, tableID.FullyQualifiedName())
+		delete(d.fqNameToExpiry, tableID.FullyQualifiedName())
 	}
 }
 
@@ -46,6 +59,12 @@ func (d *DestinationTableConfigMap) AddTable(tableID sql.TableIdentifier, config
 	}
 
 	d.fqNameToConfigMap[tableID.FullyQualifiedName()] = config
+
+	if d.fqNameToExpiry == nil {
+		d.fqNameToExpiry = make(map[string]time.Time)
+	}
+
+	d.fqNameToExpiry[tableID.FullyQualifiedName()] = time.Now().Add(time.Hour)
 }
 
 type MergeOpts struct {
