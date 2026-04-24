@@ -49,7 +49,7 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 
 	tags["database"] = topicConfig.tc.Database
 	tags["schema"] = topicConfig.tc.Schema
-	pkMap, err := topicConfig.GetPrimaryKey(p.Msg.Key(), topicConfig.tc, reservedColumns)
+	pkMap, err := topicConfig.buildPKMap(p.Msg.Key(), reservedColumns)
 	if err != nil {
 		tags["what"] = "marshall_pk_err"
 		return cdc.TableID{}, fmt.Errorf("cannot unmarshal key %q: %w", string(p.Msg.Key()), err)

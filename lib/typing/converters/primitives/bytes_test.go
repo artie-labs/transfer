@@ -65,6 +65,6 @@ func TestAsBytes(t *testing.T) {
 	{
 		// Unmarshallable value (channel) returns an error.
 		_, err := AsBytes(make(chan int))
-		assert.ErrorContains(t, err, "failed to marshal value")
+		assert.ErrorContains(t, err, "failed to convert chan int to []byte")
 	}
 }

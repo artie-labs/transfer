@@ -13,7 +13,6 @@ func Float32ToString(value float32) string {
 func BooleanToBit(val bool) int {
 	if val {
 		return 1
-	} else {
-		return 0
 	}
+	return 0
 }

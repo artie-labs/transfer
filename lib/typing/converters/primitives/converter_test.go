@@ -81,42 +81,42 @@ func TestInt64Converter_Convert(t *testing.T) {
 		{
 			// float64 - has fractional component
 			_, err := converter.Convert(float64(1234.5))
-			assert.ErrorContains(t, err, "float64 (1234.500000) has fractional component")
+			assert.ErrorContains(t, err, "failed to convert float64 to int64: value 1234.500000 has fractional component")
 		}
 		{
 			// float64 - small fractional component
 			_, err := converter.Convert(float64(1234.1))
-			assert.ErrorContains(t, err, "float64 (1234.100000) has fractional component")
+			assert.ErrorContains(t, err, "failed to convert float64 to int64: value 1234.100000 has fractional component")
 		}
 		{
 			// float64 - negative fractional component
 			_, err := converter.Convert(float64(-1234.5))
-			assert.ErrorContains(t, err, "float64 (-1234.500000) has fractional component")
+			assert.ErrorContains(t, err, "failed to convert float64 to int64: value -1234.500000 has fractional component")
 		}
 		{
 			// float64 - positive overflow
 			_, err := converter.Convert(float64(math.MaxInt64) * 2)
-			assert.ErrorContains(t, err, "overflows int64")
+			assert.ErrorContains(t, err, "failed to convert float64 to int64: value")
 		}
 		{
 			// float64 - negative overflow
 			_, err := converter.Convert(float64(math.MinInt64) * 2)
-			assert.ErrorContains(t, err, "overflows int64")
+			assert.ErrorContains(t, err, "failed to convert float64 to int64: value")
 		}
 		{
 			// float64 - positive infinity
 			_, err := converter.Convert(math.Inf(1))
-			assert.ErrorContains(t, err, "overflows int64")
+			assert.ErrorContains(t, err, "failed to convert float64 to int64: value")
 		}
 		{
 			// float64 - negative infinity
 			_, err := converter.Convert(math.Inf(-1))
-			assert.ErrorContains(t, err, "overflows int64")
+			assert.ErrorContains(t, err, "failed to convert float64 to int64: value")
 		}
 		{
 			// float64 - NaN
 			_, err := converter.Convert(math.NaN())
-			assert.ErrorContains(t, err, "has fractional component")
+			assert.ErrorContains(t, err, "failed to convert float64 to int64: value")
 		}
 	}
 	{
@@ -169,12 +169,12 @@ func TestFloat32Converter_Convert(t *testing.T) {
 		{
 			// Max float
 			_, err := converter.Convert(math.MaxFloat64)
-			assert.ErrorContains(t, err, "value overflows float32")
+			assert.ErrorContains(t, err, "failed to convert float64 to float32: value overflows float32")
 		}
 		{
 			// Min float
 			_, err := converter.Convert(-math.MaxFloat64)
-			assert.ErrorContains(t, err, "value overflows float32")
+			assert.ErrorContains(t, err, "failed to convert float64 to float32: value overflows float32")
 		}
 		{
 			actual, err := converter.Convert(float64(123.55))
@@ -203,6 +203,6 @@ func TestFloat32Converter_Convert(t *testing.T) {
 	{
 		// Irrelevant
 		_, err := converter.Convert(true)
-		assert.ErrorContains(t, err, "failed to parse float32, unsupported type: bool")
+		assert.ErrorContains(t, err, "failed to convert bool to float32: unsupported type")
 	}
 }

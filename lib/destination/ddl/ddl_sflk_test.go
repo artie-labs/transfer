@@ -28,7 +28,7 @@ func (d *DDLTestSuite) TestAlterComplexObjects() {
 	tableID := dialect.NewTableIdentifier("shop", "public", "complex_columns")
 	d.snowflakeStagesStore.GetConfigMap().AddTable(tableID, types.NewDestinationTableConfig(nil, true))
 	tc := d.snowflakeStagesStore.GetConfigMap().GetTableConfig(tableID)
-	assert.NoError(d.T(), shared.AlterTableAddColumns(d.T().Context(), d.snowflakeStagesStore, tc, config.SharedDestinationColumnSettings{}, tableID, cols))
+	assert.NoError(d.T(), shared.AlterTableAddColumns(d.T().Context(), d.snowflakeStagesStore, tc, config.SharedDestinationColumnSettings{}, tableID, cols, nil))
 	for i := 0; i < len(cols); i++ {
 		dataType, err := d.snowflakeStagesStore.Dialect().DataTypeForKind(cols[i].KindDetails, false, config.SharedDestinationColumnSettings{})
 		assert.NoError(d.T(), err)
@@ -53,7 +53,7 @@ func (d *DDLTestSuite) TestAlterIdempotency() {
 	tc := d.snowflakeStagesStore.GetConfigMap().GetTableConfig(tableID)
 
 	d.fakeSnowflakeStagesStore.ExecContextReturns(nil, errors.New("table does not exist"))
-	assert.ErrorContains(d.T(), shared.AlterTableAddColumns(d.T().Context(), d.snowflakeStagesStore, tc, config.SharedDestinationColumnSettings{}, tableID, cols), `failed to alter table: table does not exist`)
+	assert.ErrorContains(d.T(), shared.AlterTableAddColumns(d.T().Context(), d.snowflakeStagesStore, tc, config.SharedDestinationColumnSettings{}, tableID, cols, nil), `failed to alter table: table does not exist`)
 }
 
 func (d *DDLTestSuite) TestAlterTableAdd() {
@@ -69,7 +69,7 @@ func (d *DDLTestSuite) TestAlterTableAdd() {
 	d.snowflakeStagesStore.GetConfigMap().AddTable(tableID, types.NewDestinationTableConfig(nil, true))
 	tc := d.snowflakeStagesStore.GetConfigMap().GetTableConfig(tableID)
 
-	assert.NoError(d.T(), shared.AlterTableAddColumns(d.T().Context(), d.snowflakeStagesStore, tc, config.SharedDestinationColumnSettings{}, tableID, cols))
+	assert.NoError(d.T(), shared.AlterTableAddColumns(d.T().Context(), d.snowflakeStagesStore, tc, config.SharedDestinationColumnSettings{}, tableID, cols, nil))
 	assert.Equal(d.T(), len(cols), d.fakeSnowflakeStagesStore.ExecContextCallCount(), "called SFLK the same amt to create cols")
 
 	// Check the table config
@@ -100,7 +100,7 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 	d.snowflakeStagesStore.GetConfigMap().AddTable(tableID, types.NewDestinationTableConfig(nil, true))
 	tc := d.snowflakeStagesStore.GetConfigMap().GetTableConfig(tableID)
 
-	assert.NoError(d.T(), shared.AlterTableDropColumns(d.T().Context(), d.snowflakeStagesStore, tc, tableID, cols, time.Now().UTC(), true))
+	assert.NoError(d.T(), shared.AlterTableDropColumns(d.T().Context(), d.snowflakeStagesStore, tc, tableID, cols, time.Now().UTC(), true, nil))
 	assert.Equal(d.T(), 0, d.fakeSnowflakeStagesStore.ExecContextCallCount(), "tried to delete, but not yet.")
 
 	// Check the table config
@@ -125,7 +125,7 @@ func (d *DDLTestSuite) TestAlterTableDeleteDryRun() {
 		// Now let's actually try to dial the time back, and it should actually try to delete.
 		tableConfig.AddColumnsToDelete(colToActuallyDelete, time.Now().Add(-1*time.Hour))
 
-		assert.NoError(d.T(), shared.AlterTableDropColumns(d.T().Context(), d.snowflakeStagesStore, tc, tableID, cols, time.Now().UTC(), true))
+		assert.NoError(d.T(), shared.AlterTableDropColumns(d.T().Context(), d.snowflakeStagesStore, tc, tableID, cols, time.Now().UTC(), true, nil))
 		assert.Equal(d.T(), i+1, d.fakeSnowflakeStagesStore.ExecContextCallCount(), "tried to delete one column")
 
 		_, execArg, _ := d.fakeSnowflakeStagesStore.ExecContextArgsForCall(i)
@@ -155,14 +155,14 @@ func (d *DDLTestSuite) TestAlterTableDelete() {
 	tc := d.snowflakeStagesStore.GetConfigMap().GetTableConfig(tableID)
 	{
 		// containsOtherOperations = false
-		assert.NoError(d.T(), shared.AlterTableDropColumns(d.T().Context(), d.snowflakeStagesStore, tc, tableID, cols, time.Now(), false))
+		assert.NoError(d.T(), shared.AlterTableDropColumns(d.T().Context(), d.snowflakeStagesStore, tc, tableID, cols, time.Now(), false, nil))
 		// Nothing got deleted
 		assert.Equal(d.T(), 0, d.fakeSnowflakeStagesStore.ExecContextCallCount())
 		assert.Equal(d.T(), colsToDeleteMap, tc.ReadOnlyColumnsToDelete())
 	}
 	{
 		// containsOtherOperations = true
-		assert.NoError(d.T(), shared.AlterTableDropColumns(d.T().Context(), d.snowflakeStagesStore, tc, tableID, cols, time.Now(), true))
+		assert.NoError(d.T(), shared.AlterTableDropColumns(d.T().Context(), d.snowflakeStagesStore, tc, tableID, cols, time.Now(), true, nil))
 		assert.Equal(d.T(), 3, d.fakeSnowflakeStagesStore.ExecContextCallCount())
 
 		// Check the table config

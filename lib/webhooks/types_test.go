@@ -12,7 +12,9 @@ func TestGetEventSeverity(t *testing.T) {
 		EventBackfillCompleted:  SeverityInfo,
 		EventBackfillFailed:     SeverityError,
 		EventReplicationStarted: SeverityInfo,
-		EventReplicationFailed:  SeverityError,
+		EventReplicationError:   SeverityError,
+		EventDDLSeen:            SeverityInfo,
+		EventDDLApplied:         SeverityInfo,
 		EventType("unknown"):    SeverityInfo,
 	}
 
@@ -27,7 +29,9 @@ func TestGetEventMessage(t *testing.T) {
 		EventBackfillCompleted:  "Backfill completed",
 		EventBackfillFailed:     "Backfill failed",
 		EventReplicationStarted: "Replication started",
-		EventReplicationFailed:  "Replication failed",
+		EventReplicationError:   "Replication error",
+		EventDDLSeen:            "DDL seen",
+		EventDDLApplied:         "DDL applied",
 		EventType("unknown"):    "Unknown event type",
 	}
 

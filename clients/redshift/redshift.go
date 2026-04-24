@@ -127,13 +127,38 @@ func (s *Store) SweepTemporaryTables(ctx context.Context) error {
 }
 
 func (s *Store) Dedupe(ctx context.Context, tableID sql.TableIdentifier, pair kafkalib.DatabaseAndSchemaPair, primaryKeys []string, includeArtieUpdatedAt bool) error {
-	stagingTableID := shared.BuildStagingTableID(s, pair, tableID)
-	dedupeQueries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt)
-
-	if _, err := destination.ExecContextStatements(ctx, s, dedupeQueries); err != nil {
-		return fmt.Errorf("failed to dedupe: %w", err)
+	if !s.config.SharedDestinationSettings.RedshiftAlterTableAppendDedupe {
+		stagingTableID := shared.BuildStagingTableID(s, pair, tableID)
+		dedupeQueries := s.Dialect().BuildDedupeQueries(tableID, stagingTableID, primaryKeys, includeArtieUpdatedAt)
+		if _, err := destination.ExecContextStatements(ctx, s, dedupeQueries); err != nil {
+			return fmt.Errorf("failed to dedupe: %w", err)
+		}
+		return nil
 	}
 
+	// includeArtieUpdatedAt is unused: snapshot dedupe picks winners via
+	// MAX(rn). See BuildDedupeQueriesAlterTableAppend for rationale + recovery.
+	losersTableID := shared.BuildStagingTableID(s, pair, tableID)
+	plan := s.dialect().BuildDedupeQueriesAlterTableAppend(tableID, losersTableID, primaryKeys)
+
+	// Two APPENDs go through bare ExecContext so they auto-commit (Redshift
+	// forbids ALTER TABLE APPEND inside a transaction block). The others go
+	// through ExecContextStatements, which opens a BEGIN/END for 2+ statements.
+	if _, err := destination.ExecContextStatements(ctx, s, plan.Prep); err != nil {
+		return fmt.Errorf("failed to prep dedupe: %w", err)
+	}
+	if _, err := s.ExecContext(ctx, plan.AppendIn); err != nil {
+		return fmt.Errorf("failed to ALTER TABLE APPEND source into dedupe: %w", err)
+	}
+	if _, err := destination.ExecContextStatements(ctx, s, plan.Dedupe); err != nil {
+		return fmt.Errorf("failed to dedupe rows in dedupe table: %w", err)
+	}
+	if _, err := s.ExecContext(ctx, plan.AppendOut); err != nil {
+		return fmt.Errorf("failed to ALTER TABLE APPEND dedupe back into source: %w", err)
+	}
+	if _, err := destination.ExecContextStatements(ctx, s, plan.Cleanup); err != nil {
+		return fmt.Errorf("failed to drop dedupe table: %w", err)
+	}
 	return nil
 }
 

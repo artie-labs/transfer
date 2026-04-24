@@ -116,6 +116,18 @@ func (e *EventsTestSuite) TestTransformData() {
 			assert.NoError(e.T(), err)
 			assert.Equal(e.T(), map[string]any{"foo": nil, "abc": "def"}, data)
 		}
+		{
+			// Hash the column foo with a customer-provided salt (HMAC-SHA256).
+			data, err := transformData(
+				map[string]any{"foo": "bar", "abc": "def"},
+				kafkalib.TopicConfig{ColumnsToHash: []string{"foo"}, ColumnsToHashSalt: "pepper"},
+				nil,
+			)
+			assert.NoError(e.T(), err)
+			assert.Equal(e.T(), map[string]any{"foo": "4bb78279b8aabc9aeec1279237934fb12e061512e5c626116dfdcec82d42ff73", "abc": "def"}, data)
+			// Salted hash must differ from the unsalted hash for the same input.
+			assert.NotEqual(e.T(), "fcde2b2edba56bf408601fb721fe9b5c338d10ee429ea04fae5511b68fbf8fb9", data["foo"])
+		}
 	}
 	{
 		// Encrypting columns

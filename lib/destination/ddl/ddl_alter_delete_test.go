@@ -59,7 +59,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 
 	// Snowflake
 	for _, column := range cols.GetColumns() {
-		err := shared.AlterTableDropColumns(d.T().Context(), d.snowflakeStagesStore, snowflakeTc, snowflakeTableID, []columns.Column{column}, ts, true)
+		err := shared.AlterTableDropColumns(d.T().Context(), d.snowflakeStagesStore, snowflakeTc, snowflakeTableID, []columns.Column{column}, ts, true, nil)
 		assert.NoError(d.T(), err)
 	}
 
@@ -69,7 +69,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 
 	// BigQuery
 	for _, column := range cols.GetColumns() {
-		assert.NoError(d.T(), shared.AlterTableDropColumns(d.T().Context(), d.bigQueryStore, bqTc, bqTableID, []columns.Column{column}, ts, true))
+		assert.NoError(d.T(), shared.AlterTableDropColumns(d.T().Context(), d.bigQueryStore, bqTc, bqTableID, []columns.Column{column}, ts, true, nil))
 	}
 
 	// Never actually deleted.
@@ -78,7 +78,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 
 	// Redshift
 	for _, column := range cols.GetColumns() {
-		assert.NoError(d.T(), shared.AlterTableDropColumns(d.T().Context(), d.redshiftStore, redshiftTc, redshiftTableID, []columns.Column{column}, ts, true))
+		assert.NoError(d.T(), shared.AlterTableDropColumns(d.T().Context(), d.redshiftStore, redshiftTc, redshiftTableID, []columns.Column{column}, ts, true, nil))
 	}
 
 	// Never actually deleted.
@@ -101,7 +101,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 	assert.Equal(d.T(), 0, len(snowflakeTc.ReadOnlyColumnsToDelete()), snowflakeTc.ReadOnlyColumnsToDelete())
 
 	for _, column := range cols.GetColumns() {
-		assert.NoError(d.T(), shared.AlterTableDropColumns(d.T().Context(), d.snowflakeStagesStore, snowflakeTc, snowflakeTableID, []columns.Column{column}, ts, false))
+		assert.NoError(d.T(), shared.AlterTableDropColumns(d.T().Context(), d.snowflakeStagesStore, snowflakeTc, snowflakeTableID, []columns.Column{column}, ts, false, nil))
 	}
 
 	// Never actually deleted.
@@ -110,7 +110,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 
 	// BigQuery
 	for _, column := range cols.GetColumns() {
-		assert.NoError(d.T(), shared.AlterTableDropColumns(d.T().Context(), d.bigQueryStore, bqTc, bqTableID, []columns.Column{column}, ts, false))
+		assert.NoError(d.T(), shared.AlterTableDropColumns(d.T().Context(), d.bigQueryStore, bqTc, bqTableID, []columns.Column{column}, ts, false, nil))
 	}
 
 	// Never actually deleted.
@@ -119,7 +119,7 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 
 	// Redshift
 	for _, column := range cols.GetColumns() {
-		assert.NoError(d.T(), shared.AlterTableDropColumns(d.T().Context(), d.redshiftStore, redshiftTc, redshiftTableID, []columns.Column{column}, ts, false))
+		assert.NoError(d.T(), shared.AlterTableDropColumns(d.T().Context(), d.redshiftStore, redshiftTc, redshiftTableID, []columns.Column{column}, ts, false, nil))
 	}
 
 	// Never actually deleted.
@@ -146,18 +146,18 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 	{
 		// Snowflake
 		for _, column := range cols.GetColumns() {
-			assert.NoError(d.T(), shared.AlterTableDropColumns(d.T().Context(), d.snowflakeStagesStore, snowflakeTc, snowflakeTableID, []columns.Column{column}, ts, true))
+			assert.NoError(d.T(), shared.AlterTableDropColumns(d.T().Context(), d.snowflakeStagesStore, snowflakeTc, snowflakeTableID, []columns.Column{column}, ts, true, nil))
 		}
 	}
 
 	// BigQuery
 	for _, column := range cols.GetColumns() {
-		assert.NoError(d.T(), shared.AlterTableDropColumns(d.T().Context(), d.bigQueryStore, bqTc, bqTableID, []columns.Column{column}, ts, true))
+		assert.NoError(d.T(), shared.AlterTableDropColumns(d.T().Context(), d.bigQueryStore, bqTc, bqTableID, []columns.Column{column}, ts, true, nil))
 	}
 
 	// Redshift
 	for _, column := range cols.GetColumns() {
-		assert.NoError(d.T(), shared.AlterTableDropColumns(d.T().Context(), d.redshiftStore, redshiftTc, redshiftTableID, []columns.Column{column}, ts, true))
+		assert.NoError(d.T(), shared.AlterTableDropColumns(d.T().Context(), d.redshiftStore, redshiftTc, redshiftTableID, []columns.Column{column}, ts, true, nil))
 	}
 
 	// Nothing has been deleted, but it is all added to the permissions table.
@@ -171,11 +171,11 @@ func (d *DDLTestSuite) TestAlterDelete_Complete() {
 
 	for _, column := range cols.GetColumns() {
 		// Snowflake
-		assert.NoError(d.T(), shared.AlterTableDropColumns(d.T().Context(), d.snowflakeStagesStore, snowflakeTc, snowflakeTableID, []columns.Column{column}, ts.Add(2*constants.DeletionConfidencePadding), true))
+		assert.NoError(d.T(), shared.AlterTableDropColumns(d.T().Context(), d.snowflakeStagesStore, snowflakeTc, snowflakeTableID, []columns.Column{column}, ts.Add(2*constants.DeletionConfidencePadding), true, nil))
 		// BigQuery
-		assert.NoError(d.T(), shared.AlterTableDropColumns(d.T().Context(), d.bigQueryStore, bqTc, bqTableID, []columns.Column{column}, ts.Add(2*constants.DeletionConfidencePadding), true))
+		assert.NoError(d.T(), shared.AlterTableDropColumns(d.T().Context(), d.bigQueryStore, bqTc, bqTableID, []columns.Column{column}, ts.Add(2*constants.DeletionConfidencePadding), true, nil))
 		// Redshift
-		assert.NoError(d.T(), shared.AlterTableDropColumns(d.T().Context(), d.redshiftStore, redshiftTc, redshiftTableID, []columns.Column{column}, ts.Add(2*constants.DeletionConfidencePadding), true))
+		assert.NoError(d.T(), shared.AlterTableDropColumns(d.T().Context(), d.redshiftStore, redshiftTc, redshiftTableID, []columns.Column{column}, ts.Add(2*constants.DeletionConfidencePadding), true, nil))
 	}
 
 	// Everything has been deleted.

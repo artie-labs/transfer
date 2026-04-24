@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"math"
 	"reflect"
 	"strconv"
 	"strings"
@@ -73,15 +74,13 @@ func (BooleanConverter) Convert(value any) (string, error) {
 	case bool:
 		return fmt.Sprint(castedValue), nil
 	default:
-		// Try to cast the value into a string and see if we can parse it
-		// If not, then return an error
 		switch strings.ToLower(fmt.Sprint(value)) {
 		case "0", "false":
 			return "false", nil
 		case "1", "true":
 			return "true", nil
 		default:
-			return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.InvalidBooleanValue)
+			return "", typing.NewParseError(fmt.Sprintf("unexpected value '%v' of type %T", value, value), typing.InvalidBooleanValue)
 		}
 	}
 }
@@ -125,7 +124,7 @@ func (StringConverter) ConvertNew(value any) (string, error) {
 			return ArrayConverter{}.Convert(value)
 		}
 
-		return "", fmt.Errorf("unsupported value: %v, type: %T", value, value)
+		return "", fmt.Errorf("unexpected value '%v' of type %T", value, value)
 	}
 }
 
@@ -160,7 +159,7 @@ func (BytesConverter) Convert(value any) (string, error) {
 	case []byte:
 		return base64.StdEncoding.EncodeToString(castedValue), nil
 	default:
-		return "", fmt.Errorf("unexpected value: '%v', type: %T", value, value)
+		return "", fmt.Errorf("unexpected value '%v' of type %T", value, value)
 	}
 }
 
@@ -169,7 +168,7 @@ type DateConverter struct{}
 func (DateConverter) Convert(value any) (string, error) {
 	_time, err := typing.ParseDateFromAny(value)
 	if err != nil {
-		return "", fmt.Errorf("failed to cast colVal as date, colVal: '%v', err: %w", value, err)
+		return "", fmt.Errorf("failed to convert value to date: %w", err)
 	}
 
 	return _time.Format(time.DateOnly), nil
@@ -184,7 +183,7 @@ func (TimeConverter) Convert(value any) (string, error) {
 	default:
 		_time, err := typing.ParseTimeFromAny(value)
 		if err != nil {
-			return "", fmt.Errorf("failed to cast colVal as time, colVal: '%v', err: %w", value, err)
+			return "", fmt.Errorf("failed to convert value to time: %w", err)
 		}
 
 		return _time.Format(ext.PostgresTimeFormatNoTZ), nil
@@ -204,7 +203,7 @@ type TimestampNTZConverter struct {
 func (t TimestampNTZConverter) Convert(value any) (string, error) {
 	_time, err := typing.ParseTimestampNTZFromAny(value)
 	if err != nil {
-		return "", fmt.Errorf("failed to cast colVal as timestampNTZ, colVal: '%v', err: %w", value, err)
+		return "", fmt.Errorf("failed to convert value to timestampNTZ: %w", err)
 	}
 
 	return _time.Format(cmp.Or(t.layoutOverride, typing.RFC3339NoTZ)), nil
@@ -223,7 +222,7 @@ type TimestampTZConverter struct {
 func (t TimestampTZConverter) Convert(value any) (string, error) {
 	_time, err := typing.ParseTimestampTZFromAny(value)
 	if err != nil {
-		return "", fmt.Errorf("failed to cast colVal as timestampTZ, colVal: '%v', err: %w", value, err)
+		return "", fmt.Errorf("failed to convert value to timestampTZ: %w", err)
 	}
 
 	return _time.Format(cmp.Or(t.layoutOverride, time.RFC3339Nano)), nil
@@ -253,8 +252,15 @@ type IntegerConverter struct{}
 func (IntegerConverter) Convert(value any) (string, error) {
 	switch parsedVal := value.(type) {
 	case float32:
+		f64Val := float64(parsedVal)
+		if math.IsInf(f64Val, 0) || f64Val != math.Trunc(f64Val) {
+			return "", typing.NewParseError(fmt.Sprintf("unexpected value '%v' of type %T", value, value), typing.UnexpectedValue)
+		}
 		return Float32ToString(parsedVal), nil
 	case float64:
+		if math.IsInf(parsedVal, 0) || parsedVal != math.Trunc(parsedVal) {
+			return "", typing.NewParseError(fmt.Sprintf("unexpected value '%v' of type %T", value, value), typing.UnexpectedValue)
+		}
 		return Float64ToString(parsedVal), nil
 	case bool:
 		return fmt.Sprint(BooleanToBit(parsedVal)), nil
@@ -263,23 +269,22 @@ func (IntegerConverter) Convert(value any) (string, error) {
 	case *decimal.Decimal:
 		reduced, _ := new(apd.Decimal).Reduce(parsedVal.Value())
 		if reduced.Exponent < 0 {
-			return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.UnexpectedValue)
+			return "", typing.NewParseError(fmt.Sprintf("unexpected value '%v' of type %T", value, value), typing.UnexpectedValue)
 		}
 		return reduced.Text('f'), nil
 	case json.Number:
 		if _, err := strconv.ParseInt(parsedVal.String(), 10, 64); err != nil {
-			return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.UnexpectedValue)
+			return "", typing.NewParseError(fmt.Sprintf("unexpected value '%v' of type %T", value, value), typing.UnexpectedValue)
 		}
 		return parsedVal.String(), nil
 	case string:
-		// If it's a string, does it parse properly to an integer? If so, that's fine.
 		if _, err := strconv.ParseInt(parsedVal, 10, 64); err != nil {
-			return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.UnexpectedValue)
+			return "", typing.NewParseError(fmt.Sprintf("unexpected value '%v' of type %T", value, value), typing.UnexpectedValue)
 		}
 
 		return parsedVal, nil
 	default:
-		return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.UnexpectedValue)
+		return "", typing.NewParseError(fmt.Sprintf("unexpected value '%v' of type %T", value, value), typing.UnexpectedValue)
 	}
 }
 
@@ -297,17 +302,16 @@ func (FloatConverter) Convert(value any) (string, error) {
 		return parsedVal.String(), nil
 	case json.Number:
 		if _, err := strconv.ParseFloat(parsedVal.String(), 64); err != nil {
-			return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.UnexpectedValue)
+			return "", typing.NewParseError(fmt.Sprintf("unexpected value '%v' of type %T", value, value), typing.UnexpectedValue)
 		}
 		return parsedVal.String(), nil
 	case string:
-		// If it's a string, verify it can be parsed as a float
 		if _, err := strconv.ParseFloat(parsedVal, 64); err != nil {
-			return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.UnexpectedValue)
+			return "", typing.NewParseError(fmt.Sprintf("unexpected value '%v' of type %T", value, value), typing.UnexpectedValue)
 		}
 		return parsedVal, nil
 	default:
-		return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.UnexpectedValue)
+		return "", typing.NewParseError(fmt.Sprintf("unexpected value '%v' of type %T", value, value), typing.UnexpectedValue)
 	}
 }
 
@@ -329,22 +333,21 @@ func (d DecimalConverter) Convert(value any) (string, error) {
 		result = fmt.Sprint(castedColVal)
 	case json.Number:
 		if _, _, err := apd.NewFromString(castedColVal.String()); err != nil {
-			return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.UnexpectedValue)
+			return "", typing.NewParseError(fmt.Sprintf("unexpected value '%v' of type %T", value, value), typing.UnexpectedValue)
 		}
 		result = castedColVal.String()
 	case string:
-		// If it's a string, verify it can be parsed as a number.
 		// We use apd.NewFromString instead of strconv.ParseFloat because ParseFloat
 		// can fail with ErrRange for large/precise decimal strings that are still
 		// valid for a decimal/NUMERIC destination.
 		if _, _, err := apd.NewFromString(castedColVal); err != nil {
-			return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.UnexpectedValue)
+			return "", typing.NewParseError(fmt.Sprintf("unexpected value '%v' of type %T", value, value), typing.UnexpectedValue)
 		}
 		result = castedColVal
 	case *decimal.Decimal:
 		result = castedColVal.String()
 	default:
-		return "", typing.NewParseError(fmt.Sprintf("unexpected value: '%v', type: %T", value, value), typing.UnexpectedValue)
+		return "", typing.NewParseError(fmt.Sprintf("unexpected value '%v' of type %T", value, value), typing.UnexpectedValue)
 	}
 
 	return truncateDecimalString(result, d.MaxScale), nil

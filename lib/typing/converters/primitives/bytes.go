@@ -14,7 +14,7 @@ func AsBytes(value any) ([]byte, error) {
 	default:
 		bytes, err := json.Marshal(value)
 		if err != nil {
-			return nil, fmt.Errorf("failed to marshal value: %w", err)
+			return nil, fmt.Errorf("failed to convert %T to []byte: %w", value, err)
 		}
 
 		return bytes, nil
