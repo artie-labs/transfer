@@ -64,7 +64,7 @@ func (d *DestinationTableConfigMap) AddTable(tableID sql.TableIdentifier, config
 		d.fqNameToExpiry = make(map[string]time.Time)
 	}
 
-	d.fqNameToExpiry[tableID.FullyQualifiedName()] = time.Now().Add(time.Hour)
+	d.fqNameToExpiry[tableID.FullyQualifiedName()] = time.Now().Add(time.Hour * 24)
 }
 
 type MergeOpts struct {
