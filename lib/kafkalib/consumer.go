@@ -473,7 +473,7 @@ func (c *ConsumerProvider) FetchBatchAndProcess(ctx context.Context, do func([]a
 	//	}
 	//}
 
-	var unprocessedMsgs []artie.Message = fn.Filter(msgs, func(msg artie.Message) bool {
+	unprocessedMsgs := fn.Filter(msgs, func(msg artie.Message) bool {
 		if appliedMsg, ok := c.partitionToAppliedOffset[msg.Partition()]; ok {
 			if appliedMsg.Offset() >= msg.Offset() {
 				return false
