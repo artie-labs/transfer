@@ -1,6 +1,6 @@
 package fn
 
-func Map[T1 any, T2 any](in []T1, mappingFn func(T1) T2) []T2 {
+func Map[T1, T2 any](in []T1, mappingFn func(T1) T2) []T2 {
 	out := make([]T2, len(in))
 
 	for i, s := range in {
