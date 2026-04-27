@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/artie-labs/transfer/lib/fn"
 	"github.com/twmb/franz-go/pkg/kerr"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/kmsg"
@@ -31,6 +32,8 @@ func BuildContextKey(topic string) ctxKey {
 type Consumer interface {
 	Close() (err error)
 	FetchMessage(ctx context.Context) (artie.Message, error)
+	// FetchBatch must only return batches with len() >= 1
+	FetchBatch(ctx context.Context) ([]artie.Message, error)
 	CommitMessages(ctx context.Context, msgs ...artie.Message) error
 }
 
@@ -113,6 +116,60 @@ func (f *FranzGoConsumer) FetchMessage(ctx context.Context) (artie.Message, erro
 	record := f.currentIter.Next()
 
 	return artie.NewFranzGoMessage(*record, f.GetHighWatermark(*record)), nil
+}
+
+func (f *FranzGoConsumer) FetchBatch(ctx context.Context) ([]artie.Message, error) {
+	if f.currentIter != nil && !f.currentIter.Done() {
+		var msgBatch []artie.Message
+
+		for !f.currentIter.Done() {
+			record := f.currentIter.Next()
+			slog.Debug("Received message",
+				slog.String("topic", record.Topic),
+				slog.Int("partition", int(record.Partition)),
+				slog.Int64("offset", record.Offset))
+
+			msgBatch = append(msgBatch, artie.NewFranzGoMessage(*record, f.GetHighWatermark(*record)))
+		}
+
+		return msgBatch, nil
+	}
+
+	groupID, generation := f.client.GroupMetadata()
+	slog.Debug("Polling topics", slog.Any("topics", f.client.GetConsumeTopics()), slog.String("groupID", groupID), slog.Int("generation", int(generation)))
+
+	fetches := f.client.PollFetches(ctx)
+	slog.Debug("done polling", "fetches", fetches, slog.Any("topics", f.client.GetConsumeTopics()), slog.String("groupID", groupID), slog.Int("generation", int(generation)))
+
+	if errs := fetches.Errors(); len(errs) > 0 {
+		var combinedErrors []error
+		for _, err := range errs {
+			combinedErrors = append(combinedErrors, err.Err)
+		}
+		return nil, errors.Join(combinedErrors...)
+	}
+
+	// Since HWM is a field on the Partition and not on every kgo.Record,
+	// we need to iterate over the partitions and update the high watermark map.
+	fetches.EachTopic(func(topic kgo.FetchTopic) {
+		topic.EachPartition(func(partition kgo.FetchPartition) {
+			f.highWatermarks[GetHighWatermarkMapKey(topic.Topic, partition.Partition)] = partition.HighWatermark
+		})
+	})
+
+	f.currentIter = fetches.RecordIter()
+	if f.currentIter.Done() {
+		return nil, ErrNoMessages
+	}
+
+	var msgBatch []artie.Message
+	for !f.currentIter.Done() {
+		record := f.currentIter.Next()
+
+		msgBatch = append(msgBatch, artie.NewFranzGoMessage(*record, f.GetHighWatermark(*record)))
+	}
+
+	return msgBatch, nil
 }
 
 // TopicExists checks if a topic exists in the Kafka cluster using metadata request.
@@ -393,6 +450,49 @@ func (c *ConsumerProvider) FetchMessageAndProcess(ctx context.Context, do func(a
 	}
 
 	c.partitionToAppliedOffset[msg.Partition()] = msg
+	return nil
+}
+
+func (c *ConsumerProvider) FetchBatchAndProcess(ctx context.Context, do func([]artie.Message) error) error {
+	ctx, cancel := context.WithTimeout(ctx, FetchMessageTimeout)
+	defer cancel()
+
+	msgs, err := c.Consumer.FetchBatch(ctx)
+	if err != nil {
+		return NewFetchMessageError(err)
+	}
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	//if appliedMsg, ok := c.partitionToAppliedOffset[msg.Partition()]; ok {
+	//	if appliedMsg.Offset() >= msg.Offset() {
+	//		// We should skip this message because we have already processed it.
+	//		return nil
+	//	}
+	//}
+
+	var unprocessedMsgs []artie.Message
+	unprocessedMsgs = fn.Filter(msgs, func(msg artie.Message) bool {
+		if appliedMsg, ok := c.partitionToAppliedOffset[msg.Partition()]; ok {
+			if appliedMsg.Offset() >= msg.Offset() {
+				return false
+			}
+		}
+		return true
+	})
+
+	// todo might want do to return the msgs that were successfully processed so we can add those
+	// to partitionToAppliedOffset in the case of a partial failure
+	// need to think about modes of failure
+	if err := do(unprocessedMsgs); err != nil {
+		return fmt.Errorf("failed to process messages: %w", err)
+	}
+
+	for _, msg := range unprocessedMsgs {
+		c.partitionToAppliedOffset[msg.Partition()] = msg
+	}
+
 	return nil
 }
 

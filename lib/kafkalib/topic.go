@@ -224,6 +224,9 @@ type TopicConfig struct {
 
 	// [AppendOnly] - if true, data will always be appended instead of merged.
 	AppendOnly bool `yaml:"appendOnly,omitempty"`
+
+	// [FlushOnReceive] - if true will directly flush on receipt of a kafka  message instead of batching
+	FlushOnReceive bool `yaml:"flushOnReceive,omitempty"`
 }
 
 func (t TopicConfig) BuildDatabaseAndSchemaPair() DatabaseAndSchemaPair {
