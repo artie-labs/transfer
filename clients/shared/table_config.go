@@ -92,7 +92,6 @@ func (g GetTableCfgArgs) buildColumnFromRow(row map[string]any) (columns.Column,
 	if kindDetails.Kind == typing.Invalid.Kind {
 		return columns.Column{}, fmt.Errorf("failed to get kind details: unable to map type: %q to dwh type", row[g.ColumnNameForDataType])
 	}
-	kindDetails.OptionalDestinationDataType = typing.ToPtr(kindColName)
 
 	colName, err := asString(row[g.ColumnNameForName])
 	if err != nil {

@@ -41,6 +41,11 @@ func destinationTimestampDataType(kindDetails typing.KindDetails) (string, bool)
 	return fmt.Sprintf("%s(%s)", dataType, strings.Join(parameters, ", ")), true
 }
 
+func kindDetailsWithDestinationDataType(kindDetails typing.KindDetails, destinationDataType string) typing.KindDetails {
+	kindDetails.OptionalDestinationDataType = typing.ToPtr(destinationDataType)
+	return kindDetails
+}
+
 func (SnowflakeDialect) DataTypeForKind(kindDetails typing.KindDetails, _ bool, _ config.SharedDestinationColumnSettings) (string, error) {
 	switch kindDetails.Kind {
 	case typing.Struct.Kind:
@@ -118,9 +123,9 @@ func (SnowflakeDialect) KindForDataType(snowflakeType string) (typing.KindDetail
 	case "array":
 		return typing.Array, nil
 	case "timestamp_ltz", "timestamp_tz":
-		return typing.TimestampTZ, nil
+		return kindDetailsWithDestinationDataType(typing.TimestampTZ, snowflakeType), nil
 	case "timestamp", "datetime", "timestamp_ntz":
-		return typing.TimestampNTZ, nil
+		return kindDetailsWithDestinationDataType(typing.TimestampNTZ, snowflakeType), nil
 	case "time":
 		return typing.TimeKindDetails, nil
 	case "date":

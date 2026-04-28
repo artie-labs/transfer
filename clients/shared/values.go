@@ -75,21 +75,19 @@ func ParseValue(colVal any, colKind columns.Column) (any, error) {
 
 		return colValString, nil
 	case typing.Struct.Kind:
-		if colKind.KindDetails == typing.Struct {
-			if strings.Contains(colValString, constants.ToastUnavailableValuePlaceholder) {
-				colVal = map[string]any{
-					"key": constants.ToastUnavailableValuePlaceholder,
-				}
+		if strings.Contains(colValString, constants.ToastUnavailableValuePlaceholder) {
+			colVal = map[string]any{
+				"key": constants.ToastUnavailableValuePlaceholder,
+			}
+		}
+
+		if reflect.TypeOf(colVal).Kind() != reflect.String {
+			colValBytes, err := json.Marshal(colVal)
+			if err != nil {
+				return "", err
 			}
 
-			if reflect.TypeOf(colVal).Kind() != reflect.String {
-				colValBytes, err := json.Marshal(colVal)
-				if err != nil {
-					return "", err
-				}
-
-				colValString = string(colValBytes)
-			}
+			colValString = string(colValBytes)
 		}
 	case typing.Array.Kind:
 		colValBytes, err := json.Marshal(colVal)
