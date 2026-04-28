@@ -53,7 +53,7 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 
 	nonBatchTopics = fn.Map(
 		fn.Filter(cfg.Kafka.TopicConfigs, func(topicConfig *kafkalib.TopicConfig) bool {
-			return topicConfig != nil && topicConfig.FlushOnReceive
+			return topicConfig != nil && !topicConfig.FlushOnReceive
 		}),
 		func(t1 *kafkalib.TopicConfig) string {
 			return t1.Topic
