@@ -8,4 +8,5 @@ type Client interface {
 	Count(name string, value int64, tags map[string]string)
 	Gauge(name string, value float64, tags map[string]string)
 	GaugeWithSample(name string, value float64, tags map[string]string, sample float64)
+	Flush() error
 }
