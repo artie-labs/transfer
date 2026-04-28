@@ -142,9 +142,9 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 	for num, topic := range batchTopics {
 		// It is recommended to not try to establish a connection all at the same time, which may overwhelm the Kafka cluster.
 		time.Sleep(jitter.Jitter(100, 3000, num))
-		nonBatchWg.Add(1)
+		batchWg.Add(1)
 		go func(topic string) {
-			defer nonBatchWg.Done()
+			defer batchWg.Done()
 			defer logger.RecoverFatal()
 			kafkaConsumer, err := kafkalib.GetConsumerFromContext(ctx, topic)
 			if err != nil {
