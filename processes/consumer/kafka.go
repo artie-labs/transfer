@@ -33,21 +33,19 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 	}
 
 	tcFmtMap := NewTcFmtMap()
-	// var topics []string
 
 	var batchTopics []string
 	var nonBatchTopics []string
 	for _, topicConfig := range cfg.Kafka.TopicConfigs {
 		tcFmtMap.Add(topicConfig.Topic, NewTopicConfigFormatter(*topicConfig, format.GetFormatParser(topicConfig.CDCFormat, topicConfig.Topic)))
-		// topics = append(topics, topicConfig.Topic)
 	}
 
 	batchTopics = fn.Map(
 		fn.Filter(cfg.Kafka.TopicConfigs, func(topicConfig *kafkalib.TopicConfig) bool {
 			return topicConfig != nil && topicConfig.FlushOnReceive
 		}),
-		func(t1 *kafkalib.TopicConfig) string {
-			return t1.Topic
+		func(topicConfig *kafkalib.TopicConfig) string {
+			return topicConfig.Topic
 		},
 	)
 

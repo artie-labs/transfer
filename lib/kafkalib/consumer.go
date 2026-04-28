@@ -466,13 +466,6 @@ func (c *ConsumerProvider) FetchBatchAndProcess(ctx context.Context, do func([]a
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	//if appliedMsg, ok := c.partitionToAppliedOffset[msg.Partition()]; ok {
-	//	if appliedMsg.Offset() >= msg.Offset() {
-	//		// We should skip this message because we have already processed it.
-	//		return nil
-	//	}
-	//}
-
 	unprocessedMsgs := fn.Filter(msgs, func(msg artie.Message) bool {
 		if appliedMsg, ok := c.partitionToAppliedOffset[msg.Partition()]; ok {
 			if appliedMsg.Offset() >= msg.Offset() {
@@ -482,9 +475,6 @@ func (c *ConsumerProvider) FetchBatchAndProcess(ctx context.Context, do func([]a
 		return true
 	})
 
-	// todo might want do to return the msgs that were successfully processed so we can add those
-	// to partitionToAppliedOffset in the case of a partial failure
-	// need to think about modes of failure
 	if err := do(unprocessedMsgs); err != nil {
 		return fmt.Errorf("failed to process messages: %w", err)
 	}
