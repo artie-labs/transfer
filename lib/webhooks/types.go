@@ -18,8 +18,9 @@ const (
 	EventDedupeCompleted   EventType = "dedupe.completed"
 	EventDedupeFailed      EventType = "dedupe.failed"
 
-	EventReplicationStarted EventType = "replication.started"
-	EventReplicationError   EventType = "replication.error"
+	EventReplicationStarted  EventType = "replication.started"
+	EventReplicationError    EventType = "replication.error"
+	EventReplicationShutdown EventType = "replication.shutdown"
 	EventRowSkipped         EventType = "row.skipped"
 	EventDDLSeen            EventType = "ddl.seen"
 	EventDDLApplied         EventType = "ddl.applied"
@@ -44,6 +45,7 @@ var AllEventTypes = []EventType{
 	EventDedupeFailed,
 	EventReplicationStarted,
 	EventReplicationError,
+	EventReplicationShutdown,
 	EventRowSkipped,
 	EventDDLSeen,
 	EventDDLApplied,
@@ -86,8 +88,9 @@ var eventMetadataMap = map[EventType]EventMetadata{
 	EventDedupeCompleted:   {SeverityInfo, "backfill", "Deduplication completed"},
 	EventDedupeFailed:      {SeverityError, "backfill", "Deduplication failed"},
 	// Replication events
-	EventReplicationStarted: {SeverityInfo, "replication", "Replication started"},
-	EventReplicationError:   {SeverityError, "replication", "Replication error"},
+	EventReplicationStarted:  {SeverityInfo, "replication", "Replication started"},
+	EventReplicationError:    {SeverityError, "replication", "Replication error"},
+	EventReplicationShutdown: {SeverityInfo, "replication", "Replication shutdown"},
 	EventRowSkipped:         {SeverityWarning, "replication", "Row skipped"},
 	EventDDLSeen:            {SeverityInfo, "replication", "DDL seen"},
 	EventDDLApplied:         {SeverityInfo, "replication", "DDL applied"},

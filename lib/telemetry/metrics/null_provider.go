@@ -18,3 +18,7 @@ func (n NullMetricsProvider) Timing(name string, value time.Duration, tags map[s
 
 func (n NullMetricsProvider) Incr(name string, tags map[string]string) {
 }
+
+func (n NullMetricsProvider) Flush() error {
+	return nil
+}

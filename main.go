@@ -16,6 +16,7 @@ import (
 	"github.com/artie-labs/transfer/lib/destination/utils"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
+	"github.com/artie-labs/transfer/lib/system"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"github.com/artie-labs/transfer/lib/webhooks"
 	"github.com/artie-labs/transfer/models"
@@ -27,7 +28,8 @@ var version = "dev" // this will be set by the goreleaser configuration to appro
 
 func main() {
 	// Parse args into settings
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	settings, err := config.LoadSettings(os.Args, true)
 	var webhookSettings *config.WebhookSettings
 	if settings != nil {
@@ -83,6 +85,12 @@ func main() {
 	)
 
 	metricsClient := metrics.LoadExporter(settings.Config)
+	defer func() {
+		if err := metricsClient.Flush(); err != nil {
+			slog.Error("Failed to flush metrics", slog.Any("err", err))
+		}
+	}()
+
 	dest, err := utils.Load(ctx, settings.Config)
 	if err != nil {
 		whClient.SendEvent(ctx, webhooks.EventReplicationError, webhooks.EventProperties{
@@ -102,6 +110,12 @@ func main() {
 
 	slog.Info("Starting...", slog.String("version", version))
 	whClient.SendEvent(ctx, webhooks.EventReplicationStarted, webhooks.EventProperties{})
+
+	system.ShutdownHook(func() {
+		sendCtx, sendCancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer sendCancel()
+		whClient.SendEvent(sendCtx, webhooks.EventReplicationShutdown, webhooks.EventProperties{})
+	}, cancel)
 
 	inMemDB := models.NewMemoryDB()
 	switch settings.Config.KafkaClient {
