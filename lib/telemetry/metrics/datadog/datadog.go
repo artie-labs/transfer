@@ -92,3 +92,7 @@ func (s *statsClient) Gauge(name string, value float64, tags map[string]string) 
 func (s *statsClient) GaugeWithSample(name string, value float64, tags map[string]string, sample float64) {
 	_ = s.client.Gauge(name, value, toDatadogTags(tags), sample)
 }
+
+func (s *statsClient) Flush() error {
+	return s.client.Flush()
+}
