@@ -80,7 +80,6 @@ func main() {
 	)
 
 	metricsClient := metrics.LoadExporter(settings.Config)
-
 	dest, err := utils.Load(ctx, settings.Config)
 	if err != nil {
 		whClient.SendEvent(ctx, webhooks.EventReplicationError, webhooks.EventProperties{
