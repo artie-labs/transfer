@@ -21,9 +21,9 @@ const (
 	EventReplicationStarted  EventType = "replication.started"
 	EventReplicationError    EventType = "replication.error"
 	EventReplicationShutdown EventType = "replication.shutdown"
-	EventRowSkipped         EventType = "row.skipped"
-	EventDDLSeen            EventType = "ddl.seen"
-	EventDDLApplied         EventType = "ddl.applied"
+	EventRowSkipped          EventType = "row.skipped"
+	EventDDLSeen             EventType = "ddl.seen"
+	EventDDLApplied          EventType = "ddl.applied"
 
 	// Dashboard specific events
 	EventDEKGenerated EventType = "dek.generated"
@@ -91,9 +91,9 @@ var eventMetadataMap = map[EventType]EventMetadata{
 	EventReplicationStarted:  {SeverityInfo, "replication", "Replication started"},
 	EventReplicationError:    {SeverityError, "replication", "Replication error"},
 	EventReplicationShutdown: {SeverityInfo, "replication", "Replication shutdown"},
-	EventRowSkipped:         {SeverityWarning, "replication", "Row skipped"},
-	EventDDLSeen:            {SeverityInfo, "replication", "DDL seen"},
-	EventDDLApplied:         {SeverityInfo, "replication", "DDL applied"},
+	EventRowSkipped:          {SeverityWarning, "replication", "Row skipped"},
+	EventDDLSeen:             {SeverityInfo, "replication", "DDL seen"},
+	EventDDLApplied:          {SeverityInfo, "replication", "DDL applied"},
 	// Dashboard specific events
 	EventDEKGenerated: {SeverityInfo, "dashboard", "Data Encryption Key (DEK) generated"},
 
