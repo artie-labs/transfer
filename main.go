@@ -27,14 +27,11 @@ import (
 var version = "dev" // this will be set by the goreleaser configuration to appropriate value for the compiled binary.
 
 func main() {
-	// Parse args into settings
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
 	settings, err := config.LoadSettings(os.Args, true)
-	var webhookSettings *config.WebhookSettings
-	if settings != nil {
-		webhookSettings = settings.Config.WebhookSettings
-	}
+	webhookSettings := settings.Config.WebhookSettings
 	whClient, whErr := webhooks.NewClient(webhookSettings, webhooks.Transfer, version)
 	if whErr != nil {
 		logger.Fatal("Failed to initialize webhooks client", slog.Any("err", whErr))
@@ -52,8 +49,6 @@ func main() {
 	// Initialize default logger
 	_logger, cleanUpHandlers := logger.NewLogger(settings.VerboseLogging, settings.Config.Reporting.Sentry, version)
 	slog.SetDefault(_logger)
-
-	defer cleanUpHandlers()
 
 	// This is used to prevent all the instances from starting at the same time and causing a thundering herd problem
 	if value := os.Getenv("MAX_INIT_SLEEP_SECONDS"); value != "" {
@@ -85,11 +80,6 @@ func main() {
 	)
 
 	metricsClient := metrics.LoadExporter(settings.Config)
-	defer func() {
-		if err := metricsClient.Flush(); err != nil {
-			slog.Error("Failed to flush metrics", slog.Any("err", err))
-		}
-	}()
 
 	dest, err := utils.Load(ctx, settings.Config)
 	if err != nil {
@@ -112,9 +102,10 @@ func main() {
 	whClient.SendEvent(ctx, webhooks.EventReplicationStarted, webhooks.EventProperties{})
 
 	system.ShutdownHook(func() {
-		sendCtx, sendCancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer sendCancel()
-		whClient.SendEvent(sendCtx, webhooks.EventReplicationShutdown, webhooks.EventProperties{})
+		cleanUpHandlers()
+		if err := metricsClient.Flush(); err != nil {
+			slog.Error("Failed to flush metrics", slog.Any("err", err))
+		}
 	}, cancel)
 
 	inMemDB := models.NewMemoryDB()
