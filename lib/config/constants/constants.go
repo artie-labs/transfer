@@ -23,7 +23,12 @@ const (
 	// not a real column and should never be included in the target table.
 	OnlySetDeleteColumnMarker = ArtiePrefix + "_only_set_delete"
 
-	DeletionConfidencePadding       = 4 * time.Hour
+	DeletionConfidencePadding = 4 * time.Hour
+	// TableConfigCacheRetention should be long enough to retain the cache for longer than
+	// DeletionConfidencePadding + flushInterval + average_flush_duration,
+	// but we want to rotate the cache often enough to pick up customer side changes so we can self-heal from
+	// column width changes or any other breaking schema changes
+	TableConfigCacheRetention       = 24 * time.Hour
 	UpdateColumnMarker              = ArtiePrefix + "_updated_at"
 	DatabaseUpdatedColumnMarker     = ArtiePrefix + "_db_updated_at"
 	OperationColumnMarker           = ArtiePrefix + "_operation"
