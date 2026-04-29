@@ -216,6 +216,10 @@ func buildEventData(event cdc.Event, tc kafkalib.TopicConfig) (map[string]any, e
 }
 
 func buildSoftPartitionSuffix(ctx context.Context, event cdc.Event, data map[string]any, tc kafkalib.TopicConfig, tblName string, dest destination.Destination, cache *lib.KVCache[string]) (string, error) {
+	if cache == nil {
+		return "", fmt.Errorf("kv cache is nil")
+	}
+
 	cacheKey := fmt.Sprintf("%s.%s", event.GetFullTableName(), tc.SoftPartitioning.PartitionColumn)
 	key, ok := cache.Get(cacheKey)
 	if !ok {
