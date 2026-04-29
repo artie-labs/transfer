@@ -118,6 +118,23 @@ COALESCE(
 		)
 	}
 	{
+		// Struct with destination metadata
+		assert.Equal(t,
+			`
+COALESCE(
+    CASE
+        WHEN JSON_SIZE(tbl."foo") < 500 THEN JSON_SERIALIZE(tbl."foo") NOT LIKE '%__debezium_unavailable_value%'
+    ELSE
+        TRUE
+    END,
+    TRUE
+)`, RedshiftDialect{}.BuildIsNotToastValueExpression("tbl", columns.NewColumn("foo", typing.KindDetails{
+				Kind:                        typing.Struct.Kind,
+				OptionalDestinationDataType: typing.ToPtr("SUPER"),
+			})),
+		)
+	}
+	{
 		// String
 		assert.Equal(t,
 			`COALESCE(tbl."foo" NOT LIKE '%__debezium_unavailable_value%', TRUE)`,

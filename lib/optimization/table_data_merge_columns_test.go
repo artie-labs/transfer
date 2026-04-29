@@ -36,6 +36,21 @@ func TestTableData_UpdateInMemoryColumnsFromDestination_Tz(t *testing.T) {
 		assert.True(t, ok)
 		assert.Equal(t, typing.TimestampTZ, updatedColumn.KindDetails)
 	}
+	{
+		// Preserve destination-specific timestamp details so staging tables match the target.
+		tableData := &TableData{inMemoryColumns: columns.NewColumns(nil)}
+		tableData.AddInMemoryCol(columns.NewColumn("foo", typing.TimestampNTZ))
+		destinationColumn := columns.NewColumn("foo", typing.KindDetails{
+			Kind:                        typing.TimestampTZ.Kind,
+			OptionalDestinationDataType: typing.ToPtr("TIMESTAMP_LTZ(6)"),
+		})
+
+		assert.NoError(t, tableData.MergeColumnsFromDestination(destinationColumn))
+		updatedColumn, ok := tableData.inMemoryColumns.GetColumn("foo")
+		assert.True(t, ok)
+		assert.Equal(t, typing.TimestampTZ.Kind, updatedColumn.KindDetails.Kind)
+		assert.Equal(t, "TIMESTAMP_LTZ(6)", *updatedColumn.KindDetails.OptionalDestinationDataType)
+	}
 }
 
 func TestTableData_UpdateInMemoryColumnsFromDestination(t *testing.T) {
