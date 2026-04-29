@@ -120,6 +120,14 @@ func ToMemoryEvent(ctx context.Context, dest destination.Destination, event cdc.
 	setSchemaColumnsToString(optionalSchema, tc.ColumnsToHash)
 	setSchemaColumnsToString(optionalSchema, tc.ColumnsToEncrypt)
 
+	if tc.EncryptJSONBColumns {
+		for key, value := range optionalSchema {
+			if value.Kind == typing.Struct.Kind {
+				optionalSchema[key] = typing.String
+			}
+		}
+	}
+
 	// Static columns cannot collide with the event data.
 	for _, staticColumn := range tc.StaticColumns {
 		if _, ok := data[staticColumn.Name]; ok {

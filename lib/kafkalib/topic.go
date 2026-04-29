@@ -203,6 +203,7 @@ type TopicConfig struct {
 	// If this is passed in, you must pass in the [SharedDestinationSettings.EncryptionPassphrase] as well.
 	ColumnsToEncrypt []string `yaml:"columnsToEncrypt,omitempty"`
 	// [EncryptJSONBColumns] - if enabled, we will encrypt the JSONB columns that should be written to the destination.
+	// This only works for relational databases where optional schema is available.
 	EncryptJSONBColumns bool     `yaml:"encryptJSONBColumns,omitempty"`
 	PrimaryKeysOverride []string `yaml:"primaryKeysOverride,omitempty"`
 	// [SkipPrimaryKeyCreation] - if enabled, we'll skip creating a primary key on the destination.
