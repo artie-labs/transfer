@@ -18,7 +18,7 @@ clean:
 
 .PHONY: generate
 generate:
-	rm lib/mocks/*.mock.go && cd lib/mocks && go tool counterfeiter -generate
+	rm -f -- lib/mocks/*.mock.go && cd lib/mocks && go tool counterfeiter -generate
 
 .PHONY: build
 build:
