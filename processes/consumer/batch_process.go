@@ -50,10 +50,10 @@ func (p batchProcessArgs) process(ctx context.Context, cfg config.Config, inMemD
 		}
 
 		if topicConfigPtr == nil {
-			topicConfig, ok := p.TopicToConfigFormatMap.GetTopicFmt(p.Msgs[0].Topic())
+			topicConfig, ok := p.TopicToConfigFormatMap.GetTopicFmt(msg.Topic())
 			if !ok {
 				tags["what"] = "failed_topic_lookup"
-				return fmt.Errorf("failed to get topic name: %q", p.Msgs[0].Topic())
+				return fmt.Errorf("failed to get topic name: %q", msg.Topic())
 			}
 			topicConfigPtr = &topicConfig
 		}
