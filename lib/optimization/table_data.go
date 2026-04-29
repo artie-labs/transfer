@@ -373,5 +373,9 @@ func mergeColumn(inMemoryCol, destCol columns.Column) columns.Column {
 		inMemoryCol.KindDetails.OptionalArrayKind = destCol.KindDetails.OptionalArrayKind
 	}
 
+	if destCol.KindDetails.OptionalDestinationDataType != nil {
+		inMemoryCol.KindDetails.OptionalDestinationDataType = destCol.KindDetails.OptionalDestinationDataType
+	}
+
 	return inMemoryCol
 }

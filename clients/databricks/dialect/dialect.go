@@ -37,8 +37,8 @@ func (DatabricksDialect) IsTableDoesNotExistErr(err error) bool {
 func (d DatabricksDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
 	toastedValue := "%" + constants.ToastUnavailableValuePlaceholder + "%"
 	colName := sql.QuoteTableAliasColumn(tableAlias, column, d)
-	switch column.KindDetails {
-	case typing.String:
+	switch column.KindDetails.Kind {
+	case typing.String.Kind:
 		return fmt.Sprintf("COALESCE(%s NOT LIKE '%s', TRUE)", colName, toastedValue)
 	default:
 		return fmt.Sprintf("COALESCE(CAST(%s AS STRING) NOT LIKE '%s', TRUE)", colName, toastedValue)

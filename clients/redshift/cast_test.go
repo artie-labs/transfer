@@ -207,6 +207,15 @@ func (r *RedshiftTestSuite) TestCastColValStaging() {
 			assert.Empty(r.T(), result.Value)
 		}
 		{
+			// Struct with destination metadata
+			result, err := castColValStaging(nil, typing.KindDetails{
+				Kind:                        typing.Struct.Kind,
+				OptionalDestinationDataType: typing.ToPtr("SUPER"),
+			}, settings)
+			assert.NoError(r.T(), err)
+			assert.Empty(r.T(), result.Value)
+		}
+		{
 			// Not struct
 			result, err := castColValStaging(nil, typing.String, settings)
 			assert.NoError(r.T(), err)

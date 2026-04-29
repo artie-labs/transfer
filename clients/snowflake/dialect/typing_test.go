@@ -32,6 +32,55 @@ func TestSnowflakeDialect_DataTypeForKind(t *testing.T) {
 	}
 }
 
+func TestSnowflakeDialect_DataTypeForKind_PreservesDestinationTimestampDataType(t *testing.T) {
+	testCases := []struct {
+		name         string
+		kindDetails  typing.KindDetails
+		expectedType string
+	}{
+		{
+			name: "timestamp ltz",
+			kindDetails: typing.KindDetails{
+				Kind:                        typing.TimestampTZ.Kind,
+				OptionalDestinationDataType: typing.ToPtr("TIMESTAMP_LTZ(6)"),
+			},
+			expectedType: "timestamp_ltz(6)",
+		},
+		{
+			name: "timestamp tz",
+			kindDetails: typing.KindDetails{
+				Kind:                        typing.TimestampTZ.Kind,
+				OptionalDestinationDataType: typing.ToPtr("TIMESTAMP_TZ(9)"),
+			},
+			expectedType: "timestamp_tz(9)",
+		},
+		{
+			name: "timestamp ntz",
+			kindDetails: typing.KindDetails{
+				Kind:                        typing.TimestampNTZ.Kind,
+				OptionalDestinationDataType: typing.ToPtr("TIMESTAMP_NTZ(6)"),
+			},
+			expectedType: "timestamp_ntz(6)",
+		},
+		{
+			name: "ignores mismatched destination type",
+			kindDetails: typing.KindDetails{
+				Kind:                        typing.TimestampNTZ.Kind,
+				OptionalDestinationDataType: typing.ToPtr("TIMESTAMP_LTZ(6)"),
+			},
+			expectedType: "timestamp_ntz",
+		},
+	}
+
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			actual, err := SnowflakeDialect{}.DataTypeForKind(tt.kindDetails, false, config.SharedDestinationColumnSettings{})
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expectedType, actual)
+		})
+	}
+}
+
 func TestSnowflakeDialect_KindForDataType_Number(t *testing.T) {
 	{
 		// Integers
@@ -172,7 +221,8 @@ func TestSnowflakeDialect_KindForDataType_DateTime(t *testing.T) {
 		for _, expectedDateTime := range expectedDateTimes {
 			kd, err := SnowflakeDialect{}.KindForDataType(expectedDateTime)
 			assert.NoError(t, err)
-			assert.Equal(t, typing.TimestampTZ, kd, expectedDateTime)
+			assert.Equal(t, typing.TimestampTZ.Kind, kd.Kind, expectedDateTime)
+			assert.Equal(t, expectedDateTime, *kd.OptionalDestinationDataType)
 		}
 	}
 	{
@@ -181,7 +231,8 @@ func TestSnowflakeDialect_KindForDataType_DateTime(t *testing.T) {
 		for _, expectedDateTime := range expectedDateTimes {
 			kd, err := SnowflakeDialect{}.KindForDataType(expectedDateTime)
 			assert.NoError(t, err)
-			assert.Equal(t, typing.TimestampNTZ, kd, expectedDateTime)
+			assert.Equal(t, typing.TimestampNTZ.Kind, kd.Kind, expectedDateTime)
+			assert.Equal(t, expectedDateTime, *kd.OptionalDestinationDataType)
 		}
 	}
 }
