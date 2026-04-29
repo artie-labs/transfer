@@ -51,19 +51,20 @@ func GetTypeFromMap[T any](obj map[string]any, key string) (T, error) {
 }
 
 // GetCaseInsensitiveValue performs a case-insensitive lookup in the map
-func GetCaseInsensitiveValue(m map[string]any, key string) (any, bool) {
+// It'll return the value and the key in the original case.
+func GetCaseInsensitiveValue(m map[string]any, key string) (any, string, bool) {
 	// First try exact match
 	if value, ok := m[key]; ok {
-		return value, true
+		return value, key, true
 	}
 
 	// Then try case-insensitive match
 	lowerKey := strings.ToLower(key)
 	for k, v := range m {
 		if strings.ToLower(k) == lowerKey {
-			return v, true
+			return v, k, true
 		}
 	}
 
-	return nil, false
+	return nil, "", false
 }

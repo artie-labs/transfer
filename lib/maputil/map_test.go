@@ -176,6 +176,7 @@ func TestGetCaseInsensitiveValue(t *testing.T) {
 		m             map[string]any
 		key           string
 		expectedValue any
+		expectedKey   string
 		expectedFound bool
 	}{
 		{
@@ -183,6 +184,7 @@ func TestGetCaseInsensitiveValue(t *testing.T) {
 			m:             map[string]any{"foo": "bar", "baz": 123},
 			key:           "foo",
 			expectedValue: "bar",
+			expectedKey:   "foo",
 			expectedFound: true,
 		},
 		{
@@ -190,6 +192,7 @@ func TestGetCaseInsensitiveValue(t *testing.T) {
 			m:             map[string]any{"Foo": "bar", "BAZ": 123},
 			key:           "foo",
 			expectedValue: "bar",
+			expectedKey:   "Foo",
 			expectedFound: true,
 		},
 		{
@@ -197,6 +200,7 @@ func TestGetCaseInsensitiveValue(t *testing.T) {
 			m:             map[string]any{"foo": "bar", "BAZ": 123},
 			key:           "FOO",
 			expectedValue: "bar",
+			expectedKey:   "foo",
 			expectedFound: true,
 		},
 		{
@@ -204,6 +208,7 @@ func TestGetCaseInsensitiveValue(t *testing.T) {
 			m:             map[string]any{"foo": "bar", "baz": 123},
 			key:           "qux",
 			expectedValue: nil,
+			expectedKey:   "",
 			expectedFound: false,
 		},
 		{
@@ -211,6 +216,7 @@ func TestGetCaseInsensitiveValue(t *testing.T) {
 			m:             map[string]any{},
 			key:           "foo",
 			expectedValue: nil,
+			expectedKey:   "",
 			expectedFound: false,
 		},
 		{
@@ -218,6 +224,7 @@ func TestGetCaseInsensitiveValue(t *testing.T) {
 			m:             nil,
 			key:           "foo",
 			expectedValue: nil,
+			expectedKey:   "",
 			expectedFound: false,
 		},
 		{
@@ -225,15 +232,17 @@ func TestGetCaseInsensitiveValue(t *testing.T) {
 			m:             map[string]any{"Created_At": "2023-01-01", "updated_at": "2023-01-02", "DELETED_AT": "2023-01-03"},
 			key:           "created_at",
 			expectedValue: "2023-01-01",
+			expectedKey:   "Created_At",
 			expectedFound: true,
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			value, found := GetCaseInsensitiveValue(testCase.m, testCase.key)
+			value, key, found := GetCaseInsensitiveValue(testCase.m, testCase.key)
 			assert.Equal(t, testCase.expectedFound, found)
 			assert.Equal(t, testCase.expectedValue, value)
+			assert.Equal(t, testCase.expectedKey, key)
 		})
 	}
 }

@@ -9,12 +9,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/artie-labs/transfer/lib"
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/kafkalib"
-	"github.com/artie-labs/transfer/lib/maputil"
 	"github.com/artie-labs/transfer/lib/optimization"
 	"github.com/artie-labs/transfer/lib/stringutil"
 	"github.com/artie-labs/transfer/lib/telemetry/metrics/base"
@@ -46,7 +46,7 @@ func (e Event) GetTable() string {
 	return e.table
 }
 
-func ToMemoryEvent(ctx context.Context, dest destination.Destination, event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfig, cfgMode config.Mode, sharedDestinationSettings config.SharedDestinationSettings, encryptionKey []byte) (Event, error) {
+func ToMemoryEvent(ctx context.Context, dest destination.Destination, event cdc.Event, pkMap map[string]any, tc kafkalib.TopicConfig, cfgMode config.Mode, sharedDestinationSettings config.SharedDestinationSettings, encryptionKey []byte, cache *lib.KVCache[string]) (Event, error) {
 	reservedColumns := destination.BuildReservedColumnNames(dest)
 	_cols, err := buildColumns(event, tc, reservedColumns)
 	if err != nil {
@@ -103,20 +103,11 @@ func ToMemoryEvent(ctx context.Context, dest destination.Destination, event cdc.
 		}
 
 		if tc.SoftPartitioning.Enabled {
-			// TODO: cache exact match or fix upstream to pass the column name from source table
-			maybeDatetime, ok := maputil.GetCaseInsensitiveValue(data, tc.SoftPartitioning.PartitionColumn)
-			if !ok {
-				return Event{}, fmt.Errorf("partition column %q not found in data", tc.SoftPartitioning.PartitionColumn)
-			}
-			actuallyDateTime, err := typing.ParseTimestampTZFromAny(maybeDatetime)
+			suffix, err := buildSoftPartitionSuffix(ctx, event, data, tc, tblName, dest, cache)
 			if err != nil {
-				return Event{}, fmt.Errorf("failed to assert datetime: %w for table %q schema %q", err, tc.TableName, tc.Schema)
+				return Event{}, fmt.Errorf("failed to build soft partition suffix: %w", err)
 			}
-			// TODO: clean up parameters, i.e. ctx, dest, etc
-			suffix, err := BuildSoftPartitionSuffix(ctx, tc, actuallyDateTime, event.GetExecutionTime(), tblName, dest)
-			if err != nil {
-				return Event{}, fmt.Errorf("failed to calculate soft partition suffix: %w", err)
-			}
+
 			tblName = tblName + suffix
 		}
 	}
