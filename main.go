@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/artie-labs/transfer/lib"
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/cryptography"
@@ -108,6 +109,7 @@ func main() {
 	}, cancel)
 
 	inMemDB := models.NewMemoryDB()
+	kvCache := lib.NewKVCache[string]()
 	switch settings.Config.KafkaClient {
 	case config.FranzGoClient:
 		ctx, err = kafkalib.InjectFranzGoConsumerProvidersIntoContext(ctx, settings.Config.Kafka)
@@ -138,7 +140,7 @@ func main() {
 		defer logger.RecoverFatal()
 		switch settings.Config.Queue {
 		case constants.Kafka:
-			consumer.StartKafkaConsumer(ctx, settings.Config, inMemDB, dest, metricsClient, whClient)
+			consumer.StartKafkaConsumer(ctx, settings.Config, inMemDB, dest, metricsClient, whClient, kvCache)
 		default:
 			whClient.SendEvent(ctx, webhooks.EventReplicationError, webhooks.EventProperties{
 				Error: fmt.Sprintf("Failed to initialize: message queue %q not supported", settings.Config.Queue),

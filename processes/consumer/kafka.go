@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/artie-labs/transfer/lib"
 	"github.com/artie-labs/transfer/lib/artie"
 	"github.com/artie-labs/transfer/lib/artie/metrics"
 	"github.com/artie-labs/transfer/lib/cdc/format"
@@ -21,7 +22,7 @@ import (
 	"github.com/artie-labs/transfer/models"
 )
 
-func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client, whClient *webhooks.Client) {
+func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client, whClient *webhooks.Client, cache *lib.KVCache[string]) {
 	encryptionKey, err := cfg.SharedDestinationSettings.BuildEncryptionKey(ctx)
 	if err != nil {
 		whClient.SendEvent(ctx, webhooks.EventReplicationError, webhooks.EventProperties{
@@ -78,6 +79,7 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 						TopicToConfigFormatMap: tcFmtMap,
 						WhClient:               whClient,
 						EncryptionKey:          encryptionKey,
+						Cache:                  cache,
 					}
 
 					tableID, err := args.process(ctx, cfg, inMemDB, dest, metricsClient)

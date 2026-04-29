@@ -19,8 +19,6 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/converters/primitives"
 )
 
-var columnCache map[string]string
-
 // normalizeNumericVal ensures that json.Number, float64, and int64 representing the same
 // logical integer produce the same output from fmt.Sprintf("%v", ...). Without this, Go's
 // %v formats json.Number via its String() method (e.g. "1771359601407") but float64 via
