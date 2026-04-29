@@ -31,7 +31,7 @@ require (
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/google/uuid v1.6.0
-	github.com/jackc/pgx/v5 v5.7.4
+	github.com/jackc/pgx/v5 v5.9.0
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/json-iterator/go v1.1.12
 	github.com/lmittmann/tint v1.0.7
