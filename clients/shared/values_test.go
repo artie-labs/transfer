@@ -86,6 +86,14 @@ func TestParseValue(t *testing.T) {
 		assert.Equal(t, `{"foo":"bar"}`, val)
 	}
 	{
+		val, err := ParseValue(map[string]any{"foo": "bar"}, columns.NewColumn("json", typing.KindDetails{
+			Kind:                        typing.Struct.Kind,
+			OptionalDestinationDataType: typing.ToPtr("JSON"),
+		}))
+		assert.NoError(t, err)
+		assert.Equal(t, `{"foo":"bar"}`, val)
+	}
+	{
 		val, err := ParseValue([]any{"foo", "bar"}, columns.NewColumn("array", typing.Array))
 		assert.NoError(t, err)
 		assert.Equal(t, `["foo","bar"]`, val)

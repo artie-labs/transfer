@@ -66,8 +66,8 @@ func (SnowflakeDialect) IsTableDoesNotExistErr(err error) bool {
 func (sd SnowflakeDialect) BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string {
 	toastedValue := "%" + constants.ToastUnavailableValuePlaceholder + "%"
 	colName := sql.QuoteTableAliasColumn(tableAlias, column, sd)
-	switch column.KindDetails {
-	case typing.String:
+	switch column.KindDetails.Kind {
+	case typing.String.Kind:
 		return fmt.Sprintf("COALESCE(%s NOT LIKE '%s', TRUE)", colName, toastedValue)
 	default:
 		return fmt.Sprintf("COALESCE(TO_VARCHAR(%s) NOT LIKE '%s', TRUE)", colName, toastedValue)
@@ -217,11 +217,11 @@ func (SnowflakeDialect) EscapeColumns(columns []columns.Column, delimiter string
 	var index int
 	for _, col := range columns {
 		escapedCol := fmt.Sprintf("$%d", index+1)
-		switch col.KindDetails {
-		case typing.Struct:
+		switch col.KindDetails.Kind {
+		case typing.Struct.Kind:
 			// https://community.snowflake.com/s/article/how-to-load-json-values-in-a-csv-file
 			escapedCol = fmt.Sprintf("PARSE_JSON(%s)", escapedCol)
-		case typing.Array:
+		case typing.Array.Kind:
 			escapedCol = fmt.Sprintf("CAST(PARSE_JSON(%s) AS ARRAY) AS %s", escapedCol, escapedCol)
 		}
 

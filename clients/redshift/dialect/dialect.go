@@ -47,8 +47,8 @@ func (rd RedshiftDialect) BuildIsNotToastValueExpression(tableAlias constants.Ta
 	toastedValue := "%" + constants.ToastUnavailableValuePlaceholder + "%"
 	colName := sql.QuoteTableAliasColumn(tableAlias, column, rd)
 
-	switch column.KindDetails {
-	case typing.Struct, typing.Array:
+	switch column.KindDetails.Kind {
+	case typing.Struct.Kind, typing.Array.Kind:
 		// We need to use JSON_SIZE to check if the column can be serialized into a VARCHAR
 		// If the value is greater than 500 characters, it's likely not going to be toasted, so we can skip the check.
 		return fmt.Sprintf(`

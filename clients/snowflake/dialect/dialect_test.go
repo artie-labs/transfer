@@ -365,6 +365,19 @@ func TestSnowflakeDialect_EscapeColumns(t *testing.T) {
 		cols.AddColumn(columns.NewColumn("array", typing.Array))
 		assert.Equal(t, "$1,$2,PARSE_JSON($3),CAST(PARSE_JSON($4) AS ARRAY) AS $4", SnowflakeDialect{}.EscapeColumns(cols.GetColumns(), ","))
 	}
+	{
+		// Test with destination metadata on JSON columns.
+		cols := columns.NewColumns(nil)
+		cols.AddColumn(columns.NewColumn("struct", typing.KindDetails{
+			Kind:                        typing.Struct.Kind,
+			OptionalDestinationDataType: typing.ToPtr("VARIANT"),
+		}))
+		cols.AddColumn(columns.NewColumn("array", typing.KindDetails{
+			Kind:                        typing.Array.Kind,
+			OptionalDestinationDataType: typing.ToPtr("ARRAY"),
+		}))
+		assert.Equal(t, "PARSE_JSON($1),CAST(PARSE_JSON($2) AS ARRAY) AS $2", SnowflakeDialect{}.EscapeColumns(cols.GetColumns(), ","))
+	}
 }
 
 func TestSnowflakeDialect_BuildCopyIntoTableQuery(t *testing.T) {

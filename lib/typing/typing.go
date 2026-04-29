@@ -13,7 +13,6 @@ const (
 	BigIntegerKind
 )
 
-// TODO: KindDetails should store the raw data type from the target table (if exists).
 type KindDetails struct {
 	Kind                   string
 	ExtendedDecimalDetails *decimal.Details
@@ -23,6 +22,9 @@ type KindDetails struct {
 	OptionalIntegerKind     *OptionalIntegerKind
 	// [OptionalArrayKind] - This is only populated for Postgres.
 	OptionalArrayKind *KindDetails
+	// [OptionalDestinationDataType] is populated from destination table metadata
+	// when the destination has type details that do not fit into Artie's logical kinds.
+	OptionalDestinationDataType *string
 }
 
 func (k KindDetails) DecimalDetailsNotSet() bool {

@@ -66,7 +66,7 @@ func replaceExceededValues(colVal string, colKind typing.KindDetails, truncateEx
 
 func castColValStaging(colVal any, colKind typing.KindDetails, sharedDestinationSettings config.SharedDestinationSettings) (shared.ValueConvertResponse, error) {
 	if colVal == nil {
-		if colKind == typing.Struct {
+		if colKind.Kind == typing.Struct.Kind {
 			// Returning empty here because if it's a struct, it will go through JSON PARSE and JSON_PARSE("") = null
 			return shared.ValueConvertResponse{}, nil
 		}
