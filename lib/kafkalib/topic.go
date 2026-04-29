@@ -201,7 +201,9 @@ type TopicConfig struct {
 	ColumnsToExclude []string `yaml:"columnsToExclude,omitempty"`
 	// [ColumnsToEncrypt] can be used to encrypt columns that should be written to the destination.
 	// If this is passed in, you must pass in the [SharedDestinationSettings.EncryptionPassphrase] as well.
-	ColumnsToEncrypt    []string `yaml:"columnsToEncrypt,omitempty"`
+	ColumnsToEncrypt []string `yaml:"columnsToEncrypt,omitempty"`
+	// [EncryptJSONBColumns] - if enabled, we will encrypt the JSONB columns that should be written to the destination.
+	EncryptJSONBColumns bool     `yaml:"encryptJSONBColumns,omitempty"`
 	PrimaryKeysOverride []string `yaml:"primaryKeysOverride,omitempty"`
 	// [SkipPrimaryKeyCreation] - if enabled, we'll skip creating a primary key on the destination.
 	// This is useful when using PrimaryKeysOverride with columns that may contain NULLs.

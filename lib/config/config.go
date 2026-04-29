@@ -310,7 +310,7 @@ func (c Config) Validate() error {
 			return fmt.Errorf("failed to validate topic config: %w", err)
 		}
 
-		if len(topicConfig.ColumnsToEncrypt) > 0 {
+		if len(topicConfig.ColumnsToEncrypt) > 0 || topicConfig.EncryptJSONBColumns {
 			hasColumnsToEncrypt = true
 		}
 
