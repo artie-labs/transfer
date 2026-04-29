@@ -180,7 +180,7 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body []byte
 	}
 
 	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
-		return doRequestResponse{body: out, httpStatus: resp.StatusCode}, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		return doRequestResponse{body: out, httpStatus: resp.StatusCode}, fmt.Errorf("unexpected status code: %d, resp: %s", resp.StatusCode, string(out))
 	}
 
 	return doRequestResponse{body: out, httpStatus: resp.StatusCode}, nil
