@@ -1,19 +1,25 @@
 package event
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"math"
 
+	"github.com/artie-labs/transfer/lib"
 	"github.com/artie-labs/transfer/lib/cdc"
 	"github.com/artie-labs/transfer/lib/config/constants"
 	"github.com/artie-labs/transfer/lib/cryptography"
+	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/kafkalib"
+	"github.com/artie-labs/transfer/lib/maputil"
 	"github.com/artie-labs/transfer/lib/typing"
 	"github.com/artie-labs/transfer/lib/typing/columns"
 	"github.com/artie-labs/transfer/lib/typing/converters/primitives"
 )
+
+var columnCache map[string]string
 
 // normalizeNumericVal ensures that json.Number, float64, and int64 representing the same
 // logical integer produce the same output from fmt.Sprintf("%v", ...). Without this, Go's
@@ -209,4 +215,29 @@ func buildEventData(event cdc.Event, tc kafkalib.TopicConfig) (map[string]any, e
 	}
 
 	return data, nil
+}
+
+func buildSoftPartitionSuffix(ctx context.Context, event cdc.Event, data map[string]any, tc kafkalib.TopicConfig, tblName string, dest destination.Destination, cache *lib.KVCache[string]) (string, error) {
+	cacheKey := fmt.Sprintf("%s.%s", event.GetFullTableName(), tc.SoftPartitioning.PartitionColumn)
+	key, ok := cache.Get(cacheKey)
+	if !ok {
+		_, key, ok = maputil.GetCaseInsensitiveValue(data, tc.SoftPartitioning.PartitionColumn)
+		if !ok {
+			return "", fmt.Errorf("partition column %q not found in data", tc.SoftPartitioning.PartitionColumn)
+		}
+
+		cache.Set(cacheKey, key)
+	}
+
+	softPartitionValue, err := typing.ParseTimestampTZFromAny(data[key])
+	if err != nil {
+		return "", fmt.Errorf("failed to assert datetime: %w for table %q schema %q", err, tc.TableName, tc.Schema)
+	}
+	// TODO: clean up parameters, i.e. ctx, dest, etc
+	suffix, err := BuildSoftPartitionSuffix(ctx, tc, softPartitionValue, event.GetExecutionTime(), tblName, dest)
+	if err != nil {
+		return "", fmt.Errorf("failed to calculate soft partition suffix: %w", err)
+	}
+
+	return suffix, nil
 }
