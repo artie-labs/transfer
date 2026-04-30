@@ -311,7 +311,7 @@ func TestConfig_Validate_Encryption(t *testing.T) {
 	{
 		// Neither passphrase nor KMS config set
 		cfg := baseCfg()
-		assert.ErrorContains(t, cfg.Validate(), "encryptionPassphrase or encryptionKMSConfig is required when columnsToEncrypt is specified")
+		assert.ErrorContains(t, cfg.Validate(), "encryptionPassphrase or encryptionKMSConfig is required when columnsToEncrypt or encryptJSONBColumns is specified")
 	}
 	{
 		// Both passphrase and KMS config set

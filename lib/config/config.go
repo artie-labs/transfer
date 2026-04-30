@@ -339,7 +339,7 @@ func (c Config) Validate() error {
 		}
 
 		if !hasPassphrase && !hasKMSConfig {
-			return fmt.Errorf("encryptionPassphrase or encryptionKMSConfig is required when columnsToEncrypt is specified")
+			return fmt.Errorf("encryptionPassphrase or encryptionKMSConfig is required when columnsToEncrypt or encryptJSONBColumns is specified")
 		}
 
 		if hasPassphrase {
