@@ -120,9 +120,11 @@ func ToMemoryEvent(ctx context.Context, dest destination.Destination, event cdc.
 	setSchemaColumnsToString(optionalSchema, tc.ColumnsToHash)
 	setSchemaColumnsToString(optionalSchema, tc.ColumnsToEncrypt)
 
+	var jsonbColumnsToEncrypt []string
 	if tc.EncryptJSONBColumns {
 		for key, value := range optionalSchema {
 			if value.Kind == typing.Struct.Kind {
+				jsonbColumnsToEncrypt = append(jsonbColumnsToEncrypt, key)
 				optionalSchema[key] = typing.String
 			}
 		}
@@ -138,7 +140,7 @@ func ToMemoryEvent(ctx context.Context, dest destination.Destination, event cdc.
 		data[staticColumn.Name] = staticColumn.Value
 	}
 
-	transformedData, err := transformData(data, tc, encryptionKey)
+	transformedData, err := transformData(data, tc, encryptionKey, jsonbColumnsToEncrypt)
 	if err != nil {
 		return Event{}, fmt.Errorf("failed to transform data: %w", err)
 	}
