@@ -227,7 +227,7 @@ func (id IcebergDialect) BuildAppendToTable(tableID sql.TableIdentifier, viewNam
 			allValues[i] = columns[i]
 		} else {
 			allColumns[i] = missingSourceColumns[i-len(columns)]
-			allColumns[i] = fmt.Sprintf("NULL as %s", missingSourceColumns[i-len(columns)])
+			allValues[i] = fmt.Sprintf("NULL as %s", missingSourceColumns[i-len(columns)])
 		}
 	}
 
