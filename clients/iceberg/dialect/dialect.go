@@ -217,7 +217,7 @@ func (IcebergDialect) BuildCreateTemporaryView(viewName string, colParts []strin
 	return fmt.Sprintf("CREATE OR REPLACE TEMPORARY VIEW %s ( %s ) USING csv %s;", viewName, strings.Join(colParts, ", "), getCSVOptions(s3Path))
 }
 
-func (id IcebergDialect) BuildAppendToTable(tableID sql.TableIdentifier, viewName string, columns []string, missingSourceColumns []string) string {
+func (id IcebergDialect) BuildAppendToTable(tableID sql.TableIdentifier, viewName string, columns, missingSourceColumns []string) string {
 	allColumns := append(columns, missingSourceColumns...)
 
 	// build missing source values
