@@ -142,7 +142,7 @@ func buildPrimaryKeys(tc kafkalib.TopicConfig, pkMap map[string]any, reservedCol
 	return pks
 }
 
-func transformData(data map[string]any, tc kafkalib.TopicConfig, encryptionKey []byte) (map[string]any, error) {
+func transformData(data map[string]any, tc kafkalib.TopicConfig, encryptionKey []byte, jsonbColumnsToEncrypt []string) (map[string]any, error) {
 	for _, columnToHash := range tc.ColumnsToHash {
 		if value, ok := data[columnToHash]; ok {
 			data[columnToHash] = cryptography.HashValue(value, tc.ColumnsToHashSalt)
@@ -164,6 +164,22 @@ func transformData(data map[string]any, tc kafkalib.TopicConfig, encryptionKey [
 
 				data[columnToEncrypt] = base64.StdEncoding.EncodeToString(encrypted)
 			}
+		}
+	}
+
+	for _, col := range jsonbColumnsToEncrypt {
+		if value := data[col]; value != nil {
+			jsonBytes, err := json.Marshal(value)
+			if err != nil {
+				return nil, fmt.Errorf("failed to serialize JSONB column %q to JSON: %w", col, err)
+			}
+
+			encrypted, err := cryptography.Encrypt(encryptionKey, jsonBytes)
+			if err != nil {
+				return nil, fmt.Errorf("failed to encrypt JSONB column %q: %w", col, err)
+			}
+
+			data[col] = base64.StdEncoding.EncodeToString(encrypted)
 		}
 	}
 
