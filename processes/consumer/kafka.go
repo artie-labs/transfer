@@ -94,12 +94,13 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 					}
 
 					args := processArgs{
-						Msg:                    msg,
+						Msgs:                   []artie.Message{msg},
 						GroupID:                kafkaConsumer.GetGroupID(),
 						TopicToConfigFormatMap: tcFmtMap,
 						WhClient:               whClient,
 						EncryptionKey:          encryptionKey,
 						Cache:                  cache,
+						FlushByDefault:         false,
 					}
 
 					tableID, err := args.process(ctx, cfg, inMemDB, dest, metricsClient)
@@ -166,15 +167,17 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 			var fetchRetries int
 			for {
 				err = kafkaConsumer.FetchBatchAndProcess(ctx, func(msgs []artie.Message) error {
-					args := batchProcessArgs{
+					args := processArgs{
 						Msgs:                   msgs,
 						GroupID:                kafkaConsumer.GetGroupID(),
 						TopicToConfigFormatMap: tcFmtMap,
 						WhClient:               whClient,
 						EncryptionKey:          encryptionKey,
+						Cache:                  cache,
+						FlushByDefault:         true,
 					}
 
-					err := args.process(ctx, cfg, inMemDB, dest, metricsClient)
+					_, err := args.process(ctx, cfg, inMemDB, dest, metricsClient)
 					if err != nil {
 						whClient.SendEvent(ctx, webhooks.EventReplicationError, webhooks.EventProperties{
 							Error: fmt.Sprintf("Failed to process batch: %s", err),
@@ -182,9 +185,6 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 						})
 						logger.Fatal("Failed to process batch", slog.Any("err", err), slog.String("topic", msgs[0].Topic()))
 					}
-
-					// todo what metrics would be appropriate to emit here?
-					// bearing in mind that because of fan in a batch may contain events from multiple tables
 
 					return nil
 				})
