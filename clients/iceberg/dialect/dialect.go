@@ -218,15 +218,18 @@ func (IcebergDialect) BuildCreateTemporaryView(viewName string, colParts []strin
 }
 
 func (id IcebergDialect) BuildAppendToTable(tableID sql.TableIdentifier, viewName string, columns, missingSourceColumns []string) string {
-	allColumns := append(columns, missingSourceColumns...)
+	allColumns := make([]string, len(columns)+len(missingSourceColumns))
+	allValues := make([]string, len(columns)+len(missingSourceColumns))
 
-	// build missing source values
-	missingSourceValues := []string{}
-	for _, col := range missingSourceColumns {
-		missingSourceValues = append(missingSourceValues, fmt.Sprintf("NULL as %s", col))
+	for i := range len(allColumns) {
+		if i < len(columns) {
+			allColumns[i] = columns[i]
+			allValues[i] = columns[i]
+		} else {
+			allColumns[i] = missingSourceColumns[i-len(columns)]
+			allColumns[i] = fmt.Sprintf("NULL as %s", missingSourceColumns[i-len(columns)])
+		}
 	}
-
-	allValues := append(columns, missingSourceValues...)
 
 	// Ref: https://downloads.apache.org/spark/docs/3.1.1/sql-ref-syntax-dml-insert-into.html
 	return fmt.Sprintf("INSERT INTO %s (%s) SELECT %s FROM %s", tableID.FullyQualifiedName(), strings.Join(allColumns, ", "), strings.Join(allValues, ", "), viewName)
