@@ -87,8 +87,9 @@ func (s Store) append(ctx context.Context, client *apachelivy.Client, tableData 
 		return fmt.Errorf("failed to get table config: %w", err)
 	}
 
-	// We don't care about srcKeysMissing because we don't drop columns when we append.
-	_, targetKeysMissing := columns.DiffAndFilter(
+	// We do care about srcKeysMissing because Iceberg doesn't like inserts with not enough columns.
+	// ref: https://github.com/apache/iceberg/issues/2040
+	srcKeysMissing, targetKeysMissing := columns.DiffAndFilter(
 		tableData.ReadOnlyInMemoryCols().GetColumns(),
 		tableConfig.GetColumns(),
 		tableData.BuildColumnsToKeep(),
@@ -119,8 +120,13 @@ func (s Store) append(ctx context.Context, client *apachelivy.Client, tableData 
 		validColumnNames[i] = col.Name()
 	}
 
+	missingSourceColumnNames := make([]string, len(srcKeysMissing))
+	for i, col := range srcKeysMissing {
+		missingSourceColumnNames[i] = col.Name()
+	}
+
 	// Then append the view into the target table
-	query := s.Dialect().BuildAppendToTable(tableID, tempTableID.EscapedTable(), validColumnNames)
+	query := s.Dialect().BuildAppendToTable(tableID, tempTableID.EscapedTable(), validColumnNames, missingSourceColumnNames)
 	if err = client.ExecContext(ctx, query); err != nil {
 		if s.Dialect().IsTableDoesNotExistErr(err) {
 			s.cm.RemoveTable(tableID)
