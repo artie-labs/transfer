@@ -128,6 +128,8 @@ func ToMemoryEvent(ctx context.Context, dest destination.Destination, event cdc.
 				optionalSchema[key] = typing.String
 			}
 		}
+
+		SetColumnTypesToString(cols, jsonbColumnsToEncrypt)
 	}
 
 	// Static columns cannot collide with the event data.
