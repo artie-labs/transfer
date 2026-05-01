@@ -73,6 +73,7 @@ type CreateSessionRequest struct {
 	DriverMemory             string         `json:"driverMemory,omitempty"`
 	ExecutorMemory           string         `json:"executorMemory,omitempty"`
 	Name                     string         `json:"name,omitempty"`
+	TTL                      string         `json:"ttl,omitempty"`
 }
 
 type CreateSessionResponse struct {

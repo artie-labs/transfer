@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"os"
 	"slices"
 	"strings"
 	"time"
@@ -87,6 +88,10 @@ func (c *Client) newSession(ctx context.Context, kind SessionKind, blockUntilRea
 		DriverMemory:             c.sessionDriverMemory,
 		ExecutorMemory:           c.sessionExecutorMemory,
 		Name:                     c.sessionName,
+	}
+
+	if _ttl := os.Getenv("LIVY_TTL"); _ttl != "" {
+		request.TTL = _ttl
 	}
 
 	body, err := json.Marshal(request)
