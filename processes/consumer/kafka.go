@@ -64,76 +64,7 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 		time.Sleep(jitter.Jitter(100, 3000, num))
 		nonBatchWg.Add(1)
 		go func(topic string) {
-			defer nonBatchWg.Done()
-			defer logger.RecoverFatal()
-			kafkaConsumer, err := kafkalib.GetConsumerFromContext(ctx, topic)
-			if err != nil {
-				whClient.SendEvent(ctx, webhooks.EventReplicationError, webhooks.EventProperties{
-					Error: fmt.Sprintf("Failed to start Kafka consumer: %s", err),
-					Topic: topic,
-				})
-				logger.Fatal("Failed to get consumer from context", slog.Any("err", err))
-			}
-
-			if cfg.Kafka.WaitForTopics {
-				if err := kafkaConsumer.WaitForTopic(ctx); err != nil {
-					whClient.SendEvent(ctx, webhooks.EventReplicationError, webhooks.EventProperties{
-						Error: fmt.Sprintf("Failed waiting for Kafka topic to exist: %s", err),
-						Topic: topic,
-					})
-					logger.Fatal("Failed waiting for topic to exist", slog.Any("err", err), slog.String("topic", topic))
-				}
-			}
-
-			var fetchRetries int
-			for {
-				err = kafkaConsumer.FetchMessageAndProcess(ctx, func(msg artie.Message) error {
-					if len(msg.Value()) == 0 {
-						slog.Debug("Found a tombstone message, skipping...", artie.BuildLogFields(msg)...)
-						return nil
-					}
-
-					args := processArgs{
-						Msgs:                   []artie.Message{msg},
-						GroupID:                kafkaConsumer.GetGroupID(),
-						TopicToConfigFormatMap: tcFmtMap,
-						WhClient:               whClient,
-						EncryptionKey:          encryptionKey,
-						Cache:                  cache,
-						FlushByDefault:         false,
-					}
-
-					tableID, err := args.process(ctx, cfg, inMemDB, dest, metricsClient)
-					if err != nil {
-						whClient.SendEvent(ctx, webhooks.EventReplicationError, webhooks.EventProperties{
-							Error: fmt.Sprintf("Failed to process message: %s", err),
-							Topic: msg.Topic(),
-						})
-						logger.Fatal("Failed to process message", slog.Any("err", err), slog.String("topic", msg.Topic()))
-					}
-
-					metrics.EmitIngestionLag(msg, metricsClient, cfg.Mode, kafkaConsumer.GetGroupID(), tableID.Schema, tableID.Table)
-					metrics.EmitRowLag(msg, metricsClient, cfg.Mode, kafkaConsumer.GetGroupID(), tableID.Schema, tableID.Table)
-
-					return nil
-				})
-				if err != nil {
-					_, isFetchErr := kafkalib.AsFetchMessageError(err)
-					if isFetchErr && db.IsRetryableError(err, context.DeadlineExceeded, kafkalib.ErrNoMessages) {
-						sleepDuration := jitter.Jitter(500, jitter.DefaultMaxMs, fetchRetries)
-						time.Sleep(sleepDuration)
-						fetchRetries++
-						continue
-					} else {
-						whClient.SendEvent(ctx, webhooks.EventReplicationError, webhooks.EventProperties{
-							Error: fmt.Sprintf("Failed to fetch and process message: %s", err),
-							Topic: topic,
-						})
-						logger.Fatal("Failed to fetch and process message", slog.Any("err", err), slog.String("topic", topic))
-					}
-				}
-				fetchRetries = 0
-			}
+			processTopic(topic, &nonBatchWg, ctx, whClient, cfg, tcFmtMap, encryptionKey, inMemDB, dest, metricsClient, false)
 		}(topic)
 	}
 
@@ -143,71 +74,106 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 		time.Sleep(jitter.Jitter(100, 3000, num))
 		batchWg.Add(1)
 		go func(topic string) {
-			defer batchWg.Done()
-			defer logger.RecoverFatal()
-			kafkaConsumer, err := kafkalib.GetConsumerFromContext(ctx, topic)
-			if err != nil {
-				whClient.SendEvent(ctx, webhooks.EventReplicationError, webhooks.EventProperties{
-					Error: fmt.Sprintf("Failed to start Kafka consumer: %s", err),
-					Topic: topic,
-				})
-				logger.Fatal("Failed to get consumer from context", slog.Any("err", err))
-			}
-
-			if cfg.Kafka.WaitForTopics {
-				if err := kafkaConsumer.WaitForTopic(ctx); err != nil {
-					whClient.SendEvent(ctx, webhooks.EventReplicationError, webhooks.EventProperties{
-						Error: fmt.Sprintf("Failed waiting for Kafka topic to exist: %s", err),
-						Topic: topic,
-					})
-					logger.Fatal("Failed waiting for topic to exist", slog.Any("err", err), slog.String("topic", topic))
-				}
-			}
-
-			var fetchRetries int
-			for {
-				err = kafkaConsumer.FetchBatchAndProcess(ctx, func(msgs []artie.Message) error {
-					args := processArgs{
-						Msgs:                   msgs,
-						GroupID:                kafkaConsumer.GetGroupID(),
-						TopicToConfigFormatMap: tcFmtMap,
-						WhClient:               whClient,
-						EncryptionKey:          encryptionKey,
-						Cache:                  cache,
-						FlushByDefault:         true,
-					}
-
-					_, err := args.process(ctx, cfg, inMemDB, dest, metricsClient)
-					if err != nil {
-						whClient.SendEvent(ctx, webhooks.EventReplicationError, webhooks.EventProperties{
-							Error: fmt.Sprintf("Failed to process batch: %s", err),
-							Topic: msgs[0].Topic(),
-						})
-						logger.Fatal("Failed to process batch", slog.Any("err", err), slog.String("topic", msgs[0].Topic()))
-					}
-
-					return nil
-				})
-				if err != nil {
-					_, isFetchErr := kafkalib.AsFetchMessageError(err)
-					if isFetchErr && db.IsRetryableError(err, context.DeadlineExceeded, kafkalib.ErrNoMessages) {
-						sleepDuration := jitter.Jitter(500, jitter.DefaultMaxMs, fetchRetries)
-						time.Sleep(sleepDuration)
-						fetchRetries++
-						continue
-					} else {
-						whClient.SendEvent(ctx, webhooks.EventReplicationError, webhooks.EventProperties{
-							Error: fmt.Sprintf("Failed to fetch and process batch: %s", err),
-							Topic: topic,
-						})
-						logger.Fatal("Failed to fetch and process batch", slog.Any("err", err), slog.String("topic", topic))
-					}
-				}
-				fetchRetries = 0
-			}
+			processTopic(topic, &batchWg, ctx, whClient, cfg, tcFmtMap, encryptionKey, inMemDB, dest, metricsClient, true)
 		}(topic)
 	}
 
 	batchWg.Wait()
 	nonBatchWg.Wait()
+}
+
+func processTopic(topic string, wg *sync.WaitGroup, ctx context.Context, whClient *webhooks.Client, cfg config.Config, tcFmtMap *TcFmtMap, encryptionKey []byte, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client, isBatch bool) {
+	defer wg.Done()
+	defer logger.RecoverFatal()
+	kafkaConsumer, err := kafkalib.GetConsumerFromContext(ctx, topic)
+	if err != nil {
+		whClient.SendEvent(ctx, webhooks.EventReplicationError, webhooks.EventProperties{
+			Error: fmt.Sprintf("Failed to start Kafka consumer: %s", err),
+			Topic: topic,
+		})
+		logger.Fatal("Failed to get consumer from context", slog.Any("err", err))
+	}
+
+	if cfg.Kafka.WaitForTopics {
+		if err := kafkaConsumer.WaitForTopic(ctx); err != nil {
+			whClient.SendEvent(ctx, webhooks.EventReplicationError, webhooks.EventProperties{
+				Error: fmt.Sprintf("Failed waiting for Kafka topic to exist: %s", err),
+				Topic: topic,
+			})
+			logger.Fatal("Failed waiting for topic to exist", slog.Any("err", err), slog.String("topic", topic))
+		}
+	}
+
+	var fetchRetries int
+	for {
+		msgOrBatch := ""
+		if isBatch {
+			msgOrBatch = "batch"
+			err = kafkaConsumer.FetchBatchAndProcess(ctx, func(msg []artie.Message) error {
+				return processMessages(msg, kafkaConsumer, tcFmtMap, whClient, encryptionKey, ctx, cfg, inMemDB, dest, metricsClient, isBatch)
+			})
+		} else {
+			msgOrBatch = "message"
+			err = kafkaConsumer.FetchMessageAndProcess(ctx, func(msg []artie.Message) error {
+				return processMessages(msg, kafkaConsumer, tcFmtMap, whClient, encryptionKey, ctx, cfg, inMemDB, dest, metricsClient, isBatch)
+			})
+		}
+		if err != nil {
+			_, isFetchErr := kafkalib.AsFetchMessageError(err)
+			if isFetchErr && db.IsRetryableError(err, context.DeadlineExceeded, kafkalib.ErrNoMessages) {
+				sleepDuration := jitter.Jitter(500, jitter.DefaultMaxMs, fetchRetries)
+				time.Sleep(sleepDuration)
+				fetchRetries++
+				continue
+			} else {
+				whClient.SendEvent(ctx, webhooks.EventReplicationError, webhooks.EventProperties{
+					Error: fmt.Sprintf("Failed to fetch and process %s: %s", msgOrBatch, err),
+					Topic: topic,
+				})
+				logger.Fatal(fmt.Sprintf("Failed to fetch and process %s", msgOrBatch), slog.Any("err", err), slog.String("topic", topic))
+			}
+		}
+		fetchRetries = 0
+	}
+}
+
+func processMessages(msgs []artie.Message, kafkaConsumer *kafkalib.ConsumerProvider, tcFmtMap *TcFmtMap, whClient *webhooks.Client, encryptionKey []byte, ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client, flushByDefault bool) error {
+	tombstoneMsgs := fn.Filter(msgs, func(msg artie.Message) bool {
+		return len(msg.Value()) == 0
+	})
+	nonTombstoneMsgs := fn.Filter(msgs, func(msg artie.Message) bool {
+		return len(msg.Value()) != 0
+	})
+	for _, msg := range tombstoneMsgs {
+		slog.Debug("Found a tombstone message, skipping...", artie.BuildLogFields(msg)...)
+	}
+
+	args := processArgs{
+		Msgs:                   nonTombstoneMsgs,
+		GroupID:                kafkaConsumer.GetGroupID(),
+		TopicToConfigFormatMap: tcFmtMap,
+		WhClient:               whClient,
+		EncryptionKey:          encryptionKey,
+		FlushByDefault:         flushByDefault,
+	}
+
+	tableID, err := args.process(ctx, cfg, inMemDB, dest, metricsClient)
+	if err != nil {
+		topic := ""
+		for _, msg := range msgs {
+			topic = msg.Topic()
+			whClient.SendEvent(ctx, webhooks.EventReplicationError, webhooks.EventProperties{
+				Error: fmt.Sprintf("Failed to process message: %s", err),
+				Topic: msg.Topic(),
+			})
+		}
+		logger.Fatal("Failed to process message", slog.Any("err", err), slog.String("topic", topic))
+	}
+
+	for _, msg := range msgs {
+		metrics.EmitIngestionLag(msg, metricsClient, cfg.Mode, kafkaConsumer.GetGroupID(), tableID.Schema, tableID.Table)
+		metrics.EmitRowLag(msg, metricsClient, cfg.Mode, kafkaConsumer.GetGroupID(), tableID.Schema, tableID.Table)
+	}
+
+	return nil
 }

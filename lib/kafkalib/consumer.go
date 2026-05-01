@@ -397,7 +397,8 @@ func (c *ConsumerProvider) LockAndProcess(ctx context.Context, lock bool, do fun
 	return nil
 }
 
-func (c *ConsumerProvider) FetchMessageAndProcess(ctx context.Context, do func(artie.Message) error) error {
+// FetchMessageAndProcess fetches a single message and executes the do function against a singleton list containing that message
+func (c *ConsumerProvider) FetchMessageAndProcess(ctx context.Context, do func([]artie.Message) error) error {
 	ctx, cancel := context.WithTimeout(ctx, FetchMessageTimeout)
 	defer cancel()
 
@@ -416,7 +417,7 @@ func (c *ConsumerProvider) FetchMessageAndProcess(ctx context.Context, do func(a
 		}
 	}
 
-	if err := do(msg); err != nil {
+	if err := do([]artie.Message{msg}); err != nil {
 		return fmt.Errorf("failed to process message: %w", err)
 	}
 
