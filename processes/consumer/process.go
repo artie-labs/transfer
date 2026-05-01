@@ -39,16 +39,22 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 		"what":    "success",
 	}
 
+	msgOrBatch := "message"
+	if len(p.Msgs) > 0 {
+		msgOrBatch = "batch"
+	}
+
 	st := time.Now()
 	// We are wrapping this in a defer function so that the values do not get immediately evaluated and miss with our actual process duration.
 	defer func() {
-		metricsClient.Timing("process.batch", time.Since(st), tags)
+		metricsClient.Timing(fmt.Sprintf("process.%s", msgOrBatch), time.Since(st), tags)
 	}()
 
 	// if any if any events are successfully processed these will all be set
 	var topicConfigPtr *TopicConfigFormatter = nil
 	shouldFlush := false
 	flushReason := ""
+	executionTime := time.Now()
 
 	// if all events processed have the same tableId this will be set,
 	// otherwise it will be unset
@@ -99,6 +105,10 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 			tableIdPtr = &cdc.TableID{}
 		}
 
+		if evt.GetExecutionTime().Before(executionTime) {
+			executionTime = evt.GetExecutionTime()
+		}
+
 		// Table name is only available after event has been cast
 		tags["table"] = evt.GetTable()
 		if topicConfigPtr.ShouldSkip(string(_event.Operation())) {
@@ -130,7 +140,7 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 
 	// if topicConfigPtr is nil it means there's nothing to flush anyways
 	if topicConfigPtr != nil && (shouldFlush || p.FlushByDefault) {
-		err := FlushSingleTopic(ctx, inMemDB, dest, metricsClient, p.WhClient, Args{Reason: flushReason, ReportDBExecutionTime: cfg.Reporting.EmitDBExecutionTime}, topicConfigPtr.tc.Topic, false)
+		err := FlushSingleTopic(ctx, inMemDB, dest, metricsClient, p.WhClient, Args{Reason: flushReason, ReportDBExecutionTime: cfg.Reporting.EmitDBExecutionTime, EventExecutionTime: &executionTime}, topicConfigPtr.tc.Topic, false)
 		if err != nil {
 			tags["what"] = "flush_fail"
 		}
