@@ -64,7 +64,7 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 		time.Sleep(jitter.Jitter(100, 3000, num))
 		nonBatchWg.Add(1)
 		go func(topic string) {
-			processTopic(topic, &nonBatchWg, ctx, whClient, cfg, tcFmtMap, encryptionKey, inMemDB, dest, metricsClient, false)
+			processTopic(topic, &nonBatchWg, ctx, whClient, cfg, tcFmtMap, encryptionKey, inMemDB, dest, metricsClient, cache, false)
 		}(topic)
 	}
 
@@ -74,7 +74,7 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 		time.Sleep(jitter.Jitter(100, 3000, num))
 		batchWg.Add(1)
 		go func(topic string) {
-			processTopic(topic, &batchWg, ctx, whClient, cfg, tcFmtMap, encryptionKey, inMemDB, dest, metricsClient, true)
+			processTopic(topic, &batchWg, ctx, whClient, cfg, tcFmtMap, encryptionKey, inMemDB, dest, metricsClient, cache, true)
 		}(topic)
 	}
 
@@ -82,7 +82,7 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 	nonBatchWg.Wait()
 }
 
-func processTopic(topic string, wg *sync.WaitGroup, ctx context.Context, whClient *webhooks.Client, cfg config.Config, tcFmtMap *TcFmtMap, encryptionKey []byte, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client, isBatch bool) {
+func processTopic(topic string, wg *sync.WaitGroup, ctx context.Context, whClient *webhooks.Client, cfg config.Config, tcFmtMap *TcFmtMap, encryptionKey []byte, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client, cache *lib.KVCache[string],isBatch bool) {
 	defer wg.Done()
 	defer logger.RecoverFatal()
 	kafkaConsumer, err := kafkalib.GetConsumerFromContext(ctx, topic)
@@ -110,12 +110,12 @@ func processTopic(topic string, wg *sync.WaitGroup, ctx context.Context, whClien
 		if isBatch {
 			msgOrBatch = "batch"
 			err = kafkaConsumer.FetchBatchAndProcess(ctx, func(msg []artie.Message) error {
-				return processMessages(msg, kafkaConsumer, tcFmtMap, whClient, encryptionKey, ctx, cfg, inMemDB, dest, metricsClient, isBatch)
+				return processMessages(msg, kafkaConsumer, tcFmtMap, whClient, encryptionKey, ctx, cfg, inMemDB, dest, metricsClient, cache, isBatch)
 			})
 		} else {
 			msgOrBatch = "message"
 			err = kafkaConsumer.FetchMessageAndProcess(ctx, func(msg []artie.Message) error {
-				return processMessages(msg, kafkaConsumer, tcFmtMap, whClient, encryptionKey, ctx, cfg, inMemDB, dest, metricsClient, isBatch)
+				return processMessages(msg, kafkaConsumer, tcFmtMap, whClient, encryptionKey, ctx, cfg, inMemDB, dest, metricsClient, cache, isBatch)
 			})
 		}
 		if err != nil {
@@ -137,7 +137,7 @@ func processTopic(topic string, wg *sync.WaitGroup, ctx context.Context, whClien
 	}
 }
 
-func processMessages(msgs []artie.Message, kafkaConsumer *kafkalib.ConsumerProvider, tcFmtMap *TcFmtMap, whClient *webhooks.Client, encryptionKey []byte, ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client, flushByDefault bool) error {
+func processMessages(msgs []artie.Message, kafkaConsumer *kafkalib.ConsumerProvider, tcFmtMap *TcFmtMap, whClient *webhooks.Client, encryptionKey []byte, ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client, cache *lib.KVCache[string], flushByDefault bool) error {
 	tombstoneMsgs := fn.Filter(msgs, func(msg artie.Message) bool {
 		return len(msg.Value()) == 0
 	})
@@ -154,6 +154,7 @@ func processMessages(msgs []artie.Message, kafkaConsumer *kafkalib.ConsumerProvi
 		TopicToConfigFormatMap: tcFmtMap,
 		WhClient:               whClient,
 		EncryptionKey:          encryptionKey,
+		Cache:                  cache,
 		FlushByDefault:         flushByDefault,
 	}
 
