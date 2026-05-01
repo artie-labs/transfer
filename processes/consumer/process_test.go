@@ -39,7 +39,7 @@ func TestProcessMessageFailures(t *testing.T) {
 		Partition: 0,
 		Offset:    int64(0),
 		Key:       nil,
-		Value:     nil,
+		Value:     []byte("test"),
 		Timestamp: time.Time{},
 	}
 
