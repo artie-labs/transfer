@@ -103,7 +103,7 @@ func (c *Client) newSession(ctx context.Context, kind SessionKind, blockUntilRea
 	if err != nil {
 		var errorResponse ErrorResponse
 		if err = json.Unmarshal(resp.body, &errorResponse); err != nil {
-			return fmt.Errorf("failed to unmarshal error response: %w", err)
+			return fmt.Errorf("failed to unmarshal error response: %s: %w", string(resp.body), err)
 		}
 
 		if errorResponse.Message == ErrTooManySessionsCreated {
