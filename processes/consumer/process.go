@@ -47,8 +47,8 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 
 	// if any if any events are successfully processed these will all be set
 	var topicConfigPtr *TopicConfigFormatter = nil
-	var shouldFlush bool = false
-	var flushReason string = ""
+	shouldFlush := false
+	flushReason := ""
 
 	// if all events processed have the same tableId this will be set,
 	// otherwise it will be unset
