@@ -24,6 +24,20 @@ func TestBuildTemporaryFilePath(t *testing.T) {
 	assert.True(t, strings.HasSuffix(fp, ".parquet"), fp)
 }
 
+func TestDropTablePrefix(t *testing.T) {
+	tableID := NewTableIdentifier("db", "public", "table", "")
+	{
+		// Without FolderName
+		store := &Store{config: config.Config{S3: &config.S3Settings{}}}
+		assert.Equal(t, "db.public.table", store.dropTablePrefix(tableID))
+	}
+	{
+		// With FolderName
+		store := &Store{config: config.Config{S3: &config.S3Settings{FolderName: "my-folder"}}}
+		assert.Equal(t, "my-folder/db.public.table", store.dropTablePrefix(tableID))
+	}
+}
+
 func TestObjectPrefix(t *testing.T) {
 	td := optimization.NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{Database: "db", TableName: "table", Schema: "public"}, "table")
 	{
