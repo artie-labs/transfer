@@ -222,13 +222,21 @@ func (s *Store) IsRetryableError(_ error) bool {
 	return false // not supported for S3
 }
 
+func (s *Store) dropTablePrefix(tableID TableIdentifier) string {
+	prefix := tableID.FullyQualifiedName()
+	if len(s.config.S3.FolderName) > 0 {
+		prefix = s.config.S3.FolderName + "/" + prefix
+	}
+	return prefix
+}
+
 func (s *Store) DropTable(ctx context.Context, tableID sql.TableIdentifier) error {
 	castedTableID, ok := tableID.(TableIdentifier)
 	if !ok {
 		return fmt.Errorf("expected tableID to be a TableIdentifier, got %T", tableID)
 	}
 
-	return s.s3Client.DeleteFolder(ctx, s.config.S3.Bucket, castedTableID.FullyQualifiedName())
+	return s.s3Client.DeleteFolder(ctx, s.config.S3.Bucket, s.dropTablePrefix(castedTableID))
 }
 
 func LoadStore(ctx context.Context, cfg config.Config) (*Store, error) {
