@@ -82,7 +82,7 @@ func StartKafkaConsumer(ctx context.Context, cfg config.Config, inMemDB *models.
 	nonBatchWg.Wait()
 }
 
-func processTopic(topic string, wg *sync.WaitGroup, ctx context.Context, whClient *webhooks.Client, cfg config.Config, tcFmtMap *TcFmtMap, encryptionKey []byte, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client, cache *lib.KVCache[string],isBatch bool) {
+func processTopic(topic string, wg *sync.WaitGroup, ctx context.Context, whClient *webhooks.Client, cfg config.Config, tcFmtMap *TcFmtMap, encryptionKey []byte, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client, cache *lib.KVCache[string], isBatch bool) {
 	defer wg.Done()
 	defer logger.RecoverFatal()
 	kafkaConsumer, err := kafkalib.GetConsumerFromContext(ctx, topic)
