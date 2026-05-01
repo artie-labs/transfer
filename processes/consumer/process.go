@@ -40,7 +40,7 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 	}
 
 	msgOrBatch := "message"
-	if len(p.Msgs) > 0 {
+	if len(p.Msgs) > 1 {
 		msgOrBatch = "batch"
 	}
 
