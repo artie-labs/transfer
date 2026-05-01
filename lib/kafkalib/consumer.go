@@ -76,6 +76,36 @@ func (f *FranzGoConsumer) Close() error {
 	return nil
 }
 
+func (f *FranzGoConsumer) performFetches(ctx context.Context) error {
+	groupID, generation := f.client.GroupMetadata()
+	slog.Debug("Polling topics", slog.Any("topics", f.client.GetConsumeTopics()), slog.String("groupID", groupID), slog.Int("generation", int(generation)))
+
+	fetches := f.client.PollFetches(ctx)
+	slog.Debug("done polling", "fetches", fetches, slog.Any("topics", f.client.GetConsumeTopics()), slog.String("groupID", groupID), slog.Int("generation", int(generation)))
+
+	if errs := fetches.Errors(); len(errs) > 0 {
+		var combinedErrors []error
+		for _, err := range errs {
+			combinedErrors = append(combinedErrors, err.Err)
+		}
+		return errors.Join(combinedErrors...)
+	}
+
+	// Since HWM is a field on the Partition and not on every kgo.Record,
+	// we need to iterate over the partitions and update the high watermark map.
+	fetches.EachTopic(func(topic kgo.FetchTopic) {
+		topic.EachPartition(func(partition kgo.FetchPartition) {
+			f.highWatermarks[GetHighWatermarkMapKey(topic.Topic, partition.Partition)] = partition.HighWatermark
+		})
+	})
+
+	f.currentIter = fetches.RecordIter()
+	if f.currentIter.Done() {
+		return ErrNoMessages
+	}
+	return nil
+}
+
 func (f *FranzGoConsumer) FetchMessage(ctx context.Context) (artie.Message, error) {
 	if f.currentIter != nil && !f.currentIter.Done() {
 		record := f.currentIter.Next()
@@ -87,31 +117,9 @@ func (f *FranzGoConsumer) FetchMessage(ctx context.Context) (artie.Message, erro
 		return artie.NewFranzGoMessage(*record, f.GetHighWatermark(*record)), nil
 	}
 
-	groupID, generation := f.client.GroupMetadata()
-	slog.Debug("Polling topics", slog.Any("topics", f.client.GetConsumeTopics()), slog.String("groupID", groupID), slog.Int("generation", int(generation)))
-
-	fetches := f.client.PollFetches(ctx)
-	slog.Debug("done polling", "fetches", fetches, slog.Any("topics", f.client.GetConsumeTopics()), slog.String("groupID", groupID), slog.Int("generation", int(generation)))
-
-	if errs := fetches.Errors(); len(errs) > 0 {
-		var combinedErrors []error
-		for _, err := range errs {
-			combinedErrors = append(combinedErrors, err.Err)
-		}
-		return nil, errors.Join(combinedErrors...)
-	}
-
-	// Since HWM is a field on the Partition and not on every kgo.Record,
-	// we need to iterate over the partitions and update the high watermark map.
-	fetches.EachTopic(func(topic kgo.FetchTopic) {
-		topic.EachPartition(func(partition kgo.FetchPartition) {
-			f.highWatermarks[GetHighWatermarkMapKey(topic.Topic, partition.Partition)] = partition.HighWatermark
-		})
-	})
-
-	f.currentIter = fetches.RecordIter()
-	if f.currentIter.Done() {
-		return nil, ErrNoMessages
+	err := f.performFetches(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	record := f.currentIter.Next()
@@ -120,47 +128,9 @@ func (f *FranzGoConsumer) FetchMessage(ctx context.Context) (artie.Message, erro
 }
 
 func (f *FranzGoConsumer) FetchBatch(ctx context.Context) ([]artie.Message, error) {
-	if f.currentIter != nil && !f.currentIter.Done() {
-		var msgBatch []artie.Message
-
-		for !f.currentIter.Done() {
-			record := f.currentIter.Next()
-			slog.Debug("Received message",
-				slog.String("topic", record.Topic),
-				slog.Int("partition", int(record.Partition)),
-				slog.Int64("offset", record.Offset))
-
-			msgBatch = append(msgBatch, artie.NewFranzGoMessage(*record, f.GetHighWatermark(*record)))
-		}
-
-		return msgBatch, nil
-	}
-
-	groupID, generation := f.client.GroupMetadata()
-	slog.Debug("Polling topics", slog.Any("topics", f.client.GetConsumeTopics()), slog.String("groupID", groupID), slog.Int("generation", int(generation)))
-
-	fetches := f.client.PollFetches(ctx)
-	slog.Debug("done polling", "fetches", fetches, slog.Any("topics", f.client.GetConsumeTopics()), slog.String("groupID", groupID), slog.Int("generation", int(generation)))
-
-	if errs := fetches.Errors(); len(errs) > 0 {
-		var combinedErrors []error
-		for _, err := range errs {
-			combinedErrors = append(combinedErrors, err.Err)
-		}
-		return nil, errors.Join(combinedErrors...)
-	}
-
-	// Since HWM is a field on the Partition and not on every kgo.Record,
-	// we need to iterate over the partitions and update the high watermark map.
-	fetches.EachTopic(func(topic kgo.FetchTopic) {
-		topic.EachPartition(func(partition kgo.FetchPartition) {
-			f.highWatermarks[GetHighWatermarkMapKey(topic.Topic, partition.Partition)] = partition.HighWatermark
-		})
-	})
-
-	f.currentIter = fetches.RecordIter()
-	if f.currentIter.Done() {
-		return nil, ErrNoMessages
+	err := f.performFetches(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	var msgBatch []artie.Message
