@@ -161,7 +161,7 @@ func processMessages(msgs []artie.Message, kafkaConsumer *kafkalib.ConsumerProvi
 	tableID, err := args.process(ctx, cfg, inMemDB, dest, metricsClient)
 	if err != nil {
 		topic := ""
-		for _, msg := range msgs {
+		for _, msg := range nonTombstoneMsgs {
 			topic = msg.Topic()
 			whClient.SendEvent(ctx, webhooks.EventReplicationError, webhooks.EventProperties{
 				Error: fmt.Sprintf("Failed to process message: %s", err),
