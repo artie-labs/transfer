@@ -171,7 +171,7 @@ func processMessages(msgs []artie.Message, kafkaConsumer *kafkalib.ConsumerProvi
 		logger.Fatal("Failed to process message", slog.Any("err", err), slog.String("topic", topic))
 	}
 
-	for _, msg := range msgs {
+	for _, msg := range nonTombstoneMsgs {
 		metrics.EmitIngestionLag(msg, metricsClient, cfg.Mode, kafkaConsumer.GetGroupID(), tableID.Schema, tableID.Table)
 		metrics.EmitRowLag(msg, metricsClient, cfg.Mode, kafkaConsumer.GetGroupID(), tableID.Schema, tableID.Table)
 	}

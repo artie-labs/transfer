@@ -39,18 +39,15 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 		"what":    "success",
 	}
 
-	msgOrBatch := "message"
-	if len(p.Msgs) > 1 {
-		msgOrBatch = "batch"
-	}
-
 	st := time.Now()
 	// We are wrapping this in a defer function so that the values do not get immediately evaluated and miss with our actual process duration.
 	defer func() {
-		metricsClient.Timing(fmt.Sprintf("process.%s", msgOrBatch), time.Since(st), tags)
+		for range p.Msgs {
+			metricsClient.Timing("process.message", time.Since(st), tags)
+		}
 	}()
 
-	// if any if any events are successfully processed these will all be set
+	// if any of any events are successfully processed these will all be set
 	var topicConfigPtr *TopicConfigFormatter = nil
 	shouldFlush := false
 	flushReason := ""
@@ -61,11 +58,6 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 	var tableIdPtr *cdc.TableID
 
 	for _, msg := range p.Msgs {
-		// handle tombstone
-		if len(msg.Value()) == 0 {
-			continue
-		}
-
 		if topicConfigPtr == nil {
 			topicConfig, ok := p.TopicToConfigFormatMap.GetTopicFmt(msg.Topic())
 			if !ok {
