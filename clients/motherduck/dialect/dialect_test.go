@@ -480,7 +480,7 @@ func TestDuckDBDialect_BuildMergeQueryIntoStagingTable(t *testing.T) {
 			constants.OnlySetDeleteColumnMarker: typing.Boolean,
 		})
 
-		statements := DuckDBDialect{}.BuildMergeQueryIntoStagingTable(
+		statements, err := DuckDBDialect{}.BuildMergeQueryIntoStagingTable(
 			tableID,
 			`"test_db"."public"."table"`,
 			[]columns.Column{columns.NewColumn("id", typing.Invalid)},
@@ -489,6 +489,7 @@ func TestDuckDBDialect_BuildMergeQueryIntoStagingTable(t *testing.T) {
 			false,
 		)
 
+		assert.NoError(t, err)
 		assert.Len(t, statements, 1)
 		assert.Equal(t, `MERGE INTO "test_db"."public"."table" AS tgt USING (SELECT * FROM "test_db"."public"."table") AS stg ON tgt."id" = stg."id"
 WHEN MATCHED THEN UPDATE SET "__artie_delete"=stg."__artie_delete","__artie_only_set_delete"=stg."__artie_only_set_delete","bar"=stg."bar","id"=stg."id","updated_at"=stg."updated_at"
@@ -508,7 +509,7 @@ WHEN NOT MATCHED THEN INSERT ("__artie_delete","__artie_only_set_delete","bar","
 			ToastCol: typing.ToPtr(true),
 		}))
 
-		statements := DuckDBDialect{}.BuildMergeQueryIntoStagingTable(
+		statements, err := DuckDBDialect{}.BuildMergeQueryIntoStagingTable(
 			tableID,
 			`"test_db"."public"."table"`,
 			[]columns.Column{columns.NewColumn("id", typing.Invalid)},
@@ -517,6 +518,7 @@ WHEN NOT MATCHED THEN INSERT ("__artie_delete","__artie_only_set_delete","bar","
 			false,
 		)
 
+		assert.NoError(t, err)
 		assert.Len(t, statements, 1)
 		assert.Equal(t, `MERGE INTO "test_db"."public"."table" AS tgt USING (SELECT * FROM "test_db"."public"."table") AS stg ON tgt."id" = stg."id"
 WHEN MATCHED THEN UPDATE SET "__artie_delete"=stg."__artie_delete","__artie_only_set_delete"=stg."__artie_only_set_delete","bar"= CASE WHEN COALESCE(stg."bar" NOT LIKE '%__debezium_unavailable_value%', TRUE) THEN stg."bar" ELSE tgt."bar" END,"id"=stg."id","updated_at"=stg."updated_at"

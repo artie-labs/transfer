@@ -31,6 +31,10 @@ func (MSSQLDialect) EscapeStruct(value string) string {
 	panic("not implemented") // We don't currently support backfills for MS SQL.
 }
 
+func (MSSQLDialect) BuildNullSafeEqualityCond(_, _ string) (string, error) {
+	return "", fmt.Errorf("not implemented")
+}
+
 func (MSSQLDialect) IsColumnAlreadyExistsErr(err error) bool {
 	alreadyExistErrs := []string{
 		// Column names in each table must be unique. Column name 'first_name' in table 'users' is specified more than once.
@@ -62,8 +66,8 @@ func (MSSQLDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifi
 	panic("not implemented") // We don't currently support deduping for MS SQL.
 }
 
-func (MSSQLDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column, _ bool) []string {
-	panic("not implemented")
+func (MSSQLDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) ([]string, error) {
+	return nil, fmt.Errorf("not implemented")
 }
 
 func (md MSSQLDialect) BuildMergeQueries(

@@ -26,6 +26,10 @@ func (MySQLDialect) EscapeStruct(value string) string {
 	panic("not implemented") // We don't currently support backfills for MySQL.
 }
 
+func (MySQLDialect) BuildNullSafeEqualityCond(_, _ string) (string, error) {
+	return "", fmt.Errorf("not implemented")
+}
+
 func (MySQLDialect) IsColumnAlreadyExistsErr(err error) bool {
 	// MySQL error 1060: Duplicate column name
 	return strings.Contains(err.Error(), "Duplicate column name")
@@ -46,8 +50,8 @@ func (MySQLDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifi
 	panic("not implemented") // We don't currently support deduping for MySQL.
 }
 
-func (MySQLDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column, _ bool) []string {
-	panic("not implemented")
+func (MySQLDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) ([]string, error) {
+	return nil, fmt.Errorf("not implemented")
 }
 
 func (md MySQLDialect) BuildMergeQueries(

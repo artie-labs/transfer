@@ -36,6 +36,10 @@ func (BigQueryDialect) EscapeStruct(value string) string {
 	return "JSON" + sql.QuoteLiteral(value)
 }
 
+func (BigQueryDialect) BuildNullSafeEqualityCond(_, _ string) (string, error) {
+	return "", fmt.Errorf("not implemented")
+}
+
 func (BigQueryDialect) IsColumnAlreadyExistsErr(err error) bool {
 	// Error ends up looking like something like this: Column already exists: _string at [1:39]
 	return strings.Contains(err.Error(), "Column already exists")
@@ -179,6 +183,6 @@ WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s) VALUES (%s);`,
 	)}, nil
 }
 
-func (BigQueryDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column, _ bool) []string {
-	panic("not implemented")
+func (BigQueryDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) ([]string, error) {
+	return nil, fmt.Errorf("not implemented")
 }

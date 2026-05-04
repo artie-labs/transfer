@@ -43,7 +43,7 @@ type Dialect interface {
 	BuildDedupeQueries(tableID, stagingTableID TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string
 	BuildDescribeTableQuery(tableID TableIdentifier) (string, []any, error)
 	BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string
-	BuildMergeQueryIntoStagingTable(tableID TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column, useEqualNull bool) []string
+	BuildMergeQueryIntoStagingTable(tableID TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) ([]string, error)
 	BuildMergeQueries(
 		tableID TableIdentifier,
 		subQuery string,
@@ -60,6 +60,8 @@ type Dialect interface {
 	// DDL queries
 	BuildAddColumnQuery(tableID TableIdentifier, sqlPart string) string
 	BuildDropColumnQuery(tableID TableIdentifier, colName string) string
+
+	BuildNullSafeEqualityCond(colA, colB string) (string, error)
 
 	// Default values
 	GetDefaultValueStrategy() DefaultValueStrategy

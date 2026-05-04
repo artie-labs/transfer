@@ -88,7 +88,7 @@ func BuildColumnComparisonsWithEqualNull(_columns []columns.Column, table1, tabl
 	for i, column := range _columns {
 		colA := QuoteTableAliasColumn(table1, column, dialect)
 		colB := QuoteTableAliasColumn(table2, column, dialect)
-		comparison, err := dialect.BuildEqualityCondition(colA, colB)
+		comparison, err := dialect.BuildNullSafeEqualityCond(colA, colB)
 		if err != nil {
 			return nil, err
 		}

@@ -83,6 +83,12 @@ func TestSnowflakeDialect_BuildDropColumnQuery(t *testing.T) {
 	)
 }
 
+func TestSnowflakeDialect_BuildNullSafeEqualityCond(t *testing.T) {
+	result, err := SnowflakeDialect{}.BuildNullSafeEqualityCond(`tgt."ID"`, `stg."ID"`)
+	assert.NoError(t, err)
+	assert.Equal(t, `EQUAL_NULL(tgt."ID", stg."ID")`, result)
+}
+
 func TestSnowflakeDialect_BuildIsNotToastValueExpression(t *testing.T) {
 	{
 		// Unspecified data type
@@ -171,7 +177,7 @@ func TestSnowflakeDialect_BuildMergeQueryIntoStagingTable(t *testing.T) {
 			constants.OnlySetDeleteColumnMarker: typing.Boolean,
 		})
 
-		statements := SnowflakeDialect{}.BuildMergeQueryIntoStagingTable(
+		statements, err := SnowflakeDialect{}.BuildMergeQueryIntoStagingTable(
 			fakeTableID,
 			fqTable,
 			[]columns.Column{columns.NewColumn("id", typing.Invalid)},
@@ -180,6 +186,7 @@ func TestSnowflakeDialect_BuildMergeQueryIntoStagingTable(t *testing.T) {
 			false,
 		)
 
+		assert.NoError(t, err)
 		assert.Len(t, statements, 1)
 		assert.Equal(t, `
 MERGE INTO db.schema.table tgt USING ( db.schema.table ) AS stg ON tgt."ID" = stg."ID"
@@ -200,7 +207,7 @@ WHEN NOT MATCHED THEN INSERT ("__ARTIE_DELETE","__ARTIE_ONLY_SET_DELETE","BAR","
 			ToastCol: typing.ToPtr(true),
 		}))
 
-		statements := SnowflakeDialect{}.BuildMergeQueryIntoStagingTable(
+		statements, err := SnowflakeDialect{}.BuildMergeQueryIntoStagingTable(
 			fakeTableID,
 			fqTable,
 			[]columns.Column{columns.NewColumn("id", typing.Invalid)},
@@ -208,7 +215,7 @@ WHEN NOT MATCHED THEN INSERT ("__ARTIE_DELETE","__ARTIE_ONLY_SET_DELETE","BAR","
 			_cols.ValidColumns(),
 			false,
 		)
-
+		assert.NoError(t, err)
 		assert.Len(t, statements, 1)
 		assert.Equal(t, `
 MERGE INTO db.schema.table tgt USING ( db.schema.table ) AS stg ON tgt."ID" = stg."ID"

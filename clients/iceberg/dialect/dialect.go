@@ -33,6 +33,10 @@ func (IcebergDialect) EscapeStruct(value string) string {
 	return sql.QuoteLiteral(value)
 }
 
+func (IcebergDialect) BuildNullSafeEqualityCond(_, _ string) (string, error) {
+	return "", fmt.Errorf("not implemented")
+}
+
 func (IcebergDialect) IsColumnAlreadyExistsErr(err error) bool {
 	if err == nil {
 		return false
@@ -223,6 +227,6 @@ func (id IcebergDialect) BuildAppendToTable(tableID sql.TableIdentifier, viewNam
 	return fmt.Sprintf("INSERT INTO %s (%s) SELECT %s FROM %s", tableID.FullyQualifiedName(), strings.Join(columns, ", "), strings.Join(columns, ", "), viewName)
 }
 
-func (IcebergDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column, _ bool) []string {
-	panic("not implemented")
+func (IcebergDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) ([]string, error) {
+	return nil, fmt.Errorf("not implemented")
 }
