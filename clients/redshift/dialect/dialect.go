@@ -25,7 +25,7 @@ func (RedshiftDialect) EscapeStruct(value string) string {
 	return fmt.Sprintf("JSON_PARSE(%s)", sql.QuoteLiteral(value))
 }
 
-func (RedshiftDialect) BuildEqualityCondition(_, _ string) (string, error) {
+func (RedshiftDialect) BuildNullSafeEqualityCond(_, _ string) (string, error) {
 	return "", fmt.Errorf("not implemented")
 }
 

@@ -26,7 +26,7 @@ func (MySQLDialect) EscapeStruct(value string) string {
 	panic("not implemented") // We don't currently support backfills for MySQL.
 }
 
-func (MySQLDialect) BuildEqualityCondition(_, _ string) (string, error) {
+func (MySQLDialect) BuildNullSafeEqualityCond(_, _ string) (string, error) {
 	return "", fmt.Errorf("not implemented")
 }
 

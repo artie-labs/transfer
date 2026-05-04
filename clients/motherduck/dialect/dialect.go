@@ -125,7 +125,7 @@ func (DuckDBDialect) KindForDataType(_type string) (typing.KindDetails, error) {
 	return typing.Invalid, fmt.Errorf("unsupported data type: %s", dataType)
 }
 
-func (DuckDBDialect) BuildEqualityCondition(_, _ string) (string, error) {
+func (DuckDBDialect) BuildNullSafeEqualityCond(_, _ string) (string, error) {
 	return "", fmt.Errorf("not implemented")
 }
 

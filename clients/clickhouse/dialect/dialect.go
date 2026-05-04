@@ -29,7 +29,7 @@ func (ClickhouseDialect) EscapeStruct(value string) string {
 	return sql.QuoteLiteral(value)
 }
 
-func (ClickhouseDialect) BuildEqualityCondition(_, _ string) (string, error) {
+func (ClickhouseDialect) BuildNullSafeEqualityCond(_, _ string) (string, error) {
 	return "", fmt.Errorf("not implemented")
 }
 
