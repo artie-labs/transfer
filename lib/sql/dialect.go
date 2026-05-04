@@ -60,6 +60,8 @@ type Dialect interface {
 	BuildAddColumnQuery(tableID TableIdentifier, sqlPart string) string
 	BuildDropColumnQuery(tableID TableIdentifier, colName string) string
 
+	BuildNullSafeEqualityCond(colA, colB string) (string, error)
+
 	// Default values
 	GetDefaultValueStrategy() DefaultValueStrategy
 }

@@ -47,6 +47,10 @@ func (PostgresDialect) EscapeStruct(value string) string {
 	return sql.QuoteLiteral(value)
 }
 
+func (PostgresDialect) BuildNullSafeEqualityCond(_, _ string) (string, error) {
+	return "", fmt.Errorf("not implemented")
+}
+
 func (PostgresDialect) IsColumnAlreadyExistsErr(_ error) bool {
 	return false
 }

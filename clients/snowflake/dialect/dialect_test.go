@@ -83,6 +83,12 @@ func TestSnowflakeDialect_BuildDropColumnQuery(t *testing.T) {
 	)
 }
 
+func TestSnowflakeDialect_BuildNullSafeEqualityCond(t *testing.T) {
+	result, err := SnowflakeDialect{}.BuildNullSafeEqualityCond(`tgt."ID"`, `stg."ID"`)
+	assert.NoError(t, err)
+	assert.Equal(t, `EQUAL_NULL(tgt."ID", stg."ID")`, result)
+}
+
 func TestSnowflakeDialect_BuildIsNotToastValueExpression(t *testing.T) {
 	{
 		// Unspecified data type
