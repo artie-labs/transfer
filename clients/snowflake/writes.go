@@ -24,7 +24,10 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData, wh
 		return false, fmt.Errorf("failed to build additional equality strings: %w", err)
 	}
 
-	mergeOpts := types.MergeOpts{AdditionalEqualityStrings: predicates}
+	mergeOpts := types.MergeOpts{
+		AdditionalEqualityStrings: predicates,
+		UseEqualNull:              len(tableData.TopicConfig().PrimaryKeysOverride) > 0,
+	}
 	if tableData.MultiStepMergeSettings().Enabled {
 		return shared.MultiStepMerge(ctx, s, tableData, mergeOpts, whClient)
 	}

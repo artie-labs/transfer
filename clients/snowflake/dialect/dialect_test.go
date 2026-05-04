@@ -151,6 +151,7 @@ func TestSnowflakeDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
 			_cols.ValidColumns(),
 			true,
 			false,
+			false,
 		)
 		assert.Len(t, statements, 1)
 		assert.NoError(t, err)
@@ -182,6 +183,7 @@ func TestSnowflakeDialect_BuildMergeQueryIntoStagingTable(t *testing.T) {
 			[]columns.Column{columns.NewColumn("id", typing.Invalid)},
 			nil,
 			_cols.ValidColumns(),
+			false,
 		)
 
 		assert.Len(t, statements, 1)
@@ -210,6 +212,7 @@ WHEN NOT MATCHED THEN INSERT ("__ARTIE_DELETE","__ARTIE_ONLY_SET_DELETE","BAR","
 			[]columns.Column{columns.NewColumn("id", typing.Invalid)},
 			nil,
 			_cols.ValidColumns(),
+			false,
 		)
 
 		assert.Len(t, statements, 1)
@@ -242,6 +245,7 @@ func TestSnowflakeDialect_BuildMergeQueries(t *testing.T) {
 		_cols.ValidColumns(),
 		false,
 		false,
+		false,
 	)
 	assert.Len(t, statements, 1)
 	assert.NoError(t, err)
@@ -266,7 +270,7 @@ func TestSnowflakeDialect_BuildMergeQueries_EqualNull(t *testing.T) {
 	fakeTableID := &mocks.FakeTableIdentifier{}
 	fakeTableID.FullyQualifiedNameReturns(fqTable)
 
-	statements, err := SnowflakeDialect{UseEqualNull: true}.BuildMergeQueries(
+	statements, err := SnowflakeDialect{}.BuildMergeQueries(
 		fakeTableID,
 		fqTable,
 		[]columns.Column{columns.NewColumn("id", typing.Invalid)},
@@ -274,6 +278,7 @@ func TestSnowflakeDialect_BuildMergeQueries_EqualNull(t *testing.T) {
 		_cols.ValidColumns(),
 		false,
 		false,
+		true,
 	)
 	assert.Len(t, statements, 1)
 	assert.NoError(t, err)
@@ -305,6 +310,7 @@ func TestSnowflakeDialect_BuildMergeQueries_CompositeKey(t *testing.T) {
 		},
 		nil,
 		_cols.ValidColumns(),
+		false,
 		false,
 		false,
 	)
@@ -340,6 +346,7 @@ func TestSnowflakeDialect_BuildMergeQueries_EscapePrimaryKeys(t *testing.T) {
 		},
 		nil,
 		_cols.ValidColumns(),
+		false,
 		false,
 		false,
 	)

@@ -139,6 +139,7 @@ func TestMSSQLDialect_BuildMergeQueries(t *testing.T) {
 			_cols,
 			false,
 			false,
+			false,
 		)
 		assert.NoError(t, err)
 		assert.Len(t, queries, 1)
@@ -158,6 +159,7 @@ WHEN NOT MATCHED AND COALESCE(stg.[__artie_delete], 1) = 0 THEN INSERT ([id],[ba
 			[]string{},
 			_cols,
 			true,
+			false,
 			false,
 		)
 		assert.NoError(t, err)

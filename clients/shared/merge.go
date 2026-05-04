@@ -180,6 +180,7 @@ func Merge(ctx context.Context, dest destination.SQLDestination, tableData *opti
 		validColumns,
 		tableData.TopicConfig().SoftDelete,
 		tableData.ContainsHardDeletes(),
+		opts.UseEqualNull,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to generate merge statements: %w", err)

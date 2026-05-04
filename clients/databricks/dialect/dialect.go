@@ -91,6 +91,7 @@ func (d DatabricksDialect) BuildMergeQueries(
 	cols []columns.Column,
 	softDelete bool,
 	_ bool,
+	_ bool,
 ) ([]string, error) {
 	// Build the base equality condition for the MERGE query
 	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, d)
@@ -191,6 +192,6 @@ FORMAT_OPTIONS (
 	)
 }
 
-func (DatabricksDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string {
+func (DatabricksDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column, _ bool) []string {
 	panic("not implemented")
 }

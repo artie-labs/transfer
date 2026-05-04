@@ -12,9 +12,7 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-type SnowflakeDialect struct {
-	UseEqualNull bool
-}
+type SnowflakeDialect struct{}
 
 // ReservedColumnNames - This is sourced from: https://docs.snowflake.com/en/sql-reference/reserved-keywords
 func (SnowflakeDialect) ReservedColumnNames() map[string]bool {
@@ -119,8 +117,8 @@ func (sd SnowflakeDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableI
 }
 
 // BuildMergeQueryIntoStagingTable - This is used to merge data from a staging table into a multi-step merge staging table.
-func (sd SnowflakeDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string {
-	equalitySQLParts, err := sql.BuildColumnComparisonsWithEqualNull(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, sd, sd.UseEqualNull)
+func (sd SnowflakeDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column, useEqualNull bool) []string {
+	equalitySQLParts, err := sql.BuildColumnComparisonsWithEqualNull(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, sd, useEqualNull)
 	if err != nil {
 		return nil
 	}
@@ -152,8 +150,9 @@ func (sd SnowflakeDialect) BuildMergeQueries(
 	cols []columns.Column,
 	softDelete bool,
 	_ bool,
+	useEqualNull bool,
 ) ([]string, error) {
-	equalitySQLParts, err := sql.BuildColumnComparisonsWithEqualNull(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, sd, sd.UseEqualNull)
+	equalitySQLParts, err := sql.BuildColumnComparisonsWithEqualNull(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, sd, useEqualNull)
 	if err != nil {
 		return nil, err
 	}

@@ -59,6 +59,7 @@ func (ClickhouseDialect) BuildMergeQueries(
 	cols []columns.Column,
 	softDelete bool,
 	_ bool,
+	_ bool,
 ) ([]string, error) {
 	panic("not implemented")
 }
@@ -75,7 +76,7 @@ func (ClickhouseDialect) BuildCopyIntoQuery(tempTableID sql.TableIdentifier, tar
 	panic("not implemented")
 }
 
-func (ClickhouseDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string {
+func (ClickhouseDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column, _ bool) []string {
 	panic("not implemented")
 }
 
