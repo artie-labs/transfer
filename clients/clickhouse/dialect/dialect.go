@@ -29,6 +29,10 @@ func (ClickhouseDialect) EscapeStruct(value string) string {
 	return sql.QuoteLiteral(value)
 }
 
+func (ClickhouseDialect) BuildNullSafeEqualityCond(_, _ string) (string, error) {
+	return "", fmt.Errorf("not implemented")
+}
+
 func (ClickhouseDialect) IsColumnAlreadyExistsErr(err error) bool {
 	// https://github.com/ClickHouse/ClickHouse/blob/master/src/Common/ErrorCodes.cpp
 	return err != nil && (strings.Contains(err.Error(), "code: 15") || strings.Contains(err.Error(), "code: 44"))

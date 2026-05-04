@@ -36,6 +36,10 @@ func (BigQueryDialect) EscapeStruct(value string) string {
 	return "JSON" + sql.QuoteLiteral(value)
 }
 
+func (BigQueryDialect) BuildNullSafeEqualityCond(_, _ string) (string, error) {
+	return "", fmt.Errorf("not implemented")
+}
+
 func (BigQueryDialect) IsColumnAlreadyExistsErr(err error) bool {
 	// Error ends up looking like something like this: Column already exists: _string at [1:39]
 	return strings.Contains(err.Error(), "Column already exists")
