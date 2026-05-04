@@ -108,6 +108,7 @@ func (bd BigQueryDialect) BuildMergeQueries(
 	cols []columns.Column,
 	softDelete bool,
 	_ bool,
+	_ bool,
 ) ([]string, error) {
 	var equalitySQLParts []string
 	for _, primaryKey := range primaryKeys {
@@ -182,6 +183,6 @@ WHEN NOT MATCHED AND IFNULL(%s, false) = false THEN INSERT (%s) VALUES (%s);`,
 	)}, nil
 }
 
-func (BigQueryDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) ([]string, error) {
+func (BigQueryDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column, _ bool) ([]string, error) {
 	return nil, fmt.Errorf("not implemented")
 }

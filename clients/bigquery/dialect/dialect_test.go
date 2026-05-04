@@ -138,6 +138,7 @@ func TestBigQueryDialect_BuildMergeQueries_TempTable(t *testing.T) {
 		cols,
 		false,
 		false,
+		false,
 	)
 	assert.NoError(t, err)
 	assert.Len(t, statements, 1)
@@ -169,6 +170,7 @@ func TestBigQueryDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
 		cols,
 		true,
 		false,
+		false,
 	)
 	assert.NoError(t, err)
 	assert.Len(t, statements, 1)
@@ -199,6 +201,7 @@ func TestBigQueryDialect_BuildMergeQueries_JSONKey(t *testing.T) {
 		[]columns.Column{orderOIDCol},
 		nil,
 		cols.ValidColumns(),
+		false,
 		false,
 		false,
 	)

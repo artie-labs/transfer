@@ -50,7 +50,7 @@ func (MySQLDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifi
 	panic("not implemented") // We don't currently support deduping for MySQL.
 }
 
-func (MySQLDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) ([]string, error) {
+func (MySQLDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column, _ bool) ([]string, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
@@ -61,6 +61,7 @@ func (md MySQLDialect) BuildMergeQueries(
 	_ []string,
 	cols []columns.Column,
 	softDelete bool,
+	_ bool,
 	_ bool,
 ) ([]string, error) {
 	joinOn := strings.Join(sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, md), " AND ")

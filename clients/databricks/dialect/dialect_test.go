@@ -206,6 +206,7 @@ func TestDatabricksDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
 			_cols.ValidColumns(),
 			true,
 			false,
+			false,
 		)
 		assert.Len(t, statements, 1)
 		assert.NoError(t, err)
@@ -240,6 +241,7 @@ func TestDatabricksDialect_BuildMergeQueries(t *testing.T) {
 		[]columns.Column{columns.NewColumn("id", typing.Invalid)},
 		nil,
 		_cols.ValidColumns(),
+		false,
 		false,
 		false,
 	)
@@ -277,6 +279,7 @@ func TestDatabricksDialect_BuildMergeQueries_CompositeKey(t *testing.T) {
 		_cols.ValidColumns(),
 		false,
 		false,
+		false,
 	)
 	assert.Len(t, statements, 1)
 	assert.NoError(t, err)
@@ -312,6 +315,7 @@ func TestDatabricksDialect_BuildMergeQueries_EscapePrimaryKeys(t *testing.T) {
 		},
 		nil,
 		_cols.ValidColumns(),
+		false,
 		false,
 		false,
 	)

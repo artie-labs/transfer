@@ -348,6 +348,7 @@ func (rd RedshiftDialect) BuildMergeQueries(
 	cols []columns.Column,
 	softDelete bool,
 	containsHardDeletes bool,
+	_ bool,
 ) ([]string, error) {
 	cols, err := columns.RemoveOnlySetDeleteColumnMarker(cols)
 	if err != nil {
@@ -406,6 +407,6 @@ func (rd RedshiftDialect) BuildCopyStatement(tableID sql.TableIdentifier, cols [
 	)
 }
 
-func (RedshiftDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) ([]string, error) {
+func (RedshiftDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column, _ bool) ([]string, error) {
 	return nil, fmt.Errorf("not implemented")
 }

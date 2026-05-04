@@ -117,8 +117,11 @@ func (sd SnowflakeDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableI
 }
 
 // BuildMergeQueryIntoStagingTable - This is used to merge data from a staging table into a multi-step merge staging table.
-func (sd SnowflakeDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) ([]string, error) {
-	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, sd)
+func (sd SnowflakeDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column, useEqualNull bool) ([]string, error) {
+	equalitySQLParts, err := sql.BuildColumnComparisonsWithEqualNull(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, sd, useEqualNull)
+	if err != nil {
+		return nil, err
+	}
 	if len(additionalEqualityStrings) > 0 {
 		equalitySQLParts = append(equalitySQLParts, additionalEqualityStrings...)
 	}
@@ -147,8 +150,12 @@ func (sd SnowflakeDialect) BuildMergeQueries(
 	cols []columns.Column,
 	softDelete bool,
 	_ bool,
+	useEqualNull bool,
 ) ([]string, error) {
-	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, sd)
+	equalitySQLParts, err := sql.BuildColumnComparisonsWithEqualNull(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, sd, useEqualNull)
+	if err != nil {
+		return nil, err
+	}
 	if len(additionalEqualityStrings) > 0 {
 		equalitySQLParts = append(equalitySQLParts, additionalEqualityStrings...)
 	}
@@ -157,7 +164,7 @@ MERGE INTO %s %s USING ( %s ) AS %s ON %s`,
 		tableID.FullyQualifiedName(), constants.TargetAlias, subQuery, constants.StagingAlias, strings.Join(equalitySQLParts, " AND "),
 	)
 
-	cols, err := columns.RemoveOnlySetDeleteColumnMarker(cols)
+	cols, err = columns.RemoveOnlySetDeleteColumnMarker(cols)
 	if err != nil {
 		return []string{}, err
 	}

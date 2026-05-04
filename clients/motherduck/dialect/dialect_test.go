@@ -486,6 +486,7 @@ func TestDuckDBDialect_BuildMergeQueryIntoStagingTable(t *testing.T) {
 			[]columns.Column{columns.NewColumn("id", typing.Invalid)},
 			nil,
 			_cols.ValidColumns(),
+			false,
 		)
 
 		assert.NoError(t, err)
@@ -514,6 +515,7 @@ WHEN NOT MATCHED THEN INSERT ("__artie_delete","__artie_only_set_delete","bar","
 			[]columns.Column{columns.NewColumn("id", typing.Invalid)},
 			nil,
 			_cols.ValidColumns(),
+			false,
 		)
 
 		assert.NoError(t, err)

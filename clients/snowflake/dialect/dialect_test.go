@@ -151,6 +151,7 @@ func TestSnowflakeDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
 			_cols.ValidColumns(),
 			true,
 			false,
+			false,
 		)
 		assert.Len(t, statements, 1)
 		assert.NoError(t, err)
@@ -182,6 +183,7 @@ func TestSnowflakeDialect_BuildMergeQueryIntoStagingTable(t *testing.T) {
 			[]columns.Column{columns.NewColumn("id", typing.Invalid)},
 			nil,
 			_cols.ValidColumns(),
+			false,
 		)
 
 		assert.NoError(t, err)
@@ -211,6 +213,7 @@ WHEN NOT MATCHED THEN INSERT ("__ARTIE_DELETE","__ARTIE_ONLY_SET_DELETE","BAR","
 			[]columns.Column{columns.NewColumn("id", typing.Invalid)},
 			nil,
 			_cols.ValidColumns(),
+			false,
 		)
 		assert.NoError(t, err)
 		assert.Len(t, statements, 1)
@@ -243,11 +246,45 @@ func TestSnowflakeDialect_BuildMergeQueries(t *testing.T) {
 		_cols.ValidColumns(),
 		false,
 		false,
+		false,
 	)
 	assert.Len(t, statements, 1)
 	assert.NoError(t, err)
 	assert.Equal(t, `
 MERGE INTO database.schema.table tgt USING ( database.schema.table ) AS stg ON tgt."ID" = stg."ID"
+WHEN MATCHED AND stg."__ARTIE_DELETE" THEN DELETE
+WHEN MATCHED AND IFNULL(stg."__ARTIE_DELETE", false) = false THEN UPDATE SET "BAR"=stg."BAR","ID"=stg."ID","START"=stg."START","UPDATED_AT"=stg."UPDATED_AT"
+WHEN NOT MATCHED AND IFNULL(stg."__ARTIE_DELETE", false) = false THEN INSERT ("BAR","ID","START","UPDATED_AT") VALUES (stg."BAR",stg."ID",stg."START",stg."UPDATED_AT");`, statements[0])
+}
+
+func TestSnowflakeDialect_BuildMergeQueries_EqualNull(t *testing.T) {
+	fqTable := "database.schema.table"
+	_cols := buildColumns(map[string]typing.KindDetails{
+		"id":                                typing.String,
+		"bar":                               typing.String,
+		"updated_at":                        typing.String,
+		"start":                             typing.String,
+		constants.DeleteColumnMarker:        typing.Boolean,
+		constants.OnlySetDeleteColumnMarker: typing.Boolean,
+	})
+
+	fakeTableID := &mocks.FakeTableIdentifier{}
+	fakeTableID.FullyQualifiedNameReturns(fqTable)
+
+	statements, err := SnowflakeDialect{}.BuildMergeQueries(
+		fakeTableID,
+		fqTable,
+		[]columns.Column{columns.NewColumn("id", typing.Invalid)},
+		nil,
+		_cols.ValidColumns(),
+		false,
+		false,
+		true,
+	)
+	assert.Len(t, statements, 1)
+	assert.NoError(t, err)
+	assert.Equal(t, `
+MERGE INTO database.schema.table tgt USING ( database.schema.table ) AS stg ON EQUAL_NULL(tgt."ID", stg."ID")
 WHEN MATCHED AND stg."__ARTIE_DELETE" THEN DELETE
 WHEN MATCHED AND IFNULL(stg."__ARTIE_DELETE", false) = false THEN UPDATE SET "BAR"=stg."BAR","ID"=stg."ID","START"=stg."START","UPDATED_AT"=stg."UPDATED_AT"
 WHEN NOT MATCHED AND IFNULL(stg."__ARTIE_DELETE", false) = false THEN INSERT ("BAR","ID","START","UPDATED_AT") VALUES (stg."BAR",stg."ID",stg."START",stg."UPDATED_AT");`, statements[0])
@@ -274,6 +311,7 @@ func TestSnowflakeDialect_BuildMergeQueries_CompositeKey(t *testing.T) {
 		},
 		nil,
 		_cols.ValidColumns(),
+		false,
 		false,
 		false,
 	)
@@ -309,6 +347,7 @@ func TestSnowflakeDialect_BuildMergeQueries_EscapePrimaryKeys(t *testing.T) {
 		},
 		nil,
 		_cols.ValidColumns(),
+		false,
 		false,
 		false,
 	)
