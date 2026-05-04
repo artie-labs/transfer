@@ -120,8 +120,8 @@ func (PostgresDialect) BuildDropColumnQuery(tableID sql.TableIdentifier, colName
 	return fmt.Sprintf("ALTER TABLE %s DROP COLUMN IF EXISTS %s", tableID.FullyQualifiedName(), colName)
 }
 
-func (PostgresDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string {
-	panic("not implemented")
+func (PostgresDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) ([]string, error) {
+	return nil, fmt.Errorf("not implemented")
 }
 
 func (pd PostgresDialect) BuildMergeQueries(

@@ -75,8 +75,8 @@ func (ClickhouseDialect) BuildCopyIntoQuery(tempTableID sql.TableIdentifier, tar
 	panic("not implemented")
 }
 
-func (ClickhouseDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string {
-	panic("not implemented")
+func (ClickhouseDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) ([]string, error) {
+	return nil, fmt.Errorf("not implemented")
 }
 
 func (ClickhouseDialect) BuildAddColumnQuery(tableID sql.TableIdentifier, sqlPart string) string {

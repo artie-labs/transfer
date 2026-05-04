@@ -66,8 +66,8 @@ func (MSSQLDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableIdentifi
 	panic("not implemented") // We don't currently support deduping for MS SQL.
 }
 
-func (MSSQLDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string {
-	panic("not implemented")
+func (MSSQLDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) ([]string, error) {
+	return nil, fmt.Errorf("not implemented")
 }
 
 func (md MSSQLDialect) BuildMergeQueries(
