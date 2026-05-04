@@ -33,7 +33,7 @@ func (IcebergDialect) EscapeStruct(value string) string {
 	return sql.QuoteLiteral(value)
 }
 
-func (IcebergDialect) BuildEqualityCondition(_, _ string) (string, error) {
+func (IcebergDialect) BuildNullSafeEqualityCond(_, _ string) (string, error) {
 	return "", fmt.Errorf("not implemented")
 }
 

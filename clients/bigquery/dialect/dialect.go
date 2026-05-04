@@ -36,7 +36,7 @@ func (BigQueryDialect) EscapeStruct(value string) string {
 	return "JSON" + sql.QuoteLiteral(value)
 }
 
-func (BigQueryDialect) BuildEqualityCondition(_, _ string) (string, error) {
+func (BigQueryDialect) BuildNullSafeEqualityCond(_, _ string) (string, error) {
 	return "", fmt.Errorf("not implemented")
 }
 

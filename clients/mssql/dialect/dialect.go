@@ -31,7 +31,7 @@ func (MSSQLDialect) EscapeStruct(value string) string {
 	panic("not implemented") // We don't currently support backfills for MS SQL.
 }
 
-func (MSSQLDialect) BuildEqualityCondition(_, _ string) (string, error) {
+func (MSSQLDialect) BuildNullSafeEqualityCond(_, _ string) (string, error) {
 	return "", fmt.Errorf("not implemented")
 }
 

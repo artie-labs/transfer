@@ -22,8 +22,8 @@ func TestBigQueryDialect_QuoteIdentifier(t *testing.T) {
 	assert.Equal(t, "`FOO; BAD`", dialect.QuoteIdentifier("FOO`; BAD"))
 }
 
-func TestBigQueryDialect_BuildEqualityCondition(t *testing.T) {
-	_, err := BigQueryDialect{}.BuildEqualityCondition(`tgt.id`, `stg.id`)
+func TestBigQueryDialect_BuildNullSafeEqualityCond(t *testing.T) {
+	_, err := BigQueryDialect{}.BuildNullSafeEqualityCond(`tgt.id`, `stg.id`)
 	assert.ErrorContains(t, err, "not implemented")
 }
 

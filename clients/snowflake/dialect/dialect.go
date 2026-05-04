@@ -48,7 +48,7 @@ func (SnowflakeDialect) EscapeStruct(value string) string {
 	return sql.QuoteLiteral(value)
 }
 
-func (SnowflakeDialect) BuildEqualityCondition(colA, colB string) (string, error) {
+func (SnowflakeDialect) BuildNullSafeEqualityCond(colA, colB string) (string, error) {
 	return fmt.Sprintf("EQUAL_NULL(%s, %s)", colA, colB), nil
 }
 

@@ -83,8 +83,8 @@ func TestSnowflakeDialect_BuildDropColumnQuery(t *testing.T) {
 	)
 }
 
-func TestSnowflakeDialect_BuildEqualityCondition(t *testing.T) {
-	result, err := SnowflakeDialect{}.BuildEqualityCondition(`tgt."ID"`, `stg."ID"`)
+func TestSnowflakeDialect_BuildNullSafeEqualityCond(t *testing.T) {
+	result, err := SnowflakeDialect{}.BuildNullSafeEqualityCond(`tgt."ID"`, `stg."ID"`)
 	assert.NoError(t, err)
 	assert.Equal(t, `EQUAL_NULL(tgt."ID", stg."ID")`, result)
 }

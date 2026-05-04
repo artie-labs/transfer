@@ -26,7 +26,7 @@ func (DatabricksDialect) EscapeStruct(value string) string {
 	panic("not implemented")
 }
 
-func (DatabricksDialect) BuildEqualityCondition(_, _ string) (string, error) {
+func (DatabricksDialect) BuildNullSafeEqualityCond(_, _ string) (string, error) {
 	return "", fmt.Errorf("not implemented")
 }
 
