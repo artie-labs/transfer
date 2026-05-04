@@ -61,11 +61,6 @@ type Dialect interface {
 	BuildAddColumnQuery(tableID TableIdentifier, sqlPart string) string
 	BuildDropColumnQuery(tableID TableIdentifier, colName string) string
 
-	// Equality
-	// BuildEqualityCondition returns a NULL-safe equality expression for two fully-qualified column references.
-	// For Snowflake this returns EQUAL_NULL(colA, colB). Other dialects return an error.
-	BuildEqualityCondition(colA, colB string) (string, error)
-
 	// Default values
 	GetDefaultValueStrategy() DefaultValueStrategy
 }

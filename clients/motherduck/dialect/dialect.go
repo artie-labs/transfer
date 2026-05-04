@@ -125,10 +125,6 @@ func (DuckDBDialect) KindForDataType(_type string) (typing.KindDetails, error) {
 	return typing.Invalid, fmt.Errorf("unsupported data type: %s", dataType)
 }
 
-func (DuckDBDialect) BuildEqualityCondition(_, _ string) (string, error) {
-	return "", fmt.Errorf("not implemented")
-}
-
 func (DuckDBDialect) IsColumnAlreadyExistsErr(err error) bool {
 	return false
 }
