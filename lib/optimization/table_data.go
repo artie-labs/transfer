@@ -60,6 +60,11 @@ type TableData struct {
 	// containsHardDeletes - this means there are hard deletes in `rowsData`, so for multi-part merge statements, we should include a DELETE SQL statement.
 	containsHardDeletes bool
 
+	// containsUpdate - set to true when any CDC update event (op=u) is observed in this batch.
+	containsUpdate bool
+	// minExecutionTime - the earliest source database timestamp across all rows in this batch.
+	minExecutionTime *time.Time
+
 	temporaryTableSuffix string
 
 	// Multi-step merge settings
@@ -71,6 +76,9 @@ type TableData struct {
 
 func (t *TableData) SetLatestTimestamp(timestamp time.Time) {
 	t.latestTimestamp = timestamp
+	if t.minExecutionTime == nil || timestamp.Before(*t.minExecutionTime) {
+		t.minExecutionTime = &timestamp
+	}
 }
 
 func (t *TableData) GetLatestTimestamp() time.Time {
@@ -107,6 +115,18 @@ func (t *TableData) ContainsHardDeletes() bool {
 
 func (t *TableData) ContainsOtherOperations() bool {
 	return t.containsOtherOperations
+}
+
+func (t *TableData) SetContainsUpdate() {
+	t.containsUpdate = true
+}
+
+func (t *TableData) ContainsOnlyCreates() bool {
+	return !t.containsUpdate && !t.containsHardDeletes
+}
+
+func (t *TableData) MinExecutionTime() *time.Time {
+	return t.minExecutionTime
 }
 
 func (t *TableData) PrimaryKeys() []string {

@@ -420,3 +420,71 @@ func TestTempTableIDWithSuffix(t *testing.T) {
 	tempTableName := shared.TempTableIDWithSuffix(&Store{}, tableID, "sUfFiX").FullyQualifiedName()
 	assert.Equal(t, `"DB"."SCHEMA"."TABLE___ARTIE_SUFFIX"`, trimTTL(tempTableName))
 }
+
+func (s *SnowflakeTestSuite) TestMergePushDownFilter() {
+	colToKindDetailsMap := maputil.NewOrderedMap[typing.KindDetails](true)
+	colToKindDetailsMap.Add("id", typing.Integer)
+	colToKindDetailsMap.Add("name", typing.String)
+	colToKindDetailsMap.Add(constants.DeleteColumnMarker, typing.Boolean)
+	colToKindDetailsMap.Add(constants.OnlySetDeleteColumnMarker, typing.Boolean)
+
+	cols := columns.NewColumns(nil)
+	for colName, colKind := range colToKindDetailsMap.All() {
+		cols.AddColumn(columns.NewColumn(colName, colKind))
+	}
+
+	topicConfig := kafkalib.TopicConfig{
+		Database:                  "customer",
+		TableName:                 "orders",
+		Schema:                    "public",
+		IncludeArtieUpdatedAt:     true,
+		EnableMergePushDownFilter: true,
+	}
+
+	tableData := optimization.NewTableData(cols, config.Replication, []string{"id"}, topicConfig, "foo")
+	tableData.ResetTempTableSuffix()
+
+	// Insert rows (creates only, no updates or deletes)
+	ts := time.Date(2024, 6, 15, 12, 0, 0, 0, time.UTC)
+	for i := range 3 {
+		tableData.InsertRow(fmt.Sprintf("pk-%d", i), map[string]any{
+			"id":   i,
+			"name": fmt.Sprintf("Name-%d", i),
+		}, false)
+		tableData.SetLatestTimestamp(ts.Add(time.Duration(i) * time.Minute))
+	}
+
+	// Verify preconditions
+	assert.True(s.T(), tableData.ContainsOnlyCreates())
+	assert.NotNil(s.T(), tableData.MinExecutionTime())
+	assert.Equal(s.T(), ts, *tableData.MinExecutionTime())
+
+	s.stageStore.configMap.AddTable(s.identifierFor(tableData), types.NewDestinationTableConfig(cols.GetColumns(), true))
+
+	// Expect CREATE TABLE
+	createTableRegex := regexp.QuoteMeta(`CREATE TRANSIENT TABLE IF NOT EXISTS "CUSTOMER"."PUBLIC"."`) + `.*`
+	s.mockDB.ExpectExec(createTableRegex).WillReturnResult(sqlmock.NewResult(0, 0))
+
+	// Expect PUT
+	putQueryRegex := regexp.QuoteMeta(`PUT 'file://`) + `.*`
+	s.mockDB.ExpectExec(putQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
+
+	// Expect COPY INTO
+	copyQueryRegex := regexp.QuoteMeta(`COPY INTO "CUSTOMER"."PUBLIC"."`) + `.*`
+	s.mockDB.ExpectQuery(copyQueryRegex).WillReturnRows(sqlmock.NewRows([]string{"rows_loaded"}).AddRow(fmt.Sprintf("%d", tableData.NumberOfRows())))
+
+	// Expect MERGE with push-down filter in the ON clause
+	mergeQueryRegex := regexp.QuoteMeta(`MERGE INTO "CUSTOMER"."PUBLIC"."`) + `.*` +
+		regexp.QuoteMeta(`__artie_updated_at`) + `.*` +
+		regexp.QuoteMeta(`2024-06-15`)
+	s.mockDB.ExpectExec(mergeQueryRegex).WillReturnResult(sqlmock.NewResult(0, 3))
+
+	// Expect DROP TABLE
+	dropQueryRegex := regexp.QuoteMeta(`DROP TABLE IF EXISTS "CUSTOMER"."PUBLIC"."`) + `.*`
+	s.mockDB.ExpectExec(dropQueryRegex).WillReturnResult(sqlmock.NewResult(0, 0))
+
+	commitTx, err := s.stageStore.Merge(s.T().Context(), tableData, nil)
+	assert.NoError(s.T(), err)
+	assert.True(s.T(), commitTx)
+	assert.NoError(s.T(), s.mockDB.ExpectationsWereMet())
+}
