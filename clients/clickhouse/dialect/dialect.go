@@ -29,6 +29,10 @@ func (ClickhouseDialect) EscapeStruct(value string) string {
 	return sql.QuoteLiteral(value)
 }
 
+func (ClickhouseDialect) BuildNullSafeEqualityCond(_, _ string) (string, error) {
+	return "", fmt.Errorf("not implemented")
+}
+
 func (ClickhouseDialect) IsColumnAlreadyExistsErr(err error) bool {
 	// https://github.com/ClickHouse/ClickHouse/blob/master/src/Common/ErrorCodes.cpp
 	return err != nil && (strings.Contains(err.Error(), "code: 15") || strings.Contains(err.Error(), "code: 44"))
@@ -55,6 +59,7 @@ func (ClickhouseDialect) BuildMergeQueries(
 	cols []columns.Column,
 	softDelete bool,
 	_ bool,
+	_ bool,
 ) ([]string, error) {
 	panic("not implemented")
 }
@@ -71,8 +76,8 @@ func (ClickhouseDialect) BuildCopyIntoQuery(tempTableID sql.TableIdentifier, tar
 	panic("not implemented")
 }
 
-func (ClickhouseDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string {
-	panic("not implemented")
+func (ClickhouseDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column, _ bool) ([]string, error) {
+	return nil, fmt.Errorf("not implemented")
 }
 
 func (ClickhouseDialect) BuildAddColumnQuery(tableID sql.TableIdentifier, sqlPart string) string {

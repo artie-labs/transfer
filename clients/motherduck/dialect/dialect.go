@@ -125,6 +125,10 @@ func (DuckDBDialect) KindForDataType(_type string) (typing.KindDetails, error) {
 	return typing.Invalid, fmt.Errorf("unsupported data type: %s", dataType)
 }
 
+func (DuckDBDialect) BuildNullSafeEqualityCond(_, _ string) (string, error) {
+	return "", fmt.Errorf("not implemented")
+}
+
 func (DuckDBDialect) IsColumnAlreadyExistsErr(err error) bool {
 	return false
 }
@@ -245,7 +249,7 @@ func (d DuckDBDialect) BuildIsNotToastValueExpression(tableAlias constants.Table
 	return fmt.Sprintf("COALESCE(%s NOT LIKE '%s', TRUE)", colName, toastedValue)
 }
 
-func (d DuckDBDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string {
+func (d DuckDBDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column, _ bool) ([]string, error) {
 	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, d)
 	if len(additionalEqualityStrings) > 0 {
 		equalitySQLParts = append(equalitySQLParts, additionalEqualityStrings...)
@@ -266,7 +270,7 @@ WHEN NOT MATCHED THEN INSERT (%s) VALUES (%s)`,
 		sql.BuildColumnsUpdateFragment(cols, constants.StagingAlias, constants.TargetAlias, d),
 		strings.Join(sql.QuoteColumns(cols, d), ","),
 		strings.Join(sql.QuoteTableAliasColumns(constants.StagingAlias, cols, d), ","),
-	)}
+	)}, nil
 }
 
 // buildSoftDeleteMergeQuery builds a single MERGE query for soft delete operations
@@ -346,6 +350,7 @@ func (d DuckDBDialect) BuildMergeQueries(
 	cols []columns.Column,
 	softDelete bool,
 	containsHardDeletes bool,
+	_ bool,
 ) ([]string, error) {
 	// Build equality conditions for the MERGE ON clause
 	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, d)

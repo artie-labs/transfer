@@ -22,6 +22,11 @@ func TestBigQueryDialect_QuoteIdentifier(t *testing.T) {
 	assert.Equal(t, "`FOO; BAD`", dialect.QuoteIdentifier("FOO`; BAD"))
 }
 
+func TestBigQueryDialect_BuildNullSafeEqualityCond(t *testing.T) {
+	_, err := BigQueryDialect{}.BuildNullSafeEqualityCond(`tgt.id`, `stg.id`)
+	assert.ErrorContains(t, err, "not implemented")
+}
+
 func TestBigQueryDialect_IsColumnAlreadyExistsErr(t *testing.T) {
 	{
 		// Random error
@@ -133,6 +138,7 @@ func TestBigQueryDialect_BuildMergeQueries_TempTable(t *testing.T) {
 		cols,
 		false,
 		false,
+		false,
 	)
 	assert.NoError(t, err)
 	assert.Len(t, statements, 1)
@@ -164,6 +170,7 @@ func TestBigQueryDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
 		cols,
 		true,
 		false,
+		false,
 	)
 	assert.NoError(t, err)
 	assert.Len(t, statements, 1)
@@ -194,6 +201,7 @@ func TestBigQueryDialect_BuildMergeQueries_JSONKey(t *testing.T) {
 		[]columns.Column{orderOIDCol},
 		nil,
 		cols.ValidColumns(),
+		false,
 		false,
 		false,
 	)

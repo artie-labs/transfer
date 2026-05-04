@@ -216,7 +216,7 @@ func (s Store) Merge(ctx context.Context, tableData *optimization.TableData, whC
 		}
 	}
 
-	queries, err := s.Dialect().BuildMergeQueries(tableID, temporaryTableID.EscapedTable(), primaryKeys, nil, cols, tableData.TopicConfig().SoftDelete, tableData.ContainsHardDeletes())
+	queries, err := s.Dialect().BuildMergeQueries(tableID, temporaryTableID.EscapedTable(), primaryKeys, nil, cols, tableData.TopicConfig().SoftDelete, tableData.ContainsHardDeletes(), false)
 	if err != nil {
 		return false, fmt.Errorf("failed to build merge queries: %w", err)
 	}

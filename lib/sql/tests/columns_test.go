@@ -192,3 +192,22 @@ func TestBuildColumnComparisons(t *testing.T) {
 	dialect := snowflakeDialect.SnowflakeDialect{}
 	assert.Equal(t, []string{`a."FOO" = b."FOO"`, `a."BAR" = b."BAR"`}, sql.BuildColumnComparisons(cols, "a", "b", sql.Equal, dialect))
 }
+
+func TestBuildColumnComparisonsWithEqualNull(t *testing.T) {
+	cols := []columns.Column{
+		columns.NewColumn("foo", typing.Boolean),
+		columns.NewColumn("bar", typing.String),
+	}
+	{
+		// useEqualNull = false falls back to standard comparison
+		result, err := sql.BuildColumnComparisonsWithEqualNull(cols, "a", "b", sql.Equal, snowflakeDialect.SnowflakeDialect{}, false)
+		assert.NoError(t, err)
+		assert.Equal(t, []string{`a."FOO" = b."FOO"`, `a."BAR" = b."BAR"`}, result)
+	}
+	{
+		// useEqualNull = true uses dialect's BuildEqualityCondition (Snowflake returns EQUAL_NULL)
+		result, err := sql.BuildColumnComparisonsWithEqualNull(cols, "a", "b", sql.Equal, snowflakeDialect.SnowflakeDialect{}, true)
+		assert.NoError(t, err)
+		assert.Equal(t, []string{`EQUAL_NULL(a."FOO", b."FOO")`, `EQUAL_NULL(a."BAR", b."BAR")`}, result)
+	}
+}
