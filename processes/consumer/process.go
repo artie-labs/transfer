@@ -17,12 +17,13 @@ import (
 )
 
 type processArgs struct {
-	Msg                    artie.Message
+	Msgs                   []artie.Message
 	GroupID                string
 	TopicToConfigFormatMap *TcFmtMap
 	WhClient               *webhooks.Client
 	EncryptionKey          []byte
 	Cache                  *lib.KVCache[string]
+	FlushByDefault         bool
 }
 
 func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *models.DatabaseData, dest destination.Destination, metricsClient base.Client) (cdc.TableID, error) {
@@ -31,6 +32,7 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 	}
 
 	reservedColumns := destination.BuildReservedColumnNames(dest)
+
 	tags := map[string]string{
 		"mode":    cfg.Mode.String(),
 		"groupID": p.GroupID,
@@ -40,63 +42,101 @@ func (p processArgs) process(ctx context.Context, cfg config.Config, inMemDB *mo
 	st := time.Now()
 	// We are wrapping this in a defer function so that the values do not get immediately evaluated and miss with our actual process duration.
 	defer func() {
-		metricsClient.Timing("process.message", time.Since(st), tags)
+		for range p.Msgs {
+			metricsClient.Timing("process.message", time.Since(st), tags)
+		}
 	}()
 
-	topicConfig, ok := p.TopicToConfigFormatMap.GetTopicFmt(p.Msg.Topic())
-	if !ok {
-		tags["what"] = "failed_topic_lookup"
-		return cdc.TableID{}, fmt.Errorf("failed to get topic name: %q", p.Msg.Topic())
+	// if any of any events are successfully processed these will all be set
+	var topicConfigPtr *TopicConfigFormatter = nil
+	shouldFlush := false
+	flushReason := ""
+	executionTime := time.Now()
+
+	// if all events processed have the same tableId this will be set,
+	// otherwise it will be unset
+	var tableIdPtr *cdc.TableID
+
+	for _, msg := range p.Msgs {
+		if topicConfigPtr == nil {
+			topicConfig, ok := p.TopicToConfigFormatMap.GetTopicFmt(msg.Topic())
+			if !ok {
+				tags["what"] = "failed_topic_lookup"
+				return cdc.TableID{}, fmt.Errorf("failed to get topic name: %q", msg.Topic())
+			}
+			topicConfigPtr = &topicConfig
+		}
+
+		tags["database"] = topicConfigPtr.tc.Database
+		tags["schema"] = topicConfigPtr.tc.Schema
+
+		pkMap, err := topicConfigPtr.buildPKMap(msg.Key(), reservedColumns)
+		if err != nil {
+			tags["what"] = "marshall_pk_err"
+			return cdc.TableID{}, fmt.Errorf("cannot unmarshal key %q: %w", string(msg.Key()), err)
+		}
+
+		_event, err := topicConfigPtr.GetEventFromBytes(msg.Value())
+		if err != nil {
+			tags["what"] = "marshal_value_err"
+			return cdc.TableID{}, fmt.Errorf("cannot unmarshal event: %w", err)
+		}
+
+		tags["op"] = string(_event.Operation())
+		evt, err := event.ToMemoryEvent(ctx, dest, _event, pkMap, topicConfigPtr.tc, cfg.Mode, cfg.SharedDestinationSettings, p.EncryptionKey, p.Cache)
+		if err != nil {
+			tags["what"] = "to_mem_event_err"
+			return cdc.TableID{}, fmt.Errorf("cannot convert to memory event: %w", err)
+		}
+
+		tableId := evt.GetTableID()
+		if tableIdPtr == nil {
+			tableIdPtr = &tableId
+		} else if tableIdPtr.String() != tableId.String() {
+			// using the zero value of the struct as a barrier value
+			tableIdPtr = &cdc.TableID{}
+		}
+
+		if evt.GetExecutionTime().Before(executionTime) {
+			executionTime = evt.GetExecutionTime()
+		}
+
+		// Table name is only available after event has been cast
+		tags["table"] = evt.GetTable()
+		if topicConfigPtr.ShouldSkip(string(_event.Operation())) {
+			continue
+		}
+
+		if cfg.Reporting.EmitExecutionTime {
+			evt.EmitExecutionTimeLag(metricsClient)
+		}
+
+		eventShouldFlush, eventFlushReason, err := evt.Save(cfg, inMemDB, topicConfigPtr.tc, reservedColumns)
+		if err != nil {
+			tags["what"] = "save_fail"
+			return cdc.TableID{}, fmt.Errorf("event failed to save: %w", err)
+		}
+		shouldFlush = shouldFlush || eventShouldFlush
+		if eventFlushReason != "" {
+			flushReason = eventFlushReason
+		}
 	}
 
-	tags["database"] = topicConfig.tc.Database
-	tags["schema"] = topicConfig.tc.Schema
-	pkMap, err := topicConfig.buildPKMap(p.Msg.Key(), reservedColumns)
-	if err != nil {
-		tags["what"] = "marshall_pk_err"
-		return cdc.TableID{}, fmt.Errorf("cannot unmarshal key %q: %w", string(p.Msg.Key()), err)
+	if p.FlushByDefault {
+		flushReason = "flushOnReceive"
 	}
 
-	_event, err := topicConfig.GetEventFromBytes(p.Msg.Value())
-	if err != nil {
-		tags["what"] = "marshal_value_err"
-		return cdc.TableID{}, fmt.Errorf("cannot unmarshal event: %w", err)
+	if tableIdPtr == nil {
+		tableIdPtr = &cdc.TableID{}
 	}
 
-	tags["op"] = string(_event.Operation())
-	evt, err := event.ToMemoryEvent(ctx, dest, _event, pkMap, topicConfig.tc, cfg.Mode, cfg.SharedDestinationSettings, p.EncryptionKey, p.Cache)
-	if err != nil {
-		tags["what"] = "to_mem_event_err"
-		return cdc.TableID{}, fmt.Errorf("cannot convert to memory event: %w", err)
-	}
-
-	// Table name is only available after event has been cast
-	tags["table"] = evt.GetTable()
-	if topicConfig.ShouldSkip(string(_event.Operation())) {
-		// Check to see if we should skip first
-		// This way, we can emit a specific tag to be more clear
-		tags["skipped"] = "yes"
-		return evt.GetTableID(), nil
-	}
-
-	if cfg.Reporting.EmitExecutionTime {
-		evt.EmitExecutionTimeLag(metricsClient)
-	}
-
-	shouldFlush, flushReason, err := evt.Save(cfg, inMemDB, topicConfig.tc, reservedColumns)
-	if err != nil {
-		tags["what"] = "save_fail"
-		return cdc.TableID{}, fmt.Errorf("event failed to save: %w", err)
-	}
-
-	if shouldFlush {
-		executionTime := evt.GetExecutionTime()
-		err = FlushSingleTopic(ctx, inMemDB, dest, metricsClient, p.WhClient, Args{Reason: flushReason, ReportDBExecutionTime: cfg.Reporting.EmitDBExecutionTime, EventExecutionTime: &executionTime}, topicConfig.tc.Topic, false)
+	// if topicConfigPtr is nil it means there's nothing to flush anyways
+	if topicConfigPtr != nil && (shouldFlush || p.FlushByDefault) {
+		err := FlushSingleTopic(ctx, inMemDB, dest, metricsClient, p.WhClient, Args{Reason: flushReason, ReportDBExecutionTime: cfg.Reporting.EmitDBExecutionTime, EventExecutionTime: &executionTime}, topicConfigPtr.tc.Topic, false)
 		if err != nil {
 			tags["what"] = "flush_fail"
 		}
-		return evt.GetTableID(), err
+		return *tableIdPtr, err
 	}
-
-	return evt.GetTableID(), nil
+	return *tableIdPtr, nil
 }

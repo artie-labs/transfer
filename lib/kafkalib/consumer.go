@@ -12,6 +12,8 @@ import (
 	"github.com/twmb/franz-go/pkg/kgo"
 	"github.com/twmb/franz-go/pkg/kmsg"
 
+	"github.com/artie-labs/transfer/lib/fn"
+
 	"github.com/artie-labs/transfer/lib/artie"
 )
 
@@ -31,6 +33,8 @@ func BuildContextKey(topic string) ctxKey {
 type Consumer interface {
 	Close() (err error)
 	FetchMessage(ctx context.Context) (artie.Message, error)
+	// FetchBatch must only return batches with len() >= 1
+	FetchBatch(ctx context.Context) ([]artie.Message, error)
 	CommitMessages(ctx context.Context, msgs ...artie.Message) error
 }
 
@@ -72,17 +76,7 @@ func (f *FranzGoConsumer) Close() error {
 	return nil
 }
 
-func (f *FranzGoConsumer) FetchMessage(ctx context.Context) (artie.Message, error) {
-	if f.currentIter != nil && !f.currentIter.Done() {
-		record := f.currentIter.Next()
-		slog.Debug("Received message",
-			slog.String("topic", record.Topic),
-			slog.Int("partition", int(record.Partition)),
-			slog.Int64("offset", record.Offset))
-
-		return artie.NewFranzGoMessage(*record, f.GetHighWatermark(*record)), nil
-	}
-
+func (f *FranzGoConsumer) performFetches(ctx context.Context) error {
 	groupID, generation := f.client.GroupMetadata()
 	slog.Debug("Polling topics", slog.Any("topics", f.client.GetConsumeTopics()), slog.String("groupID", groupID), slog.Int("generation", int(generation)))
 
@@ -94,7 +88,7 @@ func (f *FranzGoConsumer) FetchMessage(ctx context.Context) (artie.Message, erro
 		for _, err := range errs {
 			combinedErrors = append(combinedErrors, err.Err)
 		}
-		return nil, errors.Join(combinedErrors...)
+		return errors.Join(combinedErrors...)
 	}
 
 	// Since HWM is a field on the Partition and not on every kgo.Record,
@@ -107,12 +101,46 @@ func (f *FranzGoConsumer) FetchMessage(ctx context.Context) (artie.Message, erro
 
 	f.currentIter = fetches.RecordIter()
 	if f.currentIter.Done() {
-		return nil, ErrNoMessages
+		return ErrNoMessages
+	}
+	return nil
+}
+
+func (f *FranzGoConsumer) FetchMessage(ctx context.Context) (artie.Message, error) {
+	if f.currentIter != nil && !f.currentIter.Done() {
+		record := f.currentIter.Next()
+		slog.Debug("Received message",
+			slog.String("topic", record.Topic),
+			slog.Int("partition", int(record.Partition)),
+			slog.Int64("offset", record.Offset))
+
+		return artie.NewFranzGoMessage(*record, f.GetHighWatermark(*record)), nil
+	}
+
+	err := f.performFetches(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	record := f.currentIter.Next()
 
 	return artie.NewFranzGoMessage(*record, f.GetHighWatermark(*record)), nil
+}
+
+func (f *FranzGoConsumer) FetchBatch(ctx context.Context) ([]artie.Message, error) {
+	err := f.performFetches(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var msgBatch []artie.Message
+	for !f.currentIter.Done() {
+		record := f.currentIter.Next()
+
+		msgBatch = append(msgBatch, artie.NewFranzGoMessage(*record, f.GetHighWatermark(*record)))
+	}
+
+	return msgBatch, nil
 }
 
 // TopicExists checks if a topic exists in the Kafka cluster using metadata request.
@@ -369,7 +397,8 @@ func (c *ConsumerProvider) LockAndProcess(ctx context.Context, lock bool, do fun
 	return nil
 }
 
-func (c *ConsumerProvider) FetchMessageAndProcess(ctx context.Context, do func(artie.Message) error) error {
+// FetchMessageAndProcess fetches a single message and executes the do function against a singleton list containing that message
+func (c *ConsumerProvider) FetchMessageAndProcess(ctx context.Context, do func([]artie.Message) error) error {
 	ctx, cancel := context.WithTimeout(ctx, FetchMessageTimeout)
 	defer cancel()
 
@@ -388,11 +417,43 @@ func (c *ConsumerProvider) FetchMessageAndProcess(ctx context.Context, do func(a
 		}
 	}
 
-	if err := do(msg); err != nil {
+	if err := do([]artie.Message{msg}); err != nil {
 		return fmt.Errorf("failed to process message: %w", err)
 	}
 
 	c.partitionToAppliedOffset[msg.Partition()] = msg
+	return nil
+}
+
+func (c *ConsumerProvider) FetchBatchAndProcess(ctx context.Context, do func([]artie.Message) error) error {
+	ctx, cancel := context.WithTimeout(ctx, FetchMessageTimeout)
+	defer cancel()
+
+	msgs, err := c.Consumer.FetchBatch(ctx)
+	if err != nil {
+		return NewFetchMessageError(err)
+	}
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	unprocessedMsgs := fn.Filter(msgs, func(msg artie.Message) bool {
+		if appliedMsg, ok := c.partitionToAppliedOffset[msg.Partition()]; ok {
+			if appliedMsg.Offset() >= msg.Offset() {
+				return false
+			}
+		}
+		return true
+	})
+
+	if err := do(unprocessedMsgs); err != nil {
+		return fmt.Errorf("failed to process messages: %w", err)
+	}
+
+	for _, msg := range unprocessedMsgs {
+		c.partitionToAppliedOffset[msg.Partition()] = msg
+	}
+
 	return nil
 }
 

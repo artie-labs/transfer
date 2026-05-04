@@ -39,13 +39,13 @@ func TestProcessMessageFailures(t *testing.T) {
 		Partition: 0,
 		Offset:    int64(0),
 		Key:       nil,
-		Value:     nil,
+		Value:     []byte("test"),
 		Timestamp: time.Time{},
 	}
 
 	msg := artie.NewFranzGoMessage(kafkaMsg, 0)
 	args := processArgs{
-		Msg:     msg,
+		Msgs:    []artie.Message{msg},
 		GroupID: "foo",
 	}
 
@@ -74,7 +74,7 @@ func TestProcessMessageFailures(t *testing.T) {
 	))
 
 	args = processArgs{
-		Msg:                    msg,
+		Msgs:                   []artie.Message{msg},
 		GroupID:                "foo",
 		TopicToConfigFormatMap: tcFmtMap,
 	}
@@ -166,7 +166,7 @@ func TestProcessMessageFailures(t *testing.T) {
 	kafkaMessage.Value = []byte(val)
 
 	args = processArgs{
-		Msg:                    artie.NewFranzGoMessage(kafkaMessage, 0),
+		Msgs:                   []artie.Message{artie.NewFranzGoMessage(kafkaMessage, 0)},
 		GroupID:                "foo",
 		TopicToConfigFormatMap: tcFmtMap,
 	}
@@ -196,7 +196,7 @@ func TestProcessMessageFailures(t *testing.T) {
 		kafkaMessage.Value = []byte("not a json object")
 		msg := artie.NewFranzGoMessage(kafkaMessage, 0)
 		args = processArgs{
-			Msg:                    msg,
+			Msgs:                   []artie.Message{msg},
 			GroupID:                "foo",
 			TopicToConfigFormatMap: tcFmtMap,
 		}
@@ -336,7 +336,7 @@ func TestProcessMessageNilKeyWithPrimaryKeyOverride(t *testing.T) {
 
 	memDB := models.NewMemoryDB()
 	args := processArgs{
-		Msg:                    artie.NewFranzGoMessage(kafkaMessage, 0),
+		Msgs:                   []artie.Message{artie.NewFranzGoMessage(kafkaMessage, 0)},
 		GroupID:                "foo",
 		TopicToConfigFormatMap: tcFmtMap,
 	}
@@ -482,7 +482,7 @@ func TestProcessMessageSkip(t *testing.T) {
 
 		msg := artie.NewFranzGoMessage(kafkaMessage, 0)
 		args := processArgs{
-			Msg:                    msg,
+			Msgs:                   []artie.Message{msg},
 			GroupID:                "foo",
 			TopicToConfigFormatMap: tcFmtMap,
 		}

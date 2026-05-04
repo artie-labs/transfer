@@ -15,6 +15,7 @@ import (
 	"github.com/artie-labs/transfer/lib/cryptography"
 	"github.com/artie-labs/transfer/lib/destination"
 	"github.com/artie-labs/transfer/lib/destination/utils"
+	"github.com/artie-labs/transfer/lib/fn"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/logger"
 	"github.com/artie-labs/transfer/lib/system"
@@ -126,12 +127,20 @@ func main() {
 		logger.Fatal(fmt.Sprintf("Kafka client: %q not supported", settings.Config.KafkaClient))
 	}
 
+	flushingTopicConfigs := fn.Filter(settings.Config.Kafka.TopicConfigs, func(topicConfig *kafkalib.TopicConfig) bool {
+		return topicConfig != nil && !topicConfig.FlushOnReceive
+	})
+
+	flushingTopicNames := fn.Map(flushingTopicConfigs, func(topicConfig *kafkalib.TopicConfig) string {
+		return topicConfig.Topic
+	})
+
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		defer logger.RecoverFatal()
-		pool.StartPool(ctx, inMemDB, dest, metricsClient, whClient, settings.Config.Kafka.Topics(), time.Duration(settings.Config.FlushIntervalSeconds)*time.Second, settings.Config)
+		pool.StartPool(ctx, inMemDB, dest, metricsClient, whClient, flushingTopicNames, time.Duration(settings.Config.FlushIntervalSeconds)*time.Second, settings.Config)
 	}()
 
 	wg.Add(1)
