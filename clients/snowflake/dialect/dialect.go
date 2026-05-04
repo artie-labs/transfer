@@ -12,7 +12,9 @@ import (
 	"github.com/artie-labs/transfer/lib/typing/columns"
 )
 
-type SnowflakeDialect struct{}
+type SnowflakeDialect struct {
+	UseEqualNull bool
+}
 
 // ReservedColumnNames - This is sourced from: https://docs.snowflake.com/en/sql-reference/reserved-keywords
 func (SnowflakeDialect) ReservedColumnNames() map[string]bool {
@@ -118,7 +120,10 @@ func (sd SnowflakeDialect) BuildDedupeQueries(tableID, stagingTableID sql.TableI
 
 // BuildMergeQueryIntoStagingTable - This is used to merge data from a staging table into a multi-step merge staging table.
 func (sd SnowflakeDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string {
-	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, sd)
+	equalitySQLParts, err := sql.BuildColumnComparisonsWithEqualNull(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, sd, sd.UseEqualNull)
+	if err != nil {
+		return nil
+	}
 	if len(additionalEqualityStrings) > 0 {
 		equalitySQLParts = append(equalitySQLParts, additionalEqualityStrings...)
 	}
@@ -148,7 +153,10 @@ func (sd SnowflakeDialect) BuildMergeQueries(
 	softDelete bool,
 	_ bool,
 ) ([]string, error) {
-	equalitySQLParts := sql.BuildColumnComparisons(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, sd)
+	equalitySQLParts, err := sql.BuildColumnComparisonsWithEqualNull(primaryKeys, constants.TargetAlias, constants.StagingAlias, sql.Equal, sd, sd.UseEqualNull)
+	if err != nil {
+		return nil, err
+	}
 	if len(additionalEqualityStrings) > 0 {
 		equalitySQLParts = append(equalitySQLParts, additionalEqualityStrings...)
 	}
@@ -157,7 +165,7 @@ MERGE INTO %s %s USING ( %s ) AS %s ON %s`,
 		tableID.FullyQualifiedName(), constants.TargetAlias, subQuery, constants.StagingAlias, strings.Join(equalitySQLParts, " AND "),
 	)
 
-	cols, err := columns.RemoveOnlySetDeleteColumnMarker(cols)
+	cols, err = columns.RemoveOnlySetDeleteColumnMarker(cols)
 	if err != nil {
 		return []string{}, err
 	}

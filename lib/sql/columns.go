@@ -76,3 +76,23 @@ func BuildColumnComparisons(_columns []columns.Column, table1, table2 constants.
 	}
 	return result
 }
+
+// BuildColumnComparisonsWithEqualNull builds column comparisons using the dialect's BuildEqualityCondition
+// (e.g. EQUAL_NULL for Snowflake) when useEqualNull is true, otherwise falls back to the standard operator comparison.
+func BuildColumnComparisonsWithEqualNull(_columns []columns.Column, table1, table2 constants.TableAlias, operator Operator, dialect Dialect, useEqualNull bool) ([]string, error) {
+	if !useEqualNull {
+		return BuildColumnComparisons(_columns, table1, table2, operator, dialect), nil
+	}
+
+	result := make([]string, len(_columns))
+	for i, column := range _columns {
+		colA := QuoteTableAliasColumn(table1, column, dialect)
+		colB := QuoteTableAliasColumn(table2, column, dialect)
+		comparison, err := dialect.BuildEqualityCondition(colA, colB)
+		if err != nil {
+			return nil, err
+		}
+		result[i] = comparison
+	}
+	return result, nil
+}
