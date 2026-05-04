@@ -192,6 +192,6 @@ FORMAT_OPTIONS (
 	)
 }
 
-func (DatabricksDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) ([]string, error) {
+func (DatabricksDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column, _ bool) ([]string, error) {
 	return nil, fmt.Errorf("not implemented")
 }

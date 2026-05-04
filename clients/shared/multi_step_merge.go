@@ -171,6 +171,7 @@ func merge(ctx context.Context, dwh destination.SQLDestination, tableData *optim
 			primaryKeys,
 			opts.AdditionalEqualityStrings,
 			validColumns,
+			opts.UseEqualNull,
 		)
 		if err != nil {
 			return fmt.Errorf("failed to generate merge statements: %w", err)
