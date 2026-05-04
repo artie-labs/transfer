@@ -14,9 +14,21 @@ import (
 	"github.com/artie-labs/transfer/lib/config"
 	"github.com/artie-labs/transfer/lib/kafkalib"
 	"github.com/artie-labs/transfer/lib/mocks"
-	"github.com/artie-labs/transfer/lib/telemetry/metrics"
 	"github.com/artie-labs/transfer/models"
 )
+
+// processMessageMetricCount returns the number of Timing calls recorded against
+// the "process.message" metric — one is expected per processed message.
+func processMessageMetricCount(m *mocks.FakeMetricsClient) int {
+	n := 0
+	for i := 0; i < m.TimingCallCount(); i++ {
+		name, _, _ := m.TimingArgsForCall(i)
+		if name == "process.message" {
+			n++
+		}
+	}
+	return n
+}
 
 // These tests pin the externally-observable behavior of processArgs.process for
 // a single message: when a flush happens, when it doesn't, and what's left in
@@ -78,6 +90,7 @@ func TestProcess_SingleMessage_NoFlushWhenBufferNotFull(t *testing.T) {
 	cfg := config.Config{BufferRows: 10, FlushSizeKb: 900, FlushIntervalSeconds: 10}
 	memDB := models.NewMemoryDB()
 	dest := &mocks.FakeDestination{}
+	m := &mocks.FakeMetricsClient{}
 
 	args := processArgs{
 		Msg:                    buildMongoMessage(t, "r"),
@@ -85,12 +98,13 @@ func TestProcess_SingleMessage_NoFlushWhenBufferNotFull(t *testing.T) {
 		TopicToConfigFormatMap: regressionTcFmtMap(regressionTC("")),
 	}
 
-	gotID, err := args.process(t.Context(), cfg, memDB, dest, metrics.NullMetricsProvider{})
+	gotID, err := args.process(t.Context(), cfg, memDB, dest, m)
 	assert.NoError(t, err)
 	assert.Equal(t, tableID, gotID)
 	assert.Equal(t, 0, dest.MergeCallCount(), "no flush expected when buffer is not full")
 	assert.Equal(t, 0, dest.AppendCallCount())
 	assert.Equal(t, uint(1), memDB.GetOrCreateTableData(tableID, regressionTopic).NumberOfRows())
+	assert.Equal(t, 1, processMessageMetricCount(m))
 }
 
 func TestProcess_SingleMessage_FlushesWhenBufferFull(t *testing.T) {
@@ -100,6 +114,7 @@ func TestProcess_SingleMessage_FlushesWhenBufferFull(t *testing.T) {
 	memDB := models.NewMemoryDB()
 	dest := &mocks.FakeDestination{}
 	dest.MergeReturns(true, nil)
+	m := &mocks.FakeMetricsClient{}
 	ctx, fc := withConsumerCtx(t)
 
 	args := processArgs{
@@ -108,17 +123,19 @@ func TestProcess_SingleMessage_FlushesWhenBufferFull(t *testing.T) {
 		TopicToConfigFormatMap: regressionTcFmtMap(regressionTC("")),
 	}
 
-	gotID, err := args.process(ctx, cfg, memDB, dest, metrics.NullMetricsProvider{})
+	gotID, err := args.process(ctx, cfg, memDB, dest, m)
 	assert.NoError(t, err)
 	assert.Equal(t, tableID, gotID)
 	assert.Equal(t, 1, dest.MergeCallCount())
 	assert.Equal(t, 1, fc.CommitMessagesCallCount())
+	assert.Equal(t, 1, processMessageMetricCount(m))
 }
 
 func TestProcess_SingleMessage_SkipDoesNotFlush(t *testing.T) {
 	cfg := config.Config{BufferRows: 10, FlushSizeKb: 900, FlushIntervalSeconds: 10}
 	memDB := models.NewMemoryDB()
 	dest := &mocks.FakeDestination{}
+	m := &mocks.FakeMetricsClient{}
 
 	args := processArgs{
 		Msg:                    buildMongoMessage(t, "d"),
@@ -126,17 +143,19 @@ func TestProcess_SingleMessage_SkipDoesNotFlush(t *testing.T) {
 		TopicToConfigFormatMap: regressionTcFmtMap(regressionTC("d")),
 	}
 
-	gotID, err := args.process(t.Context(), cfg, memDB, dest, metrics.NullMetricsProvider{})
+	gotID, err := args.process(t.Context(), cfg, memDB, dest, m)
 	assert.NoError(t, err)
 	assert.Equal(t, tableID, gotID)
 	assert.Equal(t, 0, dest.MergeCallCount())
 	assert.Equal(t, uint(0), memDB.GetOrCreateTableData(tableID, regressionTopic).NumberOfRows())
+	assert.Equal(t, 1, processMessageMetricCount(m), "process.message must still be emitted on skip")
 }
 
 func TestProcess_SingleMessage_UnmarshalErrorDoesNotFlush(t *testing.T) {
 	cfg := config.Config{BufferRows: 10, FlushSizeKb: 900, FlushIntervalSeconds: 10}
 	memDB := models.NewMemoryDB()
 	dest := &mocks.FakeDestination{}
+	m := &mocks.FakeMetricsClient{}
 
 	bad := artie.NewFranzGoMessage(kgo.Record{
 		Topic: regressionTopic, Key: []byte("Struct{id=1}"), Value: []byte("not json"),
@@ -148,7 +167,8 @@ func TestProcess_SingleMessage_UnmarshalErrorDoesNotFlush(t *testing.T) {
 		TopicToConfigFormatMap: regressionTcFmtMap(regressionTC("")),
 	}
 
-	_, err := args.process(t.Context(), cfg, memDB, dest, metrics.NullMetricsProvider{})
+	_, err := args.process(t.Context(), cfg, memDB, dest, m)
 	assert.Error(t, err)
 	assert.Equal(t, 0, dest.MergeCallCount())
+	assert.Equal(t, 1, processMessageMetricCount(m), "process.message must still be emitted on error")
 }
