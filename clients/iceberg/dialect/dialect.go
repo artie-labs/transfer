@@ -33,6 +33,10 @@ func (IcebergDialect) EscapeStruct(value string) string {
 	return sql.QuoteLiteral(value)
 }
 
+func (IcebergDialect) BuildEqualityCondition(_, _ string) (string, error) {
+	return "", fmt.Errorf("not implemented")
+}
+
 func (IcebergDialect) IsColumnAlreadyExistsErr(err error) bool {
 	if err == nil {
 		return false

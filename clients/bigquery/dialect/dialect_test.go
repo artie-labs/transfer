@@ -22,6 +22,11 @@ func TestBigQueryDialect_QuoteIdentifier(t *testing.T) {
 	assert.Equal(t, "`FOO; BAD`", dialect.QuoteIdentifier("FOO`; BAD"))
 }
 
+func TestBigQueryDialect_BuildEqualityCondition(t *testing.T) {
+	_, err := BigQueryDialect{}.BuildEqualityCondition(`tgt.id`, `stg.id`)
+	assert.ErrorContains(t, err, "not implemented")
+}
+
 func TestBigQueryDialect_IsColumnAlreadyExistsErr(t *testing.T) {
 	{
 		// Random error

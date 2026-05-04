@@ -26,6 +26,10 @@ func (MySQLDialect) EscapeStruct(value string) string {
 	panic("not implemented") // We don't currently support backfills for MySQL.
 }
 
+func (MySQLDialect) BuildEqualityCondition(_, _ string) (string, error) {
+	return "", fmt.Errorf("not implemented")
+}
+
 func (MySQLDialect) IsColumnAlreadyExistsErr(err error) bool {
 	// MySQL error 1060: Duplicate column name
 	return strings.Contains(err.Error(), "Duplicate column name")

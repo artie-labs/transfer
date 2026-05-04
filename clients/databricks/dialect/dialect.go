@@ -26,6 +26,10 @@ func (DatabricksDialect) EscapeStruct(value string) string {
 	panic("not implemented")
 }
 
+func (DatabricksDialect) BuildEqualityCondition(_, _ string) (string, error) {
+	return "", fmt.Errorf("not implemented")
+}
+
 func (DatabricksDialect) IsColumnAlreadyExistsErr(err error) bool {
 	return err != nil && strings.Contains(err.Error(), "[FIELDS_ALREADY_EXISTS]")
 }

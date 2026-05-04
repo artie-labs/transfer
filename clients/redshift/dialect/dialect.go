@@ -25,6 +25,10 @@ func (RedshiftDialect) EscapeStruct(value string) string {
 	return fmt.Sprintf("JSON_PARSE(%s)", sql.QuoteLiteral(value))
 }
 
+func (RedshiftDialect) BuildEqualityCondition(_, _ string) (string, error) {
+	return "", fmt.Errorf("not implemented")
+}
+
 func (RedshiftDialect) IsColumnAlreadyExistsErr(err error) bool {
 	// Redshift's error: ERROR: column "foo" of relation "statement" already exists
 	return strings.Contains(err.Error(), "already exists")

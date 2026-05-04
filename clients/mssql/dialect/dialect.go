@@ -31,6 +31,10 @@ func (MSSQLDialect) EscapeStruct(value string) string {
 	panic("not implemented") // We don't currently support backfills for MS SQL.
 }
 
+func (MSSQLDialect) BuildEqualityCondition(_, _ string) (string, error) {
+	return "", fmt.Errorf("not implemented")
+}
+
 func (MSSQLDialect) IsColumnAlreadyExistsErr(err error) bool {
 	alreadyExistErrs := []string{
 		// Column names in each table must be unique. Column name 'first_name' in table 'users' is specified more than once.
