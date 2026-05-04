@@ -185,6 +185,9 @@ type TopicConfig struct {
 	IncludeArtieUpdatedAt      bool   `yaml:"includeArtieUpdatedAt"`
 	IncludeArtieOperation      bool   `yaml:"includeArtieOperation"`
 	IncludeDatabaseUpdatedAt   bool   `yaml:"includeDatabaseUpdatedAt"`
+	// EnableMergePushDownFilter - When enabled along with IncludeArtieUpdatedAt, adds a push-down filter
+	// to the Snowflake MERGE ON clause to narrow the target table scan when the batch contains only inserts.
+	EnableMergePushDownFilter bool `yaml:"enableMergePushDownFilter"`
 	IncludeSourceMetadata      bool   `yaml:"includeSourceMetadata"`
 	IncludeFullSourceTableName bool   `yaml:"includeFullSourceTableName"`
 	// TODO: Deprecate BigQueryPartitionSettings and use AdditionalMergePredicates instead.

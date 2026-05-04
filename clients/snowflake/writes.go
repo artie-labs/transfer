@@ -3,6 +3,8 @@ package snowflake
 import (
 	"context"
 	"fmt"
+	"log/slog"
+	"time"
 
 	"github.com/artie-labs/transfer/clients/shared"
 	"github.com/artie-labs/transfer/lib/config/constants"
@@ -22,6 +24,17 @@ func (s *Store) Merge(ctx context.Context, tableData *optimization.TableData, wh
 	predicates, err := shared.BuildAdditionalEqualityStrings(s.Dialect(), tableData.TopicConfig().AdditionalMergePredicates)
 	if err != nil {
 		return false, fmt.Errorf("failed to build additional equality strings: %w", err)
+	}
+
+	tc := tableData.TopicConfig()
+	if tc.EnableMergePushDownFilter && tc.IncludeArtieUpdatedAt && tableData.ContainsOnlyCreates() && tableData.MinExecutionTime() != nil {
+		filter := fmt.Sprintf(`%s."%s" >= '%s'`,
+			constants.TargetAlias,
+			constants.UpdateColumnMarker,
+			tableData.MinExecutionTime().Format(time.RFC3339Nano),
+		)
+		predicates = append(predicates, filter)
+		slog.Info("Applying merge push-down filter", slog.String("table", tableData.Name()), slog.String("filter", filter))
 	}
 
 	mergeOpts := types.MergeOpts{AdditionalEqualityStrings: predicates}

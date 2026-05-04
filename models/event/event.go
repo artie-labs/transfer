@@ -34,6 +34,7 @@ type Event struct {
 
 	// [executionTime] - The database timestamp for when the event was created.
 	executionTime time.Time
+	operation     constants.Operation
 	mode          config.Mode
 	appendOnly    bool
 }
@@ -150,6 +151,7 @@ func ToMemoryEvent(ctx context.Context, dest destination.Destination, event cdc.
 	sort.Strings(pks)
 	return Event{
 		executionTime: event.GetExecutionTime(),
+		operation:     event.Operation(),
 		mode:          cfgMode,
 		appendOnly:    tc.AppendOnly,
 		// [primaryKeys] needs to be sorted so that we have a deterministic way to identify a row in our in-memory db.
@@ -335,6 +337,9 @@ func (e *Event) Save(cfg config.Config, inMemDB *models.DatabaseData, tc kafkali
 
 	td.InsertRow(pkValueString, e.data, e.deleted)
 	td.SetLatestTimestamp(e.executionTime)
+	if e.operation == constants.Update {
+		td.SetContainsUpdate()
+	}
 	flush, flushReason := td.ShouldFlush(cfg)
 	return flush, flushReason, nil
 }

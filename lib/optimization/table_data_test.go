@@ -3,6 +3,7 @@ package optimization
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -414,5 +415,60 @@ func TestTableData_BuildColumnsToKeep(t *testing.T) {
 		// Include full source table name is true
 		td := TableData{mode: config.Replication, topicConfig: kafkalib.TopicConfig{IncludeFullSourceTableName: true}}
 		assert.ElementsMatch(t, []string{constants.FullSourceTableNameColumnMarker}, td.BuildColumnsToKeep())
+	}
+}
+
+func TestTableData_ContainsOnlyCreates(t *testing.T) {
+	{
+		// Empty batch is creates-only by default
+		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "foo")
+		assert.True(t, td.ContainsOnlyCreates())
+	}
+	{
+		// Inserts without updates or deletes
+		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "foo")
+		td.InsertRow("1", map[string]any{"id": "1"}, false)
+		assert.True(t, td.ContainsOnlyCreates())
+	}
+	{
+		// Calling SetContainsUpdate makes it non-creates-only
+		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "foo")
+		td.InsertRow("1", map[string]any{"id": "1"}, false)
+		td.SetContainsUpdate()
+		assert.False(t, td.ContainsOnlyCreates())
+	}
+	{
+		// Hard deletes make it non-creates-only
+		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "foo")
+		td.InsertRow("1", map[string]any{"id": "1"}, true)
+		assert.False(t, td.ContainsOnlyCreates())
+	}
+}
+
+func TestTableData_MinExecutionTime(t *testing.T) {
+	{
+		// No timestamps set
+		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "foo")
+		assert.Nil(t, td.MinExecutionTime())
+	}
+	{
+		// Single timestamp
+		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "foo")
+		ts := time.Date(2024, 6, 15, 12, 0, 0, 0, time.UTC)
+		td.SetLatestTimestamp(ts)
+		assert.Equal(t, ts, *td.MinExecutionTime())
+	}
+	{
+		// Multiple timestamps - min is tracked
+		td := NewTableData(nil, config.Replication, nil, kafkalib.TopicConfig{}, "foo")
+		ts1 := time.Date(2024, 6, 15, 12, 0, 0, 0, time.UTC)
+		ts2 := time.Date(2024, 6, 15, 11, 0, 0, 0, time.UTC)
+		ts3 := time.Date(2024, 6, 15, 13, 0, 0, 0, time.UTC)
+		td.SetLatestTimestamp(ts1)
+		td.SetLatestTimestamp(ts2)
+		td.SetLatestTimestamp(ts3)
+		assert.Equal(t, ts2, *td.MinExecutionTime())
+		// latestTimestamp should be the last one set
+		assert.Equal(t, ts3, td.GetLatestTimestamp())
 	}
 }
