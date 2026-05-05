@@ -222,9 +222,22 @@ func (IcebergDialect) BuildCreateTemporaryView(viewName string, colParts []strin
 	return fmt.Sprintf("CREATE OR REPLACE TEMPORARY VIEW %s ( %s ) USING csv %s;", viewName, strings.Join(colParts, ", "), getCSVOptions(s3Path))
 }
 
-func (id IcebergDialect) BuildAppendToTable(tableID sql.TableIdentifier, viewName string, columns []string) string {
+func (id IcebergDialect) BuildAppendToTable(tableID sql.TableIdentifier, viewName string, columns, missingSourceColumns []string) string {
+	allColumns := make([]string, len(columns)+len(missingSourceColumns))
+	allValues := make([]string, len(columns)+len(missingSourceColumns))
+
+	for i := range len(allColumns) {
+		if i < len(columns) {
+			allColumns[i] = columns[i]
+			allValues[i] = columns[i]
+		} else {
+			allColumns[i] = missingSourceColumns[i-len(columns)]
+			allValues[i] = fmt.Sprintf("NULL as %s", missingSourceColumns[i-len(columns)])
+		}
+	}
+
 	// Ref: https://downloads.apache.org/spark/docs/3.1.1/sql-ref-syntax-dml-insert-into.html
-	return fmt.Sprintf("INSERT INTO %s (%s) SELECT %s FROM %s", tableID.FullyQualifiedName(), strings.Join(columns, ", "), strings.Join(columns, ", "), viewName)
+	return fmt.Sprintf("INSERT INTO %s (%s) SELECT %s FROM %s", tableID.FullyQualifiedName(), strings.Join(allColumns, ", "), strings.Join(allValues, ", "), viewName)
 }
 
 func (IcebergDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column, _ bool) ([]string, error) {
