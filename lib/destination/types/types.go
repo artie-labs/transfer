@@ -72,6 +72,10 @@ type MergeOpts struct {
 	AdditionalEqualityStrings []string
 	ColumnSettings            config.SharedDestinationColumnSettings
 	RetryColBackfill          bool
+	// UseEqualNull - when true, uses the dialect's BuildEqualityCondition (e.g. EQUAL_NULL for Snowflake)
+	// for primary key comparisons in merge queries. This should be enabled when using primary key overrides,
+	// since overridden keys may contain NULLs.
+	UseEqualNull bool
 
 	// Multi-step merge settings
 	PrepareTemporaryTable              bool

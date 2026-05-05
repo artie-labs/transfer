@@ -26,6 +26,10 @@ func (DatabricksDialect) EscapeStruct(value string) string {
 	panic("not implemented")
 }
 
+func (DatabricksDialect) BuildNullSafeEqualityCond(_, _ string) (string, error) {
+	return "", fmt.Errorf("not implemented")
+}
+
 func (DatabricksDialect) IsColumnAlreadyExistsErr(err error) bool {
 	return err != nil && strings.Contains(err.Error(), "[FIELDS_ALREADY_EXISTS]")
 }
@@ -86,6 +90,7 @@ func (d DatabricksDialect) BuildMergeQueries(
 	additionalEqualityStrings []string,
 	cols []columns.Column,
 	softDelete bool,
+	_ bool,
 	_ bool,
 ) ([]string, error) {
 	// Build the base equality condition for the MERGE query
@@ -187,6 +192,6 @@ FORMAT_OPTIONS (
 	)
 }
 
-func (DatabricksDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string {
-	panic("not implemented")
+func (DatabricksDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column, _ bool) ([]string, error) {
+	return nil, fmt.Errorf("not implemented")
 }

@@ -43,7 +43,7 @@ type Dialect interface {
 	BuildDedupeQueries(tableID, stagingTableID TableIdentifier, primaryKeys []string, includeArtieUpdatedAt bool) []string
 	BuildDescribeTableQuery(tableID TableIdentifier) (string, []any, error)
 	BuildIsNotToastValueExpression(tableAlias constants.TableAlias, column columns.Column) string
-	BuildMergeQueryIntoStagingTable(tableID TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string
+	BuildMergeQueryIntoStagingTable(tableID TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column, useEqualNull bool) ([]string, error)
 	BuildMergeQueries(
 		tableID TableIdentifier,
 		subQuery string,
@@ -54,11 +54,14 @@ type Dialect interface {
 		softDelete bool,
 		// containsHardDeletes is only used for Redshift where we do not issue a DELETE statement if there are no hard deletes in the batch
 		containsHardDeletes bool,
+		useEqualNull bool,
 	) ([]string, error)
 
 	// DDL queries
 	BuildAddColumnQuery(tableID TableIdentifier, sqlPart string) string
 	BuildDropColumnQuery(tableID TableIdentifier, colName string) string
+
+	BuildNullSafeEqualityCond(colA, colB string) (string, error)
 
 	// Default values
 	GetDefaultValueStrategy() DefaultValueStrategy

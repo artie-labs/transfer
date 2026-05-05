@@ -165,13 +165,19 @@ func merge(ctx context.Context, dwh destination.SQLDestination, tableData *optim
 
 	var mergeStatements []string
 	if opts.UseBuildMergeQueryIntoStagingTable {
-		mergeStatements = dwh.Dialect().BuildMergeQueryIntoStagingTable(
+		_mergeStatements, err := dwh.Dialect().BuildMergeQueryIntoStagingTable(
 			targetTableID,
 			subQuery,
 			primaryKeys,
 			opts.AdditionalEqualityStrings,
 			validColumns,
+			opts.UseEqualNull,
 		)
+		if err != nil {
+			return fmt.Errorf("failed to generate merge statements: %w", err)
+		}
+
+		mergeStatements = _mergeStatements
 	} else {
 		_mergeStatements, err := dwh.Dialect().BuildMergeQueries(
 			targetTableID,
@@ -181,6 +187,7 @@ func merge(ctx context.Context, dwh destination.SQLDestination, tableData *optim
 			validColumns,
 			tableData.TopicConfig().SoftDelete,
 			tableData.ContainsHardDeletes(),
+			opts.UseEqualNull,
 		)
 		if err != nil {
 			return fmt.Errorf("failed to generate merge statements: %w", err)

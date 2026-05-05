@@ -285,6 +285,7 @@ func TestRedshiftDialect_BuildMergeQueries_SkipDelete(t *testing.T) {
 		res.Columns,
 		false,
 		false,
+		false,
 	)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(parts))
@@ -313,6 +314,7 @@ func TestRedshiftDialect_BuildMergeQueries_SoftDelete(t *testing.T) {
 			nil,
 			res.Columns,
 			true,
+			false,
 			false,
 		)
 		assert.NoError(t, err)
@@ -343,6 +345,7 @@ func TestRedshiftDialect_BuildMergeQueries_SoftDeleteComposite(t *testing.T) {
 			nil,
 			res.Columns,
 			true,
+			false,
 			false,
 		)
 		assert.NoError(t, err)
@@ -377,6 +380,7 @@ func TestRedshiftDialect_BuildMergeQueries(t *testing.T) {
 			res.Columns,
 			false,
 			true,
+			false,
 		)
 		assert.NoError(t, err)
 		assert.Equal(t, 3, len(parts))
@@ -409,6 +413,7 @@ func TestRedshiftDialect_BuildMergeQueries_CompositeKey(t *testing.T) {
 			res.Columns,
 			false,
 			true,
+			false,
 		)
 		assert.NoError(t, err)
 		assert.Equal(t, 3, len(parts))

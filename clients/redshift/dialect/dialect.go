@@ -25,6 +25,10 @@ func (RedshiftDialect) EscapeStruct(value string) string {
 	return fmt.Sprintf("JSON_PARSE(%s)", sql.QuoteLiteral(value))
 }
 
+func (RedshiftDialect) BuildNullSafeEqualityCond(_, _ string) (string, error) {
+	return "", fmt.Errorf("not implemented")
+}
+
 func (RedshiftDialect) IsColumnAlreadyExistsErr(err error) bool {
 	// Redshift's error: ERROR: column "foo" of relation "statement" already exists
 	return strings.Contains(err.Error(), "already exists")
@@ -344,6 +348,7 @@ func (rd RedshiftDialect) BuildMergeQueries(
 	cols []columns.Column,
 	softDelete bool,
 	containsHardDeletes bool,
+	_ bool,
 ) ([]string, error) {
 	cols, err := columns.RemoveOnlySetDeleteColumnMarker(cols)
 	if err != nil {
@@ -402,6 +407,6 @@ func (rd RedshiftDialect) BuildCopyStatement(tableID sql.TableIdentifier, cols [
 	)
 }
 
-func (RedshiftDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column) []string {
-	panic("not implemented")
+func (RedshiftDialect) BuildMergeQueryIntoStagingTable(tableID sql.TableIdentifier, subQuery string, primaryKeys []columns.Column, additionalEqualityStrings []string, cols []columns.Column, _ bool) ([]string, error) {
+	return nil, fmt.Errorf("not implemented")
 }

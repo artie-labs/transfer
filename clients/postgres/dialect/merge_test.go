@@ -77,7 +77,7 @@ func TestPostgresDialect_BuildMergeQueries(t *testing.T) {
 		columns.NewColumn(constants.OnlySetDeleteColumnMarker, typing.Boolean),
 	}
 
-	queries, err := dialect.BuildMergeQueries(tableID, subQuery, primaryKeys, nil, cols, true, false)
+	queries, err := dialect.BuildMergeQueries(tableID, subQuery, primaryKeys, nil, cols, true, false, false)
 	assert.NoError(t, err)
 	assert.Len(t, queries, 1)
 
@@ -90,7 +90,7 @@ WHEN NOT MATCHED THEN INSERT ("id","name","__artie_delete") VALUES (stg."id",stg
 	assert.Equal(t, expectedQuery, queries[0])
 
 	// Test regular mode
-	queries, err = dialect.BuildMergeQueries(tableID, subQuery, primaryKeys, nil, cols, false, true)
+	queries, err = dialect.BuildMergeQueries(tableID, subQuery, primaryKeys, nil, cols, false, true, false)
 	assert.NoError(t, err)
 	assert.Len(t, queries, 1)
 
@@ -114,14 +114,14 @@ WHEN NOT MATCHED AND COALESCE(stg."__artie_delete", false) = false THEN INSERT (
 		columns.NewColumn(constants.OnlySetDeleteColumnMarker, typing.Boolean),
 	}
 
-	queries, err = dialect.BuildMergeQueries(tableID, subQuery, multiplePrimaryKeys, nil, multiKeyCols, false, false)
+	queries, err = dialect.BuildMergeQueries(tableID, subQuery, multiplePrimaryKeys, nil, multiKeyCols, false, false, false)
 	assert.NoError(t, err)
 	assert.Len(t, queries, 1)
 	assert.Contains(t, queries[0], `tgt."id" = stg."id" AND tgt."tenant_id" = stg."tenant_id"`)
 
 	// Test with additional equality strings
 	additionalEqualityStrings := []string{`"partition_date" = '2023-01-01'`}
-	queries, err = dialect.BuildMergeQueries(tableID, subQuery, primaryKeys, additionalEqualityStrings, cols, false, true)
+	queries, err = dialect.BuildMergeQueries(tableID, subQuery, primaryKeys, additionalEqualityStrings, cols, false, true, false)
 	assert.NoError(t, err)
 	assert.Len(t, queries, 1)
 	assert.Contains(t, queries[0], `tgt."id" = stg."id" AND "partition_date" = '2023-01-01'`)
@@ -145,7 +145,7 @@ func TestPostgresDialect_BuildMergeQueries_DisableMerge(t *testing.T) {
 	}
 
 	// Test regular mode with hard deletes
-	queries, err := dialect.BuildMergeQueries(tableID, subQuery, primaryKeys, nil, cols, false, true)
+	queries, err := dialect.BuildMergeQueries(tableID, subQuery, primaryKeys, nil, cols, false, true, false)
 	assert.NoError(t, err)
 	assert.Len(t, queries, 3)
 
@@ -162,12 +162,12 @@ func TestPostgresDialect_BuildMergeQueries_DisableMerge(t *testing.T) {
 		queries[2])
 
 	// Test regular mode without hard deletes
-	queries, err = dialect.BuildMergeQueries(tableID, subQuery, primaryKeys, nil, cols, false, false)
+	queries, err = dialect.BuildMergeQueries(tableID, subQuery, primaryKeys, nil, cols, false, false, false)
 	assert.NoError(t, err)
 	assert.Len(t, queries, 2)
 
 	// Test soft delete mode
-	queries, err = dialect.BuildMergeQueries(tableID, subQuery, primaryKeys, nil, cols, true, false)
+	queries, err = dialect.BuildMergeQueries(tableID, subQuery, primaryKeys, nil, cols, true, false, false)
 	assert.NoError(t, err)
 	assert.Len(t, queries, 3)
 
@@ -203,7 +203,7 @@ func TestPostgresDialect_BuildMergeQueries_DisableMerge_CompositeKey(t *testing.
 		columns.NewColumn(constants.OnlySetDeleteColumnMarker, typing.Boolean),
 	}
 
-	queries, err := dialect.BuildMergeQueries(tableID, subQuery, primaryKeys, nil, cols, false, true)
+	queries, err := dialect.BuildMergeQueries(tableID, subQuery, primaryKeys, nil, cols, false, true, false)
 	assert.NoError(t, err)
 	assert.Len(t, queries, 3)
 
@@ -230,7 +230,7 @@ func TestPostgresDialect_BuildMergeQueries_DisableMerge_AdditionalEqualityString
 	}
 
 	// Test with hard deletes
-	queries, err := dialect.BuildMergeQueries(tableID, subQuery, primaryKeys, additionalEqualityStrings, cols, false, true)
+	queries, err := dialect.BuildMergeQueries(tableID, subQuery, primaryKeys, additionalEqualityStrings, cols, false, true, false)
 	assert.NoError(t, err)
 	assert.Len(t, queries, 3)
 
@@ -243,7 +243,7 @@ func TestPostgresDialect_BuildMergeQueries_DisableMerge_AdditionalEqualityString
 	assert.Contains(t, queries[2], `DELETE FROM "schema"."table" AS tgt USING`)
 
 	// Test soft delete mode
-	queries, err = dialect.BuildMergeQueries(tableID, subQuery, primaryKeys, additionalEqualityStrings, cols, true, false)
+	queries, err = dialect.BuildMergeQueries(tableID, subQuery, primaryKeys, additionalEqualityStrings, cols, true, false, false)
 	assert.NoError(t, err)
 	assert.Len(t, queries, 3)
 
@@ -291,7 +291,7 @@ func TestPostgresDialect_BuildMergeQueries_DisableMerge_ToastColumns(t *testing.
 	}
 
 	// Test regular mode with hard deletes
-	queries, err := dialect.BuildMergeQueries(tableID, subQuery, primaryKeys, nil, cols, false, true)
+	queries, err := dialect.BuildMergeQueries(tableID, subQuery, primaryKeys, nil, cols, false, true, false)
 	assert.NoError(t, err)
 	assert.Len(t, queries, 3)
 
@@ -345,7 +345,7 @@ func TestPostgresDialect_BuildMergeQueries_DisableMerge_ToastColumns_SoftDelete(
 	}
 
 	// Test soft delete mode
-	queries, err := dialect.BuildMergeQueries(tableID, subQuery, primaryKeys, nil, cols, true, false)
+	queries, err := dialect.BuildMergeQueries(tableID, subQuery, primaryKeys, nil, cols, true, false, false)
 	assert.NoError(t, err)
 	assert.Len(t, queries, 3)
 
